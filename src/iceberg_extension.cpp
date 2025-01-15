@@ -23,7 +23,7 @@
 
 namespace duckdb {
 
-static unique_ptr<BaseSecret> CreatePolarisSecretFunction(ClientContext &, CreateSecretInput &input) {
+static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &, CreateSecretInput &input) {
 	// apply any overridden settings
 	vector<string> prefix_paths;
 	auto result = make_uniq<KeyValueSecret>(prefix_paths, "iceberg", "config", input.name);
@@ -42,7 +42,7 @@ static unique_ptr<BaseSecret> CreatePolarisSecretFunction(ClientContext &, Creat
 	}
 
 	// Get token from catalog
-	result->secret_map["token"] = UCAPI::GetToken(
+	result->secret_map["token"] = IBAPI::GetToken(
 		result->secret_map["client_id"].ToString(), 
 		result->secret_map["client_secret"].ToString(),
 		result->secret_map["endpoint"].ToString());
@@ -53,7 +53,7 @@ static unique_ptr<BaseSecret> CreatePolarisSecretFunction(ClientContext &, Creat
 	return std::move(result);
 }
 
-static void SetPolarisSecretParameters(CreateSecretFunction &function) {
+static void SetCatalogSecretParameters(CreateSecretFunction &function) {
 	function.named_parameters["client_id"] = LogicalType::VARCHAR;
 	function.named_parameters["client_secret"] = LogicalType::VARCHAR;
 	function.named_parameters["endpoint"] = LogicalType::VARCHAR;
@@ -77,10 +77,10 @@ unique_ptr<SecretEntry> GetSecret(ClientContext &context, const string &secret_n
 	return nullptr;
 }
 
-static unique_ptr<Catalog> PolarisCatalogAttach(StorageExtensionInfo *storage_info, ClientContext &context,
+static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_info, ClientContext &context,
                                            AttachedDatabase &db, const string &name, AttachInfo &info,
                                            AccessMode access_mode) {
-	UCCredentials credentials;
+	IBCredentials credentials;
 
 	// check if we have a secret provided
 	string secret_name;
@@ -143,7 +143,7 @@ static unique_ptr<TransactionManager> CreateTransactionManager(StorageExtensionI
 class UCCatalogStorageExtension : public StorageExtension {
 public:
 	UCCatalogStorageExtension() {
-		attach = PolarisCatalogAttach;
+		attach = IcebergCatalogAttach;
 		create_transaction_manager = CreateTransactionManager;
 	}
 };
@@ -168,7 +168,7 @@ static void LoadInternal(DatabaseInstance &instance) {
 		ExtensionUtil::RegisterFunction(instance, fun);
 	}
 
-	UCAPI::InitializeCurl();
+	IBAPI::InitializeCurl();
 
 	SecretType secret_type;
 	secret_type.name = "iceberg";
@@ -176,8 +176,8 @@ static void LoadInternal(DatabaseInstance &instance) {
 	secret_type.default_provider = "config";
 
 	ExtensionUtil::RegisterSecretType(instance, secret_type);
-	CreateSecretFunction secret_function = {"iceberg", "config", CreatePolarisSecretFunction};
-	SetPolarisSecretParameters(secret_function);
+	CreateSecretFunction secret_function = {"iceberg", "config", CreateCatalogSecretFunction};
+	SetCatalogSecretParameters(secret_function);
 	ExtensionUtil::RegisterFunction(instance, secret_function);
 
 	config.storage_extensions["iceberg"] = make_uniq<UCCatalogStorageExtension>();

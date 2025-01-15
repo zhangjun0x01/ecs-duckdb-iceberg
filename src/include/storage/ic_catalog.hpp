@@ -7,9 +7,9 @@
 #include "storage/ic_schema_set.hpp"
 
 namespace duckdb {
-class UCSchemaEntry;
+class IBSchemaEntry;
 
-struct UCCredentials {
+struct IBCredentials {
 	string endpoint;
 	string client_id;
 	string client_secret;
@@ -29,12 +29,12 @@ public:
 class UCCatalog : public Catalog {
 public:
 	explicit UCCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
-	                   UCCredentials credentials);
+	                   IBCredentials credentials);
 	~UCCatalog();
 
 	string internal_name;
 	AccessMode access_mode;
-	UCCredentials credentials;
+	IBCredentials credentials;
 
 public:
 	void Initialize(bool load_builtin) override;

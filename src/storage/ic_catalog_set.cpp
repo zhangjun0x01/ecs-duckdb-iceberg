@@ -5,10 +5,10 @@
 
 namespace duckdb {
 
-UCCatalogSet::UCCatalogSet(Catalog &catalog) : catalog(catalog), is_loaded(false) {
+IBCatalogSet::IBCatalogSet(Catalog &catalog) : catalog(catalog), is_loaded(false) {
 }
 
-optional_ptr<CatalogEntry> UCCatalogSet::GetEntry(ClientContext &context, const string &name) {
+optional_ptr<CatalogEntry> IBCatalogSet::GetEntry(ClientContext &context, const string &name) {
 	if (!is_loaded) {
 		is_loaded = true;
 		LoadEntries(context);
@@ -21,16 +21,16 @@ optional_ptr<CatalogEntry> UCCatalogSet::GetEntry(ClientContext &context, const 
 	return entry->second.get();
 }
 
-void UCCatalogSet::DropEntry(ClientContext &context, DropInfo &info) {
-	throw NotImplementedException("UCCatalogSet::DropEntry");
+void IBCatalogSet::DropEntry(ClientContext &context, DropInfo &info) {
+	throw NotImplementedException("IBCatalogSet::DropEntry");
 }
 
-void UCCatalogSet::EraseEntryInternal(const string &name) {
+void IBCatalogSet::EraseEntryInternal(const string &name) {
 	lock_guard<mutex> l(entry_lock);
 	entries.erase(name);
 }
 
-void UCCatalogSet::Scan(ClientContext &context, const std::function<void(CatalogEntry &)> &callback) {
+void IBCatalogSet::Scan(ClientContext &context, const std::function<void(CatalogEntry &)> &callback) {
 	if (!is_loaded) {
 		is_loaded = true;
 		LoadEntries(context);
@@ -41,29 +41,29 @@ void UCCatalogSet::Scan(ClientContext &context, const std::function<void(Catalog
 	}
 }
 
-optional_ptr<CatalogEntry> UCCatalogSet::CreateEntry(unique_ptr<CatalogEntry> entry) {
+optional_ptr<CatalogEntry> IBCatalogSet::CreateEntry(unique_ptr<CatalogEntry> entry) {
 	lock_guard<mutex> l(entry_lock);
 	auto result = entry.get();
 	if (result->name.empty()) {
-		throw InternalException("UCCatalogSet::CreateEntry called with empty name");
+		throw InternalException("IBCatalogSet::CreateEntry called with empty name");
 	}
 	entries.insert(make_pair(result->name, std::move(entry)));
 	return result;
 }
 
-void UCCatalogSet::ClearEntries() {
+void IBCatalogSet::ClearEntries() {
 	entries.clear();
 	is_loaded = false;
 }
 
-UCInSchemaSet::UCInSchemaSet(UCSchemaEntry &schema) : UCCatalogSet(schema.ParentCatalog()), schema(schema) {
+UCInSchemaSet::UCInSchemaSet(IBSchemaEntry &schema) : IBCatalogSet(schema.ParentCatalog()), schema(schema) {
 }
 
 optional_ptr<CatalogEntry> UCInSchemaSet::CreateEntry(unique_ptr<CatalogEntry> entry) {
 	if (!entry->internal) {
 		entry->internal = schema.internal;
 	}
-	return UCCatalogSet::CreateEntry(std::move(entry));
+	return IBCatalogSet::CreateEntry(std::move(entry));
 }
 
 } // namespace duckdb

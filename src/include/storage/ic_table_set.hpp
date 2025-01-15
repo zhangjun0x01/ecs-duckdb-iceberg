@@ -7,16 +7,16 @@
 namespace duckdb {
 struct CreateTableInfo;
 class UCResult;
-class UCSchemaEntry;
+class IBSchemaEntry;
 
 class UCTableSet : public UCInSchemaSet {
 public:
-	explicit UCTableSet(UCSchemaEntry &schema);
+	explicit UCTableSet(IBSchemaEntry &schema);
 
 public:
 	optional_ptr<CatalogEntry> CreateTable(ClientContext &context, BoundCreateTableInfo &info);
 
-	static unique_ptr<UCTableInfo> GetTableInfo(ClientContext &context, UCSchemaEntry &schema,
+	static unique_ptr<UCTableInfo> GetTableInfo(ClientContext &context, IBSchemaEntry &schema,
 	                                            const string &table_name);
 	optional_ptr<CatalogEntry> RefreshTable(ClientContext &context, const string &table_name);
 

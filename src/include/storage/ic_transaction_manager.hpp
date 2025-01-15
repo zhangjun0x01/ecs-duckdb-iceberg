@@ -20,7 +20,7 @@ public:
 private:
 	UCCatalog &ic_catalog;
 	mutex transaction_lock;
-	reference_map_t<Transaction, unique_ptr<UCTransaction>> transactions;
+	reference_map_t<Transaction, unique_ptr<IBTransaction>> transactions;
 };
 
 } // namespace duckdb

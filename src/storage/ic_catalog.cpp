@@ -9,7 +9,7 @@
 namespace duckdb {
 
 UCCatalog::UCCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
-                     UCCredentials credentials)
+                     IBCredentials credentials)
     : Catalog(db_p), internal_name(internal_name), access_mode(access_mode), credentials(std::move(credentials)),
       schemas(*this) {
 }
@@ -36,7 +36,7 @@ void UCCatalog::DropSchema(ClientContext &context, DropInfo &info) {
 }
 
 void UCCatalog::ScanSchemas(ClientContext &context, std::function<void(SchemaCatalogEntry &)> callback) {
-	schemas.Scan(context, [&](CatalogEntry &schema) { callback(schema.Cast<UCSchemaEntry>()); });
+	schemas.Scan(context, [&](CatalogEntry &schema) { callback(schema.Cast<IBSchemaEntry>()); });
 }
 
 optional_ptr<SchemaCatalogEntry> UCCatalog::GetSchema(CatalogTransaction transaction, const string &schema_name,

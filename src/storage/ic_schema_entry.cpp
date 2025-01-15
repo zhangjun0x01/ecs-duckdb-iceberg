@@ -13,21 +13,21 @@
 
 namespace duckdb {
 
-UCSchemaEntry::UCSchemaEntry(Catalog &catalog, CreateSchemaInfo &info)
+IBSchemaEntry::IBSchemaEntry(Catalog &catalog, CreateSchemaInfo &info)
     : SchemaCatalogEntry(catalog, info), tables(*this) {
 }
 
-UCSchemaEntry::~UCSchemaEntry() {
+IBSchemaEntry::~IBSchemaEntry() {
 }
 
-UCTransaction &GetUCTransaction(CatalogTransaction transaction) {
+IBTransaction &GetUCTransaction(CatalogTransaction transaction) {
 	if (!transaction.transaction) {
 		throw InternalException("No transaction!?");
 	}
-	return transaction.transaction->Cast<UCTransaction>();
+	return transaction.transaction->Cast<IBTransaction>();
 }
 
-optional_ptr<CatalogEntry> UCSchemaEntry::CreateTable(CatalogTransaction transaction, BoundCreateTableInfo &info) {
+optional_ptr<CatalogEntry> IBSchemaEntry::CreateTable(CatalogTransaction transaction, BoundCreateTableInfo &info) {
 	auto &base_info = info.Base();
 	auto table_name = base_info.table;
 	if (base_info.on_conflict == OnCreateConflict::REPLACE_ON_CONFLICT) {
@@ -36,7 +36,7 @@ optional_ptr<CatalogEntry> UCSchemaEntry::CreateTable(CatalogTransaction transac
 	return tables.CreateTable(transaction.GetContext(), info);
 }
 
-optional_ptr<CatalogEntry> UCSchemaEntry::CreateFunction(CatalogTransaction transaction, CreateFunctionInfo &info) {
+optional_ptr<CatalogEntry> IBSchemaEntry::CreateFunction(CatalogTransaction transaction, CreateFunctionInfo &info) {
 	throw BinderException("PC databases do not support creating functions");
 }
 
@@ -50,7 +50,7 @@ void UCUnqualifyColumnRef(ParsedExpression &expr) {
 	ParsedExpressionIterator::EnumerateChildren(expr, UCUnqualifyColumnRef);
 }
 
-optional_ptr<CatalogEntry> UCSchemaEntry::CreateIndex(CatalogTransaction transaction, CreateIndexInfo &info,
+optional_ptr<CatalogEntry> IBSchemaEntry::CreateIndex(CatalogTransaction transaction, CreateIndexInfo &info,
                                                       TableCatalogEntry &table) {
 	throw NotImplementedException("CreateIndex");
 }
@@ -59,7 +59,7 @@ string GetUCCreateView(CreateViewInfo &info) {
 	throw NotImplementedException("GetCreateView");
 }
 
-optional_ptr<CatalogEntry> UCSchemaEntry::CreateView(CatalogTransaction transaction, CreateViewInfo &info) {
+optional_ptr<CatalogEntry> IBSchemaEntry::CreateView(CatalogTransaction transaction, CreateViewInfo &info) {
 	if (info.sql.empty()) {
 		throw BinderException("Cannot create view in PC that originated from an "
 		                      "empty SQL statement");
@@ -79,34 +79,34 @@ optional_ptr<CatalogEntry> UCSchemaEntry::CreateView(CatalogTransaction transact
 	return tables.RefreshTable(transaction.GetContext(), info.view_name);
 }
 
-optional_ptr<CatalogEntry> UCSchemaEntry::CreateType(CatalogTransaction transaction, CreateTypeInfo &info) {
+optional_ptr<CatalogEntry> IBSchemaEntry::CreateType(CatalogTransaction transaction, CreateTypeInfo &info) {
 	throw BinderException("PC databases do not support creating types");
 }
 
-optional_ptr<CatalogEntry> UCSchemaEntry::CreateSequence(CatalogTransaction transaction, CreateSequenceInfo &info) {
+optional_ptr<CatalogEntry> IBSchemaEntry::CreateSequence(CatalogTransaction transaction, CreateSequenceInfo &info) {
 	throw BinderException("PC databases do not support creating sequences");
 }
 
-optional_ptr<CatalogEntry> UCSchemaEntry::CreateTableFunction(CatalogTransaction transaction,
+optional_ptr<CatalogEntry> IBSchemaEntry::CreateTableFunction(CatalogTransaction transaction,
                                                               CreateTableFunctionInfo &info) {
 	throw BinderException("PC databases do not support creating table functions");
 }
 
-optional_ptr<CatalogEntry> UCSchemaEntry::CreateCopyFunction(CatalogTransaction transaction,
+optional_ptr<CatalogEntry> IBSchemaEntry::CreateCopyFunction(CatalogTransaction transaction,
                                                              CreateCopyFunctionInfo &info) {
 	throw BinderException("PC databases do not support creating copy functions");
 }
 
-optional_ptr<CatalogEntry> UCSchemaEntry::CreatePragmaFunction(CatalogTransaction transaction,
+optional_ptr<CatalogEntry> IBSchemaEntry::CreatePragmaFunction(CatalogTransaction transaction,
                                                                CreatePragmaFunctionInfo &info) {
 	throw BinderException("PC databases do not support creating pragma functions");
 }
 
-optional_ptr<CatalogEntry> UCSchemaEntry::CreateCollation(CatalogTransaction transaction, CreateCollationInfo &info) {
+optional_ptr<CatalogEntry> IBSchemaEntry::CreateCollation(CatalogTransaction transaction, CreateCollationInfo &info) {
 	throw BinderException("PC databases do not support creating collations");
 }
 
-void UCSchemaEntry::Alter(CatalogTransaction transaction, AlterInfo &info) {
+void IBSchemaEntry::Alter(CatalogTransaction transaction, AlterInfo &info) {
 	if (info.type != AlterType::ALTER_TABLE) {
 		throw BinderException("Only altering tables is supported for now");
 	}
@@ -125,22 +125,22 @@ bool CatalogTypeIsSupported(CatalogType type) {
 	}
 }
 
-void UCSchemaEntry::Scan(ClientContext &context, CatalogType type,
+void IBSchemaEntry::Scan(ClientContext &context, CatalogType type,
                          const std::function<void(CatalogEntry &)> &callback) {
 	if (!CatalogTypeIsSupported(type)) {
 		return;
 	}
 	GetCatalogSet(type).Scan(context, callback);
 }
-void UCSchemaEntry::Scan(CatalogType type, const std::function<void(CatalogEntry &)> &callback) {
+void IBSchemaEntry::Scan(CatalogType type, const std::function<void(CatalogEntry &)> &callback) {
 	throw NotImplementedException("Scan without context not supported");
 }
 
-void UCSchemaEntry::DropEntry(ClientContext &context, DropInfo &info) {
+void IBSchemaEntry::DropEntry(ClientContext &context, DropInfo &info) {
 	GetCatalogSet(info.type).DropEntry(context, info);
 }
 
-optional_ptr<CatalogEntry> UCSchemaEntry::GetEntry(CatalogTransaction transaction, CatalogType type,
+optional_ptr<CatalogEntry> IBSchemaEntry::GetEntry(CatalogTransaction transaction, CatalogType type,
                                                    const string &name) {
 	if (!CatalogTypeIsSupported(type)) {
 		return nullptr;
@@ -148,7 +148,7 @@ optional_ptr<CatalogEntry> UCSchemaEntry::GetEntry(CatalogTransaction transactio
 	return GetCatalogSet(type).GetEntry(transaction.GetContext(), name);
 }
 
-UCCatalogSet &UCSchemaEntry::GetCatalogSet(CatalogType type) {
+IBCatalogSet &IBSchemaEntry::GetCatalogSet(CatalogType type) {
 	switch (type) {
 	case CatalogType::TABLE_ENTRY:
 	case CatalogType::VIEW_ENTRY:

@@ -17,20 +17,20 @@
 
 namespace duckdb {
 
-UCTableSet::UCTableSet(UCSchemaEntry &schema) : UCInSchemaSet(schema) {
+UCTableSet::UCTableSet(IBSchemaEntry &schema) : UCInSchemaSet(schema) {
 }
 
-static ColumnDefinition CreateColumnDefinition(ClientContext &context, UCAPIColumnDefinition &coldef) {
-	return {coldef.name, UCUtils::TypeToLogicalType(context, coldef.type_text)};
+static ColumnDefinition CreateColumnDefinition(ClientContext &context, IBAPIColumnDefinition &coldef) {
+	return {coldef.name, IBUtils::TypeToLogicalType(context, coldef.type_text)};
 }
 
 void UCTableSet::LoadEntries(ClientContext &context) {
-	auto &transaction = UCTransaction::Get(context, catalog);
+	auto &transaction = IBTransaction::Get(context, catalog);
 
 	auto &ic_catalog = catalog.Cast<UCCatalog>();
 
 	// TODO: handle out-of-order columns using position property
-	auto tables = UCAPI::GetTables(catalog.GetName(), catalog.GetDBPath(), schema.name, ic_catalog.credentials);
+	auto tables = IBAPI::GetTables(catalog.GetName(), catalog.GetDBPath(), schema.name, ic_catalog.credentials);
 
 	for (auto &table : tables) {
 		D_ASSERT(schema.name == table.schema_name);
@@ -41,7 +41,7 @@ void UCTableSet::LoadEntries(ClientContext &context) {
 
 		info.table = table.name;
 		auto table_entry = make_uniq<UCTableEntry>(catalog, schema, info);
-		table_entry->table_data = make_uniq<UCAPITable>(table);
+		table_entry->table_data = make_uniq<IBAPITable>(table);
 
 		CreateEntry(std::move(table_entry));
 	}
@@ -55,7 +55,7 @@ optional_ptr<CatalogEntry> UCTableSet::RefreshTable(ClientContext &context, cons
 	return table_ptr;
 }
 
-unique_ptr<UCTableInfo> UCTableSet::GetTableInfo(ClientContext &context, UCSchemaEntry &schema,
+unique_ptr<UCTableInfo> UCTableSet::GetTableInfo(ClientContext &context, IBSchemaEntry &schema,
                                                  const string &table_name) {
 	throw NotImplementedException("UCTableSet::CreateTable");
 }

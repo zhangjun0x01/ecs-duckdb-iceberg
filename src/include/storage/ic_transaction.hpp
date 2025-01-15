@@ -5,15 +5,15 @@
 
 namespace duckdb {
 class UCCatalog;
-class UCSchemaEntry;
+class IBSchemaEntry;
 class UCTableEntry;
 
 enum class UCTransactionState { TRANSACTION_NOT_YET_STARTED, TRANSACTION_STARTED, TRANSACTION_FINISHED };
 
-class UCTransaction : public Transaction {
+class IBTransaction : public Transaction {
 public:
-	UCTransaction(UCCatalog &ic_catalog, TransactionManager &manager, ClientContext &context);
-	~UCTransaction() override;
+	IBTransaction(UCCatalog &ic_catalog, TransactionManager &manager, ClientContext &context);
+	~IBTransaction() override;
 
 	void Start();
 	void Commit();
@@ -21,7 +21,7 @@ public:
 
 	//	UCConnection &GetConnection();
 	//	unique_ptr<UCResult> Query(const string &query);
-	static UCTransaction &Get(ClientContext &context, Catalog &catalog);
+	static IBTransaction &Get(ClientContext &context, Catalog &catalog);
 	AccessMode GetAccessMode() const {
 		return access_mode;
 	}

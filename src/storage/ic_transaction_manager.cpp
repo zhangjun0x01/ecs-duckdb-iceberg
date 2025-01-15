@@ -8,7 +8,7 @@ UCTransactionManager::UCTransactionManager(AttachedDatabase &db_p, UCCatalog &ic
 }
 
 Transaction &UCTransactionManager::StartTransaction(ClientContext &context) {
-	auto transaction = make_uniq<UCTransaction>(ic_catalog, *this, context);
+	auto transaction = make_uniq<IBTransaction>(ic_catalog, *this, context);
 	transaction->Start();
 	auto &result = *transaction;
 	lock_guard<mutex> l(transaction_lock);
@@ -17,7 +17,7 @@ Transaction &UCTransactionManager::StartTransaction(ClientContext &context) {
 }
 
 ErrorData UCTransactionManager::CommitTransaction(ClientContext &context, Transaction &transaction) {
-	auto &ic_transaction = transaction.Cast<UCTransaction>();
+	auto &ic_transaction = transaction.Cast<IBTransaction>();
 	ic_transaction.Commit();
 	lock_guard<mutex> l(transaction_lock);
 	transactions.erase(transaction);
@@ -25,14 +25,14 @@ ErrorData UCTransactionManager::CommitTransaction(ClientContext &context, Transa
 }
 
 void UCTransactionManager::RollbackTransaction(Transaction &transaction) {
-	auto &ic_transaction = transaction.Cast<UCTransaction>();
+	auto &ic_transaction = transaction.Cast<IBTransaction>();
 	ic_transaction.Rollback();
 	lock_guard<mutex> l(transaction_lock);
 	transactions.erase(transaction);
 }
 
 void UCTransactionManager::Checkpoint(ClientContext &context, bool force) {
-	auto &transaction = UCTransaction::Get(context, db.GetCatalog());
+	auto &transaction = IBTransaction::Get(context, db.GetCatalog());
 	//	auto &db = transaction.GetConnection();
 	//	db.Execute("CHECKPOINT");
 }

@@ -6,14 +6,14 @@
 #include "storage/ic_table_set.hpp"
 
 namespace duckdb {
-class UCTransaction;
+class IBTransaction;
 
-class UCSchemaEntry : public SchemaCatalogEntry {
+class IBSchemaEntry : public SchemaCatalogEntry {
 public:
-	UCSchemaEntry(Catalog &catalog, CreateSchemaInfo &info);
-	~UCSchemaEntry() override;
+	IBSchemaEntry(Catalog &catalog, CreateSchemaInfo &info);
+	~IBSchemaEntry() override;
 
-	unique_ptr<UCAPISchema> schema_data;
+	unique_ptr<IBAPISchema> schema_data;
 
 public:
 	optional_ptr<CatalogEntry> CreateTable(CatalogTransaction transaction, BoundCreateTableInfo &info) override;
@@ -37,7 +37,7 @@ public:
 	optional_ptr<CatalogEntry> GetEntry(CatalogTransaction transaction, CatalogType type, const string &name) override;
 
 private:
-	UCCatalogSet &GetCatalogSet(CatalogType type);
+	IBCatalogSet &GetCatalogSet(CatalogType type);
 
 private:
 	UCTableSet tables;

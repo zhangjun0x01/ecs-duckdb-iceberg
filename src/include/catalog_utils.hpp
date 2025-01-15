@@ -5,18 +5,18 @@
 #include "catalog_api.hpp"
 
 namespace duckdb {
-class UCSchemaEntry;
-class UCTransaction;
+class IBSchemaEntry;
+class IBTransaction;
 
-enum class UCTypeAnnotation { STANDARD, CAST_TO_VARCHAR, NUMERIC_AS_DOUBLE, CTID, JSONB, FIXED_LENGTH_CHAR };
+enum class IBTypeAnnotation { STANDARD, CAST_TO_VARCHAR, NUMERIC_AS_DOUBLE, CTID, JSONB, FIXED_LENGTH_CHAR };
 
 struct UCType {
 	idx_t oid = 0;
-	UCTypeAnnotation info = UCTypeAnnotation::STANDARD;
+	IBTypeAnnotation info = IBTypeAnnotation::STANDARD;
 	vector<UCType> children;
 };
 
-class UCUtils {
+class IBUtils {
 public:
 	static LogicalType ToUCType(const LogicalType &input);
 	static LogicalType TypeToLogicalType(ClientContext &context, const string &columnDefinition);

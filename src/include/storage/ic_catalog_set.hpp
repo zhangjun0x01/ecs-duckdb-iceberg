@@ -7,12 +7,12 @@
 
 namespace duckdb {
 struct DropInfo;
-class UCSchemaEntry;
-class UCTransaction;
+class IBSchemaEntry;
+class IBTransaction;
 
-class UCCatalogSet {
+class IBCatalogSet {
 public:
-	UCCatalogSet(Catalog &catalog);
+	IBCatalogSet(Catalog &catalog);
 
 	optional_ptr<CatalogEntry> GetEntry(ClientContext &context, const string &name);
 	virtual void DropEntry(ClientContext &context, DropInfo &info);
@@ -34,14 +34,14 @@ private:
 	bool is_loaded;
 };
 
-class UCInSchemaSet : public UCCatalogSet {
+class UCInSchemaSet : public IBCatalogSet {
 public:
-	UCInSchemaSet(UCSchemaEntry &schema);
+	UCInSchemaSet(IBSchemaEntry &schema);
 
 	optional_ptr<CatalogEntry> CreateEntry(unique_ptr<CatalogEntry> entry) override;
 
 protected:
-	UCSchemaEntry &schema;
+	IBSchemaEntry &schema;
 };
 
 } // namespace duckdb

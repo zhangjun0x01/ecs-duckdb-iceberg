@@ -4,9 +4,9 @@
 #include "duckdb/common/types.hpp"
 
 namespace duckdb {
-struct UCCredentials;
+struct IBCredentials;
 
-struct UCAPIColumnDefinition {
+struct IBAPIColumnDefinition {
 	string name;
 	string type_text;
 	idx_t precision;
@@ -14,7 +14,7 @@ struct UCAPIColumnDefinition {
 	idx_t position;
 };
 
-struct UCAPITable {
+struct IBAPITable {
 	string table_id;
 
 	string name;
@@ -25,30 +25,30 @@ struct UCAPITable {
 
 	string storage_location;
 
-	vector<UCAPIColumnDefinition> columns;
+	vector<IBAPIColumnDefinition> columns;
 };
 
-struct UCAPISchema {
+struct IBAPISchema {
 	string schema_name;
 	string catalog_name;
 };
 
-struct UCAPITableCredentials {
+struct IBAPITableCredentials {
 	string key_id;
 	string secret;
 	string session_token;
 };
 
-class UCAPI {
+class IBAPI {
 public:
   	//! WARNING: not thread-safe. To be called once on extension initialization
   	static void InitializeCurl();
 
-	static UCAPITableCredentials GetTableCredentials(const string &internal, const string &schema, const string &table, UCCredentials credentials);
-	static vector<string> GetCatalogs(const string &catalog, UCCredentials credentials);
-	static vector<UCAPITable> GetTables(const string &catalog, const string &internal, const string &schema, UCCredentials credentials);
-	static vector<UCAPISchema> GetSchemas(const string &catalog, const string &internal, UCCredentials credentials);
-	static vector<UCAPITable> GetTablesInSchema(const string &catalog, const string &schema, UCCredentials credentials);
+	static IBAPITableCredentials GetTableCredentials(const string &internal, const string &schema, const string &table, IBCredentials credentials);
+	static vector<string> GetCatalogs(const string &catalog, IBCredentials credentials);
+	static vector<IBAPITable> GetTables(const string &catalog, const string &internal, const string &schema, IBCredentials credentials);
+	static vector<IBAPISchema> GetSchemas(const string &catalog, const string &internal, IBCredentials credentials);
+	static vector<IBAPITable> GetTablesInSchema(const string &catalog, const string &schema, IBCredentials credentials);
 	static string GetToken(string id, string secret, string endpoint);
 };
 } // namespace duckdb

@@ -74,8 +74,8 @@ TableFunction UCTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 
 	if (table_data->storage_location.find("file://") != 0) {
 		auto &secret_manager = SecretManager::Get(context);
-		// Get Credentials from UCAPI
-		auto table_credentials = UCAPI::GetTableCredentials(
+		// Get Credentials from IBAPI
+		auto table_credentials = IBAPI::GetTableCredentials(
 			ic_catalog.internal_name, table_data->schema_name, table_data->name, ic_catalog.credentials);
 
 		// Inject secret into secret manager scoped to this path

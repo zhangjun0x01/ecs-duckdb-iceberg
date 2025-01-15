@@ -6,30 +6,30 @@
 
 namespace duckdb {
 
-UCTransaction::UCTransaction(UCCatalog &ic_catalog, TransactionManager &manager, ClientContext &context)
+IBTransaction::IBTransaction(UCCatalog &ic_catalog, TransactionManager &manager, ClientContext &context)
     : Transaction(manager, context), access_mode(ic_catalog.access_mode) {
 	//	connection = UCConnection::Open(ic_catalog.path);
 }
 
-UCTransaction::~UCTransaction() = default;
+IBTransaction::~IBTransaction() = default;
 
-void UCTransaction::Start() {
+void IBTransaction::Start() {
 	transaction_state = UCTransactionState::TRANSACTION_NOT_YET_STARTED;
 }
-void UCTransaction::Commit() {
+void IBTransaction::Commit() {
 	if (transaction_state == UCTransactionState::TRANSACTION_STARTED) {
 		transaction_state = UCTransactionState::TRANSACTION_FINISHED;
 		//		connection.Execute("COMMIT");
 	}
 }
-void UCTransaction::Rollback() {
+void IBTransaction::Rollback() {
 	if (transaction_state == UCTransactionState::TRANSACTION_STARTED) {
 		transaction_state = UCTransactionState::TRANSACTION_FINISHED;
 		//		connection.Execute("ROLLBACK");
 	}
 }
 
-// UCConnection &UCTransaction::GetConnection() {
+// UCConnection &IBTransaction::GetConnection() {
 //	if (transaction_state == UCTransactionState::TRANSACTION_NOT_YET_STARTED) {
 //		transaction_state = UCTransactionState::TRANSACTION_STARTED;
 //		string query = "START TRANSACTION";
@@ -41,7 +41,7 @@ void UCTransaction::Rollback() {
 //	return connection;
 //}
 
-// unique_ptr<UCResult> UCTransaction::Query(const string &query) {
+// unique_ptr<UCResult> IBTransaction::Query(const string &query) {
 //	if (transaction_state == UCTransactionState::TRANSACTION_NOT_YET_STARTED) {
 //		transaction_state = UCTransactionState::TRANSACTION_STARTED;
 //		string transaction_start = "START TRANSACTION";
@@ -54,8 +54,8 @@ void UCTransaction::Rollback() {
 //	return connection.Query(query);
 //}
 
-UCTransaction &UCTransaction::Get(ClientContext &context, Catalog &catalog) {
-	return Transaction::Get(context, catalog).Cast<UCTransaction>();
+IBTransaction &IBTransaction::Get(ClientContext &context, Catalog &catalog) {
+	return Transaction::Get(context, catalog).Cast<IBTransaction>();
 }
 
 } // namespace duckdb
