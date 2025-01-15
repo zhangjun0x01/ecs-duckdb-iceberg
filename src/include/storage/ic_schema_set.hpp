@@ -7,9 +7,9 @@
 namespace duckdb {
 struct CreateSchemaInfo;
 
-class UCSchemaSet : public IBCatalogSet {
+class IBSchemaSet : public IBCatalogSet {
 public:
-	explicit UCSchemaSet(Catalog &catalog);
+	explicit IBSchemaSet(Catalog &catalog);
 
 public:
 	optional_ptr<CatalogEntry> CreateSchema(ClientContext &context, CreateSchemaInfo &info);

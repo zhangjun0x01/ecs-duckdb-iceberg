@@ -7,7 +7,7 @@
 
 namespace duckdb {
 
-UCSchemaSet::UCSchemaSet(Catalog &catalog) : IBCatalogSet(catalog) {
+IBSchemaSet::IBSchemaSet(Catalog &catalog) : IBCatalogSet(catalog) {
 }
 
 static bool IsInternalTable(const string &catalog, const string &schema) {
@@ -16,9 +16,9 @@ static bool IsInternalTable(const string &catalog, const string &schema) {
 	}
 	return false;
 }
-void UCSchemaSet::LoadEntries(ClientContext &context) {
+void IBSchemaSet::LoadEntries(ClientContext &context) {
 
-	auto &ic_catalog = catalog.Cast<UCCatalog>();
+	auto &ic_catalog = catalog.Cast<IBCatalog>();
 	auto tables = IBAPI::GetSchemas(catalog.GetName(), ic_catalog.internal_name, ic_catalog.credentials);
 
 	for (const auto &schema : tables) {
@@ -31,7 +31,7 @@ void UCSchemaSet::LoadEntries(ClientContext &context) {
 	}
 }
 
-optional_ptr<CatalogEntry> UCSchemaSet::CreateSchema(ClientContext &context, CreateSchemaInfo &info) {
+optional_ptr<CatalogEntry> IBSchemaSet::CreateSchema(ClientContext &context, CreateSchemaInfo &info) {
 	throw NotImplementedException("Schema creation");
 }
 

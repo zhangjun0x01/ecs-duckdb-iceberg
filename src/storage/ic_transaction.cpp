@@ -6,32 +6,32 @@
 
 namespace duckdb {
 
-IBTransaction::IBTransaction(UCCatalog &ic_catalog, TransactionManager &manager, ClientContext &context)
+IBTransaction::IBTransaction(IBCatalog &ic_catalog, TransactionManager &manager, ClientContext &context)
     : Transaction(manager, context), access_mode(ic_catalog.access_mode) {
-	//	connection = UCConnection::Open(ic_catalog.path);
+	//	connection = IBConnection::Open(ic_catalog.path);
 }
 
 IBTransaction::~IBTransaction() = default;
 
 void IBTransaction::Start() {
-	transaction_state = UCTransactionState::TRANSACTION_NOT_YET_STARTED;
+	transaction_state = IBTransactionState::TRANSACTION_NOT_YET_STARTED;
 }
 void IBTransaction::Commit() {
-	if (transaction_state == UCTransactionState::TRANSACTION_STARTED) {
-		transaction_state = UCTransactionState::TRANSACTION_FINISHED;
+	if (transaction_state == IBTransactionState::TRANSACTION_STARTED) {
+		transaction_state = IBTransactionState::TRANSACTION_FINISHED;
 		//		connection.Execute("COMMIT");
 	}
 }
 void IBTransaction::Rollback() {
-	if (transaction_state == UCTransactionState::TRANSACTION_STARTED) {
-		transaction_state = UCTransactionState::TRANSACTION_FINISHED;
+	if (transaction_state == IBTransactionState::TRANSACTION_STARTED) {
+		transaction_state = IBTransactionState::TRANSACTION_FINISHED;
 		//		connection.Execute("ROLLBACK");
 	}
 }
 
-// UCConnection &IBTransaction::GetConnection() {
-//	if (transaction_state == UCTransactionState::TRANSACTION_NOT_YET_STARTED) {
-//		transaction_state = UCTransactionState::TRANSACTION_STARTED;
+// IBConnection &IBTransaction::GetConnection() {
+//	if (transaction_state == IBTransactionState::TRANSACTION_NOT_YET_STARTED) {
+//		transaction_state = IBTransactionState::TRANSACTION_STARTED;
 //		string query = "START TRANSACTION";
 //		if (access_mode == AccessMode::READ_ONLY) {
 //			query += " READ ONLY";
@@ -41,9 +41,9 @@ void IBTransaction::Rollback() {
 //	return connection;
 //}
 
-// unique_ptr<UCResult> IBTransaction::Query(const string &query) {
-//	if (transaction_state == UCTransactionState::TRANSACTION_NOT_YET_STARTED) {
-//		transaction_state = UCTransactionState::TRANSACTION_STARTED;
+// unique_ptr<IBResult> IBTransaction::Query(const string &query) {
+//	if (transaction_state == IBTransactionState::TRANSACTION_NOT_YET_STARTED) {
+//		transaction_state = IBTransactionState::TRANSACTION_STARTED;
 //		string transaction_start = "START TRANSACTION";
 //		if (access_mode == AccessMode::READ_ONLY) {
 //			transaction_start += " READ ONLY";

@@ -8,18 +8,18 @@
 
 namespace duckdb {
 
-UCCatalog::UCCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
+IBCatalog::IBCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
                      IBCredentials credentials)
     : Catalog(db_p), internal_name(internal_name), access_mode(access_mode), credentials(std::move(credentials)),
       schemas(*this) {
 }
 
-UCCatalog::~UCCatalog() = default;
+IBCatalog::~IBCatalog() = default;
 
-void UCCatalog::Initialize(bool load_builtin) {
+void IBCatalog::Initialize(bool load_builtin) {
 }
 
-optional_ptr<CatalogEntry> UCCatalog::CreateSchema(CatalogTransaction transaction, CreateSchemaInfo &info) {
+optional_ptr<CatalogEntry> IBCatalog::CreateSchema(CatalogTransaction transaction, CreateSchemaInfo &info) {
 	if (info.on_conflict == OnCreateConflict::REPLACE_ON_CONFLICT) {
 		DropInfo try_drop;
 		try_drop.type = CatalogType::SCHEMA_ENTRY;
@@ -31,15 +31,15 @@ optional_ptr<CatalogEntry> UCCatalog::CreateSchema(CatalogTransaction transactio
 	return schemas.CreateSchema(transaction.GetContext(), info);
 }
 
-void UCCatalog::DropSchema(ClientContext &context, DropInfo &info) {
+void IBCatalog::DropSchema(ClientContext &context, DropInfo &info) {
 	return schemas.DropEntry(context, info);
 }
 
-void UCCatalog::ScanSchemas(ClientContext &context, std::function<void(SchemaCatalogEntry &)> callback) {
+void IBCatalog::ScanSchemas(ClientContext &context, std::function<void(SchemaCatalogEntry &)> callback) {
 	schemas.Scan(context, [&](CatalogEntry &schema) { callback(schema.Cast<IBSchemaEntry>()); });
 }
 
-optional_ptr<SchemaCatalogEntry> UCCatalog::GetSchema(CatalogTransaction transaction, const string &schema_name,
+optional_ptr<SchemaCatalogEntry> IBCatalog::GetSchema(CatalogTransaction transaction, const string &schema_name,
                                                       OnEntryNotFound if_not_found, QueryErrorContext error_context) {
 	if (schema_name == DEFAULT_SCHEMA) {
 		if (default_schema.empty()) {
@@ -55,17 +55,17 @@ optional_ptr<SchemaCatalogEntry> UCCatalog::GetSchema(CatalogTransaction transac
 	return reinterpret_cast<SchemaCatalogEntry *>(entry.get());
 }
 
-bool UCCatalog::InMemory() {
+bool IBCatalog::InMemory() {
 	return false;
 }
 
-string UCCatalog::GetDBPath() {
+string IBCatalog::GetDBPath() {
 	return internal_name;
 }
 
 
 
-DatabaseSize UCCatalog::GetDatabaseSize(ClientContext &context) {
+DatabaseSize IBCatalog::GetDatabaseSize(ClientContext &context) {
 	if (default_schema.empty()) {
 		throw InvalidInputException("Attempting to fetch the database size - but no database was provided "
 		                            "in the connection string");
@@ -74,29 +74,29 @@ DatabaseSize UCCatalog::GetDatabaseSize(ClientContext &context) {
 	return size;
 }
 
-void UCCatalog::ClearCache() {
+void IBCatalog::ClearCache() {
 	schemas.ClearEntries();
 }
 
-unique_ptr<PhysicalOperator> UCCatalog::PlanInsert(ClientContext &context, LogicalInsert &op,
+unique_ptr<PhysicalOperator> IBCatalog::PlanInsert(ClientContext &context, LogicalInsert &op,
                                                    unique_ptr<PhysicalOperator> plan) {
-	throw NotImplementedException("UCCatalog PlanInsert");
+	throw NotImplementedException("IBCatalog PlanInsert");
 }
-unique_ptr<PhysicalOperator> UCCatalog::PlanCreateTableAs(ClientContext &context, LogicalCreateTable &op,
+unique_ptr<PhysicalOperator> IBCatalog::PlanCreateTableAs(ClientContext &context, LogicalCreateTable &op,
                                                           unique_ptr<PhysicalOperator> plan) {
-	throw NotImplementedException("UCCatalog PlanCreateTableAs");
+	throw NotImplementedException("IBCatalog PlanCreateTableAs");
 }
-unique_ptr<PhysicalOperator> UCCatalog::PlanDelete(ClientContext &context, LogicalDelete &op,
+unique_ptr<PhysicalOperator> IBCatalog::PlanDelete(ClientContext &context, LogicalDelete &op,
                                                    unique_ptr<PhysicalOperator> plan) {
-	throw NotImplementedException("UCCatalog PlanDelete");
+	throw NotImplementedException("IBCatalog PlanDelete");
 }
-unique_ptr<PhysicalOperator> UCCatalog::PlanUpdate(ClientContext &context, LogicalUpdate &op,
+unique_ptr<PhysicalOperator> IBCatalog::PlanUpdate(ClientContext &context, LogicalUpdate &op,
                                                    unique_ptr<PhysicalOperator> plan) {
-	throw NotImplementedException("UCCatalog PlanUpdate");
+	throw NotImplementedException("IBCatalog PlanUpdate");
 }
-unique_ptr<LogicalOperator> UCCatalog::BindCreateIndex(Binder &binder, CreateStatement &stmt, TableCatalogEntry &table,
+unique_ptr<LogicalOperator> IBCatalog::BindCreateIndex(Binder &binder, CreateStatement &stmt, TableCatalogEntry &table,
                                                        unique_ptr<LogicalOperator> plan) {
-	throw NotImplementedException("UCCatalog BindCreateIndex");
+	throw NotImplementedException("IBCatalog BindCreateIndex");
 }
 
 } // namespace duckdb

@@ -40,7 +40,7 @@ private:
 	IBCatalogSet &GetCatalogSet(CatalogType type);
 
 private:
-	UCTableSet tables;
+	IBTableSet tables;
 };
 
 } // namespace duckdb

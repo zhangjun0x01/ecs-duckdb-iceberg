@@ -131,18 +131,18 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 
 	// TODO: Check catalog with name actually exists!
 
-	return make_uniq<UCCatalog>(db, info.path, access_mode, credentials);
+	return make_uniq<IBCatalog>(db, info.path, access_mode, credentials);
 }
 
 static unique_ptr<TransactionManager> CreateTransactionManager(StorageExtensionInfo *storage_info, AttachedDatabase &db,
                                                                Catalog &catalog) {
-	auto &ic_catalog = catalog.Cast<UCCatalog>();
-	return make_uniq<UCTransactionManager>(db, ic_catalog);
+	auto &ic_catalog = catalog.Cast<IBCatalog>();
+	return make_uniq<IBTransactionManager>(db, ic_catalog);
 }
 
-class UCCatalogStorageExtension : public StorageExtension {
+class IBCatalogStorageExtension : public StorageExtension {
 public:
-	UCCatalogStorageExtension() {
+	IBCatalogStorageExtension() {
 		attach = IcebergCatalogAttach;
 		create_transaction_manager = CreateTransactionManager;
 	}
@@ -180,7 +180,7 @@ static void LoadInternal(DatabaseInstance &instance) {
 	SetCatalogSecretParameters(secret_function);
 	ExtensionUtil::RegisterFunction(instance, secret_function);
 
-	config.storage_extensions["iceberg"] = make_uniq<UCCatalogStorageExtension>();
+	config.storage_extensions["iceberg"] = make_uniq<IBCatalogStorageExtension>();
 }
 
 void IcebergExtension::Load(DuckDB &db) {

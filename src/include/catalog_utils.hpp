@@ -10,10 +10,10 @@ class IBTransaction;
 
 enum class IBTypeAnnotation { STANDARD, CAST_TO_VARCHAR, NUMERIC_AS_DOUBLE, CTID, JSONB, FIXED_LENGTH_CHAR };
 
-struct UCType {
+struct IBType {
 	idx_t oid = 0;
 	IBTypeAnnotation info = IBTypeAnnotation::STANDARD;
-	vector<UCType> children;
+	vector<IBType> children;
 };
 
 class IBUtils {

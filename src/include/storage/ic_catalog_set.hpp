@@ -34,9 +34,9 @@ private:
 	bool is_loaded;
 };
 
-class UCInSchemaSet : public IBCatalogSet {
+class IBInSchemaSet : public IBCatalogSet {
 public:
-	UCInSchemaSet(IBSchemaEntry &schema);
+	IBInSchemaSet(IBSchemaEntry &schema);
 
 	optional_ptr<CatalogEntry> CreateEntry(unique_ptr<CatalogEntry> entry) override;
 

@@ -7,14 +7,14 @@
 
 namespace duckdb {
 
-struct UCTableInfo {
-	UCTableInfo() {
+struct IBTableInfo {
+	IBTableInfo() {
 		create_info = make_uniq<CreateTableInfo>();
 	}
-	UCTableInfo(const string &schema, const string &table) {
+	IBTableInfo(const string &schema, const string &table) {
 		create_info = make_uniq<CreateTableInfo>(string(), schema, table);
 	}
-	UCTableInfo(const SchemaCatalogEntry &schema, const string &table) {
+	IBTableInfo(const SchemaCatalogEntry &schema, const string &table) {
 		create_info = make_uniq<CreateTableInfo>((SchemaCatalogEntry &)schema, table);
 	}
 
@@ -25,10 +25,10 @@ struct UCTableInfo {
 	unique_ptr<CreateTableInfo> create_info;
 };
 
-class UCTableEntry : public TableCatalogEntry {
+class IBTableEntry : public TableCatalogEntry {
 public:
-	UCTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, CreateTableInfo &info);
-	UCTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, UCTableInfo &info);
+	IBTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, CreateTableInfo &info);
+	IBTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, IBTableInfo &info);
 
 	unique_ptr<IBAPITable> table_data;
 

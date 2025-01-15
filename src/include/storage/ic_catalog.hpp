@@ -19,18 +19,18 @@ struct IBCredentials {
 	string token;
 };
 
-class UCClearCacheFunction : public TableFunction {
+class IBClearCacheFunction : public TableFunction {
 public:
-	UCClearCacheFunction();
+	IBClearCacheFunction();
 
 	static void ClearCacheOnSetting(ClientContext &context, SetScope scope, Value &parameter);
 };
 
-class UCCatalog : public Catalog {
+class IBCatalog : public Catalog {
 public:
-	explicit UCCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
+	explicit IBCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
 	                   IBCredentials credentials);
-	~UCCatalog();
+	~IBCatalog();
 
 	string internal_name;
 	AccessMode access_mode;
@@ -73,7 +73,7 @@ private:
 	void DropSchema(ClientContext &context, DropInfo &info) override;
 
 private:
-	UCSchemaSet schemas;
+	IBSchemaSet schemas;
 	string default_schema;
 };
 

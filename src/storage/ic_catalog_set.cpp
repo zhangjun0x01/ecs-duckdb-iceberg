@@ -56,10 +56,10 @@ void IBCatalogSet::ClearEntries() {
 	is_loaded = false;
 }
 
-UCInSchemaSet::UCInSchemaSet(IBSchemaEntry &schema) : IBCatalogSet(schema.ParentCatalog()), schema(schema) {
+IBInSchemaSet::IBInSchemaSet(IBSchemaEntry &schema) : IBCatalogSet(schema.ParentCatalog()), schema(schema) {
 }
 
-optional_ptr<CatalogEntry> UCInSchemaSet::CreateEntry(unique_ptr<CatalogEntry> entry) {
+optional_ptr<CatalogEntry> IBInSchemaSet::CreateEntry(unique_ptr<CatalogEntry> entry) {
 	if (!entry->internal) {
 		entry->internal = schema.internal;
 	}

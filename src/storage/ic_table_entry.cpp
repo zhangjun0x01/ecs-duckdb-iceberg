@@ -19,21 +19,21 @@
 
 namespace duckdb {
 
-UCTableEntry::UCTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, CreateTableInfo &info)
+IBTableEntry::IBTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, CreateTableInfo &info)
     : TableCatalogEntry(catalog, schema, info) {
 	this->internal = false;
 }
 
-UCTableEntry::UCTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, UCTableInfo &info)
+IBTableEntry::IBTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, IBTableInfo &info)
     : TableCatalogEntry(catalog, schema, *info.create_info) {
 	this->internal = false;
 }
 
-unique_ptr<BaseStatistics> UCTableEntry::GetStatistics(ClientContext &context, column_t column_id) {
+unique_ptr<BaseStatistics> IBTableEntry::GetStatistics(ClientContext &context, column_t column_id) {
 	return nullptr;
 }
 
-void UCTableEntry::BindUpdateConstraints(Binder &binder, LogicalGet &, LogicalProjection &, LogicalUpdate &,
+void IBTableEntry::BindUpdateConstraints(Binder &binder, LogicalGet &, LogicalProjection &, LogicalUpdate &,
                                          ClientContext &) {
 	throw NotImplementedException("BindUpdateConstraints");
 }
@@ -55,9 +55,9 @@ struct MyIcebergFunctionData : public FunctionData {
     }
 };
 
-TableFunction UCTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) {
+TableFunction IBTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) {
 	auto &db = DatabaseInstance::GetDatabase(context);
-	auto &ic_catalog = catalog.Cast<UCCatalog>();
+	auto &ic_catalog = catalog.Cast<IBCatalog>();
 
 	auto &parquet_function_set = ExtensionUtil::GetTableFunction(db, "parquet_scan");
 	auto parquet_scan_function = parquet_function_set.functions.GetFunctionByArguments(context, {LogicalType::VARCHAR});
@@ -138,7 +138,7 @@ TableFunction UCTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	return parquet_scan_function;
 }
 
-TableStorageInfo UCTableEntry::GetStorageInfo(ClientContext &context) {
+TableStorageInfo IBTableEntry::GetStorageInfo(ClientContext &context) {
 	TableStorageInfo result;
 	// TODO fill info
 	return result;

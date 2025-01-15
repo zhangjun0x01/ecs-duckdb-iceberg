@@ -6,17 +6,17 @@
 
 namespace duckdb {
 struct CreateTableInfo;
-class UCResult;
+class IBResult;
 class IBSchemaEntry;
 
-class UCTableSet : public UCInSchemaSet {
+class IBTableSet : public IBInSchemaSet {
 public:
-	explicit UCTableSet(IBSchemaEntry &schema);
+	explicit IBTableSet(IBSchemaEntry &schema);
 
 public:
 	optional_ptr<CatalogEntry> CreateTable(ClientContext &context, BoundCreateTableInfo &info);
 
-	static unique_ptr<UCTableInfo> GetTableInfo(ClientContext &context, IBSchemaEntry &schema,
+	static unique_ptr<IBTableInfo> GetTableInfo(ClientContext &context, IBSchemaEntry &schema,
 	                                            const string &table_name);
 	optional_ptr<CatalogEntry> RefreshTable(ClientContext &context, const string &table_name);
 
@@ -30,7 +30,7 @@ protected:
 	void AlterTable(ClientContext &context, AddColumnInfo &info);
 	void AlterTable(ClientContext &context, RemoveColumnInfo &info);
 
-	static void AddColumn(ClientContext &context, UCResult &result, UCTableInfo &table_info, idx_t column_offset = 0);
+	static void AddColumn(ClientContext &context, IBResult &result, IBTableInfo &table_info, idx_t column_offset = 0);
 };
 
 } // namespace duckdb

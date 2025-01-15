@@ -40,14 +40,14 @@ optional_ptr<CatalogEntry> IBSchemaEntry::CreateFunction(CatalogTransaction tran
 	throw BinderException("PC databases do not support creating functions");
 }
 
-void UCUnqualifyColumnRef(ParsedExpression &expr) {
+void IBUnqualifyColumnRef(ParsedExpression &expr) {
 	if (expr.type == ExpressionType::COLUMN_REF) {
 		auto &colref = expr.Cast<ColumnRefExpression>();
 		auto name = std::move(colref.column_names.back());
 		colref.column_names = {std::move(name)};
 		return;
 	}
-	ParsedExpressionIterator::EnumerateChildren(expr, UCUnqualifyColumnRef);
+	ParsedExpressionIterator::EnumerateChildren(expr, IBUnqualifyColumnRef);
 }
 
 optional_ptr<CatalogEntry> IBSchemaEntry::CreateIndex(CatalogTransaction transaction, CreateIndexInfo &info,
