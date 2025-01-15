@@ -1,14 +1,14 @@
-#include "storage/uc_transaction_manager.hpp"
+#include "storage/ic_transaction_manager.hpp"
 #include "duckdb/main/attached_database.hpp"
 
 namespace duckdb {
 
-UCTransactionManager::UCTransactionManager(AttachedDatabase &db_p, UCCatalog &uc_catalog)
-    : TransactionManager(db_p), uc_catalog(uc_catalog) {
+UCTransactionManager::UCTransactionManager(AttachedDatabase &db_p, UCCatalog &ic_catalog)
+    : TransactionManager(db_p), ic_catalog(ic_catalog) {
 }
 
 Transaction &UCTransactionManager::StartTransaction(ClientContext &context) {
-	auto transaction = make_uniq<UCTransaction>(uc_catalog, *this, context);
+	auto transaction = make_uniq<UCTransaction>(ic_catalog, *this, context);
 	transaction->Start();
 	auto &result = *transaction;
 	lock_guard<mutex> l(transaction_lock);
@@ -17,16 +17,16 @@ Transaction &UCTransactionManager::StartTransaction(ClientContext &context) {
 }
 
 ErrorData UCTransactionManager::CommitTransaction(ClientContext &context, Transaction &transaction) {
-	auto &uc_transaction = transaction.Cast<UCTransaction>();
-	uc_transaction.Commit();
+	auto &ic_transaction = transaction.Cast<UCTransaction>();
+	ic_transaction.Commit();
 	lock_guard<mutex> l(transaction_lock);
 	transactions.erase(transaction);
 	return ErrorData();
 }
 
 void UCTransactionManager::RollbackTransaction(Transaction &transaction) {
-	auto &uc_transaction = transaction.Cast<UCTransaction>();
-	uc_transaction.Rollback();
+	auto &ic_transaction = transaction.Cast<UCTransaction>();
+	ic_transaction.Rollback();
 	lock_guard<mutex> l(transaction_lock);
 	transactions.erase(transaction);
 }

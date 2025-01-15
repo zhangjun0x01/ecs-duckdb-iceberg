@@ -1,16 +1,9 @@
-//===----------------------------------------------------------------------===//
-//                         DuckDB
-//
-// storage/uc_schema_entry.hpp
-//
-//
-//===----------------------------------------------------------------------===//
 
 #pragma once
 
-#include "uc_api.hpp"
+#include "catalog_api.hpp"
 #include "duckdb/catalog/catalog_entry/schema_catalog_entry.hpp"
-#include "storage/uc_table_set.hpp"
+#include "storage/ic_table_set.hpp"
 
 namespace duckdb {
 class UCTransaction;

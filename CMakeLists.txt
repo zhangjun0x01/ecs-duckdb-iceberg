@@ -13,23 +13,23 @@ include_directories(src/include)
 set(EXTENSION_SOURCES
     src/iceberg_extension.cpp
     src/iceberg_functions.cpp
-    src/uc_api.cpp
-    src/uc_utils.cpp 
+    src/catalog_api.cpp
+    src/catalog_utils.cpp 
     src/common/utils.cpp
     src/common/schema.cpp
     src/common/iceberg.cpp
     src/iceberg_functions/iceberg_snapshots.cpp
     src/iceberg_functions/iceberg_scan.cpp
     src/iceberg_functions/iceberg_metadata.cpp
-    src/storage/uc_catalog.cpp
-    src/storage/uc_catalog_set.cpp
-    src/storage/uc_clear_cache.cpp
-    src/storage/uc_schema_entry.cpp
-    src/storage/uc_schema_set.cpp
-    src/storage/uc_table_entry.cpp
-    src/storage/uc_table_set.cpp
-    src/storage/uc_transaction.cpp
-    src/storage/uc_transaction_manager.cpp
+    src/storage/ic_catalog.cpp
+    src/storage/ic_catalog_set.cpp
+    src/storage/ic_clear_cache.cpp
+    src/storage/ic_schema_entry.cpp
+    src/storage/ic_schema_set.cpp
+    src/storage/ic_table_entry.cpp
+    src/storage/ic_table_set.cpp
+    src/storage/ic_transaction.cpp
+    src/storage/ic_transaction_manager.cpp
     )
 
 add_library(${EXTENSION_NAME} STATIC ${EXTENSION_SOURCES})

@@ -1,10 +1,3 @@
-//===----------------------------------------------------------------------===//
-//                         DuckDB
-//
-// storage/uc_transaction.hpp
-//
-//
-//===----------------------------------------------------------------------===//
 
 #pragma once
 
@@ -19,7 +12,7 @@ enum class UCTransactionState { TRANSACTION_NOT_YET_STARTED, TRANSACTION_STARTED
 
 class UCTransaction : public Transaction {
 public:
-	UCTransaction(UCCatalog &uc_catalog, TransactionManager &manager, ClientContext &context);
+	UCTransaction(UCCatalog &ic_catalog, TransactionManager &manager, ClientContext &context);
 	~UCTransaction() override;
 
 	void Start();

@@ -1,9 +1,9 @@
-#include "uc_api.hpp"
-#include "uc_utils.hpp"
+#include "catalog_api.hpp"
+#include "catalog_utils.hpp"
 
-#include "storage/uc_catalog.hpp"
-#include "storage/uc_table_set.hpp"
-#include "storage/uc_transaction.hpp"
+#include "storage/ic_catalog.hpp"
+#include "storage/ic_table_set.hpp"
+#include "storage/ic_transaction.hpp"
 #include "duckdb/parser/parsed_data/create_table_info.hpp"
 #include "duckdb/parser/constraints/not_null_constraint.hpp"
 #include "duckdb/parser/constraints/unique_constraint.hpp"
@@ -12,7 +12,7 @@
 #include "duckdb/catalog/dependency_list.hpp"
 #include "duckdb/parser/parsed_data/create_table_info.hpp"
 #include "duckdb/parser/constraints/list.hpp"
-#include "storage/uc_schema_entry.hpp"
+#include "storage/ic_schema_entry.hpp"
 #include "duckdb/parser/parser.hpp"
 
 namespace duckdb {
@@ -27,10 +27,10 @@ static ColumnDefinition CreateColumnDefinition(ClientContext &context, UCAPIColu
 void UCTableSet::LoadEntries(ClientContext &context) {
 	auto &transaction = UCTransaction::Get(context, catalog);
 
-	auto &uc_catalog = catalog.Cast<UCCatalog>();
+	auto &ic_catalog = catalog.Cast<UCCatalog>();
 
 	// TODO: handle out-of-order columns using position property
-	auto tables = UCAPI::GetTables(catalog.GetName(), catalog.GetDBPath(), schema.name, uc_catalog.credentials);
+	auto tables = UCAPI::GetTables(catalog.GetName(), catalog.GetDBPath(), schema.name, ic_catalog.credentials);
 
 	for (auto &table : tables) {
 		D_ASSERT(schema.name == table.schema_name);

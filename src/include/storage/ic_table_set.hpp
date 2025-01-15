@@ -1,15 +1,8 @@
-//===----------------------------------------------------------------------===//
-//                         DuckDB
-//
-// storage/uc_table_set.hpp
-//
-//
-//===----------------------------------------------------------------------===//
 
 #pragma once
 
-#include "storage/uc_catalog_set.hpp"
-#include "storage/uc_table_entry.hpp"
+#include "storage/ic_catalog_set.hpp"
+#include "storage/ic_table_entry.hpp"
 
 namespace duckdb {
 struct CreateTableInfo;

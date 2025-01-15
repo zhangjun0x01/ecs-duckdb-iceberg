@@ -1,17 +1,10 @@
-//===----------------------------------------------------------------------===//
-//                         DuckDB
-//
-// storage/uc_catalog.hpp
-//
-//
-//===----------------------------------------------------------------------===//
 
 #pragma once
 
 #include "duckdb/catalog/catalog.hpp"
 #include "duckdb/function/table_function.hpp"
 #include "duckdb/common/enums/access_mode.hpp"
-#include "storage/uc_schema_set.hpp"
+#include "storage/ic_schema_set.hpp"
 
 namespace duckdb {
 class UCSchemaEntry;

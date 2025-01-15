@@ -1,7 +1,7 @@
-#include "storage/uc_catalog.hpp"
-#include "storage/uc_schema_entry.hpp"
-#include "storage/uc_table_entry.hpp"
-#include "storage/uc_transaction.hpp"
+#include "storage/ic_catalog.hpp"
+#include "storage/ic_schema_entry.hpp"
+#include "storage/ic_table_entry.hpp"
+#include "storage/ic_transaction.hpp"
 #include "duckdb/storage/statistics/base_statistics.hpp"
 #include "duckdb/storage/table_storage_info.hpp"
 #include "duckdb/main/extension_util.hpp"
@@ -9,7 +9,7 @@
 #include "duckdb/main/secret/secret_manager.hpp"
 #include "duckdb/catalog/catalog_entry/table_function_catalog_entry.hpp"
 #include "duckdb/parser/tableref/table_function_ref.hpp"
-#include "uc_api.hpp"
+#include "catalog_api.hpp"
 #include "../../duckdb/third_party/catch/catch.hpp"
 #include "duckdb/planner/binder.hpp"
 #include "duckdb/planner/tableref/bound_table_function.hpp"
@@ -57,7 +57,7 @@ struct MyIcebergFunctionData : public FunctionData {
 
 TableFunction UCTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) {
 	auto &db = DatabaseInstance::GetDatabase(context);
-	auto &uc_catalog = catalog.Cast<UCCatalog>();
+	auto &ic_catalog = catalog.Cast<UCCatalog>();
 
 	auto &parquet_function_set = ExtensionUtil::GetTableFunction(db, "parquet_scan");
 	auto parquet_scan_function = parquet_function_set.functions.GetFunctionByArguments(context, {LogicalType::VARCHAR});
@@ -76,11 +76,11 @@ TableFunction UCTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 		auto &secret_manager = SecretManager::Get(context);
 		// Get Credentials from UCAPI
 		auto table_credentials = UCAPI::GetTableCredentials(
-			uc_catalog.internal_name, table_data->schema_name, table_data->name, uc_catalog.credentials);
+			ic_catalog.internal_name, table_data->schema_name, table_data->name, ic_catalog.credentials);
 
 		// Inject secret into secret manager scoped to this path
 		CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
-		info.name = "__internal_uc_" + table_data->table_id;
+		info.name = "__internal_ic_" + table_data->table_id;
 		info.type = "s3";
 		info.provider = "config";
 		info.storage_type = "memory";
@@ -88,7 +88,7 @@ TableFunction UCTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 		    {"key_id", table_credentials.key_id},
 		    {"secret", table_credentials.secret},
 		    {"session_token", table_credentials.session_token},
-		    {"region", uc_catalog.credentials.aws_region},
+		    {"region", ic_catalog.credentials.aws_region},
 		};
 
 		std::string lc_storage_location;

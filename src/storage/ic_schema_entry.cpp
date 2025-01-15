@@ -1,6 +1,6 @@
-#include "storage/uc_schema_entry.hpp"
-#include "storage/uc_table_entry.hpp"
-#include "storage/uc_transaction.hpp"
+#include "storage/ic_schema_entry.hpp"
+#include "storage/ic_table_entry.hpp"
+#include "storage/ic_transaction.hpp"
 #include "duckdb/parser/parsed_data/create_view_info.hpp"
 #include "duckdb/parser/parsed_data/create_index_info.hpp"
 #include "duckdb/planner/parsed_data/bound_create_table_info.hpp"
@@ -74,8 +74,8 @@ optional_ptr<CatalogEntry> UCSchemaEntry::CreateView(CatalogTransaction transact
 			throw NotImplementedException("REPLACE ON CONFLICT in CreateView");
 		}
 	}
-	auto &uc_transaction = GetUCTransaction(transaction);
-	//	uc_transaction.Query(GetUCCreateView(info));
+	auto &ic_transaction = GetUCTransaction(transaction);
+	//	ic_transaction.Query(GetUCCreateView(info));
 	return tables.RefreshTable(transaction.GetContext(), info.view_name);
 }
 

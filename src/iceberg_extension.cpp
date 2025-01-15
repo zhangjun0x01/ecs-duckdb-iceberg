@@ -1,8 +1,8 @@
 #define DUCKDB_EXTENSION_MAIN
 
 #include "iceberg_extension.hpp"
-#include "storage/uc_catalog.hpp"
-#include "storage/uc_transaction_manager.hpp"
+#include "storage/ic_catalog.hpp"
+#include "storage/ic_transaction_manager.hpp"
 
 #include "duckdb.hpp"
 #include "duckdb/main/secret/secret_manager.hpp"
@@ -19,7 +19,7 @@
 #include "yyjson.hpp"
 #include "duckdb/main/extension_util.hpp"
 #include <duckdb/parser/parsed_data/create_scalar_function_info.hpp>
-#include "uc_api.hpp"
+#include "catalog_api.hpp"
 
 namespace duckdb {
 
@@ -136,8 +136,8 @@ static unique_ptr<Catalog> PolarisCatalogAttach(StorageExtensionInfo *storage_in
 
 static unique_ptr<TransactionManager> CreateTransactionManager(StorageExtensionInfo *storage_info, AttachedDatabase &db,
                                                                Catalog &catalog) {
-	auto &uc_catalog = catalog.Cast<UCCatalog>();
-	return make_uniq<UCTransactionManager>(db, uc_catalog);
+	auto &ic_catalog = catalog.Cast<UCCatalog>();
+	return make_uniq<UCTransactionManager>(db, ic_catalog);
 }
 
 class UCCatalogStorageExtension : public StorageExtension {

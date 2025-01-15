@@ -1,15 +1,8 @@
-//===----------------------------------------------------------------------===//
-//                         DuckDB
-//
-// storage/uc_schema_set.hpp
-//
-//
-//===----------------------------------------------------------------------===//
 
 #pragma once
 
-#include "storage/uc_catalog_set.hpp"
-#include "storage/uc_schema_entry.hpp"
+#include "storage/ic_catalog_set.hpp"
+#include "storage/ic_schema_entry.hpp"
 
 namespace duckdb {
 struct CreateSchemaInfo;

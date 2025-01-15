@@ -1,14 +1,14 @@
-#include "storage/uc_transaction.hpp"
-#include "storage/uc_catalog.hpp"
+#include "storage/ic_transaction.hpp"
+#include "storage/ic_catalog.hpp"
 #include "duckdb/parser/parsed_data/create_view_info.hpp"
 #include "duckdb/catalog/catalog_entry/index_catalog_entry.hpp"
 #include "duckdb/catalog/catalog_entry/view_catalog_entry.hpp"
 
 namespace duckdb {
 
-UCTransaction::UCTransaction(UCCatalog &uc_catalog, TransactionManager &manager, ClientContext &context)
-    : Transaction(manager, context), access_mode(uc_catalog.access_mode) {
-	//	connection = UCConnection::Open(uc_catalog.path);
+UCTransaction::UCTransaction(UCCatalog &ic_catalog, TransactionManager &manager, ClientContext &context)
+    : Transaction(manager, context), access_mode(ic_catalog.access_mode) {
+	//	connection = UCConnection::Open(ic_catalog.path);
 }
 
 UCTransaction::~UCTransaction() = default;

@@ -1,14 +1,7 @@
-//===----------------------------------------------------------------------===//
-//                         DuckDB
-//
-// storage/uc_table_entry.hpp
-//
-//
-//===----------------------------------------------------------------------===//
 
 #pragma once
 
-#include "uc_api.hpp"
+#include "catalog_api.hpp"
 #include "duckdb/catalog/catalog_entry/table_catalog_entry.hpp"
 #include "duckdb/parser/parsed_data/create_table_info.hpp"
 

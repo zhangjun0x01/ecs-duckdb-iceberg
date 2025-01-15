@@ -1,15 +1,8 @@
-//===----------------------------------------------------------------------===//
-//                         DuckDB
-//
-// mysql_utils.hpp
-//
-//
-//===----------------------------------------------------------------------===//
 
 #pragma once
 
 #include "duckdb.hpp"
-#include "uc_api.hpp"
+#include "catalog_api.hpp"
 
 namespace duckdb {
 class UCSchemaEntry;

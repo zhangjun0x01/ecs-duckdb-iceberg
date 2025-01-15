@@ -1,7 +1,7 @@
-#include "uc_utils.hpp"
+#include "catalog_utils.hpp"
 #include "duckdb/common/operator/cast_operators.hpp"
-#include "storage/uc_schema_entry.hpp"
-#include "storage/uc_transaction.hpp"
+#include "storage/ic_schema_entry.hpp"
+#include "storage/ic_transaction.hpp"
 
 #include <iostream>
 

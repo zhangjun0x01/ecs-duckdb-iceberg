@@ -1,5 +1,5 @@
-#include "uc_api.hpp"
-#include "storage/uc_catalog.hpp"
+#include "catalog_api.hpp"
+#include "storage/ic_catalog.hpp"
 #include "yyjson.hpp"
 #include <curl/curl.h>
 #include <sys/stat.h>
