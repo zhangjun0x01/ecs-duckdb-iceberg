@@ -55,8 +55,6 @@ LogicalType IBUtils::TypeToLogicalType(ClientContext &context, const string &typ
 		return LogicalType::BLOB;
 	} else if (type_text == "date") {
 		return LogicalType::DATE;
-	} else if (type_text == "timestamp") {
-		return LogicalType::TIMESTAMP; // TODO: Is this the right timestamp
 	} else if (type_text.find("decimal(") == 0) {
 		size_t spec_end = type_text.find(')');
 		if (spec_end != string::npos) {
