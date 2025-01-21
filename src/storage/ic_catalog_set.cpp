@@ -5,24 +5,22 @@
 
 namespace duckdb {
 
-IBCatalogSet::IBCatalogSet(Catalog &catalog) : catalog(catalog), is_loaded(false) {
+IBCatalogSet::IBCatalogSet(Catalog &catalog) : catalog(catalog) {
 }
 
 optional_ptr<CatalogEntry> IBCatalogSet::GetEntry(ClientContext &context, const string &name) {
-	if (!is_loaded) {
-		is_loaded = true;
-		LoadEntries(context);
-	}
+	LoadEntries(context);
 	lock_guard<mutex> l(entry_lock);
 	auto entry = entries.find(name);
 	if (entry == entries.end()) {
 		return nullptr;
 	}
+	FillEntry(context, entry->second);
 	return entry->second.get();
 }
 
 void IBCatalogSet::DropEntry(ClientContext &context, DropInfo &info) {
-	throw NotImplementedException("IBCatalogSet::DropEntry");
+	EraseEntryInternal(info.name);
 }
 
 void IBCatalogSet::EraseEntryInternal(const string &name) {
@@ -31,10 +29,8 @@ void IBCatalogSet::EraseEntryInternal(const string &name) {
 }
 
 void IBCatalogSet::Scan(ClientContext &context, const std::function<void(CatalogEntry &)> &callback) {
-	if (!is_loaded) {
-		is_loaded = true;
-		LoadEntries(context);
-	}
+	LoadEntries(context);
+
 	lock_guard<mutex> l(entry_lock);
 	for (auto &entry : entries) {
 		callback(*entry.second);
@@ -53,7 +49,7 @@ optional_ptr<CatalogEntry> IBCatalogSet::CreateEntry(unique_ptr<CatalogEntry> en
 
 void IBCatalogSet::ClearEntries() {
 	entries.clear();
-	is_loaded = false;
+	// TODO: is_loaded = false;
 }
 
 IBInSchemaSet::IBInSchemaSet(IBSchemaEntry &schema) : IBCatalogSet(schema.ParentCatalog()), schema(schema) {

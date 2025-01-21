@@ -13,9 +13,14 @@ public:
 
 public:
 	optional_ptr<CatalogEntry> CreateSchema(ClientContext &context, CreateSchemaInfo &info);
+	void DropSchema(ClientContext &context, DropInfo &info);
 
 protected:
 	void LoadEntries(ClientContext &context) override;
+	void FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &entry) override;
+
+private:
+	bool is_loaded;
 };
 
 } // namespace duckdb

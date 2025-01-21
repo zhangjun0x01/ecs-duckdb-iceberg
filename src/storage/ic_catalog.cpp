@@ -26,13 +26,13 @@ optional_ptr<CatalogEntry> IBCatalog::CreateSchema(CatalogTransaction transactio
 		try_drop.name = info.schema;
 		try_drop.if_not_found = OnEntryNotFound::RETURN_NULL;
 		try_drop.cascade = false;
-		schemas.DropEntry(transaction.GetContext(), try_drop);
+		schemas.DropSchema(transaction.GetContext(), try_drop);
 	}
 	return schemas.CreateSchema(transaction.GetContext(), info);
 }
 
 void IBCatalog::DropSchema(ClientContext &context, DropInfo &info) {
-	return schemas.DropEntry(context, info);
+	return schemas.DropSchema(context, info);
 }
 
 void IBCatalog::ScanSchemas(ClientContext &context, std::function<void(SchemaCatalogEntry &)> callback) {

@@ -5,9 +5,11 @@
 #include "duckdb/parser/parsed_data/create_schema_info.hpp"
 #include "duckdb/catalog/catalog.hpp"
 
+#include <iostream>
+
 namespace duckdb {
 
-IBSchemaSet::IBSchemaSet(Catalog &catalog) : IBCatalogSet(catalog) {
+IBSchemaSet::IBSchemaSet(Catalog &catalog) : IBCatalogSet(catalog), is_loaded(false) {
 }
 
 static bool IsInternalTable(const string &catalog, const string &schema) {
@@ -16,12 +18,17 @@ static bool IsInternalTable(const string &catalog, const string &schema) {
 	}
 	return false;
 }
+
 void IBSchemaSet::LoadEntries(ClientContext &context) {
+	if (is_loaded) {
+		return;
+	}
 
+	is_loaded = true;
 	auto &ic_catalog = catalog.Cast<IBCatalog>();
-	auto tables = IBAPI::GetSchemas(catalog.GetName(), ic_catalog.internal_name, ic_catalog.credentials);
+	auto schemas = IBAPI::GetSchemas(catalog.GetName(), ic_catalog.internal_name, ic_catalog.credentials);
 
-	for (const auto &schema : tables) {
+	for (const auto &schema : schemas) {
 		CreateSchemaInfo info;
 		info.schema = schema.schema_name;
 		info.internal = IsInternalTable(schema.catalog_name, schema.schema_name);
@@ -31,8 +38,22 @@ void IBSchemaSet::LoadEntries(ClientContext &context) {
 	}
 }
 
-optional_ptr<CatalogEntry> IBSchemaSet::CreateSchema(ClientContext &context, CreateSchemaInfo &info) {
-	throw NotImplementedException("Schema creation");
+void IBSchemaSet::FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &entry) {
+	// Nothing to do
 }
+
+optional_ptr<CatalogEntry> IBSchemaSet::CreateSchema(ClientContext &context, CreateSchemaInfo &info) {
+	// TODO: throw NotImplementedException("Schema creation");
+	std::cout << " >> Create schema" << std::endl;
+	// CreateEntry(...)
+}
+
+void IBSchemaSet::DropSchema(ClientContext &context, DropInfo &info) {
+	// TODO
+	std::cout << " >> Drop schema" << std::endl;
+
+	DropEntry(context, info);
+}
+
 
 } // namespace duckdb

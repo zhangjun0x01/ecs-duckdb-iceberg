@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 
 #include <iostream>
+#include <optional>
 
 namespace duckdb {
 
@@ -58,6 +59,34 @@ static void InitializeCurlObject(CURL * curl, const string &token) {
 		curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BEARER);
 	}
     SetCurlCAFileInfo(curl);
+}
+
+template <class TYPE, uint8_t TYPE_NUM, TYPE (*get_function)(duckdb_yyjson::yyjson_val *obj)>
+static TYPE TemplatedTryGetYYJson(duckdb_yyjson::yyjson_val *obj, const string &field, TYPE default_val,
+                                  bool fail_on_missing = true) {
+	auto val = yyjson_obj_get(obj, field.c_str());
+	if (val && yyjson_get_type(val) == TYPE_NUM) {
+		return get_function(val);
+	} else if (!fail_on_missing) {
+		return default_val;
+	}
+	throw IOException("Invalid field found while parsing field: " + field);
+}
+
+static uint64_t TryGetNumFromObject(duckdb_yyjson::yyjson_val *obj, const string &field, bool fail_on_missing = true,
+                                    uint64_t default_val = 0) {
+	return TemplatedTryGetYYJson<uint64_t, YYJSON_TYPE_NUM, duckdb_yyjson::yyjson_get_uint>(obj, field, default_val,
+	                                                                                        fail_on_missing);
+}
+static bool TryGetBoolFromObject(duckdb_yyjson::yyjson_val *obj, const string &field, bool fail_on_missing = false,
+                                 bool default_val = false) {
+	return TemplatedTryGetYYJson<bool, YYJSON_TYPE_BOOL, duckdb_yyjson::yyjson_get_bool>(obj, field, default_val,
+	                                                                                     fail_on_missing);
+}
+static string TryGetStrFromObject(duckdb_yyjson::yyjson_val *obj, const string &field, bool fail_on_missing = true,
+                                  const char *default_val = "") {
+	return TemplatedTryGetYYJson<const char *, YYJSON_TYPE_STR, duckdb_yyjson::yyjson_get_str>(obj, field, default_val,
+	                                                                                           fail_on_missing);
 }
 
 static string GetRequest(const string &url, const string &token = "", curl_slist *extra_headers = NULL) {
@@ -145,35 +174,15 @@ static duckdb_yyjson::yyjson_val *GetTableMetadata(const string &internal, const
 		credentials.token,
 		extra_headers);
 	duckdb_yyjson::yyjson_doc *doc = duckdb_yyjson::yyjson_read(api_result.c_str(), api_result.size(), 0);
-	return yyjson_doc_get_root(doc);
-}
-
-template <class TYPE, uint8_t TYPE_NUM, TYPE (*get_function)(duckdb_yyjson::yyjson_val *obj)>
-static TYPE TemplatedTryGetYYJson(duckdb_yyjson::yyjson_val *obj, const string &field, TYPE default_val,
-                                  bool fail_on_missing = true) {
-	auto val = yyjson_obj_get(obj, field.c_str());
-	if (val && yyjson_get_type(val) == TYPE_NUM) {
-		return get_function(val);
-	} else if (!fail_on_missing) {
-		return default_val;
+	
+	auto *root = yyjson_doc_get_root(doc);
+	auto *error = yyjson_obj_get(root, "error");
+	if (error != NULL) {
+		string err_msg = TryGetStrFromObject(error, "message");
+		throw std::runtime_error(err_msg);
 	}
-	throw IOException("Invalid field found while parsing field: " + field);
-}
 
-static uint64_t TryGetNumFromObject(duckdb_yyjson::yyjson_val *obj, const string &field, bool fail_on_missing = true,
-                                    uint64_t default_val = 0) {
-	return TemplatedTryGetYYJson<uint64_t, YYJSON_TYPE_NUM, duckdb_yyjson::yyjson_get_uint>(obj, field, default_val,
-	                                                                                        fail_on_missing);
-}
-static bool TryGetBoolFromObject(duckdb_yyjson::yyjson_val *obj, const string &field, bool fail_on_missing = false,
-                                 bool default_val = false) {
-	return TemplatedTryGetYYJson<bool, YYJSON_TYPE_BOOL, duckdb_yyjson::yyjson_get_bool>(obj, field, default_val,
-	                                                                                     fail_on_missing);
-}
-static string TryGetStrFromObject(duckdb_yyjson::yyjson_val *obj, const string &field, bool fail_on_missing = true,
-                                  const char *default_val = "") {
-	return TemplatedTryGetYYJson<const char *, YYJSON_TYPE_STR, duckdb_yyjson::yyjson_get_str>(obj, field, default_val,
-	                                                                                           fail_on_missing);
+	return yyjson_doc_get_root(doc);
 }
 
 void IBAPI::InitializeCurl() {
@@ -228,30 +237,22 @@ string IBAPI::GetToken(string id, string secret, string endpoint) {
 	return TryGetStrFromObject(root, "access_token");
 }
 
-vector<IBAPITable> IBAPI::GetTables(const string &catalog, const string &internal, const string &schema, IBCredentials credentials) {
-	vector<IBAPITable> result;
+IBAPITable IBAPI::GetTable(
+	const string &catalog, const string &internal, const string &schema, const string &table, std::optional<IBCredentials> credentials) { 
+	
+	IBAPITable table_result;
+	table_result.catalog_name = catalog;
+	table_result.schema_name = schema;
+	table_result.name = table;
+	table_result.data_source_format = "ICEBERG";
+	table_result.table_id = "uuid-" + schema + "-" + "table";
+	std::replace(table_result.table_id.begin(), table_result.table_id.end(), '_', '-');
 
-	auto api_result = GetRequest(credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema + "/tables", credentials.token);
-
-	// Read JSON and get root
-	auto *doc = duckdb_yyjson::yyjson_read(api_result.c_str(), api_result.size(), 0);
-	auto *root = yyjson_doc_get_root(doc);
-
-	// Get root["hits"], iterate over the array
-	auto *tables = yyjson_obj_get(root, "identifiers");
-	size_t idx, max;
-	duckdb_yyjson::yyjson_val *table;
-	yyjson_arr_foreach(tables, idx, max, table) {
-		IBAPITable table_result;
-		table_result.catalog_name = catalog;
-		table_result.schema_name = schema;
-		table_result.name = TryGetStrFromObject(table, "name");
-
-		auto *metadata_root = GetTableMetadata(internal, schema, table_result.name, credentials);
-		table_result.data_source_format = "ICEBERG";
+	if (credentials) {
+		auto *metadata_root = GetTableMetadata(internal, schema, table_result.name, *credentials);
 		table_result.storage_location = TryGetStrFromObject(metadata_root, "metadata-location");
 		auto *metadata = yyjson_obj_get(metadata_root, "metadata");
-		table_result.table_id = TryGetStrFromObject(metadata, "table-uuid");
+		//table_result.table_id = TryGetStrFromObject(metadata, "table-uuid");
 
 		uint64_t current_schema_id = TryGetNumFromObject(metadata, "current-schema-id");
 		auto *schemas = yyjson_obj_get(metadata, "schemas");
@@ -269,17 +270,39 @@ vector<IBAPITable> IBAPI::GetTables(const string &catalog, const string &interna
 					auto column_definition = ParseColumnDefinition(col);
 					table_result.columns.push_back(column_definition);
 				}
-				result.push_back(table_result);
-
-				// This could take a while so display found tables to indicate progress
-				// TODO: Is there a way to show progress some other way?
-				std::cout << table_result.schema_name << " | " << table_result.name << std::endl;
 			}
 		}
 
 		if (!found) {
 			throw InternalException("Current schema not found");
 		}
+	} else {
+		// Skip fetching metadata, we'll do it later when we access the table
+		IBAPIColumnDefinition col;
+		col.name = "__";
+		col.type_text = "int";
+		col.precision = -1; //TODO: TryGetNumFromObject(column_def, "type_precision");
+		col.scale = -1; //TODO: TryGetNumFromObject(column_def, "type_scale");
+		col.position = 0;
+		table_result.columns.push_back(col);
+	}
+
+	return table_result;
+}
+
+// TODO: handle out-of-order columns using position property
+vector<IBAPITable> IBAPI::GetTables(const string &catalog, const string &internal, const string &schema, IBCredentials credentials) {
+	vector<IBAPITable> result;
+
+	auto api_result = GetRequest(credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema + "/tables", credentials.token);
+	auto *doc = duckdb_yyjson::yyjson_read(api_result.c_str(), api_result.size(), 0);
+	auto *root = yyjson_doc_get_root(doc);
+	auto *tables = yyjson_obj_get(root, "identifiers");
+	size_t idx, max;
+	duckdb_yyjson::yyjson_val *table;
+	yyjson_arr_foreach(tables, idx, max, table) {
+		auto table_result = GetTable(catalog, internal, schema, TryGetStrFromObject(table, "name"), std::nullopt);
+		result.push_back(table_result);
 	}
 
 	return result;
@@ -291,23 +314,19 @@ vector<IBAPISchema> IBAPI::GetSchemas(const string &catalog, const string &inter
 	auto api_result =
 	    GetRequest(credentials.endpoint + "/v1/" + internal + "/namespaces", credentials.token);
 
-	// Read JSON and get root
 	duckdb_yyjson::yyjson_doc *doc = duckdb_yyjson::yyjson_read(api_result.c_str(), api_result.size(), 0);
 	duckdb_yyjson::yyjson_val *root = yyjson_doc_get_root(doc);
-
 	auto *error = yyjson_obj_get(root, "error");
 	if (error != NULL) {
 		string err_msg = TryGetStrFromObject(error, "message");
 		throw std::runtime_error(err_msg);
 	}
 
-	// Get root["hits"], iterate over the array
 	auto *schemas = yyjson_obj_get(root, "namespaces");
 	size_t idx, max;
 	duckdb_yyjson::yyjson_val *schema;
 	yyjson_arr_foreach(schemas, idx, max, schema) {
 		IBAPISchema schema_result;
-
 		schema_result.catalog_name = catalog;
 		duckdb_yyjson::yyjson_val *value = yyjson_arr_get(schema, 0);
 		schema_result.schema_name = yyjson_get_str(value);

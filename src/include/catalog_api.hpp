@@ -47,6 +47,7 @@ public:
 	static IBAPITableCredentials GetTableCredentials(const string &internal, const string &schema, const string &table, IBCredentials credentials);
 	static vector<string> GetCatalogs(const string &catalog, IBCredentials credentials);
 	static vector<IBAPITable> GetTables(const string &catalog, const string &internal, const string &schema, IBCredentials credentials);
+	static IBAPITable GetTable(const string &catalog, const string &internal, const string &schema, const string &table, std::optional<IBCredentials> credentials);
 	static vector<IBAPISchema> GetSchemas(const string &catalog, const string &internal, IBCredentials credentials);
 	static vector<IBAPITable> GetTablesInSchema(const string &catalog, const string &schema, IBCredentials credentials);
 	static string GetToken(string id, string secret, string endpoint);

@@ -24,6 +24,7 @@ public:
 
 protected:
 	void LoadEntries(ClientContext &context) override;
+	void FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &entry) override;
 
 	void AlterTable(ClientContext &context, RenameTableInfo &info);
 	void AlterTable(ClientContext &context, RenameColumnInfo &info);
@@ -31,6 +32,11 @@ protected:
 	void AlterTable(ClientContext &context, RemoveColumnInfo &info);
 
 	static void AddColumn(ClientContext &context, IBResult &result, IBTableInfo &table_info, idx_t column_offset = 0);
+
+private:
+	unique_ptr<CatalogEntry> _CreateCatalogEntry(ClientContext &context, IBAPITable table);
+
+	bool is_loaded;
 };
 
 } // namespace duckdb

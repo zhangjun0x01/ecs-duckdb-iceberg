@@ -22,6 +22,7 @@ public:
 
 protected:
 	virtual void LoadEntries(ClientContext &context) = 0;
+	virtual void FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &entry) = 0;
 
 	void EraseEntryInternal(const string &name);
 
@@ -31,7 +32,6 @@ protected:
 private:
 	mutex entry_lock;
 	case_insensitive_map_t<unique_ptr<CatalogEntry>> entries;
-	bool is_loaded;
 };
 
 class IBInSchemaSet : public IBCatalogSet {
