@@ -18,9 +18,6 @@ public:
 protected:
 	void LoadEntries(ClientContext &context) override;
 	void FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &entry) override;
-
-private:
-	bool is_loaded;
 };
 
 } // namespace duckdb

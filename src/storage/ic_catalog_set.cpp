@@ -49,7 +49,6 @@ optional_ptr<CatalogEntry> IBCatalogSet::CreateEntry(unique_ptr<CatalogEntry> en
 
 void IBCatalogSet::ClearEntries() {
 	entries.clear();
-	// TODO: is_loaded = false;
 }
 
 IBInSchemaSet::IBInSchemaSet(IBSchemaEntry &schema) : IBCatalogSet(schema.ParentCatalog()), schema(schema) {

@@ -28,10 +28,10 @@ protected:
 
 protected:
 	Catalog &catalog;
+	case_insensitive_map_t<unique_ptr<CatalogEntry>> entries;
 
 private:
 	mutex entry_lock;
-	case_insensitive_map_t<unique_ptr<CatalogEntry>> entries;
 };
 
 class IBInSchemaSet : public IBCatalogSet {

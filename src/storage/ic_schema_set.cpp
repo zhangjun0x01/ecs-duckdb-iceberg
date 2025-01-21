@@ -9,7 +9,7 @@
 
 namespace duckdb {
 
-IBSchemaSet::IBSchemaSet(Catalog &catalog) : IBCatalogSet(catalog), is_loaded(false) {
+IBSchemaSet::IBSchemaSet(Catalog &catalog) : IBCatalogSet(catalog) {
 }
 
 static bool IsInternalTable(const string &catalog, const string &schema) {
@@ -20,14 +20,12 @@ static bool IsInternalTable(const string &catalog, const string &schema) {
 }
 
 void IBSchemaSet::LoadEntries(ClientContext &context) {
-	if (is_loaded) {
+	if (!entries.empty()) {
 		return;
 	}
 
-	is_loaded = true;
 	auto &ic_catalog = catalog.Cast<IBCatalog>();
 	auto schemas = IBAPI::GetSchemas(catalog.GetName(), ic_catalog.internal_name, ic_catalog.credentials);
-
 	for (const auto &schema : schemas) {
 		CreateSchemaInfo info;
 		info.schema = schema.schema_name;

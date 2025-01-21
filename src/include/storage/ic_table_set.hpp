@@ -35,8 +35,6 @@ protected:
 
 private:
 	unique_ptr<CatalogEntry> _CreateCatalogEntry(ClientContext &context, IBAPITable table);
-
-	bool is_loaded;
 };
 
 } // namespace duckdb

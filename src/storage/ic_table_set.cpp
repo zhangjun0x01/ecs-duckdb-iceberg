@@ -15,11 +15,9 @@
 #include "storage/ic_schema_entry.hpp"
 #include "duckdb/parser/parser.hpp"
 
-#include <iostream>
-
 namespace duckdb {
 
-IBTableSet::IBTableSet(IBSchemaEntry &schema) : IBInSchemaSet(schema), is_loaded(false) {
+IBTableSet::IBTableSet(IBSchemaEntry &schema) : IBInSchemaSet(schema) {
 }
 
 static ColumnDefinition CreateColumnDefinition(ClientContext &context, IBAPIColumnDefinition &coldef) {
@@ -43,7 +41,6 @@ unique_ptr<CatalogEntry> IBTableSet::_CreateCatalogEntry(ClientContext &context,
 void IBTableSet::FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &entry) {
 	auto* derived = static_cast<IBTableEntry*>(entry.get());
 	if (!derived->table_data->storage_location.empty()) {
-		std::cout << "HERE: " << derived->table_data->storage_location << std::endl;
 		return;
 	}
 		
@@ -53,11 +50,10 @@ void IBTableSet::FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &ent
 }
 
 void IBTableSet::LoadEntries(ClientContext &context) {
-	if (is_loaded) {
+	if (!entries.empty()) {
 		return;
 	}
 
-	is_loaded = true;
 	auto &transaction = IBTransaction::Get(context, catalog);
 	auto &ic_catalog = catalog.Cast<IBCatalog>();
 
