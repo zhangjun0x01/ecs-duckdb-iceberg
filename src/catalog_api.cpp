@@ -195,13 +195,11 @@ vector<string> IBAPI::GetCatalogs(const string &catalog, IBCredentials credentia
 
 static IBAPIColumnDefinition ParseColumnDefinition(duckdb_yyjson::yyjson_val *column_def) {
 	IBAPIColumnDefinition result;
-
 	result.name = TryGetStrFromObject(column_def, "name");
 	result.type_text = TryGetStrFromObject(column_def, "type");
-	result.precision = -1; //TODO: TryGetNumFromObject(column_def, "type_precision");
-	result.scale = -1; //TODO: TryGetNumFromObject(column_def, "type_scale");
+	result.precision = (result.type_text == "decimal") ? TryGetNumFromObject(column_def, "type_precision") : -1;
+	result.scale = (result.type_text == "decimal") ? TryGetNumFromObject(column_def, "type_scale") : -1;
 	result.position = TryGetNumFromObject(column_def, "id") - 1;
-
 	return result;
 }
 
@@ -281,8 +279,8 @@ IBAPITable IBAPI::GetTable(
 		IBAPIColumnDefinition col;
 		col.name = "__";
 		col.type_text = "int";
-		col.precision = -1; //TODO: TryGetNumFromObject(column_def, "type_precision");
-		col.scale = -1; //TODO: TryGetNumFromObject(column_def, "type_scale");
+		col.precision = -1;
+		col.scale = -1;
 		col.position = 0;
 		table_result.columns.push_back(col);
 	}
