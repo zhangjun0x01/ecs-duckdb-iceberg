@@ -1,11 +1,10 @@
-#include "storage/ic_schema_set.hpp"
-#include "storage/ic_catalog.hpp"
 #include "catalog_api.hpp"
-#include "storage/ic_transaction.hpp"
 #include "duckdb/parser/parsed_data/create_schema_info.hpp"
+#include "duckdb/parser/parsed_data/drop_info.hpp"
 #include "duckdb/catalog/catalog.hpp"
-
-#include <iostream>
+#include "storage/ic_catalog.hpp"
+#include "storage/ic_schema_set.hpp"
+#include "storage/ic_transaction.hpp"
 
 namespace duckdb {
 
@@ -41,17 +40,17 @@ void IBSchemaSet::FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &en
 }
 
 optional_ptr<CatalogEntry> IBSchemaSet::CreateSchema(ClientContext &context, CreateSchemaInfo &info) {
-	// TODO: throw NotImplementedException("Schema creation");
-	std::cout << " >> Create schema" << std::endl;
-	// CreateEntry(...)
+	auto &ic_catalog = catalog.Cast<IBCatalog>();
+	auto schema = IBAPI::CreateSchema(catalog.GetName(), ic_catalog.internal_name, info.schema, ic_catalog.credentials);
+	auto schema_entry = make_uniq<IBSchemaEntry>(catalog, info);
+	schema_entry->schema_data = make_uniq<IBAPISchema>(schema);
+	return CreateEntry(std::move(schema_entry));
 }
 
 void IBSchemaSet::DropSchema(ClientContext &context, DropInfo &info) {
-	// TODO
-	std::cout << " >> Drop schema" << std::endl;
-
+	auto &ic_catalog = catalog.Cast<IBCatalog>();
+	IBAPI::DropSchema(ic_catalog.internal_name, info.name, ic_catalog.credentials);
 	DropEntry(context, info);
 }
-
 
 } // namespace duckdb

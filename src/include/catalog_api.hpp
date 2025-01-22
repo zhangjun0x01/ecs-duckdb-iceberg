@@ -51,5 +51,7 @@ public:
 	static vector<IBAPISchema> GetSchemas(const string &catalog, const string &internal, IBCredentials credentials);
 	static vector<IBAPITable> GetTablesInSchema(const string &catalog, const string &schema, IBCredentials credentials);
 	static string GetToken(string id, string secret, string endpoint);
+	static IBAPISchema CreateSchema(const string &catalog, const string &internal, const string &schema, IBCredentials credentials);
+	static void DropSchema(const string &internal, const string &schema, IBCredentials credentials);
 };
 } // namespace duckdb

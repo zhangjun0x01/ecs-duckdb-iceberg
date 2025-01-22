@@ -12,7 +12,7 @@ namespace duckdb {
 //! We use a global here to store the path that is selected on the IBAPI::InitializeCurl call
 static string SELECTED_CURL_CERT_PATH = "";
 
-static size_t GetRequestWriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+static size_t RequestWriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
 	((std::string *)userp)->append((char *)contents, size * nmemb);
 	return size * nmemb;
 }
@@ -89,6 +89,36 @@ static string TryGetStrFromObject(duckdb_yyjson::yyjson_val *obj, const string &
 	                                                                                           fail_on_missing);
 }
 
+static string DeleteRequest(const string &url, const string &token = "", curl_slist *extra_headers = NULL) {
+    CURL *curl;
+    CURLcode res;
+    string readBuffer;
+
+    curl = curl_easy_init();
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, RequestWriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        
+        if(extra_headers) {
+            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, extra_headers);
+        }
+        
+        InitializeCurlObject(curl, token);
+        res = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+
+        if (res != CURLcode::CURLE_OK) {
+            string error = curl_easy_strerror(res);
+            throw IOException("Curl DELETE Request to '%s' failed with error: '%s'", url, error);
+        }
+        
+        return readBuffer;
+    }
+    throw InternalException("Failed to initialize curl");
+}
+
 static string GetRequest(const string &url, const string &token = "", curl_slist *extra_headers = NULL) {
 	CURL *curl;
 	CURLcode res;
@@ -97,11 +127,13 @@ static string GetRequest(const string &url, const string &token = "", curl_slist
 	curl = curl_easy_init();
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, GetRequestWriteCallback);
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, RequestWriteCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+		
 		if(extra_headers) {
 			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, extra_headers);
 		}
+		
 		InitializeCurlObject(curl, token);
 		res = curl_easy_perform(curl);
 		curl_easy_cleanup(curl);
@@ -110,34 +142,34 @@ static string GetRequest(const string &url, const string &token = "", curl_slist
 			string error = curl_easy_strerror(res);
 			throw IOException("Curl Request to '%s' failed with error: '%s'", url, error);
 		}
+
 		return readBuffer;
 	}
 	throw InternalException("Failed to initialize curl");
 }
 
-static string PostRequest(const string &url, const string &post_data, curl_slist *extra_headers = NULL) {
+static string PostRequest(
+		const string &url, 
+		const string &post_data, 
+		const string &content_type = "x-www-form-urlencoded",
+		const string &token = "", 
+		curl_slist *extra_headers = NULL) {
     string readBuffer;
     CURL *curl = curl_easy_init();
     if (!curl) {
 		throw InternalException("Failed to initialize curl");
 	}
 
-	// Set the URL
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	
-	// Set POST method
 	curl_easy_setopt(curl, CURLOPT_POST, 1L);
-	
-	// Set POST data
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
-	
-	// Set up response handling
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, GetRequestWriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, RequestWriteCallback);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
 	// Create default headers for content type
 	struct curl_slist *headers = NULL;
-	headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
+	const string content_type_str = "Content-Type: application/" + content_type;
+	headers = curl_slist_append(headers, content_type_str.c_str());
 	
 	// Append any extra headers
 	if (extra_headers) {
@@ -149,7 +181,7 @@ static string PostRequest(const string &url, const string &post_data, curl_slist
 	}
 	
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-	InitializeCurlObject(curl, "");
+	InitializeCurlObject(curl, token);
 	
 	// Perform the request
 	CURLcode res = curl_easy_perform(curl);
@@ -163,7 +195,17 @@ static string PostRequest(const string &url, const string &post_data, curl_slist
 		throw IOException("Curl Request to '%s' failed with error: '%s'", url, error);
 	}
 	return readBuffer;
-    
+}
+
+static duckdb_yyjson::yyjson_val *api_result_to_doc(const string &api_result) {
+	auto *doc = duckdb_yyjson::yyjson_read(api_result.c_str(), api_result.size(), 0);
+	auto *root = yyjson_doc_get_root(doc);
+	auto *error = yyjson_obj_get(root, "error");
+	if (error != NULL) {
+		string err_msg = TryGetStrFromObject(error, "message");
+		throw std::runtime_error(err_msg);
+	}
+	return root;
 }
 
 static duckdb_yyjson::yyjson_val *GetTableMetadata(const string &internal, const string &schema, const string &table, IBCredentials credentials) {
@@ -173,16 +215,7 @@ static duckdb_yyjson::yyjson_val *GetTableMetadata(const string &internal, const
 		credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema + "/tables/" + table, 
 		credentials.token,
 		extra_headers);
-	duckdb_yyjson::yyjson_doc *doc = duckdb_yyjson::yyjson_read(api_result.c_str(), api_result.size(), 0);
-	
-	auto *root = yyjson_doc_get_root(doc);
-	auto *error = yyjson_obj_get(root, "error");
-	if (error != NULL) {
-		string err_msg = TryGetStrFromObject(error, "message");
-		throw std::runtime_error(err_msg);
-	}
-
-	return yyjson_doc_get_root(doc);
+	return api_result_to_doc(api_result);
 }
 
 void IBAPI::InitializeCurl() {
@@ -205,7 +238,6 @@ static IBAPIColumnDefinition ParseColumnDefinition(duckdb_yyjson::yyjson_val *co
 
 IBAPITableCredentials IBAPI::GetTableCredentials(const string &internal, const string &schema, const string &table, IBCredentials credentials) {
 	IBAPITableCredentials result;
-
 	duckdb_yyjson::yyjson_val *root = GetTableMetadata(internal, schema, table, credentials);
 	auto *aws_temp_credentials = yyjson_obj_get(root, "config");
 
@@ -221,17 +253,7 @@ IBAPITableCredentials IBAPI::GetTableCredentials(const string &internal, const s
 string IBAPI::GetToken(string id, string secret, string endpoint) {
 	string post_data = "grant_type=client_credentials&client_id=" + id + "&client_secret=" + secret + "&scope=PRINCIPAL_ROLE:ALL";
 	string api_result = PostRequest(endpoint + "/v1/oauth/tokens", post_data);
-
-	// Read JSON and get root
-	auto *doc = duckdb_yyjson::yyjson_read(api_result.c_str(), api_result.size(), 0);
-	auto *root = yyjson_doc_get_root(doc);
-
-	auto *error = yyjson_obj_get(root, "error");
-	if (error != NULL) {
-		string err_msg = TryGetStrFromObject(error, "message");
-		throw std::runtime_error(err_msg);
-	}
-
+	auto *root = api_result_to_doc(api_result);
 	return TryGetStrFromObject(root, "access_token");
 }
 
@@ -291,10 +313,8 @@ IBAPITable IBAPI::GetTable(
 // TODO: handle out-of-order columns using position property
 vector<IBAPITable> IBAPI::GetTables(const string &catalog, const string &internal, const string &schema, IBCredentials credentials) {
 	vector<IBAPITable> result;
-
 	auto api_result = GetRequest(credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema + "/tables", credentials.token);
-	auto *doc = duckdb_yyjson::yyjson_read(api_result.c_str(), api_result.size(), 0);
-	auto *root = yyjson_doc_get_root(doc);
+	auto *root = api_result_to_doc(api_result);
 	auto *tables = yyjson_obj_get(root, "identifiers");
 	size_t idx, max;
 	duckdb_yyjson::yyjson_val *table;
@@ -308,18 +328,9 @@ vector<IBAPITable> IBAPI::GetTables(const string &catalog, const string &interna
 
 vector<IBAPISchema> IBAPI::GetSchemas(const string &catalog, const string &internal, IBCredentials credentials) {
 	vector<IBAPISchema> result;
-
 	auto api_result =
 	    GetRequest(credentials.endpoint + "/v1/" + internal + "/namespaces", credentials.token);
-
-	duckdb_yyjson::yyjson_doc *doc = duckdb_yyjson::yyjson_read(api_result.c_str(), api_result.size(), 0);
-	duckdb_yyjson::yyjson_val *root = yyjson_doc_get_root(doc);
-	auto *error = yyjson_obj_get(root, "error");
-	if (error != NULL) {
-		string err_msg = TryGetStrFromObject(error, "message");
-		throw std::runtime_error(err_msg);
-	}
-
+	auto *root = api_result_to_doc(api_result);
 	auto *schemas = yyjson_obj_get(root, "namespaces");
 	size_t idx, max;
 	duckdb_yyjson::yyjson_val *schema;
@@ -332,6 +343,24 @@ vector<IBAPISchema> IBAPI::GetSchemas(const string &catalog, const string &inter
 	}
 
 	return result;
+}
+
+IBAPISchema IBAPI::CreateSchema(const string &catalog, const string &internal, const string &schema, IBCredentials credentials) {
+	string post_data = "{\"namespace\":[\"" + schema + "\"]}";
+	string api_result = PostRequest(
+		credentials.endpoint + "/v1/" + internal + "/namespaces", post_data, "json", credentials.token);
+	api_result_to_doc(api_result);	// if the method returns, request was successful
+	
+	IBAPISchema schema_result;
+	schema_result.catalog_name = catalog;
+	schema_result.schema_name = schema; //yyjson_get_str(value);
+	return schema_result;
+}
+
+void IBAPI::DropSchema(const string &internal, const string &schema, IBCredentials credentials) {
+	string api_result = DeleteRequest(
+		credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema, credentials.token);
+	api_result_to_doc(api_result);	// if the method returns, request was successful
 }
 
 } // namespace duckdb
