@@ -7,9 +7,9 @@
 
 namespace duckdb {
 
-class IBTransactionManager : public TransactionManager {
+class ICTransactionManager : public TransactionManager {
 public:
-	IBTransactionManager(AttachedDatabase &db_p, IBCatalog &ic_catalog);
+	ICTransactionManager(AttachedDatabase &db_p, ICCatalog &ic_catalog);
 
 	Transaction &StartTransaction(ClientContext &context) override;
 	ErrorData CommitTransaction(ClientContext &context, Transaction &transaction) override;
@@ -18,9 +18,9 @@ public:
 	void Checkpoint(ClientContext &context, bool force = false) override;
 
 private:
-	IBCatalog &ic_catalog;
+	ICCatalog &ic_catalog;
 	mutex transaction_lock;
-	reference_map_t<Transaction, unique_ptr<IBTransaction>> transactions;
+	reference_map_t<Transaction, unique_ptr<ICTransaction>> transactions;
 };
 
 } // namespace duckdb

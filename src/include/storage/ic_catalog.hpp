@@ -7,9 +7,9 @@
 #include "storage/ic_schema_set.hpp"
 
 namespace duckdb {
-class IBSchemaEntry;
+class ICSchemaEntry;
 
-struct IBCredentials {
+struct ICCredentials {
 	string endpoint;
 	string client_id;
 	string client_secret;
@@ -19,23 +19,23 @@ struct IBCredentials {
 	string token;
 };
 
-class IBClearCacheFunction : public TableFunction {
+class ICClearCacheFunction : public TableFunction {
 public:
-	IBClearCacheFunction();
+	ICClearCacheFunction();
 
 	static void ClearCacheOnSetting(ClientContext &context, SetScope scope, Value &parameter);
 };
 
 
-class IBCatalog : public Catalog {
+class ICCatalog : public Catalog {
 public:
-	explicit IBCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
-	                   IBCredentials credentials);
-	~IBCatalog();
+	explicit ICCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
+	                   ICCredentials credentials);
+	~ICCatalog();
 
 	string internal_name;
 	AccessMode access_mode;
-	IBCredentials credentials;
+	ICCredentials credentials;
 
 public:
 	void Initialize(bool load_builtin) override;
@@ -74,7 +74,7 @@ private:
 	void DropSchema(ClientContext &context, DropInfo &info) override;
 
 private:
-	IBSchemaSet schemas;
+	ICSchemaSet schemas;
 	string default_schema;
 };
 

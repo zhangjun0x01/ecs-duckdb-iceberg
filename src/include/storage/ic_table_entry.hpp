@@ -7,14 +7,14 @@
 
 namespace duckdb {
 
-struct IBTableInfo {
-	IBTableInfo() {
+struct ICTableInfo {
+	ICTableInfo() {
 		create_info = make_uniq<CreateTableInfo>();
 	}
-	IBTableInfo(const string &schema, const string &table) {
+	ICTableInfo(const string &schema, const string &table) {
 		create_info = make_uniq<CreateTableInfo>(string(), schema, table);
 	}
-	IBTableInfo(const SchemaCatalogEntry &schema, const string &table) {
+	ICTableInfo(const SchemaCatalogEntry &schema, const string &table) {
 		create_info = make_uniq<CreateTableInfo>((SchemaCatalogEntry &)schema, table);
 	}
 
@@ -25,12 +25,12 @@ struct IBTableInfo {
 	unique_ptr<CreateTableInfo> create_info;
 };
 
-class IBTableEntry : public TableCatalogEntry {
+class ICTableEntry : public TableCatalogEntry {
 public:
-	IBTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, CreateTableInfo &info);
-	IBTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, IBTableInfo &info);
+	ICTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, CreateTableInfo &info);
+	ICTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, ICTableInfo &info);
 
-	unique_ptr<IBAPITable> table_data;
+	unique_ptr<ICAPITable> table_data;
 
 public:
 	unique_ptr<BaseStatistics> GetStatistics(ClientContext &context, column_t column_id) override;

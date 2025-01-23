@@ -7,7 +7,7 @@
 
 namespace duckdb {
 
-string IBUtils::TypeToString(const LogicalType &input) {
+string ICUtils::TypeToString(const LogicalType &input) {
 	switch (input.id()) {
 	case LogicalType::VARCHAR:
 		return "TEXT";
@@ -28,7 +28,7 @@ string IBUtils::TypeToString(const LogicalType &input) {
 	}
 }
 
-LogicalType IBUtils::TypeToLogicalType(ClientContext &context, const string &type_text) {
+LogicalType ICUtils::TypeToLogicalType(ClientContext &context, const string &type_text) {
 	if (type_text == "tinyint") {
 		return LogicalType::TINYINT;
 	} else if (type_text == "smallint") {
@@ -69,7 +69,7 @@ LogicalType IBUtils::TypeToLogicalType(ClientContext &context, const string &typ
 		size_t type_end = type_text.rfind('>'); // find last, to deal with nested
 		if (type_end != string::npos) {
 			auto child_type_str = type_text.substr(6, type_end - 6);
-			auto child_type = IBUtils::TypeToLogicalType(context, child_type_str);
+			auto child_type = ICUtils::TypeToLogicalType(context, child_type_str);
 			return LogicalType::LIST(child_type);
 		}
 	} else if (type_text.find("map<") == 0) {
@@ -94,7 +94,7 @@ LogicalType IBUtils::TypeToLogicalType(ClientContext &context, const string &typ
 					}
 				}
 				auto child_str = type_text.substr(cur, next_sep - cur);
-				auto child_type = IBUtils::TypeToLogicalType(context, child_str);
+				auto child_type = ICUtils::TypeToLogicalType(context, child_str);
 				key_val.push_back(child_type);
 				if (next_sep == type_end) {
 					break;
@@ -132,7 +132,7 @@ LogicalType IBUtils::TypeToLogicalType(ClientContext &context, const string &typ
 					throw NotImplementedException("Invalid struct child type specifier: %s", child_str);
 				}
 				auto child_name = child_str.substr(0, type_sep);
-				auto child_type = IBUtils::TypeToLogicalType(context, child_str.substr(type_sep + 1, string::npos));
+				auto child_type = ICUtils::TypeToLogicalType(context, child_str.substr(type_sep + 1, string::npos));
 				children.push_back({child_name, child_type});
 				if (next_sep == type_end) {
 					break;
@@ -148,7 +148,7 @@ LogicalType IBUtils::TypeToLogicalType(ClientContext &context, const string &typ
 	return LogicalType::VARCHAR;
 }
 
-LogicalType IBUtils::ToUCType(const LogicalType &input) {
+LogicalType ICUtils::ToUCType(const LogicalType &input) {
 	// todo do we need this mapping?
 	throw NotImplementedException("ToUCType not yet implemented");
 	switch (input.id()) {

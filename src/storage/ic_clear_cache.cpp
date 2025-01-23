@@ -28,7 +28,7 @@ static void ClearUCCaches(ClientContext &context) {
 		if (catalog.GetCatalogType() != "iceberg") {
 			continue;
 		}
-		catalog.Cast<IBCatalog>().ClearCache();
+		catalog.Cast<ICCatalog>().ClearCache();
 	}
 }
 
@@ -41,10 +41,10 @@ static void ClearCacheFunction(ClientContext &context, TableFunctionInput &data_
 	data.finished = true;
 }
 
-void IBClearCacheFunction::ClearCacheOnSetting(ClientContext &context, SetScope scope, Value &parameter) {
+void ICClearCacheFunction::ClearCacheOnSetting(ClientContext &context, SetScope scope, Value &parameter) {
 	ClearUCCaches(context);
 }
 
-IBClearCacheFunction::IBClearCacheFunction() : TableFunction("pc_clear_cache", {}, ClearCacheFunction, ClearCacheBind) {
+ICClearCacheFunction::ICClearCacheFunction() : TableFunction("pc_clear_cache", {}, ClearCacheFunction, ClearCacheBind) {
 }
 } // namespace duckdb

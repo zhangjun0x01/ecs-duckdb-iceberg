@@ -7,12 +7,12 @@
 
 namespace duckdb {
 struct DropInfo;
-class IBSchemaEntry;
-class IBTransaction;
+class ICSchemaEntry;
+class ICTransaction;
 
-class IBCatalogSet {
+class ICCatalogSet {
 public:
-	IBCatalogSet(Catalog &catalog);
+	ICCatalogSet(Catalog &catalog);
 
 	optional_ptr<CatalogEntry> GetEntry(ClientContext &context, const string &name);
 	virtual void DropEntry(ClientContext &context, DropInfo &info);

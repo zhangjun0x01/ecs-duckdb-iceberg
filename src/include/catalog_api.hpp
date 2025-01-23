@@ -4,9 +4,9 @@
 #include "duckdb/common/types.hpp"
 
 namespace duckdb {
-struct IBCredentials;
+struct ICCredentials;
 
-struct IBAPIColumnDefinition {
+struct ICAPIColumnDefinition {
 	string name;
 	string type_text;
 	idx_t precision;
@@ -14,7 +14,7 @@ struct IBAPIColumnDefinition {
 	idx_t position;
 };
 
-struct IBAPITable {
+struct ICAPITable {
 	string table_id;
 
 	string name;
@@ -25,33 +25,33 @@ struct IBAPITable {
 
 	string storage_location;
 
-	vector<IBAPIColumnDefinition> columns;
+	vector<ICAPIColumnDefinition> columns;
 };
 
-struct IBAPISchema {
+struct ICAPISchema {
 	string schema_name;
 	string catalog_name;
 };
 
-struct IBAPITableCredentials {
+struct ICAPITableCredentials {
 	string key_id;
 	string secret;
 	string session_token;
 };
 
-class IBAPI {
+class ICAPI {
 public:
   	//! WARNING: not thread-safe. To be called once on extension initialization
   	static void InitializeCurl();
 
-	static IBAPITableCredentials GetTableCredentials(const string &internal, const string &schema, const string &table, IBCredentials credentials);
-	static vector<string> GetCatalogs(const string &catalog, IBCredentials credentials);
-	static vector<IBAPITable> GetTables(const string &catalog, const string &internal, const string &schema, IBCredentials credentials);
-	static IBAPITable GetTable(const string &catalog, const string &internal, const string &schema, const string &table, std::optional<IBCredentials> credentials);
-	static vector<IBAPISchema> GetSchemas(const string &catalog, const string &internal, IBCredentials credentials);
-	static vector<IBAPITable> GetTablesInSchema(const string &catalog, const string &schema, IBCredentials credentials);
+	static ICAPITableCredentials GetTableCredentials(const string &internal, const string &schema, const string &table, ICCredentials credentials);
+	static vector<string> GetCatalogs(const string &catalog, ICCredentials credentials);
+	static vector<ICAPITable> GetTables(const string &catalog, const string &internal, const string &schema, ICCredentials credentials);
+	static ICAPITable GetTable(const string &catalog, const string &internal, const string &schema, const string &table, std::optional<ICCredentials> credentials);
+	static vector<ICAPISchema> GetSchemas(const string &catalog, const string &internal, ICCredentials credentials);
+	static vector<ICAPITable> GetTablesInSchema(const string &catalog, const string &schema, ICCredentials credentials);
 	static string GetToken(string id, string secret, string endpoint);
-	static IBAPISchema CreateSchema(const string &catalog, const string &internal, const string &schema, IBCredentials credentials);
-	static void DropSchema(const string &internal, const string &schema, IBCredentials credentials);
+	static ICAPISchema CreateSchema(const string &catalog, const string &internal, const string &schema, ICCredentials credentials);
+	static void DropSchema(const string &internal, const string &schema, ICCredentials credentials);
 };
 } // namespace duckdb

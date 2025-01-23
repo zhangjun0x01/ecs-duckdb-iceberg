@@ -17,14 +17,14 @@
 
 namespace duckdb {
 
-IBTableSet::IBTableSet(IBSchemaEntry &schema) : IBInSchemaSet(schema) {
+ICTableSet::ICTableSet(ICSchemaEntry &schema) : ICInSchemaSet(schema) {
 }
 
-static ColumnDefinition CreateColumnDefinition(ClientContext &context, IBAPIColumnDefinition &coldef) {
-	return {coldef.name, IBUtils::TypeToLogicalType(context, coldef.type_text)};
+static ColumnDefinition CreateColumnDefinition(ClientContext &context, ICAPIColumnDefinition &coldef) {
+	return {coldef.name, ICUtils::TypeToLogicalType(context, coldef.type_text)};
 }
 
-unique_ptr<CatalogEntry> IBTableSet::_CreateCatalogEntry(ClientContext &context, IBAPITable table) {
+unique_ptr<CatalogEntry> ICTableSet::_CreateCatalogEntry(ClientContext &context, ICAPITable table) {
 	D_ASSERT(schema.name == table.schema_name);
 	CreateTableInfo info;
 	info.table = table.name;
@@ -33,30 +33,30 @@ unique_ptr<CatalogEntry> IBTableSet::_CreateCatalogEntry(ClientContext &context,
 		info.columns.AddColumn(CreateColumnDefinition(context, col));
 	}
 
-	auto table_entry = make_uniq<IBTableEntry>(catalog, schema, info);
-	table_entry->table_data = make_uniq<IBAPITable>(table);
+	auto table_entry = make_uniq<ICTableEntry>(catalog, schema, info);
+	table_entry->table_data = make_uniq<ICAPITable>(table);
 	return table_entry;
 }
 
-void IBTableSet::FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &entry) {
-	auto* derived = static_cast<IBTableEntry*>(entry.get());
+void ICTableSet::FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &entry) {
+	auto* derived = static_cast<ICTableEntry*>(entry.get());
 	if (!derived->table_data->storage_location.empty()) {
 		return;
 	}
 		
-	auto &ic_catalog = catalog.Cast<IBCatalog>();
-	auto table = IBAPI::GetTable(catalog.GetName(), catalog.GetDBPath(), schema.name, entry->name, ic_catalog.credentials);
+	auto &ic_catalog = catalog.Cast<ICCatalog>();
+	auto table = ICAPI::GetTable(catalog.GetName(), catalog.GetDBPath(), schema.name, entry->name, ic_catalog.credentials);
 	entry = _CreateCatalogEntry(context, table);
 }
 
-void IBTableSet::LoadEntries(ClientContext &context) {
+void ICTableSet::LoadEntries(ClientContext &context) {
 	if (!entries.empty()) {
 		return;
 	}
 
-	auto &ic_catalog = catalog.Cast<IBCatalog>();
+	auto &ic_catalog = catalog.Cast<ICCatalog>();
 	// TODO: handle out-of-order columns using position property
-	auto tables = IBAPI::GetTables(catalog.GetName(), catalog.GetDBPath(), schema.name, ic_catalog.credentials);
+	auto tables = ICAPI::GetTables(catalog.GetName(), catalog.GetDBPath(), schema.name, ic_catalog.credentials);
 
 	for (auto &table : tables) {
 		auto entry = _CreateCatalogEntry(context, table);
@@ -64,41 +64,41 @@ void IBTableSet::LoadEntries(ClientContext &context) {
 	}
 }
 
-optional_ptr<CatalogEntry> IBTableSet::RefreshTable(ClientContext &context, const string &table_name) {
+optional_ptr<CatalogEntry> ICTableSet::RefreshTable(ClientContext &context, const string &table_name) {
 	auto table_info = GetTableInfo(context, schema, table_name);
-	auto table_entry = make_uniq<IBTableEntry>(catalog, schema, *table_info);
+	auto table_entry = make_uniq<ICTableEntry>(catalog, schema, *table_info);
 	auto table_ptr = table_entry.get();
 	CreateEntry(std::move(table_entry));
 	return table_ptr;
 }
 
-unique_ptr<IBTableInfo> IBTableSet::GetTableInfo(ClientContext &context, IBSchemaEntry &schema,
+unique_ptr<ICTableInfo> ICTableSet::GetTableInfo(ClientContext &context, ICSchemaEntry &schema,
                                                  const string &table_name) {
-	throw NotImplementedException("IBTableSet::CreateTable");
+	throw NotImplementedException("ICTableSet::CreateTable");
 }
 
-optional_ptr<CatalogEntry> IBTableSet::CreateTable(ClientContext &context, BoundCreateTableInfo &info) {
-	throw NotImplementedException("IBTableSet::CreateTable");
+optional_ptr<CatalogEntry> ICTableSet::CreateTable(ClientContext &context, BoundCreateTableInfo &info) {
+	throw NotImplementedException("ICTableSet::CreateTable");
 }
 
-void IBTableSet::AlterTable(ClientContext &context, RenameTableInfo &info) {
-	throw NotImplementedException("IBTableSet::AlterTable");
+void ICTableSet::AlterTable(ClientContext &context, RenameTableInfo &info) {
+	throw NotImplementedException("ICTableSet::AlterTable");
 }
 
-void IBTableSet::AlterTable(ClientContext &context, RenameColumnInfo &info) {
-	throw NotImplementedException("IBTableSet::AlterTable");
+void ICTableSet::AlterTable(ClientContext &context, RenameColumnInfo &info) {
+	throw NotImplementedException("ICTableSet::AlterTable");
 }
 
-void IBTableSet::AlterTable(ClientContext &context, AddColumnInfo &info) {
-	throw NotImplementedException("IBTableSet::AlterTable");
+void ICTableSet::AlterTable(ClientContext &context, AddColumnInfo &info) {
+	throw NotImplementedException("ICTableSet::AlterTable");
 }
 
-void IBTableSet::AlterTable(ClientContext &context, RemoveColumnInfo &info) {
-	throw NotImplementedException("IBTableSet::AlterTable");
+void ICTableSet::AlterTable(ClientContext &context, RemoveColumnInfo &info) {
+	throw NotImplementedException("ICTableSet::AlterTable");
 }
 
-void IBTableSet::AlterTable(ClientContext &context, AlterTableInfo &alter) {
-	throw NotImplementedException("IBTableSet::AlterTable");
+void ICTableSet::AlterTable(ClientContext &context, AlterTableInfo &alter) {
+	throw NotImplementedException("ICTableSet::AlterTable");
 }
 
 } // namespace duckdb

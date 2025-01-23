@@ -9,7 +9,7 @@
 
 namespace duckdb {
 
-//! We use a global here to store the path that is selected on the IBAPI::InitializeCurl call
+//! We use a global here to store the path that is selected on the ICAPI::InitializeCurl call
 static string SELECTED_CURL_CERT_PATH = "";
 
 static size_t RequestWriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
@@ -208,7 +208,7 @@ static duckdb_yyjson::yyjson_val *api_result_to_doc(const string &api_result) {
 	return root;
 }
 
-static duckdb_yyjson::yyjson_val *GetTableMetadata(const string &internal, const string &schema, const string &table, IBCredentials credentials) {
+static duckdb_yyjson::yyjson_val *GetTableMetadata(const string &internal, const string &schema, const string &table, ICCredentials credentials) {
 	struct curl_slist *extra_headers = NULL;
 	extra_headers = curl_slist_append(extra_headers, "X-Iceberg-Access-Delegation: vended-credentials");
 	auto api_result = GetRequest(
@@ -218,16 +218,16 @@ static duckdb_yyjson::yyjson_val *GetTableMetadata(const string &internal, const
 	return api_result_to_doc(api_result);
 }
 
-void IBAPI::InitializeCurl() {
+void ICAPI::InitializeCurl() {
 	SelectCurlCertPath();
 }
 
-vector<string> IBAPI::GetCatalogs(const string &catalog, IBCredentials credentials) {
-	throw NotImplementedException("IBAPI::GetCatalogs");
+vector<string> ICAPI::GetCatalogs(const string &catalog, ICCredentials credentials) {
+	throw NotImplementedException("ICAPI::GetCatalogs");
 }
 
-static IBAPIColumnDefinition ParseColumnDefinition(duckdb_yyjson::yyjson_val *column_def) {
-	IBAPIColumnDefinition result;
+static ICAPIColumnDefinition ParseColumnDefinition(duckdb_yyjson::yyjson_val *column_def) {
+	ICAPIColumnDefinition result;
 	result.name = TryGetStrFromObject(column_def, "name");
 	result.type_text = TryGetStrFromObject(column_def, "type");
 	result.precision = (result.type_text == "decimal") ? TryGetNumFromObject(column_def, "type_precision") : -1;
@@ -236,8 +236,8 @@ static IBAPIColumnDefinition ParseColumnDefinition(duckdb_yyjson::yyjson_val *co
 	return result;
 }
 
-IBAPITableCredentials IBAPI::GetTableCredentials(const string &internal, const string &schema, const string &table, IBCredentials credentials) {
-	IBAPITableCredentials result;
+ICAPITableCredentials ICAPI::GetTableCredentials(const string &internal, const string &schema, const string &table, ICCredentials credentials) {
+	ICAPITableCredentials result;
 	duckdb_yyjson::yyjson_val *root = GetTableMetadata(internal, schema, table, credentials);
 	auto *aws_temp_credentials = yyjson_obj_get(root, "config");
 
@@ -250,17 +250,17 @@ IBAPITableCredentials IBAPI::GetTableCredentials(const string &internal, const s
 	return result;
 }
 
-string IBAPI::GetToken(string id, string secret, string endpoint) {
+string ICAPI::GetToken(string id, string secret, string endpoint) {
 	string post_data = "grant_type=client_credentials&client_id=" + id + "&client_secret=" + secret + "&scope=PRINCIPAL_ROLE:ALL";
 	string api_result = PostRequest(endpoint + "/v1/oauth/tokens", post_data);
 	auto *root = api_result_to_doc(api_result);
 	return TryGetStrFromObject(root, "access_token");
 }
 
-IBAPITable IBAPI::GetTable(
-	const string &catalog, const string &internal, const string &schema, const string &table, std::optional<IBCredentials> credentials) { 
+ICAPITable ICAPI::GetTable(
+	const string &catalog, const string &internal, const string &schema, const string &table, std::optional<ICCredentials> credentials) { 
 	
-	IBAPITable table_result;
+	ICAPITable table_result;
 	table_result.catalog_name = catalog;
 	table_result.schema_name = schema;
 	table_result.name = table;
@@ -298,7 +298,7 @@ IBAPITable IBAPI::GetTable(
 		}
 	} else {
 		// Skip fetching metadata, we'll do it later when we access the table
-		IBAPIColumnDefinition col;
+		ICAPIColumnDefinition col;
 		col.name = "__";
 		col.type_text = "int";
 		col.precision = -1;
@@ -311,8 +311,8 @@ IBAPITable IBAPI::GetTable(
 }
 
 // TODO: handle out-of-order columns using position property
-vector<IBAPITable> IBAPI::GetTables(const string &catalog, const string &internal, const string &schema, IBCredentials credentials) {
-	vector<IBAPITable> result;
+vector<ICAPITable> ICAPI::GetTables(const string &catalog, const string &internal, const string &schema, ICCredentials credentials) {
+	vector<ICAPITable> result;
 	auto api_result = GetRequest(credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema + "/tables", credentials.token);
 	auto *root = api_result_to_doc(api_result);
 	auto *tables = yyjson_obj_get(root, "identifiers");
@@ -326,8 +326,8 @@ vector<IBAPITable> IBAPI::GetTables(const string &catalog, const string &interna
 	return result;
 }
 
-vector<IBAPISchema> IBAPI::GetSchemas(const string &catalog, const string &internal, IBCredentials credentials) {
-	vector<IBAPISchema> result;
+vector<ICAPISchema> ICAPI::GetSchemas(const string &catalog, const string &internal, ICCredentials credentials) {
+	vector<ICAPISchema> result;
 	auto api_result =
 	    GetRequest(credentials.endpoint + "/v1/" + internal + "/namespaces", credentials.token);
 	auto *root = api_result_to_doc(api_result);
@@ -335,7 +335,7 @@ vector<IBAPISchema> IBAPI::GetSchemas(const string &catalog, const string &inter
 	size_t idx, max;
 	duckdb_yyjson::yyjson_val *schema;
 	yyjson_arr_foreach(schemas, idx, max, schema) {
-		IBAPISchema schema_result;
+		ICAPISchema schema_result;
 		schema_result.catalog_name = catalog;
 		duckdb_yyjson::yyjson_val *value = yyjson_arr_get(schema, 0);
 		schema_result.schema_name = yyjson_get_str(value);
@@ -345,19 +345,19 @@ vector<IBAPISchema> IBAPI::GetSchemas(const string &catalog, const string &inter
 	return result;
 }
 
-IBAPISchema IBAPI::CreateSchema(const string &catalog, const string &internal, const string &schema, IBCredentials credentials) {
+ICAPISchema ICAPI::CreateSchema(const string &catalog, const string &internal, const string &schema, ICCredentials credentials) {
 	string post_data = "{\"namespace\":[\"" + schema + "\"]}";
 	string api_result = PostRequest(
 		credentials.endpoint + "/v1/" + internal + "/namespaces", post_data, "json", credentials.token);
 	api_result_to_doc(api_result);	// if the method returns, request was successful
 	
-	IBAPISchema schema_result;
+	ICAPISchema schema_result;
 	schema_result.catalog_name = catalog;
 	schema_result.schema_name = schema; //yyjson_get_str(value);
 	return schema_result;
 }
 
-void IBAPI::DropSchema(const string &internal, const string &schema, IBCredentials credentials) {
+void ICAPI::DropSchema(const string &internal, const string &schema, ICCredentials credentials) {
 	string api_result = DeleteRequest(
 		credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema, credentials.token);
 	api_result_to_doc(api_result);	// if the method returns, request was successful

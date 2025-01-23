@@ -6,32 +6,32 @@
 
 namespace duckdb {
 
-IBTransaction::IBTransaction(IBCatalog &ic_catalog, TransactionManager &manager, ClientContext &context)
+ICTransaction::ICTransaction(ICCatalog &ic_catalog, TransactionManager &manager, ClientContext &context)
     : Transaction(manager, context), access_mode(ic_catalog.access_mode) {
-	//	connection = IBConnection::Open(ic_catalog.path);
+	//	connection = ICConnection::Open(ic_catalog.path);
 }
 
-IBTransaction::~IBTransaction() = default;
+ICTransaction::~ICTransaction() = default;
 
-void IBTransaction::Start() {
-	transaction_state = IBTransactionState::TRANSACTION_NOT_YET_STARTED;
+void ICTransaction::Start() {
+	transaction_state = ICTransactionState::TRANSACTION_NOT_YET_STARTED;
 }
-void IBTransaction::Commit() {
-	if (transaction_state == IBTransactionState::TRANSACTION_STARTED) {
-		transaction_state = IBTransactionState::TRANSACTION_FINISHED;
+void ICTransaction::Commit() {
+	if (transaction_state == ICTransactionState::TRANSACTION_STARTED) {
+		transaction_state = ICTransactionState::TRANSACTION_FINISHED;
 		//		connection.Execute("COMMIT");
 	}
 }
-void IBTransaction::Rollback() {
-	if (transaction_state == IBTransactionState::TRANSACTION_STARTED) {
-		transaction_state = IBTransactionState::TRANSACTION_FINISHED;
+void ICTransaction::Rollback() {
+	if (transaction_state == ICTransactionState::TRANSACTION_STARTED) {
+		transaction_state = ICTransactionState::TRANSACTION_FINISHED;
 		//		connection.Execute("ROLLBACK");
 	}
 }
 
-// IBConnection &IBTransaction::GetConnection() {
-//	if (transaction_state == IBTransactionState::TRANSACTION_NOT_YET_STARTED) {
-//		transaction_state = IBTransactionState::TRANSACTION_STARTED;
+// ICConnection &ICTransaction::GetConnection() {
+//	if (transaction_state == ICTransactionState::TRANSACTION_NOT_YET_STARTED) {
+//		transaction_state = ICTransactionState::TRANSACTION_STARTED;
 //		string query = "START TRANSACTION";
 //		if (access_mode == AccessMode::READ_ONLY) {
 //			query += " READ ONLY";
@@ -41,9 +41,9 @@ void IBTransaction::Rollback() {
 //	return connection;
 //}
 
-// unique_ptr<IBResult> IBTransaction::Query(const string &query) {
-//	if (transaction_state == IBTransactionState::TRANSACTION_NOT_YET_STARTED) {
-//		transaction_state = IBTransactionState::TRANSACTION_STARTED;
+// unique_ptr<ICResult> ICTransaction::Query(const string &query) {
+//	if (transaction_state == ICTransactionState::TRANSACTION_NOT_YET_STARTED) {
+//		transaction_state = ICTransactionState::TRANSACTION_STARTED;
 //		string transaction_start = "START TRANSACTION";
 //		if (access_mode == AccessMode::READ_ONLY) {
 //			transaction_start += " READ ONLY";
@@ -54,8 +54,8 @@ void IBTransaction::Rollback() {
 //	return connection.Query(query);
 //}
 
-IBTransaction &IBTransaction::Get(ClientContext &context, Catalog &catalog) {
-	return Transaction::Get(context, catalog).Cast<IBTransaction>();
+ICTransaction &ICTransaction::Get(ClientContext &context, Catalog &catalog) {
+	return Transaction::Get(context, catalog).Cast<ICTransaction>();
 }
 
 } // namespace duckdb

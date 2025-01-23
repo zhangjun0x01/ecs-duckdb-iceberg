@@ -6,28 +6,28 @@
 
 namespace duckdb {
 struct CreateTableInfo;
-class IBResult;
-class IBSchemaEntry;
+class ICResult;
+class ICSchemaEntry;
 
 
-class IBInSchemaSet : public IBCatalogSet {
+class ICInSchemaSet : public ICCatalogSet {
 public:
-	IBInSchemaSet(IBSchemaEntry &schema);
+	ICInSchemaSet(ICSchemaEntry &schema);
 
 	optional_ptr<CatalogEntry> CreateEntry(unique_ptr<CatalogEntry> entry) override;
 
 protected:
-	IBSchemaEntry &schema;
+	ICSchemaEntry &schema;
 };
 
 
-class IBTableSet : public IBInSchemaSet {
+class ICTableSet : public ICInSchemaSet {
 public:
-	explicit IBTableSet(IBSchemaEntry &schema);
+	explicit ICTableSet(ICSchemaEntry &schema);
 
 public:
 	optional_ptr<CatalogEntry> CreateTable(ClientContext &context, BoundCreateTableInfo &info);
-	static unique_ptr<IBTableInfo> GetTableInfo(ClientContext &context, IBSchemaEntry &schema, const string &table_name);
+	static unique_ptr<ICTableInfo> GetTableInfo(ClientContext &context, ICSchemaEntry &schema, const string &table_name);
 	optional_ptr<CatalogEntry> RefreshTable(ClientContext &context, const string &table_name);
 	void AlterTable(ClientContext &context, AlterTableInfo &info);
 
@@ -40,10 +40,10 @@ protected:
 	void AlterTable(ClientContext &context, AddColumnInfo &info);
 	void AlterTable(ClientContext &context, RemoveColumnInfo &info);
 
-	static void AddColumn(ClientContext &context, IBResult &result, IBTableInfo &table_info, idx_t column_offset = 0);
+	static void AddColumn(ClientContext &context, ICResult &result, ICTableInfo &table_info, idx_t column_offset = 0);
 
 private:
-	unique_ptr<CatalogEntry> _CreateCatalogEntry(ClientContext &context, IBAPITable table);
+	unique_ptr<CatalogEntry> _CreateCatalogEntry(ClientContext &context, ICAPITable table);
 };
 
 

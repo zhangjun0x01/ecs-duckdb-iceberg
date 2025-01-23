@@ -19,21 +19,21 @@
 
 namespace duckdb {
 
-IBTableEntry::IBTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, CreateTableInfo &info)
+ICTableEntry::ICTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, CreateTableInfo &info)
     : TableCatalogEntry(catalog, schema, info) {
 	this->internal = false;
 }
 
-IBTableEntry::IBTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, IBTableInfo &info)
+ICTableEntry::ICTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, ICTableInfo &info)
     : TableCatalogEntry(catalog, schema, *info.create_info) {
 	this->internal = false;
 }
 
-unique_ptr<BaseStatistics> IBTableEntry::GetStatistics(ClientContext &context, column_t column_id) {
+unique_ptr<BaseStatistics> ICTableEntry::GetStatistics(ClientContext &context, column_t column_id) {
 	return nullptr;
 }
 
-void IBTableEntry::BindUpdateConstraints(Binder &binder, LogicalGet &, LogicalProjection &, LogicalUpdate &,
+void ICTableEntry::BindUpdateConstraints(Binder &binder, LogicalGet &, LogicalProjection &, LogicalUpdate &,
                                          ClientContext &) {
 	throw NotImplementedException("BindUpdateConstraints");
 }
@@ -55,9 +55,9 @@ struct MyIcebergFunctionData : public FunctionData {
     }
 };
 
-TableFunction IBTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) {
+TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) {
 	auto &db = DatabaseInstance::GetDatabase(context);
-	auto &ic_catalog = catalog.Cast<IBCatalog>();
+	auto &ic_catalog = catalog.Cast<ICCatalog>();
 
 	auto &parquet_function_set = ExtensionUtil::GetTableFunction(db, "parquet_scan");
 	auto parquet_scan_function = parquet_function_set.functions.GetFunctionByArguments(context, {LogicalType::VARCHAR});
@@ -74,8 +74,8 @@ TableFunction IBTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 
 	if (table_data->storage_location.find("file://") != 0) {
 		auto &secret_manager = SecretManager::Get(context);
-		// Get Credentials from IBAPI
-		auto table_credentials = IBAPI::GetTableCredentials(
+		// Get Credentials from ICAPI
+		auto table_credentials = ICAPI::GetTableCredentials(
 			ic_catalog.internal_name, table_data->schema_name, table_data->name, ic_catalog.credentials);
 
 		// Inject secret into secret manager scoped to this path
@@ -138,7 +138,7 @@ TableFunction IBTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	return parquet_scan_function;
 }
 
-TableStorageInfo IBTableEntry::GetStorageInfo(ClientContext &context) {
+TableStorageInfo ICTableEntry::GetStorageInfo(ClientContext &context) {
 	TableStorageInfo result;
 	// TODO fill info
 	return result;
