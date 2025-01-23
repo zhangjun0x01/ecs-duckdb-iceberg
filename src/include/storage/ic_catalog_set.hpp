@@ -34,14 +34,4 @@ private:
 	mutex entry_lock;
 };
 
-class IBInSchemaSet : public IBCatalogSet {
-public:
-	IBInSchemaSet(IBSchemaEntry &schema);
-
-	optional_ptr<CatalogEntry> CreateEntry(unique_ptr<CatalogEntry> entry) override;
-
-protected:
-	IBSchemaEntry &schema;
-};
-
 } // namespace duckdb

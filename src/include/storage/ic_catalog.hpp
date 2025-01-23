@@ -26,6 +26,7 @@ public:
 	static void ClearCacheOnSetting(ClientContext &context, SetScope scope, Value &parameter);
 };
 
+
 class IBCatalog : public Catalog {
 public:
 	explicit IBCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,

@@ -9,17 +9,26 @@ struct CreateTableInfo;
 class IBResult;
 class IBSchemaEntry;
 
+
+class IBInSchemaSet : public IBCatalogSet {
+public:
+	IBInSchemaSet(IBSchemaEntry &schema);
+
+	optional_ptr<CatalogEntry> CreateEntry(unique_ptr<CatalogEntry> entry) override;
+
+protected:
+	IBSchemaEntry &schema;
+};
+
+
 class IBTableSet : public IBInSchemaSet {
 public:
 	explicit IBTableSet(IBSchemaEntry &schema);
 
 public:
 	optional_ptr<CatalogEntry> CreateTable(ClientContext &context, BoundCreateTableInfo &info);
-
-	static unique_ptr<IBTableInfo> GetTableInfo(ClientContext &context, IBSchemaEntry &schema,
-	                                            const string &table_name);
+	static unique_ptr<IBTableInfo> GetTableInfo(ClientContext &context, IBSchemaEntry &schema, const string &table_name);
 	optional_ptr<CatalogEntry> RefreshTable(ClientContext &context, const string &table_name);
-
 	void AlterTable(ClientContext &context, AlterTableInfo &info);
 
 protected:
@@ -36,5 +45,6 @@ protected:
 private:
 	unique_ptr<CatalogEntry> _CreateCatalogEntry(ClientContext &context, IBAPITable table);
 };
+
 
 } // namespace duckdb
