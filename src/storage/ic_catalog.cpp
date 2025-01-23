@@ -63,8 +63,6 @@ string IBCatalog::GetDBPath() {
 	return internal_name;
 }
 
-
-
 DatabaseSize IBCatalog::GetDatabaseSize(ClientContext &context) {
 	if (default_schema.empty()) {
 		throw InvalidInputException("Attempting to fetch the database size - but no database was provided "

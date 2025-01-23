@@ -54,9 +54,7 @@ void IBTableSet::LoadEntries(ClientContext &context) {
 		return;
 	}
 
-	auto &transaction = IBTransaction::Get(context, catalog);
 	auto &ic_catalog = catalog.Cast<IBCatalog>();
-
 	// TODO: handle out-of-order columns using position property
 	auto tables = IBAPI::GetTables(catalog.GetName(), catalog.GetDBPath(), schema.name, ic_catalog.credentials);
 

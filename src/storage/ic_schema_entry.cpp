@@ -61,7 +61,7 @@ string GetUCCreateView(CreateViewInfo &info) {
 
 optional_ptr<CatalogEntry> IBSchemaEntry::CreateView(CatalogTransaction transaction, CreateViewInfo &info) {
 	if (info.sql.empty()) {
-		throw BinderException("Cannot create view in PC that originated from an "
+		throw BinderException("Cannot create view that originated from an "
 		                      "empty SQL statement");
 	}
 	if (info.on_conflict == OnCreateConflict::REPLACE_ON_CONFLICT ||
