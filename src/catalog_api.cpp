@@ -1,12 +1,14 @@
 #include "catalog_api.hpp"
+#include "catalog_utils.hpp"
 #include "storage/ic_catalog.hpp"
 #include "yyjson.hpp"
+
 #include <curl/curl.h>
 #include <sys/stat.h>
-
 #include <iostream>
 #include <optional>
 
+using namespace duckdb_yyjson;
 namespace duckdb {
 
 //! We use a global here to store the path that is selected on the ICAPI::InitializeCurl call
@@ -31,6 +33,15 @@ static string certFileLocations[] = {
         "/etc/ssl/ca-bundle.pem",
         // Alpine
         "/etc/ssl/cert.pem"
+};
+
+struct YyjsonDocDeleter {
+    void operator()(yyjson_doc* doc) {
+        yyjson_doc_free(doc);
+    }
+    void operator()(yyjson_mut_doc* doc) {
+        yyjson_mut_doc_free(doc);
+    }
 };
 
 // Look through the the above locations and if one of the files exists, set that as the location curl should use.
@@ -61,8 +72,8 @@ static void InitializeCurlObject(CURL * curl, const string &token) {
     SetCurlCAFileInfo(curl);
 }
 
-template <class TYPE, uint8_t TYPE_NUM, TYPE (*get_function)(duckdb_yyjson::yyjson_val *obj)>
-static TYPE TemplatedTryGetYYJson(duckdb_yyjson::yyjson_val *obj, const string &field, TYPE default_val,
+template <class TYPE, uint8_t TYPE_NUM, TYPE (*get_function)(yyjson_val *obj)>
+static TYPE TemplatedTryGetYYJson(yyjson_val *obj, const string &field, TYPE default_val,
                                   bool fail_on_missing = true) {
 	auto val = yyjson_obj_get(obj, field.c_str());
 	if (val && yyjson_get_type(val) == TYPE_NUM) {
@@ -73,19 +84,19 @@ static TYPE TemplatedTryGetYYJson(duckdb_yyjson::yyjson_val *obj, const string &
 	throw IOException("Invalid field found while parsing field: " + field);
 }
 
-static uint64_t TryGetNumFromObject(duckdb_yyjson::yyjson_val *obj, const string &field, bool fail_on_missing = true,
+static uint64_t TryGetNumFromObject(yyjson_val *obj, const string &field, bool fail_on_missing = true,
                                     uint64_t default_val = 0) {
-	return TemplatedTryGetYYJson<uint64_t, YYJSON_TYPE_NUM, duckdb_yyjson::yyjson_get_uint>(obj, field, default_val,
+	return TemplatedTryGetYYJson<uint64_t, YYJSON_TYPE_NUM, yyjson_get_uint>(obj, field, default_val,
 	                                                                                        fail_on_missing);
 }
-static bool TryGetBoolFromObject(duckdb_yyjson::yyjson_val *obj, const string &field, bool fail_on_missing = false,
+static bool TryGetBoolFromObject(yyjson_val *obj, const string &field, bool fail_on_missing = false,
                                  bool default_val = false) {
-	return TemplatedTryGetYYJson<bool, YYJSON_TYPE_BOOL, duckdb_yyjson::yyjson_get_bool>(obj, field, default_val,
+	return TemplatedTryGetYYJson<bool, YYJSON_TYPE_BOOL, yyjson_get_bool>(obj, field, default_val,
 	                                                                                     fail_on_missing);
 }
-static string TryGetStrFromObject(duckdb_yyjson::yyjson_val *obj, const string &field, bool fail_on_missing = true,
+static string TryGetStrFromObject(yyjson_val *obj, const string &field, bool fail_on_missing = true,
                                   const char *default_val = "") {
-	return TemplatedTryGetYYJson<const char *, YYJSON_TYPE_STR, duckdb_yyjson::yyjson_get_str>(obj, field, default_val,
+	return TemplatedTryGetYYJson<const char *, YYJSON_TYPE_STR, yyjson_get_str>(obj, field, default_val,
 	                                                                                           fail_on_missing);
 }
 
@@ -197,25 +208,26 @@ static string PostRequest(
 	return readBuffer;
 }
 
-static duckdb_yyjson::yyjson_val *api_result_to_doc(const string &api_result) {
-	auto *doc = duckdb_yyjson::yyjson_read(api_result.c_str(), api_result.size(), 0);
+static yyjson_doc *api_result_to_doc(const string &api_result) {
+	auto *doc = yyjson_read(api_result.c_str(), api_result.size(), 0);
 	auto *root = yyjson_doc_get_root(doc);
 	auto *error = yyjson_obj_get(root, "error");
 	if (error != NULL) {
 		string err_msg = TryGetStrFromObject(error, "message");
 		throw std::runtime_error(err_msg);
 	}
-	return root;
+	return doc;
 }
 
-static duckdb_yyjson::yyjson_val *GetTableMetadata(const string &internal, const string &schema, const string &table, ICCredentials credentials) {
+static string GetTableMetadata(const string &internal, const string &schema, const string &table, ICCredentials credentials) {
 	struct curl_slist *extra_headers = NULL;
 	extra_headers = curl_slist_append(extra_headers, "X-Iceberg-Access-Delegation: vended-credentials");
-	auto api_result = GetRequest(
+	string api_result = GetRequest(
 		credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema + "/tables/" + table, 
 		credentials.token,
 		extra_headers);
-	return api_result_to_doc(api_result);
+	curl_slist_free_all(extra_headers);
+	return api_result;
 }
 
 void ICAPI::InitializeCurl() {
@@ -226,7 +238,7 @@ vector<string> ICAPI::GetCatalogs(const string &catalog, ICCredentials credentia
 	throw NotImplementedException("ICAPI::GetCatalogs");
 }
 
-static ICAPIColumnDefinition ParseColumnDefinition(duckdb_yyjson::yyjson_val *column_def) {
+static ICAPIColumnDefinition ParseColumnDefinition(yyjson_val *column_def) {
 	ICAPIColumnDefinition result;
 	result.name = TryGetStrFromObject(column_def, "name");
 	result.type_text = TryGetStrFromObject(column_def, "type");
@@ -238,64 +250,77 @@ static ICAPIColumnDefinition ParseColumnDefinition(duckdb_yyjson::yyjson_val *co
 
 ICAPITableCredentials ICAPI::GetTableCredentials(const string &internal, const string &schema, const string &table, ICCredentials credentials) {
 	ICAPITableCredentials result;
-	duckdb_yyjson::yyjson_val *root = GetTableMetadata(internal, schema, table, credentials);
+	string api_result = GetTableMetadata(internal, schema, table, credentials);
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
+	auto *root = yyjson_doc_get_root(doc.get());
 	auto *aws_temp_credentials = yyjson_obj_get(root, "config");
-
 	if (aws_temp_credentials) {
 		result.key_id = TryGetStrFromObject(aws_temp_credentials, "s3.access-key-id");
 		result.secret = TryGetStrFromObject(aws_temp_credentials, "s3.secret-access-key");
 		result.session_token = TryGetStrFromObject(aws_temp_credentials, "s3.session-token");
+		return result;
 	}
 
-	return result;
+	throw std::runtime_error("No AWS credentials found for table");
 }
 
 string ICAPI::GetToken(string id, string secret, string endpoint) {
 	string post_data = "grant_type=client_credentials&client_id=" + id + "&client_secret=" + secret + "&scope=PRINCIPAL_ROLE:ALL";
 	string api_result = PostRequest(endpoint + "/v1/oauth/tokens", post_data);
-	auto *root = api_result_to_doc(api_result);
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
+	auto *root = yyjson_doc_get_root(doc.get());
 	return TryGetStrFromObject(root, "access_token");
 }
 
-ICAPITable ICAPI::GetTable(
-	const string &catalog, const string &internal, const string &schema, const string &table, std::optional<ICCredentials> credentials) { 
-	
+static void populateTableMetadata(ICAPITable &table, yyjson_val *metadata_root) {
+	table.storage_location = TryGetStrFromObject(metadata_root, "metadata-location");
+	auto *metadata = yyjson_obj_get(metadata_root, "metadata");
+	//table_result.table_id = TryGetStrFromObject(metadata, "table-uuid");
+
+	uint64_t current_schema_id = TryGetNumFromObject(metadata, "current-schema-id");
+	auto *schemas = yyjson_obj_get(metadata, "schemas");
+	yyjson_val *schema;
+	size_t schema_idx, schema_max;
+	bool found = false;
+	yyjson_arr_foreach(schemas, schema_idx, schema_max, schema) {
+		uint64_t schema_id = TryGetNumFromObject(schema, "schema-id");
+		if (schema_id == current_schema_id) {
+			found = true;
+			auto *columns = yyjson_obj_get(schema, "fields");
+			yyjson_val *col;
+			size_t col_idx, col_max;
+			yyjson_arr_foreach(columns, col_idx, col_max, col) {
+				auto column_definition = ParseColumnDefinition(col);
+				table.columns.push_back(column_definition);
+			}
+		}
+	}
+
+	if (!found) {
+		throw InternalException("Current schema not found");
+	}
+}
+
+static ICAPITable createTable(const string &catalog, const string &schema, const string &table_name) { 
 	ICAPITable table_result;
 	table_result.catalog_name = catalog;
 	table_result.schema_name = schema;
-	table_result.name = table;
+	table_result.name = table_name;
 	table_result.data_source_format = "ICEBERG";
 	table_result.table_id = "uuid-" + schema + "-" + "table";
 	std::replace(table_result.table_id.begin(), table_result.table_id.end(), '_', '-');
+	return table_result;
+}
 
+ICAPITable ICAPI::GetTable(
+	const string &catalog, const string &internal, const string &schema, const string &table_name, std::optional<ICCredentials> credentials) { 
+	
+	ICAPITable table_result = createTable(catalog, schema, table_name);
 	if (credentials) {
-		auto *metadata_root = GetTableMetadata(internal, schema, table_result.name, *credentials);
-		table_result.storage_location = TryGetStrFromObject(metadata_root, "metadata-location");
-		auto *metadata = yyjson_obj_get(metadata_root, "metadata");
-		//table_result.table_id = TryGetStrFromObject(metadata, "table-uuid");
-
-		uint64_t current_schema_id = TryGetNumFromObject(metadata, "current-schema-id");
-		auto *schemas = yyjson_obj_get(metadata, "schemas");
-		duckdb_yyjson::yyjson_val *schema;
-		size_t schema_idx, schema_max;
-		bool found = false;
-		yyjson_arr_foreach(schemas, schema_idx, schema_max, schema) {
-			uint64_t schema_id = TryGetNumFromObject(schema, "schema-id");
-			if (schema_id == current_schema_id) {
-				found = true;
-				auto *columns = yyjson_obj_get(schema, "fields");
-				duckdb_yyjson::yyjson_val *col;
-				size_t col_idx, col_max;
-				yyjson_arr_foreach(columns, col_idx, col_max, col) {
-					auto column_definition = ParseColumnDefinition(col);
-					table_result.columns.push_back(column_definition);
-				}
-			}
-		}
-
-		if (!found) {
-			throw InternalException("Current schema not found");
-		}
+		string result = GetTableMetadata(internal, schema, table_result.name, *credentials);
+		std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(result));
+		auto *metadata_root = yyjson_doc_get_root(doc.get());
+		populateTableMetadata(table_result, metadata_root);
 	} else {
 		// Skip fetching metadata, we'll do it later when we access the table
 		ICAPIColumnDefinition col;
@@ -313,11 +338,12 @@ ICAPITable ICAPI::GetTable(
 // TODO: handle out-of-order columns using position property
 vector<ICAPITable> ICAPI::GetTables(const string &catalog, const string &internal, const string &schema, ICCredentials credentials) {
 	vector<ICAPITable> result;
-	auto api_result = GetRequest(credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema + "/tables", credentials.token);
-	auto *root = api_result_to_doc(api_result);
+	string api_result = GetRequest(credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema + "/tables", credentials.token);
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
+	auto *root = yyjson_doc_get_root(doc.get());
 	auto *tables = yyjson_obj_get(root, "identifiers");
 	size_t idx, max;
-	duckdb_yyjson::yyjson_val *table;
+	yyjson_val *table;
 	yyjson_arr_foreach(tables, idx, max, table) {
 		auto table_result = GetTable(catalog, internal, schema, TryGetStrFromObject(table, "name"), std::nullopt);
 		result.push_back(table_result);
@@ -328,16 +354,17 @@ vector<ICAPITable> ICAPI::GetTables(const string &catalog, const string &interna
 
 vector<ICAPISchema> ICAPI::GetSchemas(const string &catalog, const string &internal, ICCredentials credentials) {
 	vector<ICAPISchema> result;
-	auto api_result =
+	string api_result =
 	    GetRequest(credentials.endpoint + "/v1/" + internal + "/namespaces", credentials.token);
-	auto *root = api_result_to_doc(api_result);
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
+	auto *root = yyjson_doc_get_root(doc.get());
 	auto *schemas = yyjson_obj_get(root, "namespaces");
 	size_t idx, max;
-	duckdb_yyjson::yyjson_val *schema;
+	yyjson_val *schema;
 	yyjson_arr_foreach(schemas, idx, max, schema) {
 		ICAPISchema schema_result;
 		schema_result.catalog_name = catalog;
-		duckdb_yyjson::yyjson_val *value = yyjson_arr_get(schema, 0);
+		yyjson_val *value = yyjson_arr_get(schema, 0);
 		schema_result.schema_name = yyjson_get_str(value);
 		result.push_back(schema_result);
 	}
@@ -361,6 +388,65 @@ void ICAPI::DropSchema(const string &internal, const string &schema, ICCredentia
 	string api_result = DeleteRequest(
 		credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema, credentials.token);
 	api_result_to_doc(api_result);	// if the method returns, request was successful
+}
+
+void ICAPI::DropTable(const string &catalog, const string &internal, const string &schema, string &table_name, ICCredentials credentials) {
+	string api_result = DeleteRequest(
+		credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema + "/tables/" + table_name + "?purgeRequested=true", 
+		credentials.token);
+	api_result_to_doc(api_result);	// if the method returns, request was successful
+}
+
+static std::string json_to_string(yyjson_mut_doc *doc, yyjson_write_flag flags = YYJSON_WRITE_PRETTY) {
+    char *json_chars = yyjson_mut_write(doc, flags, NULL);
+    std::string json_str(json_chars);
+    free(json_chars);
+    return json_str;
+}
+
+ICAPITable ICAPI::CreateTable(const string &catalog, const string &internal, const string &schema, ICCredentials credentials, CreateTableInfo *table_info) {
+	std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> dd(yyjson_mut_doc_new(NULL));
+	yyjson_mut_val *rr = yyjson_mut_obj(dd.get());
+	yyjson_mut_doc_set_root(dd.get(), rr);
+	yyjson_mut_obj_add_str(dd.get(), rr, "name", table_info->table.c_str());
+
+	yyjson_mut_val *sch = yyjson_mut_obj(dd.get());
+    yyjson_mut_obj_add_val(dd.get(), rr, "schema", sch);
+	yyjson_mut_obj_add_str(dd.get(), sch, "type", "struct");
+
+	yyjson_mut_val *fields = yyjson_mut_arr(dd.get());
+	yyjson_mut_obj_add_val(dd.get(), sch, "fields", fields);
+
+	std::vector<std::string> column_names;
+	std::vector<std::string> column_types;
+	for (auto &col : table_info->columns.Logical()) {
+		// Store column name and type in vectors
+		column_names.push_back(col.GetName());
+		column_types.push_back(ICUtils::LogicalToIcebergType(col.GetType()));
+		// Add column object to JSON
+		yyjson_mut_val *col_obj = yyjson_mut_obj(dd.get());
+		yyjson_mut_obj_add_int(dd.get(), col_obj, "id", col.Oid());
+		yyjson_mut_obj_add_bool(dd.get(), col_obj, "required", true);
+		yyjson_mut_obj_add_str(dd.get(), col_obj, "name", column_names.back().c_str());
+		yyjson_mut_obj_add_str(dd.get(), col_obj, "type", column_types.back().c_str());
+		yyjson_mut_arr_add_val(fields, col_obj);
+	}
+
+	yyjson_mut_val *props = yyjson_mut_obj(dd.get());
+    yyjson_mut_obj_add_val(dd.get(), rr, "properties", props);
+	yyjson_mut_obj_add_str(dd.get(), props, "write.parquet.compression-codec", "snappy");
+
+	ICAPITable table_result = createTable(catalog, schema, table_info->table);
+	string post_data = json_to_string(dd.get());	
+	struct curl_slist *extra_headers = NULL;
+	extra_headers = curl_slist_append(extra_headers, "X-Iceberg-Access-Delegation: vended-credentials");
+	string api_result = PostRequest(
+		credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema + "/tables", post_data, "json", credentials.token, extra_headers);
+	curl_slist_free_all(extra_headers);
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
+	auto *root = yyjson_doc_get_root(doc.get());	
+	populateTableMetadata(table_result, root);
+	return table_result;
 }
 
 } // namespace duckdb

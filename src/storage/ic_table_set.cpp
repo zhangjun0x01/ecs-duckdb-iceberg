@@ -9,6 +9,7 @@
 #include "duckdb/parser/constraints/unique_constraint.hpp"
 #include "duckdb/parser/expression/constant_expression.hpp"
 #include "duckdb/planner/parsed_data/bound_create_table_info.hpp"
+#include "duckdb/parser/parsed_data/drop_info.hpp"
 #include "duckdb/catalog/dependency_list.hpp"
 #include "duckdb/parser/parsed_data/create_table_info.hpp"
 #include "duckdb/parser/constraints/list.hpp"
@@ -74,11 +75,20 @@ optional_ptr<CatalogEntry> ICTableSet::RefreshTable(ClientContext &context, cons
 
 unique_ptr<ICTableInfo> ICTableSet::GetTableInfo(ClientContext &context, ICSchemaEntry &schema,
                                                  const string &table_name) {
-	throw NotImplementedException("ICTableSet::CreateTable");
+	throw NotImplementedException("ICTableSet::GetTableInfo");
 }
 
 optional_ptr<CatalogEntry> ICTableSet::CreateTable(ClientContext &context, BoundCreateTableInfo &info) {
-	throw NotImplementedException("ICTableSet::CreateTable");
+	auto &ic_catalog = catalog.Cast<ICCatalog>();
+	auto *table_info = dynamic_cast<CreateTableInfo *>(info.base.get());
+	auto table = ICAPI::CreateTable(catalog.GetName(), ic_catalog.internal_name, schema.name, ic_catalog.credentials, table_info);
+	auto entry = _CreateCatalogEntry(context, table);
+	return CreateEntry(std::move(entry));
+}
+
+void ICTableSet::DropTable(ClientContext &context, DropInfo &info) {
+	auto &ic_catalog = catalog.Cast<ICCatalog>();
+	ICAPI::DropTable(catalog.GetName(), ic_catalog.internal_name, schema.name, info.name, ic_catalog.credentials);	
 }
 
 void ICTableSet::AlterTable(ClientContext &context, RenameTableInfo &info) {

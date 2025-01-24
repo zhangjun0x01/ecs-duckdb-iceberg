@@ -20,8 +20,6 @@ optional_ptr<CatalogEntry> ICCatalogSet::GetEntry(ClientContext &context, const 
 }
 
 void ICCatalogSet::DropEntry(ClientContext &context, DropInfo &info) {
-	std::cout << "ICCatalogSet::DropEntry" << info.type << std::endl;
-	
 	EraseEntryInternal(info.name);
 }
 

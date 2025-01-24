@@ -77,7 +77,6 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 		// Get Credentials from ICAPI
 		auto table_credentials = ICAPI::GetTableCredentials(
 			ic_catalog.internal_name, table_data->schema_name, table_data->name, ic_catalog.credentials);
-
 		// Inject secret into secret manager scoped to this path
 		CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
 		info.name = "__internal_ic_" + table_data->table_id;

@@ -36,6 +36,14 @@ optional_ptr<CatalogEntry> ICSchemaEntry::CreateTable(CatalogTransaction transac
 	return tables.CreateTable(transaction.GetContext(), info);
 }
 
+void ICSchemaEntry::DropEntry(ClientContext &context, DropInfo &info) {
+	if (info.type != CatalogType::TABLE_ENTRY) {
+		throw BinderException("Expecting table entry");
+	}
+	tables.DropTable(context, info);
+	GetCatalogSet(info.type).DropEntry(context, info);
+}
+
 optional_ptr<CatalogEntry> ICSchemaEntry::CreateFunction(CatalogTransaction transaction, CreateFunctionInfo &info) {
 	throw BinderException("PC databases do not support creating functions");
 }
@@ -134,10 +142,6 @@ void ICSchemaEntry::Scan(ClientContext &context, CatalogType type,
 }
 void ICSchemaEntry::Scan(CatalogType type, const std::function<void(CatalogEntry &)> &callback) {
 	throw NotImplementedException("Scan without context not supported");
-}
-
-void ICSchemaEntry::DropEntry(ClientContext &context, DropInfo &info) {
-	GetCatalogSet(info.type).DropEntry(context, info);
 }
 
 optional_ptr<CatalogEntry> ICSchemaEntry::GetEntry(CatalogTransaction transaction, CatalogType type,

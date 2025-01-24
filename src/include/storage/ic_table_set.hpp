@@ -30,6 +30,7 @@ public:
 	static unique_ptr<ICTableInfo> GetTableInfo(ClientContext &context, ICSchemaEntry &schema, const string &table_name);
 	optional_ptr<CatalogEntry> RefreshTable(ClientContext &context, const string &table_name);
 	void AlterTable(ClientContext &context, AlterTableInfo &info);
+	void DropTable(ClientContext &context, DropInfo &info);
 
 protected:
 	void LoadEntries(ClientContext &context) override;

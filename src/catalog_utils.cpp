@@ -7,6 +7,49 @@
 
 namespace duckdb {
 
+string ICUtils::LogicalToIcebergType(const LogicalType &input) {
+	switch (input.id()) {
+	case LogicalType::TINYINT:
+	case LogicalType::UTINYINT:
+		return "tinyint";
+	case LogicalType::SMALLINT:
+	case LogicalType::USMALLINT:
+		return "smallint";
+	case LogicalType::INTEGER:
+	case LogicalType::UINTEGER:
+		return "int";
+	case LogicalType::BIGINT:
+	case LogicalType::UBIGINT:
+		return "long";
+	case LogicalType::VARCHAR:
+		return "string";
+	case LogicalType::DOUBLE:
+		return "double";
+	case LogicalType::FLOAT:
+		return "float";
+	case LogicalType::BOOLEAN:
+		return "boolean";
+	case LogicalType::TIMESTAMP:
+		return "timestamp";
+	case LogicalType::TIMESTAMP_TZ:
+		return "timestamptz";
+	case LogicalType::BLOB:
+		return "binary";
+	case LogicalType::DATE:
+		return "date";
+	case LogicalTypeId::DECIMAL:
+		uint8_t precision = DecimalType::GetWidth(input);
+		uint8_t scale = DecimalType::GetScale(input);
+		return "decimal(" + std::to_string(precision) + ", " + std::to_string(scale) + ")";
+	// case LogicalTypeId::ARRAY:
+	// case LogicalTypeId::STRUCT:
+	// case LogicalTypeId::MAP:
+	// default:
+	}
+
+	throw std::runtime_error("Unsupported type: " + input.ToString());
+}
+
 string ICUtils::TypeToString(const LogicalType &input) {
 	switch (input.id()) {
 	case LogicalType::VARCHAR:
