@@ -1,0 +1,111 @@
+{
+  "format-version" : 2,
+  "table-uuid" : "03adfbd9-7e0f-4041-b891-7d439694b20c",
+  "location" : "fruit",
+  "last-sequence-number" : 0,
+  "last-updated-ms" : 1738031850786,
+  "last-column-id" : 15,
+  "current-schema-id" : 0,
+  "schemas" : [ {
+    "type" : "struct",
+    "schema-id" : 0,
+    "fields" : [ {
+      "id" : 1,
+      "name" : "id",
+      "required" : true,
+      "type" : "decimal(19, 0)"
+    }, {
+      "id" : 2,
+      "name" : "count",
+      "required" : true,
+      "type" : "float"
+    }, {
+      "id" : 3,
+      "name" : "name",
+      "required" : true,
+      "type" : "string"
+    }, {
+      "id" : 4,
+      "name" : "image",
+      "required" : false,
+      "type" : "binary"
+    }, {
+      "id" : 5,
+      "name" : "available",
+      "required" : true,
+      "type" : "boolean"
+    }, {
+      "id" : 6,
+      "name" : "last_picked",
+      "required" : false,
+      "type" : "date"
+    }, {
+      "id" : 7,
+      "name" : "address",
+      "required" : false,
+      "type" : {
+        "type" : "struct",
+        "fields" : [ {
+          "id" : 10,
+          "name" : "line1",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "id" : 11,
+          "name" : "line2",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "id" : 12,
+          "name" : "zipcode",
+          "required" : false,
+          "type" : "int"
+        } ]
+      }
+    }, {
+      "id" : 8,
+      "name" : "suppliers",
+      "required" : false,
+      "type" : {
+        "type" : "list",
+        "element-id" : 13,
+        "element" : "string",
+        "element-required" : false
+      }
+    }, {
+      "id" : 9,
+      "name" : "metrics",
+      "required" : false,
+      "type" : {
+        "type" : "map",
+        "key-id" : 14,
+        "key" : "string",
+        "value-id" : 15,
+        "value" : "int",
+        "value-required" : false
+      }
+    } ]
+  } ],
+  "default-spec-id" : 0,
+  "partition-specs" : [ {
+    "spec-id" : 0,
+    "fields" : [ ]
+  } ],
+  "last-partition-id" : 999,
+  "default-sort-order-id" : 0,
+  "sort-orders" : [ {
+    "order-id" : 0,
+    "fields" : [ ]
+  } ],
+  "properties" : {
+    "owner" : "david",
+    "write.parquet.compression-codec" : "zstd"
+  },
+  "current-snapshot-id" : -1,
+  "refs" : { },
+  "snapshots" : [ ],
+  "statistics" : [ ],
+  "partition-statistics" : [ ],
+  "snapshot-log" : [ ],
+  "metadata-log" : [ ]
+}

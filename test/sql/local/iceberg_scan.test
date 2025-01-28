@@ -118,3 +118,48 @@ query I
 SELECT count(*) FROM ICEBERG_SCAN('data/iceberg/lineitem_iceberg_gz_no_hint', ALLOW_MOVED_PATHS=TRUE, METADATA_COMPRESSION_CODEC="gzip", version='2', version_name_format='v%s%s.metadata.json');
 ----
 111968
+
+query I
+SELECT typeof(id) FROM ICEBERG_SCAN('data/fruit', ALLOW_MOVED_PATHS=TRUE) LIMIT 1;
+----
+DECIMAL(19,0)
+
+query I
+SELECT typeof(count) FROM ICEBERG_SCAN('data/fruit', ALLOW_MOVED_PATHS=TRUE) LIMIT 1;
+----
+FLOAT
+
+query I
+SELECT typeof(name) FROM ICEBERG_SCAN('data/fruit', ALLOW_MOVED_PATHS=TRUE) LIMIT 1;
+----
+VARCHAR
+
+query I
+SELECT typeof(image) FROM ICEBERG_SCAN('data/fruit', ALLOW_MOVED_PATHS=TRUE) LIMIT 1;
+----
+BLOB
+
+query I
+SELECT typeof(available) FROM ICEBERG_SCAN('data/fruit', ALLOW_MOVED_PATHS=TRUE) LIMIT 1;
+----
+BOOLEAN
+
+query I
+SELECT typeof(last_picked) FROM ICEBERG_SCAN('data/fruit', ALLOW_MOVED_PATHS=TRUE) LIMIT 1;
+----
+DATE
+
+query I
+SELECT typeof(address) FROM ICEBERG_SCAN('data/fruit', ALLOW_MOVED_PATHS=TRUE) LIMIT 1;
+----
+STRUCT(line1 VARCHAR, line2 VARCHAR, zipcode INTEGER)
+
+query I
+SELECT typeof(suppliers) FROM ICEBERG_SCAN('data/fruit', ALLOW_MOVED_PATHS=TRUE) LIMIT 1;
+----
+VARCHAR[]
+
+query I
+SELECT typeof(metrics) FROM ICEBERG_SCAN('data/fruit', ALLOW_MOVED_PATHS=TRUE) LIMIT 1;
+----
+MAP(VARCHAR, INTEGER)
