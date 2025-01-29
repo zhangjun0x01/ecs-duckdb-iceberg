@@ -77,30 +77,32 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 		// Get Credentials from ICAPI
 		auto table_credentials = ICAPI::GetTableCredentials(
 			ic_catalog.internal_name, table_data->schema_name, table_data->name, ic_catalog.credentials);
-		// Inject secret into secret manager scoped to this path
-		CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
-		info.name = "__internal_ic_" + table_data->table_id;
-		info.type = "s3";
-		info.provider = "config";
-		info.storage_type = "memory";
-		info.options = {
-		    {"key_id", table_credentials.key_id},
-		    {"secret", table_credentials.secret},
-		    {"session_token", table_credentials.session_token},
-		    {"region", ic_catalog.credentials.aws_region},
-		};
+		// First check if table credentials are set (possible the IC catalog does not return credentials)
+		if (!table_credentials.key_id.empty()) {
+			// Inject secret into secret manager scoped to this path
+			CreateSecretInfo info(OnCreateConflict::ERROR_ON_CONFLICT, SecretPersistType::TEMPORARY);
+			info.name = "__internal_ic_" + table_data->table_id;
+			info.type = "s3";
+			info.provider = "config";
+			info.storage_type = "memory";
+			info.options = {
+				{"key_id", table_credentials.key_id},
+				{"secret", table_credentials.secret},
+				{"session_token", table_credentials.session_token},
+				{"region", ic_catalog.credentials.aws_region},
+			};
 
-		std::string lc_storage_location;
-		lc_storage_location.resize(table_data->storage_location.size());
-		std::transform(table_data->storage_location.begin(), table_data->storage_location.end(), lc_storage_location.begin(), ::tolower);
-		size_t metadata_pos = lc_storage_location.find("metadata");
-		if (metadata_pos != std::string::npos) {
-    		info.scope = {lc_storage_location.substr(0, metadata_pos)};
-		} else {
-			throw std::runtime_error("Substring not found");
+			std::string lc_storage_location;
+			lc_storage_location.resize(table_data->storage_location.size());
+			std::transform(table_data->storage_location.begin(), table_data->storage_location.end(), lc_storage_location.begin(), ::tolower);
+			size_t metadata_pos = lc_storage_location.find("metadata");
+			if (metadata_pos != std::string::npos) {
+				info.scope = {lc_storage_location.substr(0, metadata_pos)};
+			} else {
+				throw std::runtime_error("Substring not found");
+			}
+			auto my_secret = secret_manager.CreateSecret(context, info);
 		}
-
-		auto my_secret = secret_manager.CreateSecret(context, info);
 	}
 
 	named_parameter_map_t param_map;

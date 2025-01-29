@@ -37,14 +37,16 @@ string ICUtils::LogicalToIcebergType(const LogicalType &input) {
 		return "binary";
 	case LogicalType::DATE:
 		return "date";
-	case LogicalTypeId::DECIMAL:
+	case LogicalTypeId::DECIMAL: {
 		uint8_t precision = DecimalType::GetWidth(input);
 		uint8_t scale = DecimalType::GetScale(input);
 		return "decimal(" + std::to_string(precision) + ", " + std::to_string(scale) + ")";
+	}
 	// case LogicalTypeId::ARRAY:
 	// case LogicalTypeId::STRUCT:
 	// case LogicalTypeId::MAP:
-	// default:
+	default:
+		break;
 	}
 
 	throw std::runtime_error("Unsupported type: " + input.ToString());

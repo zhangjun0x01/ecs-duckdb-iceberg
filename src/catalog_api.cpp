@@ -35,6 +35,8 @@ static string certFileLocations[] = {
         "/etc/ssl/cert.pem"
 };
 
+const string ICAPI::API_VERSION_1 = "v1";
+
 struct YyjsonDocDeleter {
     void operator()(yyjson_doc* doc) {
         yyjson_doc_free(doc);
@@ -223,7 +225,7 @@ static string GetTableMetadata(const string &internal, const string &schema, con
 	struct curl_slist *extra_headers = NULL;
 	extra_headers = curl_slist_append(extra_headers, "X-Iceberg-Access-Delegation: vended-credentials");
 	string api_result = GetRequest(
-		credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema + "/tables/" + table, 
+		credentials.endpoint + ICAPI::GetOptionallyPrefixedURL(ICAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables/" + table,
 		credentials.token,
 		extra_headers);
 	curl_slist_free_all(extra_headers);
@@ -254,14 +256,15 @@ ICAPITableCredentials ICAPI::GetTableCredentials(const string &internal, const s
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *aws_temp_credentials = yyjson_obj_get(root, "config");
-	if (aws_temp_credentials) {
-		result.key_id = TryGetStrFromObject(aws_temp_credentials, "s3.access-key-id");
-		result.secret = TryGetStrFromObject(aws_temp_credentials, "s3.secret-access-key");
-		result.session_token = TryGetStrFromObject(aws_temp_credentials, "s3.session-token");
-		return result;
+  auto credential_size = yyjson_obj_size(aws_temp_credentials);
+	if (aws_temp_credentials && credential_size > 0) {
+		result.key_id = TryGetStrFromObject(aws_temp_credentials, "s3.access-key-id", false);
+		result.secret = TryGetStrFromObject(aws_temp_credentials, "s3.secret-access-key",  false);
+		result.session_token = TryGetStrFromObject(aws_temp_credentials, "s3.session-token", false);
 	}
+  return result;
 
-	throw std::runtime_error("No AWS credentials found for table");
+// throw std::runtime_error("No AWS credentials found for table");
 }
 
 string ICAPI::GetToken(string id, string secret, string endpoint) {
@@ -335,10 +338,18 @@ ICAPITable ICAPI::GetTable(
 	return table_result;
 }
 
+string ICAPI::GetOptionallyPrefixedURL(const string &api_version, const string &prefix) {
+  D_ASSERT((int32_t)api_version.find(std::string("/")) < 0 && (int32_t)prefix.find(std::string("/")) < 0);
+	if (prefix.empty()) {
+		return "/" + api_version + "/";
+	}
+	return "/" + api_version + "/" + prefix + "/";
+}
+
 // TODO: handle out-of-order columns using position property
 vector<ICAPITable> ICAPI::GetTables(const string &catalog, const string &internal, const string &schema, ICCredentials credentials) {
 	vector<ICAPITable> result;
-	string api_result = GetRequest(credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema + "/tables", credentials.token);
+	string api_result = GetRequest(credentials.endpoint + GetOptionallyPrefixedURL(ICAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables", credentials.token);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *tables = yyjson_obj_get(root, "identifiers");
@@ -355,7 +366,7 @@ vector<ICAPITable> ICAPI::GetTables(const string &catalog, const string &interna
 vector<ICAPISchema> ICAPI::GetSchemas(const string &catalog, const string &internal, ICCredentials credentials) {
 	vector<ICAPISchema> result;
 	string api_result =
-	    GetRequest(credentials.endpoint + "/v1/" + internal + "/namespaces", credentials.token);
+	    GetRequest(credentials.endpoint + GetOptionallyPrefixedURL(ICAPI::API_VERSION_1, internal) + "namespaces", credentials.token);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *schemas = yyjson_obj_get(root, "namespaces");
@@ -375,7 +386,7 @@ vector<ICAPISchema> ICAPI::GetSchemas(const string &catalog, const string &inter
 ICAPISchema ICAPI::CreateSchema(const string &catalog, const string &internal, const string &schema, ICCredentials credentials) {
 	string post_data = "{\"namespace\":[\"" + schema + "\"]}";
 	string api_result = PostRequest(
-		credentials.endpoint + "/v1/" + internal + "/namespaces", post_data, "json", credentials.token);
+		credentials.endpoint + GetOptionallyPrefixedURL(ICAPI::API_VERSION_1, internal) + "namespaces", post_data, "json", credentials.token);
 	api_result_to_doc(api_result);	// if the method returns, request was successful
 	
 	ICAPISchema schema_result;
@@ -386,13 +397,13 @@ ICAPISchema ICAPI::CreateSchema(const string &catalog, const string &internal, c
 
 void ICAPI::DropSchema(const string &internal, const string &schema, ICCredentials credentials) {
 	string api_result = DeleteRequest(
-		credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema, credentials.token);
+		credentials.endpoint + GetOptionallyPrefixedURL(ICAPI::API_VERSION_1, internal) + "namespaces/" + schema, credentials.token);
 	api_result_to_doc(api_result);	// if the method returns, request was successful
 }
 
 void ICAPI::DropTable(const string &catalog, const string &internal, const string &schema, string &table_name, ICCredentials credentials) {
 	string api_result = DeleteRequest(
-		credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema + "/tables/" + table_name + "?purgeRequested=true", 
+		credentials.endpoint + GetOptionallyPrefixedURL(ICAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables/" + table_name + "?purgeRequested=true",
 		credentials.token);
 	api_result_to_doc(api_result);	// if the method returns, request was successful
 }
@@ -441,7 +452,7 @@ ICAPITable ICAPI::CreateTable(const string &catalog, const string &internal, con
 	struct curl_slist *extra_headers = NULL;
 	extra_headers = curl_slist_append(extra_headers, "X-Iceberg-Access-Delegation: vended-credentials");
 	string api_result = PostRequest(
-		credentials.endpoint + "/v1/" + internal + "/namespaces/" + schema + "/tables", post_data, "json", credentials.token, extra_headers);
+		credentials.endpoint + GetOptionallyPrefixedURL(ICAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables", post_data, "json", credentials.token, extra_headers);
 	curl_slist_free_all(extra_headers);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());	

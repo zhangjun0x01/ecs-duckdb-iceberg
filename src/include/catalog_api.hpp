@@ -41,9 +41,14 @@ struct ICAPITableCredentials {
 
 class ICAPI {
 public:
+	static const string API_VERSION_1;
+
   	//! WARNING: not thread-safe. To be called once on extension initialization
   	static void InitializeCurl();
 
+	// The {prefix} for a catalog is always optional according to the iceberg spec. So no need to
+	// add it if it is not defined.
+	static string GetOptionallyPrefixedURL(const string &api_version, const string &prefix);
 	static ICAPITableCredentials GetTableCredentials(const string &internal, const string &schema, const string &table, ICCredentials credentials);
 	static vector<string> GetCatalogs(const string &catalog, ICCredentials credentials);
 	static vector<ICAPITable> GetTables(const string &catalog, const string &internal, const string &schema, ICCredentials credentials);
