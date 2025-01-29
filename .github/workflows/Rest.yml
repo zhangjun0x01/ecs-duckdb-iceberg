@@ -50,3 +50,9 @@ jobs:
         working-directory: scripts/
         run: |
           ./start-rest-catalog.sh
+
+      - name: Test With rest catalog
+        env:
+          ICEBERG_SERVER_AVAILABLE: 1
+        run: |
+          make test_release
