@@ -70,13 +70,22 @@ select * from my_datalake.default.table_mor_deletes order by all;
 2023-03-01	1	a
 2023-03-02	2	b
 2023-03-03	3	c
-2023-03-09	9	i
 2023-03-10	10	j
 2023-03-11	11	k
 2023-03-12	12	l
-
 
 statement error
 update my_datalake.default.table_unpartitioned set number = 5 where number < 5;
 ----
 <REGEX>:.*Not implemented Error.*
+
+statement error
+delete from my_datalake.default.table_unpartitioned where number < 5;
+----
+<REGEX>:.*Not implemented Error.*
+
+statement error
+insert into my_datalake.default.table_unpartitioned values ('2023-03-13', 13, 'm');
+----
+<REGEX>:.*Not implemented Error.*
+
