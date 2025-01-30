@@ -1,7 +1,7 @@
 #include "catalog_api.hpp"
 #include "catalog_utils.hpp"
 
-#include "storage/ic_catalog.hpp"
+#include "storage/icr_catalog.hpp"
 #include "storage/ic_table_set.hpp"
 #include "storage/ic_transaction.hpp"
 #include "duckdb/parser/parsed_data/create_table_info.hpp"

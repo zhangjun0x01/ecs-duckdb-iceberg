@@ -1,7 +1,7 @@
 #define DUCKDB_EXTENSION_MAIN
 
 #include "iceberg_extension.hpp"
-#include "storage/ic_catalog.hpp"
+#include "storage/icr_catalog.hpp"
 #include "storage/ic_transaction_manager.hpp"
 
 #include "duckdb.hpp"

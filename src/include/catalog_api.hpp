@@ -52,7 +52,7 @@ public:
 	static ICAPITableCredentials GetTableCredentials(const string &internal, const string &schema, const string &table, ICRCredentials credentials);
 	static vector<string> GetCatalogs(const string &catalog, ICRCredentials credentials);
 	static vector<ICRAPITable> GetTables(const string &catalog, const string &internal, const string &schema, ICRCredentials credentials);
-	static ICRAPITable GetTable(const string &catalog, const string &internal, const string &schema, const string &table_name, std::optional<ICRCredentials> credentials);
+	static ICRAPITable GetTable(const string &catalog, const string &internal, const string &schema, const string &table_name, optional_ptr<ICRCredentials> credentials);
 	static vector<ICRAPISchema> GetSchemas(const string &catalog, const string &internal, ICRCredentials credentials);
 	static vector<ICRAPITable> GetTablesInSchema(const string &catalog, const string &schema, ICRCredentials credentials);
 	static string GetToken(string id, string secret, string endpoint);

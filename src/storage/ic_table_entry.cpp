@@ -1,4 +1,4 @@
-#include "storage/ic_catalog.hpp"
+#include "storage/icr_catalog.hpp"
 #include "storage/ic_schema_entry.hpp"
 #include "storage/ic_table_entry.hpp"
 #include "storage/ic_transaction.hpp"

@@ -1,6 +1,6 @@
 #include "catalog_api.hpp"
 #include "catalog_utils.hpp"
-#include "storage/ic_catalog.hpp"
+#include "storage/icr_catalog.hpp"
 #include "yyjson.hpp"
 
 #include <curl/curl.h>
@@ -302,7 +302,7 @@ static void populateTableMetadata(ICRAPITable &table, yyjson_val *metadata_root)
 	}
 }
 
-static ICRAPITable createTable(const string &catalog, const string &schema, const string &table_name) { 
+static ICRAPITable createTable(const string &catalog, const string &schema, const string &table_name) {
 	ICRAPITable table_result;
 	table_result.catalog_name = catalog;
 	table_result.schema_name = schema;
@@ -314,7 +314,7 @@ static ICRAPITable createTable(const string &catalog, const string &schema, cons
 }
 
 ICRAPITable ICRAPI::GetTable(
-	const string &catalog, const string &internal, const string &schema, const string &table_name, std::optional<ICRCredentials> credentials) { 
+	const string &catalog, const string &internal, const string &schema, const string &table_name, optional_ptr<ICRCredentials> credentials) {
 	
 	ICRAPITable table_result = createTable(catalog, schema, table_name);
 	if (credentials) {
@@ -354,7 +354,7 @@ vector<ICRAPITable> ICRAPI::GetTables(const string &catalog, const string &inter
 	size_t idx, max;
 	yyjson_val *table;
 	yyjson_arr_foreach(tables, idx, max, table) {
-		auto table_result = GetTable(catalog, internal, schema, TryGetStrFromObject(table, "name"), std::nullopt);
+		auto table_result = GetTable(catalog, internal, schema, TryGetStrFromObject(table, "name"), nullptr);
 		result.push_back(table_result);
 	}
 

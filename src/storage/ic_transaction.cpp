@@ -1,5 +1,5 @@
 #include "storage/ic_transaction.hpp"
-#include "storage/ic_catalog.hpp"
+#include "storage/icr_catalog.hpp"
 #include "duckdb/parser/parsed_data/create_view_info.hpp"
 #include "duckdb/catalog/catalog_entry/index_catalog_entry.hpp"
 #include "duckdb/catalog/catalog_entry/view_catalog_entry.hpp"
