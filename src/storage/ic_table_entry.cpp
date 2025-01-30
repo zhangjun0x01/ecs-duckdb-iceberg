@@ -38,23 +38,6 @@ void ICTableEntry::BindUpdateConstraints(Binder &binder, LogicalGet &, LogicalPr
 	throw NotImplementedException("BindUpdateConstraints");
 }
 
-struct MyIcebergFunctionData : public FunctionData {
-    std::string path; // store the path or any other relevant info here
-
-    // Optional: implement Copy for caching/pushdown logic
-    unique_ptr<FunctionData> Copy() const override {
-        auto copy = make_uniq<MyIcebergFunctionData>();
-        copy->path = path;
-        return copy;
-    }
-
-    // Optional: implement Equals for caching
-    bool Equals(const FunctionData &other_p) const override {
-        auto &other = (const MyIcebergFunctionData &)other_p;
-        return path == other.path;
-    }
-};
-
 TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) {
 	auto &db = DatabaseInstance::GetDatabase(context);
 	auto &ic_catalog = catalog.Cast<ICCatalog>();
