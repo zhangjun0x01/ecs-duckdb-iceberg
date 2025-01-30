@@ -21,7 +21,7 @@ set(EXTENSION_SOURCES
     src/iceberg_functions/iceberg_snapshots.cpp
     src/iceberg_functions/iceberg_scan.cpp
     src/iceberg_functions/iceberg_metadata.cpp
-    src/storage/ic_catalog.cpp
+    src/storage/icr_catalog.cpp
     src/storage/ic_catalog_set.cpp
     src/storage/ic_clear_cache.cpp
     src/storage/ic_schema_entry.cpp
