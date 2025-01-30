@@ -29,31 +29,6 @@ void ICTransaction::Rollback() {
 	}
 }
 
-// ICConnection &ICTransaction::GetConnection() {
-//	if (transaction_state == ICTransactionState::TRANSACTION_NOT_YET_STARTED) {
-//		transaction_state = ICTransactionState::TRANSACTION_STARTED;
-//		string query = "START TRANSACTION";
-//		if (access_mode == AccessMode::READ_ONLY) {
-//			query += " READ ONLY";
-//		}
-////		conne/**/ction.Execute(query);
-//	}
-//	return connection;
-//}
-
-// unique_ptr<ICResult> ICTransaction::Query(const string &query) {
-//	if (transaction_state == ICTransactionState::TRANSACTION_NOT_YET_STARTED) {
-//		transaction_state = ICTransactionState::TRANSACTION_STARTED;
-//		string transaction_start = "START TRANSACTION";
-//		if (access_mode == AccessMode::READ_ONLY) {
-//			transaction_start += " READ ONLY";
-//		}
-//		connection.Query(transaction_start);
-//		return connection.Query(query);
-//	}
-//	return connection.Query(query);
-//}
-
 ICTransaction &ICTransaction::Get(ClientContext &context, Catalog &catalog) {
 	return Transaction::Get(context, catalog).Cast<ICTransaction>();
 }

@@ -263,8 +263,6 @@ ICAPITableCredentials ICAPI::GetTableCredentials(const string &internal, const s
 		result.session_token = TryGetStrFromObject(aws_temp_credentials, "s3.session-token", false);
 	}
   return result;
-
-// throw std::runtime_error("No AWS credentials found for table");
 }
 
 string ICAPI::GetToken(string id, string secret, string endpoint) {
