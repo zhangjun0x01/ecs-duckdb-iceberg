@@ -35,7 +35,7 @@ static string certFileLocations[] = {
         "/etc/ssl/cert.pem"
 };
 
-const string ICAPI::API_VERSION_1 = "v1";
+const string ICRAPI::API_VERSION_1 = "v1";
 
 struct YyjsonDocDeleter {
     void operator()(yyjson_doc* doc) {
@@ -221,27 +221,27 @@ static yyjson_doc *api_result_to_doc(const string &api_result) {
 	return doc;
 }
 
-static string GetTableMetadata(const string &internal, const string &schema, const string &table, ICCredentials credentials) {
+static string GetTableMetadata(const string &internal, const string &schema, const string &table, ICRCredentials credentials) {
 	struct curl_slist *extra_headers = NULL;
 	extra_headers = curl_slist_append(extra_headers, "X-Iceberg-Access-Delegation: vended-credentials");
 	string api_result = GetRequest(
-		credentials.endpoint + ICAPI::GetOptionallyPrefixedURL(ICAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables/" + table,
+		credentials.endpoint + ICRAPI::GetOptionallyPrefixedURL(ICRAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables/" + table,
 		credentials.token,
 		extra_headers);
 	curl_slist_free_all(extra_headers);
 	return api_result;
 }
 
-void ICAPI::InitializeCurl() {
+void ICRAPI::InitializeCurl() {
 	SelectCurlCertPath();
 }
 
-vector<string> ICAPI::GetCatalogs(const string &catalog, ICCredentials credentials) {
+vector<string> ICRAPI::GetCatalogs(const string &catalog, ICRCredentials credentials) {
 	throw NotImplementedException("ICAPI::GetCatalogs");
 }
 
-static ICAPIColumnDefinition ParseColumnDefinition(yyjson_val *column_def) {
-	ICAPIColumnDefinition result;
+static ICRAPIColumnDefinition ParseColumnDefinition(yyjson_val *column_def) {
+	ICRAPIColumnDefinition result;
 	result.name = TryGetStrFromObject(column_def, "name");
 	result.type_text = TryGetStrFromObject(column_def, "type");
 	result.precision = (result.type_text == "decimal") ? TryGetNumFromObject(column_def, "type_precision") : -1;
@@ -250,7 +250,7 @@ static ICAPIColumnDefinition ParseColumnDefinition(yyjson_val *column_def) {
 	return result;
 }
 
-ICAPITableCredentials ICAPI::GetTableCredentials(const string &internal, const string &schema, const string &table, ICCredentials credentials) {
+ICAPITableCredentials ICRAPI::GetTableCredentials(const string &internal, const string &schema, const string &table, ICRCredentials credentials) {
 	ICAPITableCredentials result;
 	string api_result = GetTableMetadata(internal, schema, table, credentials);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
@@ -265,7 +265,7 @@ ICAPITableCredentials ICAPI::GetTableCredentials(const string &internal, const s
   return result;
 }
 
-string ICAPI::GetToken(string id, string secret, string endpoint) {
+string ICRAPI::GetToken(string id, string secret, string endpoint) {
 	string post_data = "grant_type=client_credentials&client_id=" + id + "&client_secret=" + secret + "&scope=PRINCIPAL_ROLE:ALL";
 	string api_result = PostRequest(endpoint + "/v1/oauth/tokens", post_data);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
@@ -273,7 +273,7 @@ string ICAPI::GetToken(string id, string secret, string endpoint) {
 	return TryGetStrFromObject(root, "access_token");
 }
 
-static void populateTableMetadata(ICAPITable &table, yyjson_val *metadata_root) {
+static void populateTableMetadata(ICRAPITable &table, yyjson_val *metadata_root) {
 	table.storage_location = TryGetStrFromObject(metadata_root, "metadata-location");
 	auto *metadata = yyjson_obj_get(metadata_root, "metadata");
 	//table_result.table_id = TryGetStrFromObject(metadata, "table-uuid");
@@ -302,8 +302,8 @@ static void populateTableMetadata(ICAPITable &table, yyjson_val *metadata_root) 
 	}
 }
 
-static ICAPITable createTable(const string &catalog, const string &schema, const string &table_name) { 
-	ICAPITable table_result;
+static ICRAPITable createTable(const string &catalog, const string &schema, const string &table_name) { 
+	ICRAPITable table_result;
 	table_result.catalog_name = catalog;
 	table_result.schema_name = schema;
 	table_result.name = table_name;
@@ -313,10 +313,10 @@ static ICAPITable createTable(const string &catalog, const string &schema, const
 	return table_result;
 }
 
-ICAPITable ICAPI::GetTable(
-	const string &catalog, const string &internal, const string &schema, const string &table_name, std::optional<ICCredentials> credentials) { 
+ICRAPITable ICRAPI::GetTable(
+	const string &catalog, const string &internal, const string &schema, const string &table_name, std::optional<ICRCredentials> credentials) { 
 	
-	ICAPITable table_result = createTable(catalog, schema, table_name);
+	ICRAPITable table_result = createTable(catalog, schema, table_name);
 	if (credentials) {
 		string result = GetTableMetadata(internal, schema, table_result.name, *credentials);
 		std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(result));
@@ -324,7 +324,7 @@ ICAPITable ICAPI::GetTable(
 		populateTableMetadata(table_result, metadata_root);
 	} else {
 		// Skip fetching metadata, we'll do it later when we access the table
-		ICAPIColumnDefinition col;
+		ICRAPIColumnDefinition col;
 		col.name = "__";
 		col.type_text = "int";
 		col.precision = -1;
@@ -336,7 +336,7 @@ ICAPITable ICAPI::GetTable(
 	return table_result;
 }
 
-string ICAPI::GetOptionallyPrefixedURL(const string &api_version, const string &prefix) {
+string ICRAPI::GetOptionallyPrefixedURL(const string &api_version, const string &prefix) {
   D_ASSERT((int32_t)api_version.find(std::string("/")) < 0 && (int32_t)prefix.find(std::string("/")) < 0);
 	if (prefix.empty()) {
 		return "/" + api_version + "/";
@@ -345,9 +345,9 @@ string ICAPI::GetOptionallyPrefixedURL(const string &api_version, const string &
 }
 
 // TODO: handle out-of-order columns using position property
-vector<ICAPITable> ICAPI::GetTables(const string &catalog, const string &internal, const string &schema, ICCredentials credentials) {
-	vector<ICAPITable> result;
-	string api_result = GetRequest(credentials.endpoint + GetOptionallyPrefixedURL(ICAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables", credentials.token);
+vector<ICRAPITable> ICRAPI::GetTables(const string &catalog, const string &internal, const string &schema, ICRCredentials credentials) {
+	vector<ICRAPITable> result;
+	string api_result = GetRequest(credentials.endpoint + GetOptionallyPrefixedURL(ICRAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables", credentials.token);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *tables = yyjson_obj_get(root, "identifiers");
@@ -361,17 +361,17 @@ vector<ICAPITable> ICAPI::GetTables(const string &catalog, const string &interna
 	return result;
 }
 
-vector<ICAPISchema> ICAPI::GetSchemas(const string &catalog, const string &internal, ICCredentials credentials) {
-	vector<ICAPISchema> result;
+vector<ICRAPISchema> ICRAPI::GetSchemas(const string &catalog, const string &internal, ICRCredentials credentials) {
+	vector<ICRAPISchema> result;
 	string api_result =
-	    GetRequest(credentials.endpoint + GetOptionallyPrefixedURL(ICAPI::API_VERSION_1, internal) + "namespaces", credentials.token);
+	    GetRequest(credentials.endpoint + GetOptionallyPrefixedURL(ICRAPI::API_VERSION_1, internal) + "namespaces", credentials.token);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *schemas = yyjson_obj_get(root, "namespaces");
 	size_t idx, max;
 	yyjson_val *schema;
 	yyjson_arr_foreach(schemas, idx, max, schema) {
-		ICAPISchema schema_result;
+		ICRAPISchema schema_result;
 		schema_result.catalog_name = catalog;
 		yyjson_val *value = yyjson_arr_get(schema, 0);
 		schema_result.schema_name = yyjson_get_str(value);
@@ -381,27 +381,27 @@ vector<ICAPISchema> ICAPI::GetSchemas(const string &catalog, const string &inter
 	return result;
 }
 
-ICAPISchema ICAPI::CreateSchema(const string &catalog, const string &internal, const string &schema, ICCredentials credentials) {
+ICRAPISchema ICRAPI::CreateSchema(const string &catalog, const string &internal, const string &schema, ICRCredentials credentials) {
 	string post_data = "{\"namespace\":[\"" + schema + "\"]}";
 	string api_result = PostRequest(
-		credentials.endpoint + GetOptionallyPrefixedURL(ICAPI::API_VERSION_1, internal) + "namespaces", post_data, "json", credentials.token);
+		credentials.endpoint + GetOptionallyPrefixedURL(ICRAPI::API_VERSION_1, internal) + "namespaces", post_data, "json", credentials.token);
 	api_result_to_doc(api_result);	// if the method returns, request was successful
 	
-	ICAPISchema schema_result;
+	ICRAPISchema schema_result;
 	schema_result.catalog_name = catalog;
 	schema_result.schema_name = schema; //yyjson_get_str(value);
 	return schema_result;
 }
 
-void ICAPI::DropSchema(const string &internal, const string &schema, ICCredentials credentials) {
+void ICRAPI::DropSchema(const string &internal, const string &schema, ICRCredentials credentials) {
 	string api_result = DeleteRequest(
-		credentials.endpoint + GetOptionallyPrefixedURL(ICAPI::API_VERSION_1, internal) + "namespaces/" + schema, credentials.token);
+		credentials.endpoint + GetOptionallyPrefixedURL(ICRAPI::API_VERSION_1, internal) + "namespaces/" + schema, credentials.token);
 	api_result_to_doc(api_result);	// if the method returns, request was successful
 }
 
-void ICAPI::DropTable(const string &catalog, const string &internal, const string &schema, string &table_name, ICCredentials credentials) {
+void ICRAPI::DropTable(const string &catalog, const string &internal, const string &schema, string &table_name, ICRCredentials credentials) {
 	string api_result = DeleteRequest(
-		credentials.endpoint + GetOptionallyPrefixedURL(ICAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables/" + table_name + "?purgeRequested=true",
+		credentials.endpoint + GetOptionallyPrefixedURL(ICRAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables/" + table_name + "?purgeRequested=true",
 		credentials.token);
 	api_result_to_doc(api_result);	// if the method returns, request was successful
 }
@@ -413,7 +413,7 @@ static std::string json_to_string(yyjson_mut_doc *doc, yyjson_write_flag flags =
     return json_str;
 }
 
-ICAPITable ICAPI::CreateTable(const string &catalog, const string &internal, const string &schema, ICCredentials credentials, CreateTableInfo *table_info) {
+ICRAPITable ICRAPI::CreateTable(const string &catalog, const string &internal, const string &schema, ICRCredentials credentials, CreateTableInfo *table_info) {
 	std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> dd(yyjson_mut_doc_new(NULL));
 	yyjson_mut_val *rr = yyjson_mut_obj(dd.get());
 	yyjson_mut_doc_set_root(dd.get(), rr);
@@ -445,12 +445,12 @@ ICAPITable ICAPI::CreateTable(const string &catalog, const string &internal, con
     yyjson_mut_obj_add_val(dd.get(), rr, "properties", props);
 	yyjson_mut_obj_add_str(dd.get(), props, "write.parquet.compression-codec", "snappy");
 
-	ICAPITable table_result = createTable(catalog, schema, table_info->table);
+	ICRAPITable table_result = createTable(catalog, schema, table_info->table);
 	string post_data = json_to_string(dd.get());	
 	struct curl_slist *extra_headers = NULL;
 	extra_headers = curl_slist_append(extra_headers, "X-Iceberg-Access-Delegation: vended-credentials");
 	string api_result = PostRequest(
-		credentials.endpoint + GetOptionallyPrefixedURL(ICAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables", post_data, "json", credentials.token, extra_headers);
+		credentials.endpoint + GetOptionallyPrefixedURL(ICRAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables", post_data, "json", credentials.token, extra_headers);
 	curl_slist_free_all(extra_headers);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());	

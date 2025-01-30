@@ -44,7 +44,7 @@ protected:
 	static void AddColumn(ClientContext &context, ICResult &result, ICTableInfo &table_info, idx_t column_offset = 0);
 
 private:
-	unique_ptr<CatalogEntry> _CreateCatalogEntry(ClientContext &context, ICAPITable table);
+	unique_ptr<CatalogEntry> _CreateCatalogEntry(ClientContext &context, ICRAPITable table);
 };
 
 

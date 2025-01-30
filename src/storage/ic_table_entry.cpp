@@ -40,7 +40,7 @@ void ICTableEntry::BindUpdateConstraints(Binder &binder, LogicalGet &, LogicalPr
 
 TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) {
 	auto &db = DatabaseInstance::GetDatabase(context);
-	auto &ic_catalog = catalog.Cast<ICCatalog>();
+	auto &ic_catalog = catalog.Cast<ICRCatalog>();
 
 	auto &parquet_function_set = ExtensionUtil::GetTableFunction(db, "parquet_scan");
 	auto parquet_scan_function = parquet_function_set.functions.GetFunctionByArguments(context, {LogicalType::VARCHAR});
@@ -58,7 +58,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	if (table_data->storage_location.find("file://") != 0) {
 		auto &secret_manager = SecretManager::Get(context);
 		// Get Credentials from ICAPI
-		auto table_credentials = ICAPI::GetTableCredentials(
+		auto table_credentials = ICRAPI::GetTableCredentials(
 			ic_catalog.internal_name, table_data->schema_name, table_data->name, ic_catalog.credentials);
 		// First check if table credentials are set (possible the IC catalog does not return credentials)
 		if (!table_credentials.key_id.empty()) {

@@ -5,9 +5,9 @@
 #include "duckdb/parser/parsed_data/create_table_info.hpp"
 
 namespace duckdb {
-struct ICCredentials;
+struct ICRCredentials;
 
-struct ICAPIColumnDefinition {
+struct ICRAPIColumnDefinition {
 	string name;
 	string type_text;
 	idx_t precision;
@@ -15,7 +15,7 @@ struct ICAPIColumnDefinition {
 	idx_t position;
 };
 
-struct ICAPITable {
+struct ICRAPITable {
 	string table_id;
 
 	string name;
@@ -25,10 +25,10 @@ struct ICAPITable {
 	string data_source_format;
 	string storage_location;
 
-	vector<ICAPIColumnDefinition> columns;
+	vector<ICRAPIColumnDefinition> columns;
 };
 
-struct ICAPISchema {
+struct ICRAPISchema {
 	string schema_name;
 	string catalog_name;
 };
@@ -39,7 +39,7 @@ struct ICAPITableCredentials {
 	string session_token;
 };
 
-class ICAPI {
+class ICRAPI {
 public:
 	static const string API_VERSION_1;
 
@@ -49,17 +49,17 @@ public:
 	// The {prefix} for a catalog is always optional according to the iceberg spec. So no need to
 	// add it if it is not defined.
 	static string GetOptionallyPrefixedURL(const string &api_version, const string &prefix);
-	static ICAPITableCredentials GetTableCredentials(const string &internal, const string &schema, const string &table, ICCredentials credentials);
-	static vector<string> GetCatalogs(const string &catalog, ICCredentials credentials);
-	static vector<ICAPITable> GetTables(const string &catalog, const string &internal, const string &schema, ICCredentials credentials);
-	static ICAPITable GetTable(const string &catalog, const string &internal, const string &schema, const string &table_name, std::optional<ICCredentials> credentials);
-	static vector<ICAPISchema> GetSchemas(const string &catalog, const string &internal, ICCredentials credentials);
-	static vector<ICAPITable> GetTablesInSchema(const string &catalog, const string &schema, ICCredentials credentials);
+	static ICAPITableCredentials GetTableCredentials(const string &internal, const string &schema, const string &table, ICRCredentials credentials);
+	static vector<string> GetCatalogs(const string &catalog, ICRCredentials credentials);
+	static vector<ICRAPITable> GetTables(const string &catalog, const string &internal, const string &schema, ICRCredentials credentials);
+	static ICRAPITable GetTable(const string &catalog, const string &internal, const string &schema, const string &table_name, std::optional<ICRCredentials> credentials);
+	static vector<ICRAPISchema> GetSchemas(const string &catalog, const string &internal, ICRCredentials credentials);
+	static vector<ICRAPITable> GetTablesInSchema(const string &catalog, const string &schema, ICRCredentials credentials);
 	static string GetToken(string id, string secret, string endpoint);
-	static ICAPISchema CreateSchema(const string &catalog, const string &internal, const string &schema, ICCredentials credentials);
-	static void DropSchema(const string &internal, const string &schema, ICCredentials credentials);
-	static ICAPITable CreateTable(const string &catalog, const string &internal, const string &schema, ICCredentials credentials, CreateTableInfo *table_info);
-	static void DropTable(const string &catalog, const string &internal, const string &schema, string &table_name, ICCredentials credentials);
+	static ICRAPISchema CreateSchema(const string &catalog, const string &internal, const string &schema, ICRCredentials credentials);
+	static void DropSchema(const string &internal, const string &schema, ICRCredentials credentials);
+	static ICRAPITable CreateTable(const string &catalog, const string &internal, const string &schema, ICRCredentials credentials, CreateTableInfo *table_info);
+	static void DropTable(const string &catalog, const string &internal, const string &schema, string &table_name, ICRCredentials credentials);
 };
 
 } // namespace duckdb

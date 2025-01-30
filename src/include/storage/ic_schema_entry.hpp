@@ -13,7 +13,7 @@ public:
 	ICSchemaEntry(Catalog &catalog, CreateSchemaInfo &info);
 	~ICSchemaEntry() override;
 
-	unique_ptr<ICAPISchema> schema_data;
+	unique_ptr<ICRAPISchema> schema_data;
 
 public:
 	optional_ptr<CatalogEntry> CreateTable(CatalogTransaction transaction, BoundCreateTableInfo &info) override;

@@ -42,7 +42,7 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &, Creat
 	}
 
 	// Get token from catalog
-	result->secret_map["token"] = ICAPI::GetToken(
+	result->secret_map["token"] = ICRAPI::GetToken(
 		result->secret_map["client_id"].ToString(), 
 		result->secret_map["client_secret"].ToString(),
 		result->secret_map["endpoint"].ToString());
@@ -80,7 +80,7 @@ unique_ptr<SecretEntry> GetSecret(ClientContext &context, const string &secret_n
 static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_info, ClientContext &context,
                                            AttachedDatabase &db, const string &name, AttachInfo &info,
                                            AccessMode access_mode) {
-	ICCredentials credentials;
+	ICRCredentials credentials;
 
 	// check if we have a secret provided
 	string secret_name;
@@ -131,12 +131,12 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 
 	// TODO: Check catalog with name actually exists!
 
-	return make_uniq<ICCatalog>(db, info.path, access_mode, credentials);
+	return make_uniq<ICRCatalog>(db, info.path, access_mode, credentials);
 }
 
 static unique_ptr<TransactionManager> CreateTransactionManager(StorageExtensionInfo *storage_info, AttachedDatabase &db,
                                                                Catalog &catalog) {
-	auto &ic_catalog = catalog.Cast<ICCatalog>();
+	auto &ic_catalog = catalog.Cast<ICRCatalog>();
 	return make_uniq<ICTransactionManager>(db, ic_catalog);
 }
 
@@ -168,7 +168,7 @@ static void LoadInternal(DatabaseInstance &instance) {
 		ExtensionUtil::RegisterFunction(instance, fun);
 	}
 
-	ICAPI::InitializeCurl();
+	ICRAPI::InitializeCurl();
 
 	SecretType secret_type;
 	secret_type.name = "iceberg";

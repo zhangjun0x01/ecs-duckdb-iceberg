@@ -9,7 +9,7 @@
 namespace duckdb {
 class ICSchemaEntry;
 
-struct ICCredentials {
+struct ICRCredentials {
 	string endpoint;
 	string client_id;
 	string client_secret;
@@ -19,23 +19,23 @@ struct ICCredentials {
 	string token;
 };
 
-class ICClearCacheFunction : public TableFunction {
+class ICRClearCacheFunction : public TableFunction {
 public:
-	ICClearCacheFunction();
+	ICRClearCacheFunction();
 
 	static void ClearCacheOnSetting(ClientContext &context, SetScope scope, Value &parameter);
 };
 
 
-class ICCatalog : public Catalog {
+class ICRCatalog : public Catalog {
 public:
-	explicit ICCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
-	                   ICCredentials credentials);
-	~ICCatalog();
+	explicit ICRCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
+	                   ICRCredentials credentials);
+	~ICRCatalog();
 
 	string internal_name;
 	AccessMode access_mode;
-	ICCredentials credentials;
+	ICRCredentials credentials;
 
 public:
 	void Initialize(bool load_builtin) override;

@@ -3,7 +3,7 @@
 
 namespace duckdb {
 
-ICTransactionManager::ICTransactionManager(AttachedDatabase &db_p, ICCatalog &ic_catalog)
+ICTransactionManager::ICTransactionManager(AttachedDatabase &db_p, ICRCatalog &ic_catalog)
     : TransactionManager(db_p), ic_catalog(ic_catalog) {
 }
 

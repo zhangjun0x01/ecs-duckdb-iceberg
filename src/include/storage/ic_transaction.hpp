@@ -4,7 +4,7 @@
 #include "duckdb/transaction/transaction.hpp"
 
 namespace duckdb {
-class ICCatalog;
+class ICRCatalog;
 class ICSchemaEntry;
 class ICTableEntry;
 
@@ -12,7 +12,7 @@ enum class ICTransactionState { TRANSACTION_NOT_YET_STARTED, TRANSACTION_STARTED
 
 class ICTransaction : public Transaction {
 public:
-	ICTransaction(ICCatalog &ic_catalog, TransactionManager &manager, ClientContext &context);
+	ICTransaction(ICRCatalog &ic_catalog, TransactionManager &manager, ClientContext &context);
 	~ICTransaction() override;
 
 	void Start();
