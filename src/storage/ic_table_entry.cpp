@@ -102,21 +102,21 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	auto table_ref = iceberg_scan_function.bind_replace(context, bind_input);
 
 	// 1) Create a Binder and bind the parser-level TableRef -> BoundTableRef
-    auto binder = Binder::CreateBinder(context);
-    auto bound_ref = binder->Bind(*table_ref);
+	auto binder = Binder::CreateBinder(context);
+	auto bound_ref = binder->Bind(*table_ref);
 
-    // 2) Create a logical plan from the bound reference
-    unique_ptr<LogicalOperator> logical_plan = binder->CreatePlan(*bound_ref);
+	// 2) Create a logical plan from the bound reference
+	unique_ptr<LogicalOperator> logical_plan = binder->CreatePlan(*bound_ref);
 
-    // 3) Recursively search the logical plan for a LogicalGet node
-    //    For a single table function, you often have just one operator: LogicalGet
-    LogicalOperator *op = logical_plan.get();
-    if (op->type != LogicalOperatorType::LOGICAL_GET) {
-        throw std::runtime_error("Expected a LogicalGet, but got something else!");
-    }
+	// 3) Recursively search the logical plan for a LogicalGet node
+	//    For a single table function, you often have just one operator: LogicalGet
+	LogicalOperator *op = logical_plan.get();
+	if (op->type != LogicalOperatorType::LOGICAL_GET) {
+	  throw std::runtime_error("Expected a LogicalGet, but got something else!");
+	}
 
-    // 4) Access the bind_data inside LogicalGet
-    auto &get = (LogicalGet &)*op;
+	// 4) Access the bind_data inside LogicalGet
+	auto &get = (LogicalGet &)*op;
 	bind_data = std::move(get.bind_data);
 
 	return parquet_scan_function;
