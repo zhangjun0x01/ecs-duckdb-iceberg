@@ -1,11 +1,10 @@
 #include "catalog_api.hpp"
 #include "catalog_utils.hpp"
-#include "storage/icr_catalog.hpp"
+#include "storage/irc_catalog.hpp"
 #include "yyjson.hpp"
 
 #include <curl/curl.h>
 #include <sys/stat.h>
-#include <iostream>
 #include <optional>
 
 using namespace duckdb_yyjson;

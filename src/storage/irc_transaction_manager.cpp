@@ -1,4 +1,4 @@
-#include "storage/ic_transaction_manager.hpp"
+#include "storage/irc_transaction_manager.hpp"
 #include "duckdb/main/attached_database.hpp"
 
 namespace duckdb {

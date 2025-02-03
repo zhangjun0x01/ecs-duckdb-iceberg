@@ -4,7 +4,7 @@
 #include "duckdb/catalog/catalog.hpp"
 #include "duckdb/function/table_function.hpp"
 #include "duckdb/common/enums/access_mode.hpp"
-#include "storage/ic_schema_set.hpp"
+#include "storage/irc_schema_set.hpp"
 
 namespace duckdb {
 class ICSchemaEntry;

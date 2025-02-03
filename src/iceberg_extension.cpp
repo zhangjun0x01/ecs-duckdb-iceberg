@@ -1,8 +1,8 @@
 #define DUCKDB_EXTENSION_MAIN
 
 #include "iceberg_extension.hpp"
-#include "storage/icr_catalog.hpp"
-#include "storage/ic_transaction_manager.hpp"
+#include "storage/irc_catalog.hpp"
+#include "storage/irc_transaction_manager.hpp"
 
 #include "duckdb.hpp"
 #include "duckdb/main/secret/secret_manager.hpp"

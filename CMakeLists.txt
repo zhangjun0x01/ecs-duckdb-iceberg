@@ -21,16 +21,16 @@ set(EXTENSION_SOURCES
     src/iceberg_functions/iceberg_snapshots.cpp
     src/iceberg_functions/iceberg_scan.cpp
     src/iceberg_functions/iceberg_metadata.cpp
-    src/storage/icr_catalog.cpp
-    src/storage/ic_catalog_set.cpp
-    src/storage/ic_clear_cache.cpp
-    src/storage/ic_schema_entry.cpp
-    src/storage/ic_schema_set.cpp
-    src/storage/ic_table_entry.cpp
-    src/storage/ic_table_set.cpp
-    src/storage/ic_transaction.cpp
-    src/storage/ic_transaction_manager.cpp
-    )
+    src/storage/irc_catalog.cpp
+    src/storage/irc_catalog_set.cpp
+    src/storage/irc_clear_cache.cpp
+    src/storage/irc_schema_entry.cpp
+    src/storage/irc_schema_set.cpp
+    src/storage/irc_table_entry.cpp
+    src/storage/irc_table_set.cpp
+    src/storage/irc_transaction.cpp
+    src/storage/irc_transaction_manager.cpp
+)
 
 add_library(${EXTENSION_NAME} STATIC ${EXTENSION_SOURCES})
 

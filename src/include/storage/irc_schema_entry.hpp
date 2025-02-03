@@ -3,7 +3,7 @@
 
 #include "catalog_api.hpp"
 #include "duckdb/catalog/catalog_entry/schema_catalog_entry.hpp"
-#include "storage/ic_table_set.hpp"
+#include "storage/irc_table_set.hpp"
 
 namespace duckdb {
 class ICTransaction;

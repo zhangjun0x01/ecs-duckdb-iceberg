@@ -2,9 +2,9 @@
 #include "duckdb/parser/parsed_data/create_schema_info.hpp"
 #include "duckdb/parser/parsed_data/drop_info.hpp"
 #include "duckdb/catalog/catalog.hpp"
-#include "storage/icr_catalog.hpp"
-#include "storage/ic_schema_set.hpp"
-#include "storage/ic_transaction.hpp"
+#include "storage/irc_catalog.hpp"
+#include "storage/irc_schema_set.hpp"
+#include "storage/irc_transaction.hpp"
 
 namespace duckdb {
 

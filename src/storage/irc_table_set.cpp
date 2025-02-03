@@ -1,9 +1,9 @@
 #include "catalog_api.hpp"
 #include "catalog_utils.hpp"
 
-#include "storage/icr_catalog.hpp"
-#include "storage/ic_table_set.hpp"
-#include "storage/ic_transaction.hpp"
+#include "storage/irc_catalog.hpp"
+#include "storage/irc_table_set.hpp"
+#include "storage/irc_transaction.hpp"
 #include "duckdb/parser/parsed_data/create_table_info.hpp"
 #include "duckdb/parser/constraints/not_null_constraint.hpp"
 #include "duckdb/parser/constraints/unique_constraint.hpp"
@@ -13,7 +13,7 @@
 #include "duckdb/catalog/dependency_list.hpp"
 #include "duckdb/parser/parsed_data/create_table_info.hpp"
 #include "duckdb/parser/constraints/list.hpp"
-#include "storage/ic_schema_entry.hpp"
+#include "storage/irc_schema_entry.hpp"
 #include "duckdb/parser/parser.hpp"
 
 namespace duckdb {

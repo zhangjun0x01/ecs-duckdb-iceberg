@@ -1,8 +1,8 @@
 
 #pragma once
 
-#include "storage/ic_catalog_set.hpp"
-#include "storage/ic_table_entry.hpp"
+#include "storage/irc_catalog_set.hpp"
+#include "storage/irc_table_entry.hpp"
 
 namespace duckdb {
 struct CreateTableInfo;
