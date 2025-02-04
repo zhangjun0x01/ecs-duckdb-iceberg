@@ -28,7 +28,7 @@ static void ClearUCCaches(ClientContext &context) {
 		if (catalog.GetCatalogType() != "iceberg") {
 			continue;
 		}
-		catalog.Cast<ICRCatalog>().ClearCache();
+		catalog.Cast<IRCatalog>().ClearCache();
 	}
 }
 

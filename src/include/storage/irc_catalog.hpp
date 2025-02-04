@@ -27,11 +27,11 @@ public:
 };
 
 
-class ICRCatalog : public Catalog {
+class IRCatalog : public Catalog {
 public:
-	explicit ICRCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
+	explicit IRCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
 	                   ICRCredentials credentials);
-	~ICRCatalog();
+	~IRCatalog();
 
 	string internal_name;
 	AccessMode access_mode;

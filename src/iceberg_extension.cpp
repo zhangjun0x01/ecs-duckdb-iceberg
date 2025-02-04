@@ -131,12 +131,12 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 
 	// TODO: Check catalog with name actually exists!
 
-	return make_uniq<ICRCatalog>(db, info.path, access_mode, credentials);
+	return make_uniq<IRCatalog>(db, info.path, access_mode, credentials);
 }
 
 static unique_ptr<TransactionManager> CreateTransactionManager(StorageExtensionInfo *storage_info, AttachedDatabase &db,
                                                                Catalog &catalog) {
-	auto &ic_catalog = catalog.Cast<ICRCatalog>();
+	auto &ic_catalog = catalog.Cast<IRCatalog>();
 	return make_uniq<ICTransactionManager>(db, ic_catalog);
 }
 

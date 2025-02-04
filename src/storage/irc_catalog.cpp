@@ -8,18 +8,18 @@
 
 namespace duckdb {
 
-ICRCatalog::ICRCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
+IRCatalog::IRCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
                      ICRCredentials credentials)
     : Catalog(db_p), internal_name(internal_name), access_mode(access_mode), credentials(std::move(credentials)),
       schemas(*this) {
 }
 
-ICRCatalog::~ICRCatalog() = default;
+IRCatalog::~IRCatalog() = default;
 
-void ICRCatalog::Initialize(bool load_builtin) {
+void IRCatalog::Initialize(bool load_builtin) {
 }
 
-optional_ptr<CatalogEntry> ICRCatalog::CreateSchema(CatalogTransaction transaction, CreateSchemaInfo &info) {
+optional_ptr<CatalogEntry> IRCatalog::CreateSchema(CatalogTransaction transaction, CreateSchemaInfo &info) {
 	if (info.on_conflict == OnCreateConflict::REPLACE_ON_CONFLICT) {
 		DropInfo try_drop;
 		try_drop.type = CatalogType::SCHEMA_ENTRY;
@@ -31,15 +31,15 @@ optional_ptr<CatalogEntry> ICRCatalog::CreateSchema(CatalogTransaction transacti
 	return schemas.CreateSchema(transaction.GetContext(), info);
 }
 
-void ICRCatalog::DropSchema(ClientContext &context, DropInfo &info) {
+void IRCatalog::DropSchema(ClientContext &context, DropInfo &info) {
 	return schemas.DropSchema(context, info);
 }
 
-void ICRCatalog::ScanSchemas(ClientContext &context, std::function<void(SchemaCatalogEntry &)> callback) {
+void IRCatalog::ScanSchemas(ClientContext &context, std::function<void(SchemaCatalogEntry &)> callback) {
 	schemas.Scan(context, [&](CatalogEntry &schema) { callback(schema.Cast<ICSchemaEntry>()); });
 }
 
-optional_ptr<SchemaCatalogEntry> ICRCatalog::GetSchema(CatalogTransaction transaction, const string &schema_name,
+optional_ptr<SchemaCatalogEntry> IRCatalog::GetSchema(CatalogTransaction transaction, const string &schema_name,
                                                       OnEntryNotFound if_not_found, QueryErrorContext error_context) {
 	if (schema_name == DEFAULT_SCHEMA) {
 		if (default_schema.empty()) {
@@ -55,15 +55,15 @@ optional_ptr<SchemaCatalogEntry> ICRCatalog::GetSchema(CatalogTransaction transa
 	return reinterpret_cast<SchemaCatalogEntry *>(entry.get());
 }
 
-bool ICRCatalog::InMemory() {
+bool IRCatalog::InMemory() {
 	return false;
 }
 
-string ICRCatalog::GetDBPath() {
+string IRCatalog::GetDBPath() {
 	return internal_name;
 }
 
-DatabaseSize ICRCatalog::GetDatabaseSize(ClientContext &context) {
+DatabaseSize IRCatalog::GetDatabaseSize(ClientContext &context) {
 	if (default_schema.empty()) {
 		throw InvalidInputException("Attempting to fetch the database size - but no database was provided "
 		                            "in the connection string");
@@ -72,27 +72,27 @@ DatabaseSize ICRCatalog::GetDatabaseSize(ClientContext &context) {
 	return size;
 }
 
-void ICRCatalog::ClearCache() {
+void IRCatalog::ClearCache() {
 	schemas.ClearEntries();
 }
 
-unique_ptr<PhysicalOperator> ICRCatalog::PlanInsert(ClientContext &context, LogicalInsert &op,
+unique_ptr<PhysicalOperator> IRCatalog::PlanInsert(ClientContext &context, LogicalInsert &op,
                                                    unique_ptr<PhysicalOperator> plan) {
 	throw NotImplementedException("ICCatalog PlanInsert");
 }
-unique_ptr<PhysicalOperator> ICRCatalog::PlanCreateTableAs(ClientContext &context, LogicalCreateTable &op,
+unique_ptr<PhysicalOperator> IRCatalog::PlanCreateTableAs(ClientContext &context, LogicalCreateTable &op,
                                                           unique_ptr<PhysicalOperator> plan) {
 	throw NotImplementedException("ICCatalog PlanCreateTableAs");
 }
-unique_ptr<PhysicalOperator> ICRCatalog::PlanDelete(ClientContext &context, LogicalDelete &op,
+unique_ptr<PhysicalOperator> IRCatalog::PlanDelete(ClientContext &context, LogicalDelete &op,
                                                    unique_ptr<PhysicalOperator> plan) {
 	throw NotImplementedException("ICCatalog PlanDelete");
 }
-unique_ptr<PhysicalOperator> ICRCatalog::PlanUpdate(ClientContext &context, LogicalUpdate &op,
+unique_ptr<PhysicalOperator> IRCatalog::PlanUpdate(ClientContext &context, LogicalUpdate &op,
                                                    unique_ptr<PhysicalOperator> plan) {
 	throw NotImplementedException("ICCatalog PlanUpdate");
 }
-unique_ptr<LogicalOperator> ICRCatalog::BindCreateIndex(Binder &binder, CreateStatement &stmt, TableCatalogEntry &table,
+unique_ptr<LogicalOperator> IRCatalog::BindCreateIndex(Binder &binder, CreateStatement &stmt, TableCatalogEntry &table,
                                                        unique_ptr<LogicalOperator> plan) {
 	throw NotImplementedException("ICCatalog BindCreateIndex");
 }

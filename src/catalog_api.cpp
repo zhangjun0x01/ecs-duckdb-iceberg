@@ -255,7 +255,7 @@ ICAPITableCredentials ICRAPI::GetTableCredentials(const string &internal, const 
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *aws_temp_credentials = yyjson_obj_get(root, "config");
-  auto credential_size = yyjson_obj_size(aws_temp_credentials);
+	auto credential_size = yyjson_obj_size(aws_temp_credentials);
 	if (aws_temp_credentials && credential_size > 0) {
 		result.key_id = TryGetStrFromObject(aws_temp_credentials, "s3.access-key-id", false);
 		result.secret = TryGetStrFromObject(aws_temp_credentials, "s3.secret-access-key",  false);

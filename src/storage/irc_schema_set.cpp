@@ -23,7 +23,7 @@ void ICSchemaSet::LoadEntries(ClientContext &context) {
 		return;
 	}
 
-	auto &ic_catalog = catalog.Cast<ICRCatalog>();
+	auto &ic_catalog = catalog.Cast<IRCatalog>();
 	auto schemas = ICRAPI::GetSchemas(catalog.GetName(), ic_catalog.internal_name, ic_catalog.credentials);
 	for (const auto &schema : schemas) {
 		CreateSchemaInfo info;
@@ -40,7 +40,7 @@ void ICSchemaSet::FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &en
 }
 
 optional_ptr<CatalogEntry> ICSchemaSet::CreateSchema(ClientContext &context, CreateSchemaInfo &info) {
-	auto &ic_catalog = catalog.Cast<ICRCatalog>();
+	auto &ic_catalog = catalog.Cast<IRCatalog>();
 	auto schema = ICRAPI::CreateSchema(catalog.GetName(), ic_catalog.internal_name, info.schema, ic_catalog.credentials);
 	auto schema_entry = make_uniq<ICSchemaEntry>(catalog, info);
 	schema_entry->schema_data = make_uniq<ICRAPISchema>(schema);
@@ -48,7 +48,7 @@ optional_ptr<CatalogEntry> ICSchemaSet::CreateSchema(ClientContext &context, Cre
 }
 
 void ICSchemaSet::DropSchema(ClientContext &context, DropInfo &info) {
-	auto &ic_catalog = catalog.Cast<ICRCatalog>();
+	auto &ic_catalog = catalog.Cast<IRCatalog>();
 	ICRAPI::DropSchema(ic_catalog.internal_name, info.name, ic_catalog.credentials);
 	DropEntry(context, info);
 }
