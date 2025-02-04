@@ -11,13 +11,6 @@ namespace duckdb {
 ICSchemaSet::ICSchemaSet(Catalog &catalog) : ICCatalogSet(catalog) {
 }
 
-static bool IsInternalTable(const string &catalog, const string &schema) {
-	if (schema == "information_schema") {
-		return true;
-	}
-	return false;
-}
-
 void ICSchemaSet::LoadEntries(ClientContext &context) {
 	if (!entries.empty()) {
 		return;
@@ -28,7 +21,7 @@ void ICSchemaSet::LoadEntries(ClientContext &context) {
 	for (const auto &schema : schemas) {
 		CreateSchemaInfo info;
 		info.schema = schema.schema_name;
-		info.internal = IsInternalTable(schema.catalog_name, schema.schema_name);
+		info.internal = false;
 		auto schema_entry = make_uniq<ICSchemaEntry>(catalog, info);
 		schema_entry->schema_data = make_uniq<ICRAPISchema>(schema);
 		CreateEntry(std::move(schema_entry));
