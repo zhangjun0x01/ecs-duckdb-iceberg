@@ -37,12 +37,12 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &, Creat
 				lower_name == "aws_region") {
 			result->secret_map[lower_name] = named_param.second.ToString();
 		} else {
-			throw InternalException("Unknown named parameter passed to CreateUCSecretFunction: " + lower_name);
+			throw InternalException("Unknown named parameter passed to CreateIRCSecretFunction: " + lower_name);
 		}
 	}
 
 	// Get token from catalog
-	result->secret_map["token"] = ICRAPI::GetToken(
+	result->secret_map["token"] = IRCAPI::GetToken(
 		result->secret_map["client_id"].ToString(), 
 		result->secret_map["client_secret"].ToString(),
 		result->secret_map["endpoint"].ToString());
@@ -80,7 +80,7 @@ unique_ptr<SecretEntry> GetSecret(ClientContext &context, const string &secret_n
 static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_info, ClientContext &context,
                                            AttachedDatabase &db, const string &name, AttachInfo &info,
                                            AccessMode access_mode) {
-	ICRCredentials credentials;
+	IRCCredentials credentials;
 
 	// check if we have a secret provided
 	string secret_name;
@@ -168,7 +168,7 @@ static void LoadInternal(DatabaseInstance &instance) {
 		ExtensionUtil::RegisterFunction(instance, fun);
 	}
 
-	ICRAPI::InitializeCurl();
+	IRCAPI::InitializeCurl();
 
 	SecretType secret_type;
 	secret_type.name = "iceberg";

@@ -20,7 +20,7 @@ static unique_ptr<FunctionData> ClearCacheBind(ClientContext &context, TableFunc
 	return std::move(result);
 }
 
-static void ClearUCCaches(ClientContext &context) {
+static void ClearIRCCaches(ClientContext &context) {
 	auto databases = DatabaseManager::Get(context).GetDatabases(context);
 	for (auto &db_ref : databases) {
 		auto &db = db_ref.get();
@@ -37,12 +37,12 @@ static void ClearCacheFunction(ClientContext &context, TableFunctionInput &data_
 	if (data.finished) {
 		return;
 	}
-	ClearUCCaches(context);
+	ClearIRCCaches(context);
 	data.finished = true;
 }
 
 void ICRClearCacheFunction::ClearCacheOnSetting(ClientContext &context, SetScope scope, Value &parameter) {
-	ClearUCCaches(context);
+	ClearIRCCaches(context);
 }
 
 ICRClearCacheFunction::ICRClearCacheFunction() : TableFunction("pc_clear_cache", {}, ClearCacheFunction, ClearCacheBind) {

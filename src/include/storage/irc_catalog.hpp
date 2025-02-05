@@ -9,7 +9,7 @@
 namespace duckdb {
 class ICSchemaEntry;
 
-struct ICRCredentials {
+struct IRCCredentials {
 	string endpoint;
 	string client_id;
 	string client_secret;
@@ -30,12 +30,12 @@ public:
 class IRCatalog : public Catalog {
 public:
 	explicit IRCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
-	                   ICRCredentials credentials);
+	                   IRCCredentials credentials);
 	~IRCatalog();
 
 	string internal_name;
 	AccessMode access_mode;
-	ICRCredentials credentials;
+	IRCCredentials credentials;
 
 public:
 	void Initialize(bool load_builtin) override;

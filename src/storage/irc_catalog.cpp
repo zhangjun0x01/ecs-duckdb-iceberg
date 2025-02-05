@@ -9,7 +9,7 @@
 namespace duckdb {
 
 IRCatalog::IRCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
-                     ICRCredentials credentials)
+                     IRCCredentials credentials)
     : Catalog(db_p), internal_name(internal_name), access_mode(access_mode), credentials(std::move(credentials)),
       schemas(*this) {
 }

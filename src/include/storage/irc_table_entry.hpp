@@ -30,7 +30,7 @@ public:
 	ICTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, CreateTableInfo &info);
 	ICTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, ICTableInfo &info);
 
-	unique_ptr<ICRAPITable> table_data;
+	unique_ptr<IRCAPITable> table_data;
 
 public:
 	unique_ptr<BaseStatistics> GetStatistics(ClientContext &context, column_t column_id) override;

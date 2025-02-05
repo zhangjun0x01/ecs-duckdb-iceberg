@@ -18,7 +18,7 @@ struct ICType {
 
 class ICUtils {
 public:
-	static LogicalType ToUCType(const LogicalType &input);
+	static LogicalType ToICType(const LogicalType &input);
 	static LogicalType TypeToLogicalType(ClientContext &context, const string &columnDefinition);
 	static string TypeToString(const LogicalType &input);
 	static string LogicalToIcebergType(const LogicalType &input);

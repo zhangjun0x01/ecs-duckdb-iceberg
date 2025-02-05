@@ -193,7 +193,7 @@ LogicalType ICUtils::TypeToLogicalType(ClientContext &context, const string &typ
 	return LogicalType::VARCHAR;
 }
 
-LogicalType ICUtils::ToUCType(const LogicalType &input) {
+LogicalType ICUtils::ToICType(const LogicalType &input) {
 	// todo do we need this mapping?
 	throw NotImplementedException("ToUCType not yet implemented");
 	switch (input.id()) {
