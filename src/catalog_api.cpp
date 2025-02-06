@@ -381,24 +381,27 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(const string &catalog, const string &int
 }
 
 IRCAPISchema IRCAPI::CreateSchema(const string &catalog, const string &internal, const string &schema, IRCCredentials credentials) {
-	string post_data = "{\"namespace\":[\"" + schema + "\"]}";
-	string api_result = PostRequest(
-		credentials.endpoint + GetOptionallyPrefixedURL(IRCAPI::API_VERSION_1, internal) + "namespaces", post_data, "json", credentials.token);
-	api_result_to_doc(api_result);	// if the method returns, request was successful
-	
-	IRCAPISchema schema_result;
-	schema_result.catalog_name = catalog;
-	schema_result.schema_name = schema; //yyjson_get_str(value);
-	return schema_result;
+	throw NotImplementedException("IRCAPI::Create Schema not Implemented");
+	// string post_data = "{\"namespace\":[\"" + schema + "\"]}";
+	// string api_result = PostRequest(
+	// 	credentials.endpoint + GetOptionallyPrefixedURL(IRCAPI::API_VERSION_1, internal) + "namespaces", post_data, "json", credentials.token);
+	// api_result_to_doc(api_result);	// if the method returns, request was successful
+	//
+	// IRCAPISchema schema_result;
+	// schema_result.catalog_name = catalog;
+	// schema_result.schema_name = schema; //yyjson_get_str(value);
+	// return schema_result;
 }
 
 void IRCAPI::DropSchema(const string &internal, const string &schema, IRCCredentials credentials) {
+	throw NotImplementedException("IRCAPI Drop Schema not Implemented");
 	string api_result = DeleteRequest(
 		credentials.endpoint + GetOptionallyPrefixedURL(IRCAPI::API_VERSION_1, internal) + "namespaces/" + schema, credentials.token);
 	api_result_to_doc(api_result);	// if the method returns, request was successful
 }
 
 void IRCAPI::DropTable(const string &catalog, const string &internal, const string &schema, string &table_name, IRCCredentials credentials) {
+	throw NotImplementedException("IRCAPI Drop Table not Implemented");
 	string api_result = DeleteRequest(
 		credentials.endpoint + GetOptionallyPrefixedURL(IRCAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables/" + table_name + "?purgeRequested=true",
 		credentials.token);
@@ -413,6 +416,7 @@ static std::string json_to_string(yyjson_mut_doc *doc, yyjson_write_flag flags =
 }
 
 IRCAPITable IRCAPI::CreateTable(const string &catalog, const string &internal, const string &schema, IRCCredentials credentials, CreateTableInfo *table_info) {
+	throw NotImplementedException("IRCAPI Create Table not Implemented");
 	std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> dd(yyjson_mut_doc_new(NULL));
 	yyjson_mut_val *rr = yyjson_mut_obj(dd.get());
 	yyjson_mut_doc_set_root(dd.get(), rr);
