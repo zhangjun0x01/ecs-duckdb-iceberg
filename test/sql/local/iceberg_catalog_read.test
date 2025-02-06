@@ -1,4 +1,4 @@
-# name: test/sql/iceberg_catalog_read.test
+# name: test/sql/local/iceberg_catalog_read.test
 # description: test integration with iceberg catalog read
 # group: [iceberg]
 
