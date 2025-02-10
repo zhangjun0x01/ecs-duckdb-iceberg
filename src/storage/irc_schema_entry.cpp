@@ -28,6 +28,7 @@ ICTransaction &GetUCTransaction(CatalogTransaction transaction) {
 }
 
 optional_ptr<CatalogEntry> ICSchemaEntry::CreateTable(CatalogTransaction transaction, BoundCreateTableInfo &info) {
+	throw NotImplementedException("Create Table");
 	auto &base_info = info.Base();
 	auto table_name = base_info.table;
 	if (base_info.on_conflict == OnCreateConflict::REPLACE_ON_CONFLICT) {
@@ -37,6 +38,7 @@ optional_ptr<CatalogEntry> ICSchemaEntry::CreateTable(CatalogTransaction transac
 }
 
 void ICSchemaEntry::DropEntry(ClientContext &context, DropInfo &info) {
+	throw NotImplementedException("Drop Entry");
 	if (info.type != CatalogType::TABLE_ENTRY) {
 		throw BinderException("Expecting table entry");
 	}
@@ -60,14 +62,15 @@ void ICUnqualifyColumnRef(ParsedExpression &expr) {
 
 optional_ptr<CatalogEntry> ICSchemaEntry::CreateIndex(CatalogTransaction transaction, CreateIndexInfo &info,
                                                       TableCatalogEntry &table) {
-	throw NotImplementedException("CreateIndex");
+	throw NotImplementedException("Create Index");
 }
 
 string GetUCCreateView(CreateViewInfo &info) {
-	throw NotImplementedException("GetCreateView");
+	throw NotImplementedException("Get Create View");
 }
 
 optional_ptr<CatalogEntry> ICSchemaEntry::CreateView(CatalogTransaction transaction, CreateViewInfo &info) {
+	throw NotImplementedException("Create View");
 	if (info.sql.empty()) {
 		throw BinderException("Cannot create view that originated from an "
 		                      "empty SQL statement");
@@ -82,7 +85,7 @@ optional_ptr<CatalogEntry> ICSchemaEntry::CreateView(CatalogTransaction transact
 			throw NotImplementedException("REPLACE ON CONFLICT in CreateView");
 		}
 	}
-	auto &ic_transaction = GetUCTransaction(transaction);
+	// auto &ic_transaction = GetUCTransaction(transaction);
 	//	ic_transaction.Query(GetUCCreateView(info));
 	return tables.RefreshTable(transaction.GetContext(), info.view_name);
 }
@@ -115,6 +118,7 @@ optional_ptr<CatalogEntry> ICSchemaEntry::CreateCollation(CatalogTransaction tra
 }
 
 void ICSchemaEntry::Alter(CatalogTransaction transaction, AlterInfo &info) {
+	throw NotImplementedException("Alter Schema Entry");
 	if (info.type != AlterType::ALTER_TABLE) {
 		throw BinderException("Only altering tables is supported for now");
 	}
