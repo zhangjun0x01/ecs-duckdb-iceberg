@@ -423,7 +423,7 @@ IRCAPITable IRCAPI::CreateTable(const string &catalog, const string &internal, c
 	yyjson_mut_obj_add_str(dd.get(), rr, "name", table_info->table.c_str());
 
 	yyjson_mut_val *sch = yyjson_mut_obj(dd.get());
-    yyjson_mut_obj_add_val(dd.get(), rr, "schema", sch);
+	yyjson_mut_obj_add_val(dd.get(), rr, "schema", sch);
 	yyjson_mut_obj_add_str(dd.get(), sch, "type", "struct");
 
 	yyjson_mut_val *fields = yyjson_mut_arr(dd.get());
@@ -445,7 +445,7 @@ IRCAPITable IRCAPI::CreateTable(const string &catalog, const string &internal, c
 	}
 
 	yyjson_mut_val *props = yyjson_mut_obj(dd.get());
-    yyjson_mut_obj_add_val(dd.get(), rr, "properties", props);
+	yyjson_mut_obj_add_val(dd.get(), rr, "properties", props);
 	yyjson_mut_obj_add_str(dd.get(), props, "write.parquet.compression-codec", "snappy");
 
 	IRCAPITable table_result = createTable(catalog, schema, table_info->table);
