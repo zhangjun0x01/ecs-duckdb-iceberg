@@ -31,10 +31,10 @@ void ICTransactionManager::RollbackTransaction(Transaction &transaction) {
 	transactions.erase(transaction);
 }
 
-// void ICTransactionManager::Checkpoint(ClientContext &context, bool force) {
-// 	auto &transaction = ICTransaction::Get(context, db.GetCatalog());
-// 	auto &db = transaction.GetConnection();
-// 	db.Execute("CHECKPOINT");
-// }
+void ICTransactionManager::Checkpoint(ClientContext &context, bool force) {
+	auto &transaction = ICTransaction::Get(context, db.GetCatalog());
+	// auto &db = transaction.GetConnection();
+	// db.Execute("CHECKPOINT");
+}
 
 } // namespace duckdb

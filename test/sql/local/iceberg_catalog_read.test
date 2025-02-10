@@ -95,12 +95,12 @@ Create table my_datalake.default.new_table (a int, b varchar);
 <REGEX>:.*Not implemented Error.*
 
 statement error
-Alter table my_datalake.default.table_more_deletes add column new_column INTEGER default 10;
+Alter table my_datalake.default.table_mor_deletes add column new_column INTEGER default 10;
 ----
 <REGEX>:.*Not implemented Error.*
 
 statement error
-Drop table my_datalake.default.table_more_deletes;
+Drop table my_datalake.default.table_mor_deletes;
 ----
 <REGEX>:.*Not implemented Error.*
 

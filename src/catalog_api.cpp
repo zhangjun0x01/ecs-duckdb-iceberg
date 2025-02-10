@@ -90,7 +90,11 @@ static uint64_t TryGetNumFromObject(yyjson_val *obj, const string &field, bool f
 	return TemplatedTryGetYYJson<uint64_t, YYJSON_TYPE_NUM, yyjson_get_uint>(obj, field, default_val,
 	                                                                                        fail_on_missing);
 }
-
+static bool TryGetBoolFromObject(yyjson_val *obj, const string &field, bool fail_on_missing = false,
+								 bool default_val = false) {
+	return TemplatedTryGetYYJson<bool, YYJSON_TYPE_BOOL, yyjson_get_bool>(obj, field, default_val,
+																						 fail_on_missing);
+}
 static string TryGetStrFromObject(yyjson_val *obj, const string &field, bool fail_on_missing = true,
                                   const char *default_val = "") {
 	return TemplatedTryGetYYJson<const char *, YYJSON_TYPE_STR, yyjson_get_str>(obj, field, default_val,
