@@ -109,12 +109,17 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	// 3) Recursively search the logical plan for a LogicalGet node
 	//    For a single table function, you often have just one operator: LogicalGet
 	LogicalOperator *op = logical_plan.get();
-	if (op->type != LogicalOperatorType::LOGICAL_GET) {
-	  throw std::runtime_error("Expected a LogicalGet, but got something else!");
+	switch (op->type) {
+	case LogicalOperatorType::LOGICAL_PROJECTION:
+		throw NotImplementedException("Iceberg scans with point deletes not supported");
+	case LogicalOperatorType::LOGICAL_GET:
+		break;
+	default:
+		throw InternalException("Unsupported logical operator");
 	}
 
 	// 4) Access the bind_data inside LogicalGet
-	auto &get = (LogicalGet &)*op;
+	auto &get = op->Cast<LogicalGet>();
 	bind_data = std::move(get.bind_data);
 
 	return parquet_scan_function;
