@@ -1,17 +1,27 @@
 
-set -ex
+if test ! -f "./scripts/docker-compose.yml"
+then
+  # in CI
+  echo "Please run from duckdb root."
+  exit 1
+fi
+
+# cd into scripts where docker-compose file is.
+cd scripts
+
+# need to have this happen in the background
+set -exg
 
 docker-compose kill
 docker-compose rm -f
-docker-compose up -d
-docker-compose logs -f mc
+docker-compose up --detach
 
 pip3 install -r requirements.txt
 
 python3 provision.py
 
 # Would be nice to have rest support in there :)
-UNPARTITIONED_TABLE_PATH=$(curl -s http://127.0.0.1:8181/v1/namespaces/default/tables/table_unpartitioned | jq -r '."metadata-location"')
+UNPARTITIONED_TABLE_PATH=$(curl -s http://127.0.0.1:8181/v1/namespaces/default/tables/table_mor_deletes | jq -r '."metadata-location"')
 
 SQL=$(cat <<-END
 
@@ -33,6 +43,4 @@ if test -f "../build/release/duckdb"
 then
   # in CI
   ../build/release/duckdb -s "$SQL"
-else
-  duckdb -s "$SQL"
 fi
