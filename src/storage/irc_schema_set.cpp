@@ -8,10 +8,10 @@
 
 namespace duckdb {
 
-ICSchemaSet::ICSchemaSet(Catalog &catalog) : ICCatalogSet(catalog) {
+IRCSchemaSet::IRCSchemaSet(Catalog &catalog) : IRCCatalogSet(catalog) {
 }
 
-void ICSchemaSet::LoadEntries(ClientContext &context) {
+void IRCSchemaSet::LoadEntries(ClientContext &context) {
 	if (!entries.empty()) {
 		return;
 	}
@@ -22,25 +22,25 @@ void ICSchemaSet::LoadEntries(ClientContext &context) {
 		CreateSchemaInfo info;
 		info.schema = schema.schema_name;
 		info.internal = false;
-		auto schema_entry = make_uniq<ICSchemaEntry>(catalog, info);
+		auto schema_entry = make_uniq<IRCSchemaEntry>(catalog, info);
 		schema_entry->schema_data = make_uniq<IRCAPISchema>(schema);
 		CreateEntry(std::move(schema_entry));
 	}
 }
 
-void ICSchemaSet::FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &entry) {
+void IRCSchemaSet::FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &entry) {
 	// Nothing to do
 }
 
-optional_ptr<CatalogEntry> ICSchemaSet::CreateSchema(ClientContext &context, CreateSchemaInfo &info) {
+optional_ptr<CatalogEntry> IRCSchemaSet::CreateSchema(ClientContext &context, CreateSchemaInfo &info) {
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
 	auto schema = IRCAPI::CreateSchema(catalog.GetName(), ic_catalog.internal_name, info.schema, ic_catalog.credentials);
-	auto schema_entry = make_uniq<ICSchemaEntry>(catalog, info);
+	auto schema_entry = make_uniq<IRCSchemaEntry>(catalog, info);
 	schema_entry->schema_data = make_uniq<IRCAPISchema>(schema);
 	return CreateEntry(std::move(schema_entry));
 }
 
-void ICSchemaSet::DropSchema(ClientContext &context, DropInfo &info) {
+void IRCSchemaSet::DropSchema(ClientContext &context, DropInfo &info) {
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
 	IRCAPI::DropSchema(ic_catalog.internal_name, info.name, ic_catalog.credentials);
 	DropEntry(context, info);

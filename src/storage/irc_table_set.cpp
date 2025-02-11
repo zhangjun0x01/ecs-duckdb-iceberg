@@ -18,7 +18,7 @@
 
 namespace duckdb {
 
-ICTableSet::ICTableSet(ICSchemaEntry &schema) : ICInSchemaSet(schema) {
+ICTableSet::ICTableSet(IRCSchemaEntry &schema) : ICInSchemaSet(schema) {
 }
 
 static ColumnDefinition CreateColumnDefinition(ClientContext &context, IRCAPIColumnDefinition &coldef) {
@@ -73,7 +73,7 @@ optional_ptr<CatalogEntry> ICTableSet::RefreshTable(ClientContext &context, cons
 	return table_ptr;
 }
 
-unique_ptr<ICTableInfo> ICTableSet::GetTableInfo(ClientContext &context, ICSchemaEntry &schema,
+unique_ptr<ICTableInfo> ICTableSet::GetTableInfo(ClientContext &context, IRCSchemaEntry &schema,
                                                  const string &table_name) {
 	throw NotImplementedException("ICTableSet::GetTableInfo");
 }

@@ -5,8 +5,8 @@
 #include "catalog_api.hpp"
 
 namespace duckdb {
-class ICSchemaEntry;
-class ICTransaction;
+class IRCSchemaEntry;
+class IRCTransaction;
 
 enum class ICTypeAnnotation { STANDARD, CAST_TO_VARCHAR, NUMERIC_AS_DOUBLE, CTID, JSONB, FIXED_LENGTH_CHAR };
 

@@ -5,10 +5,10 @@
 
 namespace duckdb {
 
-ICCatalogSet::ICCatalogSet(Catalog &catalog) : catalog(catalog) {
+IRCCatalogSet::IRCCatalogSet(Catalog &catalog) : catalog(catalog) {
 }
 
-optional_ptr<CatalogEntry> ICCatalogSet::GetEntry(ClientContext &context, const string &name) {
+optional_ptr<CatalogEntry> IRCCatalogSet::GetEntry(ClientContext &context, const string &name) {
 	LoadEntries(context);
 	lock_guard<mutex> l(entry_lock);
 	auto entry = entries.find(name);
@@ -19,16 +19,16 @@ optional_ptr<CatalogEntry> ICCatalogSet::GetEntry(ClientContext &context, const 
 	return entry->second.get();
 }
 
-void ICCatalogSet::DropEntry(ClientContext &context, DropInfo &info) {
+void IRCCatalogSet::DropEntry(ClientContext &context, DropInfo &info) {
 	EraseEntryInternal(info.name);
 }
 
-void ICCatalogSet::EraseEntryInternal(const string &name) {
+void IRCCatalogSet::EraseEntryInternal(const string &name) {
 	lock_guard<mutex> l(entry_lock);
 	entries.erase(name);
 }
 
-void ICCatalogSet::Scan(ClientContext &context, const std::function<void(CatalogEntry &)> &callback) {
+void IRCCatalogSet::Scan(ClientContext &context, const std::function<void(CatalogEntry &)> &callback) {
 	LoadEntries(context);
 
 	lock_guard<mutex> l(entry_lock);
@@ -37,7 +37,7 @@ void ICCatalogSet::Scan(ClientContext &context, const std::function<void(Catalog
 	}
 }
 
-optional_ptr<CatalogEntry> ICCatalogSet::CreateEntry(unique_ptr<CatalogEntry> entry) {
+optional_ptr<CatalogEntry> IRCCatalogSet::CreateEntry(unique_ptr<CatalogEntry> entry) {
 	lock_guard<mutex> l(entry_lock);
 	auto result = entry.get();
 	if (result->name.empty()) {
@@ -47,18 +47,18 @@ optional_ptr<CatalogEntry> ICCatalogSet::CreateEntry(unique_ptr<CatalogEntry> en
 	return result;
 }
 
-void ICCatalogSet::ClearEntries() {
+void IRCCatalogSet::ClearEntries() {
 	entries.clear();
 }
 
-ICInSchemaSet::ICInSchemaSet(ICSchemaEntry &schema) : ICCatalogSet(schema.ParentCatalog()), schema(schema) {
+ICInSchemaSet::ICInSchemaSet(IRCSchemaEntry &schema) : IRCCatalogSet(schema.ParentCatalog()), schema(schema) {
 }
 
 optional_ptr<CatalogEntry> ICInSchemaSet::CreateEntry(unique_ptr<CatalogEntry> entry) {
 	if (!entry->internal) {
 		entry->internal = schema.internal;
 	}
-	return ICCatalogSet::CreateEntry(std::move(entry));
+	return IRCCatalogSet::CreateEntry(std::move(entry));
 }
 
 } // namespace duckdb

@@ -6,12 +6,12 @@
 #include "storage/irc_table_set.hpp"
 
 namespace duckdb {
-class ICTransaction;
+class IRCTransaction;
 
-class ICSchemaEntry : public SchemaCatalogEntry {
+class IRCSchemaEntry : public SchemaCatalogEntry {
 public:
-	ICSchemaEntry(Catalog &catalog, CreateSchemaInfo &info);
-	~ICSchemaEntry() override;
+	IRCSchemaEntry(Catalog &catalog, CreateSchemaInfo &info);
+	~IRCSchemaEntry() override;
 
 	unique_ptr<IRCAPISchema> schema_data;
 
@@ -37,7 +37,7 @@ public:
 	optional_ptr<CatalogEntry> GetEntry(CatalogTransaction transaction, CatalogType type, const string &name) override;
 
 private:
-	ICCatalogSet &GetCatalogSet(CatalogType type);
+	IRCCatalogSet &GetCatalogSet(CatalogType type);
 
 private:
 	ICTableSet tables;

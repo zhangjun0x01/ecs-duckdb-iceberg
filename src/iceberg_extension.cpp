@@ -95,7 +95,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		}
 	}
 
-	// if no secret is specified we default to the unnamed mysql secret, if it
+	// if no iceberg secret is specified we default to the unnamed mysql secret, if it
 	// exists
 	bool explicit_secret = !secret_name.empty();
 	if (!explicit_secret) {
@@ -140,9 +140,9 @@ static unique_ptr<TransactionManager> CreateTransactionManager(StorageExtensionI
 	return make_uniq<ICTransactionManager>(db, ic_catalog);
 }
 
-class ICCatalogStorageExtension : public StorageExtension {
+class IRCStorageExtension : public StorageExtension {
 public:
-	ICCatalogStorageExtension() {
+	IRCStorageExtension() {
 		attach = IcebergCatalogAttach;
 		create_transaction_manager = CreateTransactionManager;
 	}
@@ -180,7 +180,7 @@ static void LoadInternal(DatabaseInstance &instance) {
 	SetCatalogSecretParameters(secret_function);
 	ExtensionUtil::RegisterFunction(instance, secret_function);
 
-	config.storage_extensions["iceberg"] = make_uniq<ICCatalogStorageExtension>();
+	config.storage_extensions["iceberg"] = make_uniq<IRCStorageExtension>();
 }
 
 void IcebergExtension::Load(DuckDB &db) {

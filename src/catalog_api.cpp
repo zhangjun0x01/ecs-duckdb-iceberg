@@ -382,30 +382,14 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(const string &catalog, const string &int
 
 IRCAPISchema IRCAPI::CreateSchema(const string &catalog, const string &internal, const string &schema, IRCCredentials credentials) {
 	throw NotImplementedException("IRCAPI::Create Schema not Implemented");
-	// string post_data = "{\"namespace\":[\"" + schema + "\"]}";
-	// string api_result = PostRequest(
-	// 	credentials.endpoint + GetOptionallyPrefixedURL(IRCAPI::API_VERSION_1, internal) + "namespaces", post_data, "json", credentials.token);
-	// api_result_to_doc(api_result);	// if the method returns, request was successful
-	//
-	// IRCAPISchema schema_result;
-	// schema_result.catalog_name = catalog;
-	// schema_result.schema_name = schema; //yyjson_get_str(value);
-	// return schema_result;
 }
 
 void IRCAPI::DropSchema(const string &internal, const string &schema, IRCCredentials credentials) {
 	throw NotImplementedException("IRCAPI Drop Schema not Implemented");
-	string api_result = DeleteRequest(
-		credentials.endpoint + GetOptionallyPrefixedURL(IRCAPI::API_VERSION_1, internal) + "namespaces/" + schema, credentials.token);
-	api_result_to_doc(api_result);	// if the method returns, request was successful
 }
 
 void IRCAPI::DropTable(const string &catalog, const string &internal, const string &schema, string &table_name, IRCCredentials credentials) {
 	throw NotImplementedException("IRCAPI Drop Table not Implemented");
-	string api_result = DeleteRequest(
-		credentials.endpoint + GetOptionallyPrefixedURL(IRCAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables/" + table_name + "?purgeRequested=true",
-		credentials.token);
-	api_result_to_doc(api_result);	// if the method returns, request was successful
 }
 
 static std::string json_to_string(yyjson_mut_doc *doc, yyjson_write_flag flags = YYJSON_WRITE_PRETTY) {
@@ -448,8 +432,8 @@ IRCAPITable IRCAPI::CreateTable(const string &catalog, const string &internal, c
 	yyjson_mut_obj_add_val(dd.get(), rr, "properties", props);
 	yyjson_mut_obj_add_str(dd.get(), props, "write.parquet.compression-codec", "snappy");
 
-	IRCAPITable table_result = createTable(catalog, schema, table_info->table);
-	string post_data = json_to_string(dd.get());	
+	// IRCAPITable table_result = createTable(catalog, schema, table_info->table);
+	string post_data = json_to_string(dd.get());
 	struct curl_slist *extra_headers = NULL;
 	extra_headers = curl_slist_append(extra_headers, "X-Iceberg-Access-Delegation: vended-credentials");
 	string api_result = PostRequest(

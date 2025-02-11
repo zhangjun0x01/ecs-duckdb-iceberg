@@ -7,7 +7,7 @@
 #include "storage/irc_schema_set.hpp"
 
 namespace duckdb {
-class ICSchemaEntry;
+class IRCSchemaEntry;
 
 struct IRCCredentials {
 	string endpoint;
@@ -74,7 +74,7 @@ private:
 	void DropSchema(ClientContext &context, DropInfo &info) override;
 
 private:
-	ICSchemaSet schemas;
+	IRCSchemaSet schemas;
 	string default_schema;
 };
 
