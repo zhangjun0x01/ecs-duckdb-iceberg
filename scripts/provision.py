@@ -18,6 +18,7 @@
 from pyspark.sql import SparkSession
 
 import os
+import duckdb
 
 os.environ[
     "PYSPARK_SUBMIT_ARGS"
@@ -40,7 +41,10 @@ spark = (
     .config("spark.sql.catalog.demo.s3.endpoint", "http://127.0.0.1:9000")
     .config("spark.sql.catalog.demo.s3.path-style-access", "true")
     .config("spark.sql.defaultCatalog", "demo")
+    .config('spark.driver.memory', '10g')
     .config("spark.sql.catalogImplementation", "in-memory")
+    .config('spark.jars', f'scripts/test_data_generator/iceberg-spark-runtime-3.5_2.12-1.4.2.jar')
+    .config('spark.sql.extensions', 'org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions')
     .getOrCreate()
 )
 
@@ -158,3 +162,27 @@ spark.sql(
         where number > 3 and number < 10;
     """
 )
+
+con = duckdb.connect()
+con.query("INSTALL tpch")
+con.query("LOAD tpch")
+con.query(f"SELECT setseed(0.42);")
+con.query(f"CALL dbgen(sf=1);")
+location = "scripts/lineitem.parquet"
+os.makedirs(os.path.dirname(location), exist_ok=True)
+con.query(f"COPY lineitem TO '{location}' (FORMAT PARQUET)");
+
+spark.read.parquet(location).createOrReplaceTempView('parquet_lineitem_view');
+
+spark.sql(
+    """
+        CREATE OR REPLACE TABLE default.lineitem
+        USING ICEBERG
+        TBLPROPERTIES (
+            'format-version'='2'
+        )
+        As select * from parquet_lineitem_view
+    """
+)
+
+spark.sql("update default.lineitem set l_orderkey=5")

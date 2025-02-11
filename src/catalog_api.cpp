@@ -401,48 +401,6 @@ static std::string json_to_string(yyjson_mut_doc *doc, yyjson_write_flag flags =
 
 IRCAPITable IRCAPI::CreateTable(const string &catalog, const string &internal, const string &schema, IRCCredentials credentials, CreateTableInfo *table_info) {
 	throw NotImplementedException("IRCAPI Create Table not Implemented");
-	std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> dd(yyjson_mut_doc_new(NULL));
-	yyjson_mut_val *rr = yyjson_mut_obj(dd.get());
-	yyjson_mut_doc_set_root(dd.get(), rr);
-	yyjson_mut_obj_add_str(dd.get(), rr, "name", table_info->table.c_str());
-
-	yyjson_mut_val *sch = yyjson_mut_obj(dd.get());
-	yyjson_mut_obj_add_val(dd.get(), rr, "schema", sch);
-	yyjson_mut_obj_add_str(dd.get(), sch, "type", "struct");
-
-	yyjson_mut_val *fields = yyjson_mut_arr(dd.get());
-	yyjson_mut_obj_add_val(dd.get(), sch, "fields", fields);
-
-	std::vector<std::string> column_names;
-	std::vector<std::string> column_types;
-	for (auto &col : table_info->columns.Logical()) {
-		// Store column name and type in vectors
-		column_names.push_back(col.GetName());
-		column_types.push_back(ICUtils::LogicalToIcebergType(col.GetType()));
-		// Add column object to JSON
-		yyjson_mut_val *col_obj = yyjson_mut_obj(dd.get());
-		yyjson_mut_obj_add_int(dd.get(), col_obj, "id", col.Oid());
-		yyjson_mut_obj_add_bool(dd.get(), col_obj, "required", true);
-		yyjson_mut_obj_add_str(dd.get(), col_obj, "name", column_names.back().c_str());
-		yyjson_mut_obj_add_str(dd.get(), col_obj, "type", column_types.back().c_str());
-		yyjson_mut_arr_add_val(fields, col_obj);
-	}
-
-	yyjson_mut_val *props = yyjson_mut_obj(dd.get());
-	yyjson_mut_obj_add_val(dd.get(), rr, "properties", props);
-	yyjson_mut_obj_add_str(dd.get(), props, "write.parquet.compression-codec", "snappy");
-
-	// IRCAPITable table_result = createTable(catalog, schema, table_info->table);
-	string post_data = json_to_string(dd.get());
-	struct curl_slist *extra_headers = NULL;
-	extra_headers = curl_slist_append(extra_headers, "X-Iceberg-Access-Delegation: vended-credentials");
-	string api_result = PostRequest(
-		credentials.endpoint + GetOptionallyPrefixedURL(IRCAPI::API_VERSION_1, internal) + "namespaces/" + schema + "/tables", post_data, "json", credentials.token, extra_headers);
-	curl_slist_free_all(extra_headers);
-	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
-	auto *root = yyjson_doc_get_root(doc.get());	
-	populateTableMetadata(table_result, root);
-	return table_result;
 }
 
 } // namespace duckdb

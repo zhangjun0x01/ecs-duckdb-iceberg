@@ -33,6 +33,7 @@ ATTACH '' AS my_datalake (TYPE ICEBERG);
 query IIIIII
 Show all tables;
 ----
+my_datalake default lineitem    [___]   [INTEGER]   false
 my_datalake	default	table_mor_deletes	[__]	[INTEGER]	false
 my_datalake	default	table_partitioned	[__]	[INTEGER]	false
 my_datalake	default	table_unpartitioned	[__]	[INTEGER]	false
@@ -73,6 +74,11 @@ select * from my_datalake.default.table_mor_deletes order by all;
 2023-03-10	10	j
 2023-03-11	11	k
 2023-03-12	12	l
+
+statement error
+select * from my_datalake.default.lineitem;
+----
+<REGEX>:.*Not implemented Error.*
 
 statement error
 update my_datalake.default.table_unpartitioned set number = 5 where number < 5;
