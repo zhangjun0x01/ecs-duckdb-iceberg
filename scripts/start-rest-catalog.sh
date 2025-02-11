@@ -10,7 +10,7 @@ fi
 cd scripts
 
 # need to have this happen in the background
-set -exg
+set -ex
 
 docker-compose kill
 docker-compose rm -f
