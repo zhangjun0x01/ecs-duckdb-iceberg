@@ -1,4 +1,4 @@
-# name: test/sql/iceberg.test
+# name: test/sql/local/iceberg.test
 # description: test iceberg extension
 # group: [iceberg]
 

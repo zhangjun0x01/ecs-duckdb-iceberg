@@ -1,4 +1,4 @@
-# name: test/sql/iceberg_scan_generated_data_0_001.test
+# name: test/sql/local/iceberg_scan_generated_data_0_001.test
 # description: test iceberg extension with the sf0.001 generated test set
 # group: [iceberg]
 
