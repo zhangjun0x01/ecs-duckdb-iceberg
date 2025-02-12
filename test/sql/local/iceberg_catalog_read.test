@@ -33,7 +33,7 @@ ATTACH '' AS my_datalake (TYPE ICEBERG);
 query IIIIII
 Show all tables;
 ----
-my_datalake default lineitem    [___]   [INTEGER]   false
+my_datalake	default	pyspark_iceberg_table	[__]	[INTEGER]	false
 my_datalake	default	table_mor_deletes	[__]	[INTEGER]	false
 my_datalake	default	table_partitioned	[__]	[INTEGER]	false
 my_datalake	default	table_unpartitioned	[__]	[INTEGER]	false
@@ -76,7 +76,7 @@ select * from my_datalake.default.table_mor_deletes order by all;
 2023-03-12	12	l
 
 statement error
-select * from my_datalake.default.lineitem;
+select * from my_datalake.default.pyspark_iceberg_table;
 ----
 <REGEX>:.*Not implemented Error.*
 
