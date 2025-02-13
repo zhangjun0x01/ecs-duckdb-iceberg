@@ -136,7 +136,7 @@ unique_ptr<SnapshotParseInfo> IcebergSnapshot::GetParseInfo(yyjson_doc &metadata
 
 unique_ptr<SnapshotParseInfo> IcebergSnapshot::GetParseInfo(const string &path, FileSystem &fs, const string &metadata_compression_codec) {
 	auto metadata_json = ReadMetaData(path, fs, metadata_compression_codec);
-	auto doc = yyjson_read(metadata_json.c_str(), metadata_json.size(), 0);
+	auto* doc = yyjson_read(metadata_json.c_str(), metadata_json.size(), 0);
 	if (doc == nullptr) {
 		throw InvalidInputException("Fails to parse iceberg metadata from %s", path);
 	}
