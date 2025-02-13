@@ -68,13 +68,19 @@ public:
 
 	static IcebergSnapshot ParseSnapShot(yyjson_val *snapshot, idx_t iceberg_format_version, idx_t schema_id,
 	                                     vector<yyjson_val *> &schemas, const IcebergOptions &options);
-	static string GetMetaDataPath(const string &path, FileSystem &fs, const IcebergOptions &options);
+	static string GetMetaDataPath(ClientContext &context, const string &path, FileSystem &fs, const IcebergOptions &options);
 	static string ReadMetaData(const string &path, FileSystem &fs, const string &metadata_compression_codec);
+	static yyjson_val *GetSnapshots(const string &path, FileSystem &fs, string GetSnapshotByTimestamp);
 	static unique_ptr<SnapshotParseInfo> GetParseInfo(yyjson_doc &metadata_json);
 
 protected:
+	//! Version extraction and identification
+	static bool UnsafeVersionGuessingEnabled(ClientContext &context);
+	static string GetTableVersionFromHint(const string &path, FileSystem &fs, string version_format);
+	static string GuessTableVersion(const string &meta_path, FileSystem &fs, const IcebergOptions &options);
+	static string PickTableVersion(vector<string> &found_metadata, string &version_pattern, string &glob);
+
 	//! Internal JSON parsing functions
-	static string GetTableVersion(const string &path, FileSystem &fs, string version_format);
 	static yyjson_val *FindLatestSnapshotInternal(yyjson_val *snapshots);
 	static yyjson_val *FindSnapshotByIdInternal(yyjson_val *snapshots, idx_t target_id);
 	static yyjson_val *FindSnapshotByIdTimestampInternal(yyjson_val *snapshots, timestamp_t timestamp);

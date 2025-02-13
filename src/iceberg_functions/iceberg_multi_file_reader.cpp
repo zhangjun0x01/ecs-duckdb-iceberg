@@ -147,7 +147,7 @@ void IcebergMultiFileList::InitializeFiles() {
 	//! Load the snapshot
 	auto iceberg_path = GetPath();
 	auto &fs = FileSystem::GetFileSystem(context);
-	auto iceberg_meta_path = IcebergSnapshot::GetMetaDataPath(iceberg_path, fs, options);
+	auto iceberg_meta_path = IcebergSnapshot::GetMetaDataPath(context, iceberg_path, fs, options);
 	switch (options.snapshot_source) {
 	case SnapshotSource::LATEST: {
 		snapshot = IcebergSnapshot::GetLatestSnapshot(iceberg_meta_path, fs, options);

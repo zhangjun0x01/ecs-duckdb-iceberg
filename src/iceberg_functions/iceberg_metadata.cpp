@@ -71,7 +71,7 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 		}
 	}
 
-	auto iceberg_meta_path = IcebergSnapshot::GetMetaDataPath(iceberg_path, fs, options);
+	auto iceberg_meta_path = IcebergSnapshot::GetMetaDataPath(context, iceberg_path, fs, options);
 	IcebergSnapshot snapshot_to_scan;
 	if (input.inputs.size() > 1) {
 		if (input.inputs[1].type() == LogicalType::UBIGINT) {
