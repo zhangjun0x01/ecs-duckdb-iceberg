@@ -280,6 +280,7 @@ void IcebergMultiFileReader::CreateColumnMapping(const string &file_name,
 
         // Register the column to be scanned from this file
         reader_data.column_ids.push_back(entry->second);
+        reader_data.column_indexes.emplace_back(entry->second);
         reader_data.column_mapping.push_back(file_row_number_idx);
     }
 
