@@ -42,7 +42,7 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 # SCALE = "0.001"
 # DEST_PATH = "data/iceberg/generated_spec1_0_001"
 # ICEBERG_SPEC_VERSION = "1"
-# SCRIPT_DIR = "/Users/tomebergen/duckdb-iceberg/scripts/test_data_generator"
+# SCRIPT_DIR = "/Users/tomebergen/duckdb-iceberg/scripts/data_generators"
 
 ###
 ### Generate dataset
