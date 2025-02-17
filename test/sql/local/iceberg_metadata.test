@@ -1,4 +1,4 @@
-# name: test/sql/iceberg_metadata.test
+# name: test/sql/local/iceberg_metadata.test
 # description: test iceberg metadata function
 # group: [iceberg]
 
