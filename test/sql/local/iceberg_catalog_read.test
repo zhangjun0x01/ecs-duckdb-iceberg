@@ -33,8 +33,9 @@ ATTACH '' AS my_datalake (TYPE ICEBERG);
 query IIIIII
 Show all tables;
 ----
-my_datalake	default	pyspark_iceberg_table	[__]	[INTEGER]	false
-my_datalake	default	table_mor_deletes	[__]	[INTEGER]	false
+my_datalake	default	pyspark_iceberg_table_v1	[__]	[INTEGER]	false
+my_datalake	default	pyspark_iceberg_table_v2	[__]	[INTEGER]	false
+my_datalake	default	table_more_deletes	[__]	[INTEGER]	false
 my_datalake	default	table_partitioned	[__]	[INTEGER]	false
 my_datalake	default	table_unpartitioned	[__]	[INTEGER]	false
 
@@ -64,9 +65,9 @@ select * from my_datalake.default.table_unpartitioned order by all;
 2023-03-11	11	k
 2023-03-12	12	l
 
-# test deletes (see provision.py for where deletes occur)
+# test deletes (see generate_iceberg_spark_rest.py for where deletes occur)
 query III
-select * from my_datalake.default.table_mor_deletes order by all;
+select * from my_datalake.default.table_more_deletes order by all;
 ----
 2023-03-01	1	a
 2023-03-02	2	b
