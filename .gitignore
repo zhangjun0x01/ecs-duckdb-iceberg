@@ -12,4 +12,5 @@ data/iceberg/generated_*
 scripts/metastore_db/
 scripts/derby.log
 scripts/test-script-with-path.sql
-scripts/data_generators/**/__pycache__/*
+scripts/data_generators/__pycache__/
+scripts/data_generators/*/__pycache__/
