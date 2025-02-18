@@ -26,3 +26,12 @@ Should be portable between DuckDB, Spark and Snowflake
 - PySpark does not support UUID
 - Generate similar data from snowflake's iceberg implementation
 - value deletes?
+
+
+# How it works now
+
+We have data generators, like spark-local, and spark-rest. Eventually we should have generators like DuckDB and more.
+
+Each generate has a directory, in the directory are sub-directories with queries that create and modify a table, which should be defined in q00.
+If some more setup is needed to generate the data, then you need to add it as a {setup.*} file in the directory with the other sql queries. 
+A python script is the best bet for this.
