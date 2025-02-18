@@ -1,4 +1,4 @@
-INSERT INTO default.table_mor_deletes
+INSERT INTO default.table_more_deletes
 VALUES
  (CAST('2023-03-01' AS date), 1, 'a'),
  (CAST('2023-03-02' AS date), 2, 'b'),

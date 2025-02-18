@@ -1,2 +1,2 @@
-Delete from default.table_mor_deletes
+Delete from default.table_more_deletes
 where number > 3 and number < 10;

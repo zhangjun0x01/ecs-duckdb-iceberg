@@ -1,4 +1,4 @@
-CREATE OR REPLACE TABLE default.table_mor_deletes (
+CREATE OR REPLACE TABLE default.table_more_deletes (
      dt     date,
      number integer,
      letter string

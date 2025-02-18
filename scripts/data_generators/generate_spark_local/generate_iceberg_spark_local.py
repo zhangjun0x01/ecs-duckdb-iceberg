@@ -16,6 +16,7 @@ import pdb
 
 DATA_GENERATION_DIR = f"./gen-data/data/spark-local/"
 SCRIPT_DIR = f"./scripts/data_generators/"
+INTERMEDIATE_DATA = "./gen-data/intermediates/spark-local/"
 
 class IcebergSparkLocal():
     def __init__(self):
@@ -50,7 +51,7 @@ class IcebergSparkLocal():
         return subdirectories
 
     def GetSetupFile(self, dir):
-        setup_files = [f for f in os.listdir(dir) if 'setup' in f.lower() and os.path.isfile(f)]
+        setup_files = [f for f in os.listdir(dir) if 'setup' in f.lower()]
         if len(setup_files) == 0:
             return ""
         return setup_files[0]
@@ -61,37 +62,12 @@ class IcebergSparkLocal():
         for table_dir in self.GetTableDirs():
             full_table_dir = f"./scripts/data_generators/generate_spark_local/{table_dir}"
             setup_script = self.GetSetupFile(full_table_dir)
+
+            PARQUET_SRC_FILE = f"scripts/data_generators/generate_spark_local/{table_dir}/lineitem.parquet"
             if setup_script != "":
-                os.system(f"python3 {full_table_dir}/{os.path.basename(setup_script)}")
+                os.system(f"PARQUET_SRC_FILE='{PARQUET_SRC_FILE}' python3 {full_table_dir}/{os.path.basename(setup_script)}")
+                con.read.parquet(PARQUET_SRC_FILE).createOrReplaceTempView('parquet_file_view')
 
-            # should mimic generate_base_parquet
-            duckdb_con = duckdb.connect()
-            duckdb_con.execute("call dbgen(sf=1)")
-            duckdb_con.query("""CREATE VIEW test_table as
-                    SELECT
-                    (l_orderkey%2=0) as l_orderkey_bool,
-                    l_partkey::INT32 as l_partkey_int,
-                    l_suppkey::INT64 as l_suppkey_long,
-                    l_extendedprice::FLOAT as l_extendedprice_float,
-                    l_extendedprice::DOUBLE as l_extendedprice_double,
-                    l_extendedprice::DECIMAL(9,2) as l_extendedprice_dec9_2,
-                    l_extendedprice::DECIMAL(18,6) as l_extendedprice_dec18_6,
-                    l_extendedprice::DECIMAL(38,10) as l_extendedprice_dec38_10,
-                    l_shipdate::DATE as l_shipdate_date,
-                    l_partkey as l_partkey_time,
-                    l_commitdate::TIMESTAMP as l_commitdate_timestamp,
-                    l_commitdate::TIMESTAMPTZ as l_commitdate_timestamp_tz,
-                    l_comment as l_comment_string,
-                    gen_random_uuid()::VARCHAR as uuid,
-                    l_comment::BLOB as l_comment_blob
-                    FROM
-                    lineitem;""")
-
-            PARQUET_SRC_FILE = "scripts/data_generators/generate_spark_local/lineitem.parquet"
-            duckdb_con.execute(f"copy test_table to '{PARQUET_SRC_FILE}' (FORMAT PARQUET)")
-
-            # TODO fix this
-            con.read.parquet(PARQUET_SRC_FILE).createOrReplaceTempView('parquet_file_view')
             update_files = self.GetSQLFiles(full_table_dir)
 
             for path in update_files:
@@ -103,41 +79,9 @@ class IcebergSparkLocal():
                     # Run spark query
                     con.sql(query)
 
-                    # # Create a parquet copy of table
-                    # df = spark.read.table(TABLE_NAME)
-                    # df.write.parquet(f"{INTERMEDIATE_DATA}/{file_trimmed}/data.parquet");
+                    # Create a parquet copy of table
+                    df = con.read.table(f"iceberg_catalog.{table_dir}")
+                    df.write.mode("overwrite").parquet(f"{INTERMEDIATE_DATA}/{table_dir}/{file_trimmed}/data.parquet");
 
     def CloseConnection(self, con):
         pass
-
-
-
-
-# if (len(sys.argv) != 4 ):
-#     print("Usage: generate_iceberg_spark_local.py <TABLE_NAME> <ICBERG_SPEC_VERSION> <GENERATOR> <SETUP_SCRIPT> <SETUP_SCRIPT_ARGS>")
-#     exit(1)
-#
-# TABLE_NAME = sys.argv[1]
-# ICEBERG_SPEC_VERSION = sys.argv[2]
-# GENERATOR = sys.argv[3]
-# SETUP_SCRIPT = sys.argv[4]
-# SETUP_SCRIPT_ARGS = sys.argv[5:]
-#
-# TABLE_NAME = f"iceberg_catalog.{TABLE_NAME}"
-#
-
-# INTERMEDIATE_DATA = f"./gen-data/intermediate/{GENERATOR}/{TABLE_NAME}"
-#
-# PARQUET_SRC_FILE = f"scripts/parquet_src_file.parquet"
-
-
-
-###
-### Create Iceberg table from generated data
-###
-
-###
-### Finally, we copy the latest results to a "final" dir for easy test writing
-###
-# import shutil
-# shutil.copytree(f"{DEST_PATH}/expected_results/{last_file}", f"{DEST_PATH}/expected_results/last")
