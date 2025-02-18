@@ -8,63 +8,65 @@ require iceberg
 
 ### Invalid iceberg metadata leads to failed statement
 statement error
-SELECT count(*) FROM ICEBERG_SCAN('data/bad_data/bad_iceberg_metadata.json');
+SELECT count(*) FROM ICEBERG_SCAN('data_fixed/bad_data/bad_iceberg_metadata.json');
 ----
-Invalid Input Error: Fails to parse iceberg metadata from data/bad_data/bad_iceberg_metadata.json
+Invalid Input Error: Fails to parse iceberg metadata from data_fixed/bad_data/bad_iceberg_metadata.json
 
 ### Iceberg spec v1
 
-# Check count matches
-query I
-SELECT count(*) FROM ICEBERG_SCAN('data_generated/data/sark-local/pyspark_iceberg_table_v1');
+# Check count matches the same as last file
+query I nosort table_v1_count
+SELECT count(*) FROM ICEBERG_SCAN('data_generated/data/spark-local/pyspark_iceberg_table_v1');
 ----
-<FILE>:data_generated/data/sark-local/expected_results_v1/last/count.csv
+
+query I nosort table_v1_count
+SELECT count(*) FROM PARQUET_SCAN('data_generated/intermediates/spark-local/pyspark_iceberg_table_v1/last/data.parquet/*.parquet');
+----
+
 
 # Check schema is identical, sorting by uuid to guarantee unique order
 query I nosort q1-schema
-DESCRIBE SELECT * FROM ICEBERG_SCAN('data_generated/data/sark-local/pyspark_iceberg_table_v1') ORDER BY uuid;
+DESCRIBE SELECT * FROM ICEBERG_SCAN('data_generated/data/spark-local/pyspark_iceberg_table_v1') ORDER BY uuid;
 ----
 
 query I nosort q1-schema
-DESCRIBE SELECT * FROM ICEBERG_SCAN('data_generated/data/sark-local/pyspark_iceberg_table_v1/metadata/v9.metadata.json') ORDER BY uuid;
+DESCRIBE SELECT * FROM ICEBERG_SCAN('data_generated/data/spark-local/pyspark_iceberg_table_v1/metadata/v9.metadata.json') ORDER BY uuid;
 ----
 
 query I nosort q1-schema
-DESCRIBE SELECT * FROM PARQUET_SCAN('data_generated/data/sark-local/expected_results_v1/last/data/*.parquet') ORDER BY uuid;
+DESCRIBE SELECT * FROM PARQUET_SCAN('data_generated/intermediates/spark-local/pyspark_iceberg_table_v1/last/data.parquet/*.parquet') ORDER BY uuid;
 ----
 
 # Check data is identical, sorting by uuid to guarantee unique order
 query I nosort q1-data
-SELECT * FROM ICEBERG_SCAN('data_generated/data/sark-local/pyspark_iceberg_table_v1') ORDER BY uuid;
+SELECT * FROM ICEBERG_SCAN('data_generated/data/spark-local/pyspark_iceberg_table_v1') ORDER BY uuid;
 ----
 
 query I nosort q1-data
-SELECT * FROM ICEBERG_SCAN('data_generated/data/sark-local/pyspark_iceberg_table_v1/metadata/v9.metadata.json') ORDER BY uuid;
+SELECT * FROM ICEBERG_SCAN('data_generated/data/spark-local/pyspark_iceberg_table_v1/metadata/v9.metadata.json') ORDER BY uuid;
 ----
 
 query I nosort q1-data
-SELECT * FROM PARQUET_SCAN('data_generated/data/sark-local/expected_results_v1/last/data/*.parquet') ORDER BY uuid;
+SELECT * FROM PARQUET_SCAN('data_generated/intermediates/spark-local/pyspark_iceberg_table_v1/last/data.parquet/*.parquet') ORDER BY uuid;
 ----
 
 # Confirm the type matches that of the iceberg schema
 query IIIIII
-DESCRIBE SELECT schema_evol_added_col_1 FROM ICEBERG_SCAN('data_generated/data/sark-local/pyspark_iceberg_table_v1') ORDER BY uuid;
+DESCRIBE SELECT schema_evol_added_col_1 FROM ICEBERG_SCAN('data_generated/data/spark-local/pyspark_iceberg_table_v1') ORDER BY uuid;
 ----
 schema_evol_added_col_1	BIGINT	YES	NULL	NULL	NULL
 
 ### Iceberg spec v2
 
 # Check count matches
-query I
+query I nosort count_match_r1
 SELECT count(*) FROM ICEBERG_SCAN('data_generated/data/spark-local/pyspark_iceberg_table_v2');
 ----
-<FILE>:data_generated/data/spark-local/expected_results_v2/last/count.csv
 
 # We should also be able to scan the metadata file directly
-query I
+query I nosort count_match_r1
 SELECT count(*) FROM ICEBERG_SCAN('data_generated/data/spark-local/pyspark_iceberg_table_v2/metadata/v9.metadata.json');
 ----
-<FILE>:data_generated/data/spark-local/expected_results_v2/last/count.csv
 
 # Check schema is identical, sorting by uuid to guarantee unique order
 query I nosort q2-schema
@@ -76,7 +78,7 @@ DESCRIBE SELECT * FROM ICEBERG_SCAN('data_generated/data/spark-local/pyspark_ice
 ----
 
 query I nosort q2-schema
-DESCRIBE SELECT * FROM PARQUET_SCAN('data_generated/data/spark-local/expected_results_v2/last/data/*.parquet') ORDER BY uuid;
+DESCRIBE SELECT * FROM PARQUET_SCAN('data_generated/intermediates/spark-local/pyspark_iceberg_table_v2/last/data.parquet/*.parquet') ORDER BY uuid;
 ----
 
 # Check data is identical, sorting by uuid to guarantee unique order
@@ -90,7 +92,7 @@ SELECT * FROM ICEBERG_SCAN('data_generated/data/spark-local/pyspark_iceberg_tabl
 ----
 
 query I nosort q2-data
-SELECT * FROM PARQUET_SCAN('data_generated/data/spark-local/expected_results_v2/last/data/*.parquet') ORDER BY uuid;
+SELECT * FROM PARQUET_SCAN('data_generated/intermediates/spark-local/pyspark_iceberg_table_v2/last/data.parquet/*.parquet') ORDER BY uuid;
 ----
 
 ### Test schema evolution

@@ -1,4 +1,4 @@
-# name: test/sql/iceberg_snapshots.test
+# name: test/sql/local/iceberg_snapshots.test
 # description: test iceberg snapshots function
 # group: [iceberg]
 

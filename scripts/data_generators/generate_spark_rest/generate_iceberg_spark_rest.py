@@ -26,12 +26,12 @@ import os
 from pyspark import SparkContext
 from pathlib import Path
 import duckdb
-import pdb
+import shutil
 
 
-DATA_GENERATION_DIR = f"./generated_data/data/spark-rest/"
+DATA_GENERATION_DIR = f"./data_generated/data/spark-rest/"
 SCRIPT_DIR = f"./scripts/data_generators/"
-INTERMEDIATE_DATA = "./generated_data/intermediates/spark-rest/"
+INTERMEDIATE_DATA = "./data_generated/intermediates/spark-rest/"
 
 
 class IcebergSparkRest():
@@ -116,5 +116,7 @@ class IcebergSparkRest():
                     df = con.read.table(f"default.{table_dir}")
                     df.write.mode("overwrite").parquet(f"{INTERMEDIATE_DATA}/{table_dir}/{file_trimmed}/data.parquet");
 
+            ### Finally, copy the latest results to a "final" dir for easy test writing
+            shutil.copytree(f"{INTERMEDIATE_DATA}/{table_dir}/{last_file}/data.parquet", f"{INTERMEDIATE_DATA}/{table_dir}/last/data.parquet",dirs_exist_ok=True)
     def CloseConnection(self, con):
         del con

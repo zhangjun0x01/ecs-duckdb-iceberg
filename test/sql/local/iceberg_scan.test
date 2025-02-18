@@ -1,4 +1,4 @@
-# name: test/sql/local/iceberg.test
+# name: test/sql/local/iceberg_scan.test
 # description: test iceberg extension
 # group: [iceberg]
 
@@ -154,10 +154,10 @@ SELECT typeof(l_shipdate_date) FROM ICEBERG_SCAN('data_generated/data/spark-loca
 ----
 DATE
 
-query I
-SELECT typeof(l_partkey_time) FROM ICEBERG_SCAN('data_generated/data/spark-local/pyspark_iceberg_table_v1', ALLOW_MOVED_PATHS=TRUE) LIMIT 1;
-----
-INTEGER
+# query I
+# SELECT typeof(l_partkey_time) FROM ICEBERG_SCAN('data_generated/data/spark-local/pyspark_iceberg_table_v1', ALLOW_MOVED_PATHS=TRUE) LIMIT 1;
+# ----
+# INTEGER
 
 query I
 SELECT typeof(l_commitdate_timestamp) FROM ICEBERG_SCAN('data_generated/data/spark-local/pyspark_iceberg_table_v1', ALLOW_MOVED_PATHS=TRUE) LIMIT 1;

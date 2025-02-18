@@ -7,16 +7,16 @@ import os
 from pyspark import SparkContext
 from pathlib import Path
 import duckdb
-import pdb
+import shutil
 
 
 # import DataGenerationBase
 
 # from scripts.data_generators.generate_base_parquet import PARQUET_SRC_FILE
 
-DATA_GENERATION_DIR = f"./generated_data/data/spark-local/"
+DATA_GENERATION_DIR = f"./data_generated/data/spark-local/"
 SCRIPT_DIR = f"./scripts/data_generators/"
-INTERMEDIATE_DATA = "./generated_data/intermediates/spark-local/"
+INTERMEDIATE_DATA = "./data_generated/intermediates/spark-local/"
 
 class IcebergSparkLocal():
     def __init__(self):
@@ -70,6 +70,7 @@ class IcebergSparkLocal():
 
             update_files = self.GetSQLFiles(full_table_dir)
 
+            last_file = ""
             for path in update_files:
                 full_file_path = f"{full_table_dir}/{os.path.basename(path)}"
                 with open(full_file_path, 'r') as file:
@@ -82,6 +83,9 @@ class IcebergSparkLocal():
                     # Create a parquet copy of table
                     df = con.read.table(f"iceberg_catalog.{table_dir}")
                     df.write.mode("overwrite").parquet(f"{INTERMEDIATE_DATA}/{table_dir}/{file_trimmed}/data.parquet");
+
+            ### Finally, copy the latest results to a "final" dir for easy test writing
+            shutil.copytree(f"{INTERMEDIATE_DATA}/{table_dir}/{last_file}/data.parquet", f"{INTERMEDIATE_DATA}/{table_dir}/last/data.parquet",dirs_exist_ok=True)
 
     def CloseConnection(self, con):
         pass
