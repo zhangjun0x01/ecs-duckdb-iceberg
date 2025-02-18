@@ -10,7 +10,7 @@ from pathlib import Path
 from scripts.data_generators.generate_base_parquet import PARQUET_SRC_FILE
 
 if (len(sys.argv) != 4 ):
-    print("Usage: generate_iceberg.py <TABLE_NAME> <ICBERG_SPEC_VERSION> <GENERATOR> <SETUP_SCRIPT> <SETUP_SCRIPT_ARGS>")
+    print("Usage: generate_iceberg_spark_local.py <TABLE_NAME> <ICBERG_SPEC_VERSION> <GENERATOR> <SETUP_SCRIPT> <SETUP_SCRIPT_ARGS>")
     exit(1)
 
 TABLE_NAME = sys.argv[1]
