@@ -14,9 +14,9 @@ import pdb
 
 # from scripts.data_generators.generate_base_parquet import PARQUET_SRC_FILE
 
-DATA_GENERATION_DIR = f"./gen-data/data/spark-local/"
+DATA_GENERATION_DIR = f"./generated_data/data/spark-local/"
 SCRIPT_DIR = f"./scripts/data_generators/"
-INTERMEDIATE_DATA = "./gen-data/intermediates/spark-local/"
+INTERMEDIATE_DATA = "./generated_data/intermediates/spark-local/"
 
 class IcebergSparkLocal():
     def __init__(self):

@@ -29,9 +29,9 @@ import duckdb
 import pdb
 
 
-DATA_GENERATION_DIR = f"./gen-data/data/spark-rest/"
+DATA_GENERATION_DIR = f"./generated_data/data/spark-rest/"
 SCRIPT_DIR = f"./scripts/data_generators/"
-INTERMEDIATE_DATA = "./gen-data/intermediates/spark-rest/"
+INTERMEDIATE_DATA = "./generated_data/intermediates/spark-rest/"
 
 
 class IcebergSparkRest():
