@@ -63,7 +63,7 @@ class IcebergSparkLocal():
             full_table_dir = f"./scripts/data_generators/generate_spark_local/{table_dir}"
             setup_script = self.GetSetupFile(full_table_dir)
 
-            PARQUET_SRC_FILE = f"scripts/data_generators/generate_spark_local/{table_dir}/lineitem.parquet"
+            PARQUET_SRC_FILE = f"scripts/data_generators/tmp_data/tmp.parquet"
             if setup_script != "":
                 os.system(f"PARQUET_SRC_FILE='{PARQUET_SRC_FILE}' python3 {full_table_dir}/{os.path.basename(setup_script)}")
                 con.read.parquet(PARQUET_SRC_FILE).createOrReplaceTempView('parquet_file_view')
