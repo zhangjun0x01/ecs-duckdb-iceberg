@@ -12,6 +12,7 @@ include extension-ci-tools/makefiles/duckdb_extension.Makefile
 
 # Custom makefile targets
 data: data_clean
+	mkdir -p data_generated/data
 	python3 scripts/data_generators/generate_data.py
 
 data_large: data data_clean
@@ -20,4 +21,4 @@ data_large: data data_clean
 configure_ci: data data_clean
 
 data_clean:
-	rm -rf data/
+	rm -rf data_generated/
