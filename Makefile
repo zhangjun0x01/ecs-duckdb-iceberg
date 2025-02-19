@@ -19,9 +19,6 @@ data_large: data data_clean
 	python3 scripts/test_data_generator/generate_iceberg.py 1 data/iceberg/generated_spec2_1 2
 
 data_clean:
-<<<<<<< Updated upstream
-	rm -rf data/iceberg/generated_*
-=======
 	rm -rf data_generated/
 
 format-fix:
@@ -40,4 +37,3 @@ format-changes:
 
 format-main:
 	python3 scripts/format.py main --fix --noconfirm
->>>>>>> Stashed changes
