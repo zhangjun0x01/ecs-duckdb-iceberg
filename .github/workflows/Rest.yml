@@ -56,7 +56,7 @@ jobs:
 
       - name: Generate data
         run: |
-          make data
+          make data_ci
 
       - name: Test with rest catalog
         env:
