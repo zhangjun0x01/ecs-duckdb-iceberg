@@ -46,6 +46,9 @@ jobs:
         run: |
           make release
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+
       - name: Start Rest Catalog
         run: |
           ./scripts/start-rest-catalog.sh
