@@ -84,8 +84,9 @@ class IcebergSparkLocal():
                     df = con.read.table(f"iceberg_catalog.{table_dir}")
                     df.write.mode("overwrite").parquet(f"{INTERMEDIATE_DATA}/{table_dir}/{file_trimmed}/data.parquet");
 
-            ### Finally, copy the latest results to a "final" dir for easy test writing
-            shutil.copytree(f"{INTERMEDIATE_DATA}/{table_dir}/{last_file}/data.parquet", f"{INTERMEDIATE_DATA}/{table_dir}/last/data.parquet", dirs_exist_ok=True)
+            if last_file != "":
+                ### Finally, copy the latest results to a "final" dir for easy test writing
+                shutil.copytree(f"{INTERMEDIATE_DATA}/{table_dir}/{last_file}/data.parquet", f"{INTERMEDIATE_DATA}/{table_dir}/last/data.parquet", dirs_exist_ok=True)
 
     def CloseConnection(self, con):
         pass

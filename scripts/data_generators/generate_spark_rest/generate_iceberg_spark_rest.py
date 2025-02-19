@@ -28,7 +28,6 @@ from pathlib import Path
 import duckdb
 import shutil
 
-
 DATA_GENERATION_DIR = f"./data/generated/iceberg/spark-rest/"
 SCRIPT_DIR = f"./scripts/data_generators/"
 INTERMEDIATE_DATA = "./data/generated/intermediates/spark-rest/"

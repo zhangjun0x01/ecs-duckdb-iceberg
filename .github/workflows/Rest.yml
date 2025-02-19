@@ -52,15 +52,15 @@ jobs:
 
       - name: Start Rest Catalog
         run: |
-          ./scripts/start-rest-catalog.sh
+          make start-rest-catalog
 
       - name: Generate data
         run: |
-          python3 scripts/data_generators/generate_data.py
+          make data
 
       - name: Test with rest catalog
         env:
           ICEBERG_SERVER_AVAILABLE: 1
-          DUCKDB_ICEBERG_HAVE_TEST_DATA: 1
+          DUCKDB_ICEBERG_HAVE_GENERATED_DATA: 1
         run: |
           make test_release

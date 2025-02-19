@@ -7,9 +7,7 @@ then
 fi
 
 mkdir -p data/generated/iceberg/spark-rest
-mkdir -p data_generated/intermediates
-
-python3 -m pip install -r scripts/requirements.txt
+mkdir -p data/generated/intermediates
 
 # cd into scripts where docker-compose file is.
 cd scripts

@@ -119,7 +119,7 @@ SELECT count(*) FROM ICEBERG_SCAN('data/persistent/iceberg/lineitem_iceberg_gz_n
 ----
 111968
 
-require-env DUCKDB_ICEBERG_HAVE_TEST_DATA
+require-env DUCKDB_ICEBERG_HAVE_GENERATED_DATA
 
 query I
 SELECT typeof(l_orderkey_bool) FROM ICEBERG_SCAN('data/generated/iceberg/spark-local/pyspark_iceberg_table_v1', ALLOW_MOVED_PATHS=TRUE) LIMIT 1;
