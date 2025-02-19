@@ -19,11 +19,6 @@ data_large: data data_clean
 	python3 scripts/data_generators/generate_data.py
 
 configure_ci: data_clean
-	echo "uname -s" $(uname -s)
-	echo "uname -m" $(uname -m)
-	sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-	sudo chmod +x /usr/local/bin/docker-compose
-	docker-compose --version
 	python3 -m pip install -r scripts/requirements.txt
 	./scripts/start-rest-catalog.sh
 	make data
