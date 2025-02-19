@@ -116,7 +116,7 @@ public:
 
 struct IcebergMultiFileList : public MultiFileList {
 public:
-	IcebergMultiFileList(ClientContext &context, const string &path, IcebergOptions options);
+	IcebergMultiFileList(ClientContext &context, const string &path, const IcebergOptions &options);
 
 public:
 	static string ToDuckDBPath(const string &raw_path);
@@ -173,7 +173,7 @@ public:
 
 	bool initialized = false;
 	ClientContext &context;
-	IcebergOptions options;
+	const IcebergOptions &options;
 	IcebergSnapshot snapshot;
 };
 

@@ -10,7 +10,7 @@
 
 namespace duckdb {
 
-IcebergMultiFileList::IcebergMultiFileList(ClientContext &context_p, const string &path, IcebergOptions options)
+IcebergMultiFileList::IcebergMultiFileList(ClientContext &context_p, const string &path, const IcebergOptions &options)
     : MultiFileList({path}, FileGlobOptions::ALLOW_EMPTY), lock(), context(context_p), options(options) {
 }
 
@@ -540,6 +540,7 @@ bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, Mu
 		}
 		this->options.snapshot_source = SnapshotSource::FROM_ID;
 		this->options.snapshot_id = val.GetValue<uint64_t>();
+		return true;
 	}
 	if (loption == "snapshot_from_timestamp") {
 		if (this->options.snapshot_source != SnapshotSource::LATEST) {
@@ -547,6 +548,7 @@ bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, Mu
 		}
 		this->options.snapshot_source = SnapshotSource::FROM_TIMESTAMP;
 		this->options.snapshot_timestamp = val.GetValue<timestamp_t>();
+		return true;
 	}
 	return MultiFileReader::ParseOption(key, val, options, context);
 }
