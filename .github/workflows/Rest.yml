@@ -39,12 +39,12 @@ jobs:
         with:
           vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
 
-      - name: Build extension
-        env:
-          GEN: ninja
-          STATIC_LIBCPP: 1
-        run: |
-          make release
+#      - name: Build extension
+#        env:
+#          GEN: ninja
+#          STATIC_LIBCPP: 1
+#        run: |
+#          make release
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
