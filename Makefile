@@ -19,6 +19,7 @@ data_large: data data_clean
 	python3 scripts/data_generators/generate_data.py
 
 configure_ci: data data_clean
+	python3 -m pip install -r scripts/requirements.txt
 
 data_clean:
 	rm -rf data_generated/
