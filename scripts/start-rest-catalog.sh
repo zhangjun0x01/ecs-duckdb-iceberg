@@ -16,5 +16,8 @@ cd scripts
 set -ex
 
 docker-compose kill
+echo "here 1"
 docker-compose rm -f
+echo "here 2"
 docker-compose up --detach
+echo "here 3"
