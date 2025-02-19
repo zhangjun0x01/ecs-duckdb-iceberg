@@ -47,9 +47,8 @@ jobs:
           make release
 
       - name: Start Rest Catalog
-        working-directory: scripts/
         run: |
-          ./start-rest-catalog.sh
+          ./scripts/start-rest-catalog.sh
 
       - name: Generate data
         run: |

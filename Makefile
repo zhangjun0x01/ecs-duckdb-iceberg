@@ -12,11 +12,12 @@ include extension-ci-tools/makefiles/duckdb_extension.Makefile
 
 # Custom makefile targets
 data: data_clean
-	python3 scripts/test_data_generator/generate_iceberg.py 0.001 lineitem_sf001_v1 1
-	python3 scripts/test_data_generator/generate_iceberg.py 0.001 lineitem_sf001_v2 2
+	python3 scripts/data_generators/generate_data.py
 
 data_large: data data_clean
-	python3 scripts/test_data_generator/generate_iceberg.py 1 lineitem_sf1_v2 2
+	python3 scripts/data_generators/generate_data.py
+
+configure_ci: data data_clean
 
 data_clean:
 	rm -rf data/
