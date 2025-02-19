@@ -10,14 +10,14 @@ CORE_EXTENSIONS='httpfs'
 # Include the Makefile from extension-ci-tools
 include extension-ci-tools/makefiles/duckdb_extension.Makefile
 
-start-rest-catalog: install_deps
+start-rest-catalog: install_requirements
 	./scripts/start-rest-catalog.sh
 
-install_deps:
+install_requirements:
 	python3 -m pip install -r scripts/requirements.txt
 
 # Custom makefile targets
-data: install_deps data_clean
+data: install_requirements data_clean
 	mkdir -p data
 	python3 scripts/data_generators/generate_data.py
 
