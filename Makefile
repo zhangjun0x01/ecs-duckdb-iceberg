@@ -20,6 +20,7 @@ data_large: data data_clean
 
 configure_ci: data_clean
 	python3 -m pip install -r scripts/requirements.txt
+	./scripts/start-rest-catalog.sh
 	make data
 
 data_clean:
