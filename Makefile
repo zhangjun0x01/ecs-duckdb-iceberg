@@ -19,7 +19,6 @@ data_large: data data_clean
 	python3 scripts/data_generators/generate_data.py
 
 configure_ci: data_clean
-	echo $pwd
 	python3 -m pip install -r scripts/requirements.txt
 	./scripts/start-rest-catalog.sh
 	make data

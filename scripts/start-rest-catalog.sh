@@ -6,7 +6,7 @@ then
   exit 1
 fi
 
-mkdir -p data_generated/data
+mkdir -p data_generated/data/spark-rest
 mkdir -p data_generated/intermediates
 
 # cd into scripts where docker-compose file is.
