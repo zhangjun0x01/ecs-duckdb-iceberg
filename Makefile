@@ -20,7 +20,8 @@ data_large: data data_clean
 
 configure_ci: data_clean
 	sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-	sudo chmod u+x /usr/local/bin/docker-compose
+	sudo chmod +x /usr/local/bin/docker-compose
+	docker-compose --version
 	python3 -m pip install -r scripts/requirements.txt
 	./scripts/start-rest-catalog.sh
 	make data
