@@ -18,9 +18,5 @@ data: data_clean
 data_large: data data_clean
 	python3 scripts/data_generators/generate_data.py
 
-configure_ci: data_clean
-	./scripts/start-rest-catalog.sh
-	make data
-
 data_clean:
 	rm -rf data_generated/
