@@ -6,7 +6,7 @@ then
   exit 1
 fi
 
-mkdir -p data_generated/data/spark-rest
+mkdir -p data/generated/iceberg/spark-rest
 mkdir -p data_generated/intermediates
 
 python3 -m pip install -r scripts/requirements.txt

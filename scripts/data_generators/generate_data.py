@@ -9,7 +9,6 @@ if __name__ == "__main__":
     db2.CloseConnection(conn2)
     del db2
     del conn2
-
     db = IcebergSparkLocal()
     conn = db.GetConnection()
     db.GenerateTables(conn)

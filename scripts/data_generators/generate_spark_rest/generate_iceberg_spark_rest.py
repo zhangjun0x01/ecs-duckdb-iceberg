@@ -29,10 +29,9 @@ import duckdb
 import shutil
 
 
-DATA_GENERATION_DIR = f"./data_generated/data/spark-rest/"
+DATA_GENERATION_DIR = f"./data/generated/iceberg/spark-rest/"
 SCRIPT_DIR = f"./scripts/data_generators/"
-INTERMEDIATE_DATA = "./data_generated/intermediates/spark-rest/"
-
+INTERMEDIATE_DATA = "./data/generated/intermediates/spark-rest/"
 
 class IcebergSparkRest():
     def __init__(self):

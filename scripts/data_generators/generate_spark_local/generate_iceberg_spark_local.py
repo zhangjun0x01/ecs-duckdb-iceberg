@@ -14,9 +14,9 @@ import shutil
 
 # from scripts.data_generators.generate_base_parquet import PARQUET_SRC_FILE
 
-DATA_GENERATION_DIR = f"./data_generated/data/spark-local/"
+DATA_GENERATION_DIR = f"./data/generated/iceberg/spark-local/"
 SCRIPT_DIR = f"./scripts/data_generators/"
-INTERMEDIATE_DATA = "./data_generated/intermediates/spark-local/"
+INTERMEDIATE_DATA = "./data/generated/intermediates/spark-local/"
 
 class IcebergSparkLocal():
     def __init__(self):
@@ -85,7 +85,7 @@ class IcebergSparkLocal():
                     df.write.mode("overwrite").parquet(f"{INTERMEDIATE_DATA}/{table_dir}/{file_trimmed}/data.parquet");
 
             ### Finally, copy the latest results to a "final" dir for easy test writing
-            shutil.copytree(f"{INTERMEDIATE_DATA}/{table_dir}/{last_file}/data.parquet", f"{INTERMEDIATE_DATA}/{table_dir}/last/data.parquet",dirs_exist_ok=True)
+            shutil.copytree(f"{INTERMEDIATE_DATA}/{table_dir}/{last_file}/data.parquet", f"{INTERMEDIATE_DATA}/{table_dir}/last/data.parquet", dirs_exist_ok=True)
 
     def CloseConnection(self, con):
         pass
