@@ -15,9 +15,6 @@ cd scripts
 # need to have this happen in the background
 set -ex
 
-docker-compose kill
-echo "here 1"
-docker-compose rm -f
-echo "here 2"
-docker-compose up --detach
-echo "here 3"
+docker compose kill
+docker compose rm -f
+docker compose up --detach
