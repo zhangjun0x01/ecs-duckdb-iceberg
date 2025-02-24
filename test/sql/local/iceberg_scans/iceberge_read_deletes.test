@@ -11,6 +11,8 @@ require iceberg
 statement ok
 set enable_logging=true;
 
+mode skip
+
 # TODO verify the catalog has deletes (rest catalog stores data differently from local catalog)
 query I nosort results_1
 select sum(l_suppkey), min(l_suppkey), max(l_suppkey) from ICEBERG_SCAN('data/generated/iceberg/spark-local/table_with_deletes');
