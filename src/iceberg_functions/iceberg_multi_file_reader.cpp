@@ -471,11 +471,6 @@ void IcebergMultiFileList::ProcessDeletes() const {
 		ScanDeleteFile(new_entry->file_path);
 	}
 
-	for (auto &it : delete_data) {
-		auto &deletes = it.second;
-		deletes.Finalize();
-	}
-
 	D_ASSERT(current_delete_manifest == delete_manifests.end());
 }
 

@@ -38,30 +38,8 @@ public:
 		temp_invalid_rows.insert(row_id);
 	}
 
-	void Finalize() {
-		D_ASSERT(!temp_invalid_rows.empty());
-		idx_t selection_vector_size = *temp_invalid_rows.rbegin();
-		idx_t needed_space = selection_vector_size - (temp_invalid_rows.size() - 1);
-		valid_rows.Initialize(needed_space);
-
-		idx_t row_id = 0;
-		idx_t size = 0;
-		for (auto &invalid_row : temp_invalid_rows) {
-			while (row_id < invalid_row) {
-				valid_rows[size++] = row_id++;
-			}
-			row_id = invalid_row + 1;
-		}
-		D_ASSERT(size == needed_space);
-
-		last_deleted_row_id = *temp_invalid_rows.rbegin();
-		temp_invalid_rows.clear();
-		total_count = size;
-	}
-
 	void Apply(DataChunk &chunk, Vector &row_id_column) {
 		D_ASSERT(row_id_column.GetType() == LogicalType::BIGINT);
-
 
 		if (chunk.size() == 0) {
 			return;
@@ -71,38 +49,11 @@ public:
 		row_id_column.ToUnifiedFormat(count, data);
 		auto row_ids = UnifiedVectorFormat::GetData<int64_t>(data);
 
-		auto starting_row_id = row_ids[data.sel->get_index(0)];
-		idx_t valid_idx = 0;
-		for (; valid_idx < total_count; valid_idx++) {
-			if (valid_rows[valid_idx] >= starting_row_id) {
-				break;
-			}
-		}
-		//if (valid_idx + count < total_count && valid_rows[valid_idx + count] == starting_row_id + count) {
-		//	//! Everything in the chunk is valid, early out
-		//	return;
-		//}
-
 		SelectionVector result {count};
 		idx_t selection_idx = 0;
-		//! Check for every input tuple if it's valid
-		
-		idx_t tuple_idx = 0;
-		for (; tuple_idx < count && valid_idx < total_count; tuple_idx++) {
+		for (idx_t tuple_idx = 0; tuple_idx < count; tuple_idx++) {
 			auto current_row_id = row_ids[data.sel->get_index(tuple_idx)];
-			if (current_row_id == valid_rows[valid_idx]) {
-				result[selection_idx++] = tuple_idx;
-				valid_idx++;
-			}
-		}
-
-		if (valid_idx >= total_count && tuple_idx < count) {
-			//! Skip the deleted rows
-			while (tuple_idx < count && row_ids[data.sel->get_index(tuple_idx)] <= last_deleted_row_id) {
-				tuple_idx++;
-			}
-			//! Add the rows that remain (if any)
-			for (; tuple_idx < count; tuple_idx++) {
+			if (temp_invalid_rows.find(current_row_id) == temp_invalid_rows.end()) {
 				result[selection_idx++] = tuple_idx;
 			}
 		}
@@ -112,13 +63,7 @@ public:
 
 public:
 	//! Store invalid rows here before finalizing into a SelectionVector
-	set<int64_t> temp_invalid_rows;
-
-	//! The selection of rows that are not deleted
-	SelectionVector valid_rows;
-	idx_t highest_invalid_row;
-	int64_t last_deleted_row_id = -1;
-	idx_t total_count = 0;
+	unordered_set<int64_t> temp_invalid_rows;
 };
 
 struct IcebergMultiFileList : public MultiFileList {
