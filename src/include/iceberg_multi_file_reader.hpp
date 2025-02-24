@@ -53,6 +53,9 @@ public:
 			row_id = invalid_row + 1;
 		}
 		D_ASSERT(size == needed_space);
+
+		last_deleted_row_id = *temp_invalid_rows.rbegin();
+		temp_invalid_rows.clear();
 		total_count = size;
 	}
 
@@ -84,24 +87,23 @@ public:
 		idx_t selection_idx = 0;
 		//! Check for every input tuple if it's valid
 		
-		for (idx_t i = 0; i < count && valid_idx < total_count; i++) {
-			auto current_row_id = row_ids[data.sel->get_index(i)];
+		idx_t tuple_idx = 0;
+		for (; tuple_idx < count && valid_idx < total_count; tuple_idx++) {
+			auto current_row_id = row_ids[data.sel->get_index(tuple_idx)];
 			if (current_row_id == valid_rows[valid_idx]) {
-				result.set_index(selection_idx++, i);
+				result[selection_idx++] = tuple_idx;
 				valid_idx++;
 			}
 		}
 
-		auto highest_row_id = row_ids[data.sel->get_index(count - 1)] + 1;
-		if (valid_idx >= total_count && !temp_invalid_rows.empty() && highest_row_id > *temp_invalid_rows.rbegin()) {
-			//! The deletes have only told us what the highest deleted row is
-			//! But anything after that is valid and can't be ignored.
-			auto last_invalid_row = *temp_invalid_rows.rbegin();
-			auto valid_range = highest_row_id - (last_invalid_row + 1);
-			auto i = count - valid_range;
-
-			for (; i < count; i++) {
-				result[selection_idx++] = i;
+		if (valid_idx >= total_count && tuple_idx < count) {
+			//! Skip the deleted rows
+			while (tuple_idx < count && row_ids[data.sel->get_index(tuple_idx)] <= last_deleted_row_id) {
+				tuple_idx++;
+			}
+			//! Add the rows that remain (if any)
+			for (; tuple_idx < count; tuple_idx++) {
+				result[selection_idx++] = tuple_idx;
 			}
 		}
 
@@ -115,6 +117,7 @@ public:
 	//! The selection of rows that are not deleted
 	SelectionVector valid_rows;
 	idx_t highest_invalid_row;
+	int64_t last_deleted_row_id = -1;
 	idx_t total_count = 0;
 };
 
