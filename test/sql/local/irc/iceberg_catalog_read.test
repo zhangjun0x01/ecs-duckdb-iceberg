@@ -69,10 +69,10 @@ select * from my_datalake.default.table_more_deletes order by all;
 2023-03-12	12	l
 
 
-statement error
+query I
 select sum(l_suppkey_long) from my_datalake.default.pyspark_iceberg_table_v2;
 ----
-15602826438
+20352
 
 statement error
 update my_datalake.default.table_unpartitioned set number = 5 where number < 5;
