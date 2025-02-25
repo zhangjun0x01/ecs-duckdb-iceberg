@@ -8,9 +8,6 @@ require parquet
 
 require iceberg
 
-statement ok
-set enable_logging=true;
-
 mode skip
 
 # TODO verify the catalog has deletes (rest catalog stores data differently from local catalog)

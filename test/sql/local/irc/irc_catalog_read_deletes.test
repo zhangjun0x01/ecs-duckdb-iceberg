@@ -31,9 +31,8 @@ CREATE SECRET (
 statement ok
 ATTACH '' AS my_datalake (TYPE ICEBERG);
 
-
-statement ok
-set enable_logging=true;
+# statement ok
+# set enable_logging=true;
 # verify deletes
 
 # TODO verify the catalog has deletes (rest catalog stores data differently from local catalog)
