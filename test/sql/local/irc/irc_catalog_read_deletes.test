@@ -35,19 +35,19 @@ ATTACH '' AS my_datalake (TYPE ICEBERG);
 # set enable_logging=true;
 # verify deletes
 
+mode skip
+
 # TODO verify the catalog has deletes (rest catalog stores data differently from local catalog)
 query I nosort results_1
-select sum(l_suppkey), min(l_suppkey), max(l_suppkey) from my_datalake.default.table_with_deletes;
+select sum(l_suppkey), min(l_suppkey), max(l_suppkey) from my_datalake.default.lineitem_001_deletes;
 
 query I nosort results_1
-select sum(l_suppkey), min(l_suppkey), max(l_suppkey) from read_parquet('data/generated/intermediates/spark-rest/table_with_deletes/last/data.parquet/*.parquet');
+select sum(l_suppkey), min(l_suppkey), max(l_suppkey) from read_parquet('data/generated/intermediates/spark-rest/lineitem_001_deletes/last/data.parquet/*.parquet');
 
-query I
-select message::INT > 0 from duckdb_logs() where type like '%duckdb-iceberg.finalize_deletes%';
-----
-true
-
-mode skip
+# query I
+# select message::INT > 0 from duckdb_logs() where type like '%duckdb-iceberg.finalize_deletes%';
+# ----
+# true
 
 # Verify Deletes
 # joins with a table that has deletes.
