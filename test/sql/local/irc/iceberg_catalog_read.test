@@ -72,7 +72,7 @@ select * from my_datalake.default.table_more_deletes order by all;
 statement error
 select sum(l_suppkey_long) from my_datalake.default.pyspark_iceberg_table_v2;
 ----
-<REGEX>:.*Not implemented Error.*
+15602826438
 
 statement error
 update my_datalake.default.table_unpartitioned set number = 5 where number < 5;
