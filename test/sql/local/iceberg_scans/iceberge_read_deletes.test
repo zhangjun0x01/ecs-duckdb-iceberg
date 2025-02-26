@@ -8,19 +8,12 @@ require parquet
 
 require iceberg
 
-mode skip
-
 # TODO verify the catalog has deletes (rest catalog stores data differently from local catalog)
 query I nosort results_1
 select sum(l_suppkey), min(l_suppkey), max(l_suppkey) from ICEBERG_SCAN('data/generated/iceberg/spark-local/table_with_deletes');
 
 query I nosort results_1
 select sum(l_suppkey), min(l_suppkey), max(l_suppkey) from read_parquet('data/generated/intermediates/spark-local/table_with_deletes/last/data.parquet/*.parquet');
-
-# query I
-# select message::INT > 0 from duckdb_logs() where type like '%duckdb-iceberg.finalize_deletes%';
-# ----
-# true
 
 # Verify parquet scans on tables with delete vectors do not mess with results.
 query I nosort table_filter_result
@@ -42,11 +35,6 @@ where l1_deletes.l_partkey = l2_no_deletes.l_partkey
 group by l1_deletes.l_partkey
 order by l1_deletes.l_partkey, count
 ----
-
-# query I
-# select message::INT > 0 from duckdb_logs() where type like '%duckdb-iceberg.finalize_deletes%' order by timestamp desc limit 1;
-# ----
-# true
 
 query I nosort join_results
 select l1_deletes.l_partkey, count(*) count from
@@ -70,10 +58,6 @@ group by l1_deletes.l_orderkey
 order by l1_deletes.l_orderkey, count
 ----
 
-# query I
-# select message::INT > 0 from duckdb_logs() where type like '%duckdb-iceberg.finalize_deletes%' order by timestamp desc limit 1;
-# ----
-# true
 
 query I nosort join_results_2_orderkey
 select l1_deletes.l_orderkey, count(*) count from
