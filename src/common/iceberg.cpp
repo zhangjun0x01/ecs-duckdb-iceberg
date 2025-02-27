@@ -76,6 +76,39 @@ vector<IcebergManifest> IcebergTable::ReadManifestListFile(ClientContext &contex
 	TableFunctionInitInput input(bind_data.get(), column_ids, vector<idx_t>(), nullptr);
 	auto global_state = avro_scan.init_global(context, input);
 
+	std::function<void(DataChunk &input, vector<IcebergManifest> &result)> produce_manifests;
+	if (iceberg_format_version == 1) {
+		produce_manifests = [](DataChunk &input, vector<IcebergManifest> &result) {
+			auto manifest_paths = FlatVector::GetData<string_t>(input.data[0]);
+
+			for (idx_t i = 0; i < input.size(); i++) {
+				IcebergManifest manifest;
+				manifest.manifest_path = manifest_paths[i].GetString();
+				manifest.content = IcebergManifestContentType::DATA;
+				manifest.sequence_number = 0;
+
+				result.push_back(manifest);
+			}
+		};
+	} else if (iceberg_format_version == 2) {
+		produce_manifests = [](DataChunk &input, vector<IcebergManifest> &result) {
+			auto manifest_paths = FlatVector::GetData<string_t>(input.data[0]);
+			auto content = FlatVector::GetData<int32_t>(input.data[3]);
+			auto sequence_numbers = FlatVector::GetData<int64_t>(input.data[4]);
+
+			for (idx_t i = 0; i < input.size(); i++) {
+				IcebergManifest manifest;
+				manifest.manifest_path = manifest_paths[i].GetString();
+				manifest.content = IcebergManifestContentType(content[i]);
+				manifest.sequence_number = sequence_numbers[i];
+
+				result.push_back(manifest);
+			}
+		};
+	} else {
+		throw InvalidInputException("iceberg_format_version %d not handled", iceberg_format_version);
+	}
+
 	do {
 		TableFunctionInput function_input(bind_data.get(), nullptr, global_state.get());
 		result.Reset();
@@ -86,11 +119,7 @@ vector<IcebergManifest> IcebergTable::ReadManifestListFile(ClientContext &contex
 			vec.Flatten(count);
 		}
 
-		for (idx_t i = 0; i < count; i++) {
-			IcebergManifest manifest;
-			(void)i;
-
-		}
+		produce_manifests(result, ret);
 	} while (result.size() != 0);
 	return ret;
 }
@@ -114,7 +143,7 @@ vector<IcebergManifestEntry> IcebergTable::ReadManifestEntries(ClientContext &co
 
 	TableFunctionRef empty;
 	TableFunction dummy_table_function;
-	dummy_table_function.name = "IcebergManifestListScan";
+	dummy_table_function.name = "IcebergManifestEntryScan";
 	TableFunctionBindInput bind_input(children, named_params, input_types, input_names, nullptr, nullptr,
 	                                  dummy_table_function, empty);
 	vector<LogicalType> return_types;
@@ -135,6 +164,53 @@ vector<IcebergManifestEntry> IcebergTable::ReadManifestEntries(ClientContext &co
 	TableFunctionInitInput input(bind_data.get(), column_ids, vector<idx_t>(), nullptr);
 	auto global_state = avro_scan.init_global(context, input);
 
+	std::function<void(DataChunk &input, vector<IcebergManifestEntry> &result)> produce_manifest_entries;
+	if (iceberg_format_version == 1) {
+		produce_manifest_entries = [](DataChunk &input, vector<IcebergManifestEntry> &result) {
+			auto status = FlatVector::GetData<int32_t>(input.data[0]);
+			auto &data_file_entries = StructVector::GetEntries(input.data[3]);
+			//! FIXME: these are kind of guessed, since 'content' is entry index 0 in V2, I assume everything shifts down by 1
+			auto file_path = FlatVector::GetData<string_t>(*data_file_entries[0]);
+			auto file_format = FlatVector::GetData<string_t>(*data_file_entries[1]);
+			auto record_count = FlatVector::GetData<int64_t>(*data_file_entries[3]);
+
+			for (idx_t i = 0; i < input.size(); i++) {
+				IcebergManifestEntry entry;
+
+				entry.status = (IcebergManifestEntryStatusType)status[i];
+				entry.content = IcebergManifestEntryContentType::DATA;
+				entry.file_path = file_path[i].GetString();
+				entry.file_format = file_format[i].GetString();
+				entry.record_count = record_count[i];
+
+				result.push_back(entry);
+			}
+		};
+	} else if (iceberg_format_version == 2) {
+		produce_manifest_entries = [](DataChunk &input, vector<IcebergManifestEntry> &result) {
+			auto status = FlatVector::GetData<int32_t>(input.data[0]);
+			auto &data_file_entries = StructVector::GetEntries(input.data[3]);
+			auto content = FlatVector::GetData<int32_t>(*data_file_entries[0]);
+			auto file_path = FlatVector::GetData<string_t>(*data_file_entries[1]);
+			auto file_format = FlatVector::GetData<string_t>(*data_file_entries[2]);
+			auto record_count = FlatVector::GetData<int64_t>(*data_file_entries[4]);
+
+			for (idx_t i = 0; i < input.size(); i++) {
+				IcebergManifestEntry entry;
+
+				entry.status = (IcebergManifestEntryStatusType)status[i];
+				entry.content = (IcebergManifestEntryContentType)content[i];
+				entry.file_path = file_path[i].GetString();
+				entry.file_format = file_format[i].GetString();
+				entry.record_count = record_count[i];
+
+				result.push_back(entry);
+			}
+		};
+	} else {
+		throw InvalidInputException("iceberg_format_version %d not handled", iceberg_format_version);
+	}
+
 	do {
 		TableFunctionInput function_input(bind_data.get(), nullptr, global_state.get());
 		result.Reset();
@@ -145,11 +221,7 @@ vector<IcebergManifestEntry> IcebergTable::ReadManifestEntries(ClientContext &co
 			vec.Flatten(count);
 		}
 
-		for (idx_t i = 0; i < count; i++) {
-			IcebergManifestEntry manifest;
-			(void)i;
-
-		}
+		produce_manifest_entries(result, ret);
 	} while (result.size() != 0);
 	return ret;
 }
