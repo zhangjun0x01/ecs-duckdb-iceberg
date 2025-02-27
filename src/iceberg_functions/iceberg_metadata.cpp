@@ -58,32 +58,50 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 	
 	for (auto &kv : input.named_parameters) {
 		auto loption = StringUtil::Lower(kv.first);
+		auto &val = kv.second;
 		if (loption == "allow_moved_paths") {
-			options.allow_moved_paths = BooleanValue::Get(kv.second);
+			options.allow_moved_paths = BooleanValue::Get(val);
 		} else if (loption == "metadata_compression_codec") {
-			options.metadata_compression_codec = StringValue::Get(kv.second);
+			options.metadata_compression_codec = StringValue::Get(val);
 		} else if (loption == "skip_schema_inference") {
-			options.skip_schema_inference = BooleanValue::Get(kv.second);
+			options.skip_schema_inference = BooleanValue::Get(val);
 		} else if (loption == "version") {
-			options.table_version = StringValue::Get(kv.second);
+			options.table_version = StringValue::Get(val);
 		} else if (loption == "version_name_format") {
-			options.version_name_format = StringValue::Get(kv.second);
+			options.version_name_format = StringValue::Get(val);
+		} else if (loption == "snapshot_from_id") {
+			if (options.snapshot_source != SnapshotSource::LATEST) {
+				throw InvalidInputException("Can't use 'snapshot_from_id' in combination with 'snapshot_from_timestamp'");
+			}
+			options.snapshot_source = SnapshotSource::FROM_ID;
+			options.snapshot_id = val.GetValue<uint64_t>();
+		} else if (loption == "snapshot_from_timestamp") {
+			if (options.snapshot_source != SnapshotSource::LATEST) {
+				throw InvalidInputException("Can't use 'snapshot_from_id' in combination with 'snapshot_from_timestamp'");
+			}
+			options.snapshot_source = SnapshotSource::FROM_TIMESTAMP;
+			options.snapshot_timestamp = val.GetValue<timestamp_t>();
 		}
 	}
 
 	auto iceberg_meta_path = IcebergSnapshot::GetMetaDataPath(context, iceberg_path, fs, options);
+	auto parse_info = IcebergMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
 	IcebergSnapshot snapshot_to_scan;
-	if (input.inputs.size() > 1) {
-		if (input.inputs[1].type() == LogicalType::UBIGINT) {
-			snapshot_to_scan = IcebergSnapshot::GetSnapshotById(iceberg_meta_path, fs, input.inputs[1].GetValue<uint64_t>(), options);
-		} else if (input.inputs[1].type() == LogicalType::TIMESTAMP) {
-			snapshot_to_scan =
-			    IcebergSnapshot::GetSnapshotByTimestamp(iceberg_meta_path, fs, input.inputs[1].GetValue<timestamp_t>(), options);
-		} else {
-			throw InvalidInputException("Unknown argument type in IcebergScanBindReplace.");
-		}
-	} else {
-		snapshot_to_scan = IcebergSnapshot::GetLatestSnapshot(iceberg_meta_path, fs, options);
+	switch (options.snapshot_source) {
+	case SnapshotSource::LATEST: {
+		snapshot_to_scan = IcebergSnapshot::GetLatestSnapshot(*parse_info, options);
+		break;
+	}
+	case SnapshotSource::FROM_ID: {
+		snapshot_to_scan = IcebergSnapshot::GetSnapshotById(*parse_info, options.snapshot_id, options);
+		break;
+	}
+	case SnapshotSource::FROM_TIMESTAMP: {
+		snapshot_to_scan = IcebergSnapshot::GetSnapshotByTimestamp(*parse_info, options.snapshot_timestamp, options);
+		break;
+	}
+	default:
+		throw InternalException("SnapshotSource type not implemented");
 	}
 
 	ret->iceberg_table =

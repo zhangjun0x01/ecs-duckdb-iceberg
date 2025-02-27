@@ -20,11 +20,11 @@ namespace duckdb {
 struct IcebergColumnDefinition {
 public:
 	static IcebergColumnDefinition ParseFromJson(yyjson_val *val);
-
+public:
 	LogicalType ToDuckDBType() {
 		return type;
 	}
-
+public:
 	int32_t id;
 	string name;
 	LogicalType type;
@@ -32,14 +32,45 @@ public:
 	bool required;
 };
 
-struct SnapshotParseInfo {
-	~SnapshotParseInfo() {
+struct IcebergPartitionSpecField {
+public:
+	static IcebergPartitionSpecField ParseFromJson(yyjson_val *val);
+public:
+	string name;
+	//! FIXME: parse this, there are a set amount of valid transforms
+	//! See: https://iceberg.apache.org/spec/#partition-specs
+	//! "Applied to the source column(s) to produce a partition value"
+	string transform;
+	//! NOTE: v3 replaces 'source-id' with 'source-ids'
+	//! "A source column id or a list of source column ids from the table’s schema"
+	idx_t source_id;
+	//! "Used to identify a partition field and is unique within a partition spec"
+	int64_t field_id;
+};
+
+struct IcebergPartitionSpec {
+public:
+	static IcebergPartitionSpec ParseFromJson(yyjson_val *val);
+public:
+	idx_t spec_id;
+	vector<IcebergPartitionSpecField> fields;
+};
+
+struct IcebergMetadata {
+private:
+	IcebergMetadata() = default;
+public:
+	static unique_ptr<IcebergMetadata> Parse(const string &path, FileSystem &fs, const string &metadata_compression_codec);
+	~IcebergMetadata() {
 		if (doc) {
 			yyjson_doc_free(doc);
 		}
 	}
+public:
+	//static vector<IcebergPartitionSpec> ParsePartitionSpecs(vector<yyjson_val *> &partition_specs);
+public:
 	// Ownership of parse data
-	yyjson_doc *doc;
+	yyjson_doc *doc = nullptr;
 	string document;
 
 	//! Parsed info
@@ -62,16 +93,13 @@ public:
 	vector<IcebergColumnDefinition> schema;
 	string metadata_compression_codec = "none";
 public:
-	static IcebergSnapshot GetLatestSnapshot(const string &path, FileSystem &fs, const IcebergOptions &options);
-	static IcebergSnapshot GetSnapshotById(const string &path, FileSystem &fs, idx_t snapshot_id, const IcebergOptions &options);
-	static IcebergSnapshot GetSnapshotByTimestamp(const string &path, FileSystem &fs, timestamp_t timestamp, const IcebergOptions &options);
+	static IcebergSnapshot GetLatestSnapshot(IcebergMetadata &info, const IcebergOptions &options);
+	static IcebergSnapshot GetSnapshotById(IcebergMetadata &info, idx_t snapshot_id, const IcebergOptions &options);
+	static IcebergSnapshot GetSnapshotByTimestamp(IcebergMetadata &info, timestamp_t timestamp, const IcebergOptions &options);
 
 	static IcebergSnapshot ParseSnapShot(yyjson_val *snapshot, idx_t iceberg_format_version, idx_t schema_id,
 	                                     vector<yyjson_val *> &schemas, const IcebergOptions &options);
 	static string GetMetaDataPath(ClientContext &context, const string &path, FileSystem &fs, const IcebergOptions &options);
-	static string ReadMetaData(const string &path, FileSystem &fs, const string &metadata_compression_codec);
-	static yyjson_val *GetSnapshots(const string &path, FileSystem &fs, string GetSnapshotByTimestamp);
-	static unique_ptr<SnapshotParseInfo> GetParseInfo(yyjson_doc &metadata_json);
 
 protected:
 	//! Version extraction and identification
@@ -85,7 +113,6 @@ protected:
 	static yyjson_val *FindSnapshotByIdInternal(yyjson_val *snapshots, idx_t target_id);
 	static yyjson_val *FindSnapshotByIdTimestampInternal(yyjson_val *snapshots, timestamp_t timestamp);
 	static vector<IcebergColumnDefinition> ParseSchema(vector<yyjson_val *> &schemas, idx_t schema_id);
-	static unique_ptr<SnapshotParseInfo> GetParseInfo(const string &path, FileSystem &fs, const string &metadata_compression_codec);
 };
 
 //! Represents the iceberg table at a specific IcebergSnapshot. Corresponds to a single Manifest List.

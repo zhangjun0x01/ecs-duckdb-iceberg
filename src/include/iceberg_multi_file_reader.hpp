@@ -127,6 +127,7 @@ public:
 	ClientContext &context;
 	const IcebergOptions &options;
 	IcebergSnapshot snapshot;
+	vector<IcebergPartitionSpec> partition_specs;
 };
 
 struct IcebergMultiFileReaderGlobalState : public MultiFileReaderGlobalState {
