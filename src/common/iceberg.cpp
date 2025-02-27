@@ -10,6 +10,7 @@
 #include "duckdb/parallel/thread_context.hpp"
 #include "duckdb/parser/tableref/table_function_ref.hpp"
 #include "duckdb/parser/expression/constant_expression.hpp"
+#include "duckdb/common/column_index.hpp"
 
 namespace duckdb {
 
@@ -69,16 +70,21 @@ vector<IcebergManifest> IcebergTable::ReadManifestListFile(ClientContext &contex
 	ThreadContext thread_context(context);
 	ExecutionContext execution_context(context, thread_context, nullptr);
 
+	case_insensitive_map_t<ColumnIndex> name_to_vec;
 	vector<column_t> column_ids;
 	for (idx_t i = 0; i < return_types.size(); i++) {
 		column_ids.push_back(i);
+
+		auto name = StringUtil::Lower(return_names[i]);
+		name_to_vec[name] = ColumnIndex(i);
 	}
+
 	TableFunctionInitInput input(bind_data.get(), column_ids, vector<idx_t>(), nullptr);
 	auto global_state = avro_scan.init_global(context, input);
 
-	std::function<void(DataChunk &input, vector<IcebergManifest> &result)> produce_manifests;
+	std::function<void(DataChunk &input, case_insensitive_map_t<ColumnIndex> &name_to_vec, vector<IcebergManifest> &result)> produce_manifests;
 	if (iceberg_format_version == 1) {
-		produce_manifests = [](DataChunk &input, vector<IcebergManifest> &result) {
+		produce_manifests = [](DataChunk &input, case_insensitive_map_t<ColumnIndex> &name_to_vec, vector<IcebergManifest> &result) {
 			auto manifest_paths = FlatVector::GetData<string_t>(input.data[0]);
 
 			for (idx_t i = 0; i < input.size(); i++) {
@@ -91,7 +97,7 @@ vector<IcebergManifest> IcebergTable::ReadManifestListFile(ClientContext &contex
 			}
 		};
 	} else if (iceberg_format_version == 2) {
-		produce_manifests = [](DataChunk &input, vector<IcebergManifest> &result) {
+		produce_manifests = [](DataChunk &input, case_insensitive_map_t<ColumnIndex> &name_to_vec, vector<IcebergManifest> &result) {
 			auto manifest_paths = FlatVector::GetData<string_t>(input.data[0]);
 			auto content = FlatVector::GetData<int32_t>(input.data[3]);
 			auto sequence_numbers = FlatVector::GetData<int64_t>(input.data[4]);
@@ -119,7 +125,7 @@ vector<IcebergManifest> IcebergTable::ReadManifestListFile(ClientContext &contex
 			vec.Flatten(count);
 		}
 
-		produce_manifests(result, ret);
+		produce_manifests(result, name_to_vec, ret);
 	} while (result.size() != 0);
 	return ret;
 }
@@ -157,22 +163,45 @@ vector<IcebergManifestEntry> IcebergTable::ReadManifestEntries(ClientContext &co
 	ThreadContext thread_context(context);
 	ExecutionContext execution_context(context, thread_context, nullptr);
 
+	case_insensitive_map_t<ColumnIndex> name_to_vec;
 	vector<column_t> column_ids;
 	for (idx_t i = 0; i < return_types.size(); i++) {
 		column_ids.push_back(i);
+		auto name = StringUtil::Lower(return_names[i]);
+		auto &type = return_types[i];
+		if (name != "data_file") {
+			name_to_vec[name] = ColumnIndex(i);
+			continue;
+		}
+		if (type.id() != LogicalTypeId::STRUCT) {
+			throw InvalidInputException("The 'data_file' of the manifest should be a STRUCT");
+		}
+		auto &children = StructType::GetChildTypes(type);
+		for (idx_t child_idx = 0; child_idx < children.size(); child_idx++) {
+			auto &child = children[child_idx];
+			auto child_name = StringUtil::Lower(child.first);
+
+			name_to_vec[child_name] = ColumnIndex(i, {ColumnIndex(child_idx)});
+		}
 	}
+
 	TableFunctionInitInput input(bind_data.get(), column_ids, vector<idx_t>(), nullptr);
 	auto global_state = avro_scan.init_global(context, input);
 
-	std::function<void(DataChunk &input, vector<IcebergManifestEntry> &result)> produce_manifest_entries;
+	std::function<void(DataChunk &input, case_insensitive_map_t<ColumnIndex> &name_to_vec, vector<IcebergManifestEntry> &result)> produce_manifest_entries;
 	if (iceberg_format_version == 1) {
-		produce_manifest_entries = [](DataChunk &input, vector<IcebergManifestEntry> &result) {
-			auto status = FlatVector::GetData<int32_t>(input.data[0]);
-			auto &data_file_entries = StructVector::GetEntries(input.data[3]);
-			//! FIXME: these are kind of guessed, since 'content' is entry index 0 in V2, I assume everything shifts down by 1
-			auto file_path = FlatVector::GetData<string_t>(*data_file_entries[0]);
-			auto file_format = FlatVector::GetData<string_t>(*data_file_entries[1]);
-			auto record_count = FlatVector::GetData<int64_t>(*data_file_entries[3]);
+		produce_manifest_entries = [](DataChunk &input, case_insensitive_map_t<ColumnIndex> &name_to_vec, vector<IcebergManifestEntry> &result) {
+			auto status = FlatVector::GetData<int32_t>(input.data[name_to_vec["status"].GetPrimaryIndex()]);
+
+			auto file_path_idx = name_to_vec["file_path"];
+			auto data_file_idx = file_path_idx.GetPrimaryIndex();
+			auto &child_entries = StructVector::GetEntries(input.data[data_file_idx]);
+			D_ASSERT(name_to_vec["file_format"].GetPrimaryIndex());
+			D_ASSERT(name_to_vec["record_count"].GetPrimaryIndex());
+
+			auto file_path = FlatVector::GetData<string_t>(*child_entries[file_path_idx.GetChildIndex(0).GetPrimaryIndex()]);
+			auto file_format = FlatVector::GetData<string_t>(*child_entries[name_to_vec["file_format"].GetChildIndex(0).GetPrimaryIndex()]);
+			auto record_count = FlatVector::GetData<int64_t>(*child_entries[name_to_vec["record_count"].GetChildIndex(0).GetPrimaryIndex()]);
 
 			for (idx_t i = 0; i < input.size(); i++) {
 				IcebergManifestEntry entry;
@@ -187,13 +216,19 @@ vector<IcebergManifestEntry> IcebergTable::ReadManifestEntries(ClientContext &co
 			}
 		};
 	} else if (iceberg_format_version == 2) {
-		produce_manifest_entries = [](DataChunk &input, vector<IcebergManifestEntry> &result) {
-			auto status = FlatVector::GetData<int32_t>(input.data[0]);
-			auto &data_file_entries = StructVector::GetEntries(input.data[3]);
-			auto content = FlatVector::GetData<int32_t>(*data_file_entries[0]);
-			auto file_path = FlatVector::GetData<string_t>(*data_file_entries[1]);
-			auto file_format = FlatVector::GetData<string_t>(*data_file_entries[2]);
-			auto record_count = FlatVector::GetData<int64_t>(*data_file_entries[4]);
+		produce_manifest_entries = [](DataChunk &input, case_insensitive_map_t<ColumnIndex> &name_to_vec, vector<IcebergManifestEntry> &result) {
+			auto status = FlatVector::GetData<int32_t>(input.data[name_to_vec["status"].GetPrimaryIndex()]);
+
+			auto file_path_idx = name_to_vec["file_path"];
+			auto data_file_idx = file_path_idx.GetPrimaryIndex();
+			auto &child_entries = StructVector::GetEntries(input.data[data_file_idx]);
+			D_ASSERT(name_to_vec["file_format"].GetPrimaryIndex());
+			D_ASSERT(name_to_vec["record_count"].GetPrimaryIndex());
+
+			auto content = FlatVector::GetData<int32_t>(*child_entries[name_to_vec["content"].GetChildIndex(0).GetPrimaryIndex()]);
+			auto file_path = FlatVector::GetData<string_t>(*child_entries[file_path_idx.GetChildIndex(0).GetPrimaryIndex()]);
+			auto file_format = FlatVector::GetData<string_t>(*child_entries[name_to_vec["file_format"].GetChildIndex(0).GetPrimaryIndex()]);
+			auto record_count = FlatVector::GetData<int64_t>(*child_entries[name_to_vec["record_count"].GetChildIndex(0).GetPrimaryIndex()]);
 
 			for (idx_t i = 0; i < input.size(); i++) {
 				IcebergManifestEntry entry;
@@ -221,7 +256,7 @@ vector<IcebergManifestEntry> IcebergTable::ReadManifestEntries(ClientContext &co
 			vec.Flatten(count);
 		}
 
-		produce_manifest_entries(result, ret);
+		produce_manifest_entries(result, name_to_vec, ret);
 	} while (result.size() != 0);
 	return ret;
 }
