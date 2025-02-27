@@ -75,10 +75,9 @@ vector<IcebergManifest> IcebergTable::ReadManifestListFile(ClientContext &contex
 	}
 	TableFunctionInitInput input(bind_data.get(), column_ids, vector<idx_t>(), nullptr);
 	auto global_state = avro_scan.init_global(context, input);
-	auto local_state = avro_scan.init_local(execution_context, input, global_state.get());
 
 	do {
-		TableFunctionInput function_input(bind_data.get(), local_state.get(), global_state.get());
+		TableFunctionInput function_input(bind_data.get(), nullptr, global_state.get());
 		result.Reset();
 		avro_scan.function(context, function_input, result);
 
@@ -88,6 +87,7 @@ vector<IcebergManifest> IcebergTable::ReadManifestListFile(ClientContext &contex
 		}
 
 		for (idx_t i = 0; i < count; i++) {
+			IcebergManifest manifest;
 			(void)i;
 
 		}
@@ -98,7 +98,59 @@ vector<IcebergManifest> IcebergTable::ReadManifestListFile(ClientContext &contex
 vector<IcebergManifestEntry> IcebergTable::ReadManifestEntries(ClientContext &context, const string &path,
                                                                idx_t iceberg_format_version) {
 	vector<IcebergManifestEntry> ret;
-	// TODO: use 'read_avro' to read the manifest entries
+
+	// TODO: make streaming
+	auto &instance = DatabaseInstance::GetDatabase(context);
+	auto &avro_scan_entry = ExtensionUtil::GetTableFunction(instance, "read_avro");
+	auto &avro_scan = avro_scan_entry.functions.functions[0];
+
+	// Prepare the inputs for the bind
+	vector<Value> children;
+	children.reserve(1);
+	children.push_back(Value(path));
+	named_parameter_map_t named_params;
+	vector<LogicalType> input_types;
+	vector<string> input_names;
+
+	TableFunctionRef empty;
+	TableFunction dummy_table_function;
+	dummy_table_function.name = "IcebergManifestListScan";
+	TableFunctionBindInput bind_input(children, named_params, input_types, input_names, nullptr, nullptr,
+	                                  dummy_table_function, empty);
+	vector<LogicalType> return_types;
+	vector<string> return_names;
+
+	auto bind_data = avro_scan.bind(context, bind_input, return_types, return_names);
+
+	DataChunk result;
+	result.Initialize(context, return_types, STANDARD_VECTOR_SIZE);
+
+	ThreadContext thread_context(context);
+	ExecutionContext execution_context(context, thread_context, nullptr);
+
+	vector<column_t> column_ids;
+	for (idx_t i = 0; i < return_types.size(); i++) {
+		column_ids.push_back(i);
+	}
+	TableFunctionInitInput input(bind_data.get(), column_ids, vector<idx_t>(), nullptr);
+	auto global_state = avro_scan.init_global(context, input);
+
+	do {
+		TableFunctionInput function_input(bind_data.get(), nullptr, global_state.get());
+		result.Reset();
+		avro_scan.function(context, function_input, result);
+
+		idx_t count = result.size();
+		for (auto &vec : result.data) {
+			vec.Flatten(count);
+		}
+
+		for (idx_t i = 0; i < count; i++) {
+			IcebergManifestEntry manifest;
+			(void)i;
+
+		}
+	} while (result.size() != 0);
 	return ret;
 }
 
