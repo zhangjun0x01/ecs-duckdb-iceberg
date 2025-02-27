@@ -38,6 +38,19 @@ IcebergTable IcebergTable::Load(const string &iceberg_path, IcebergSnapshot &sna
 	return ret;
 }
 
+static bool VerifyManifestSchema(case_insensitive_map_t<ColumnIndex> &name_to_vec, idx_t iceberg_format_version) {
+	if (!name_to_vec.count("manifest_path")) {
+		return false;
+	}
+	if (iceberg_format_version >= 2 && !name_to_vec.count("sequence_number")) {
+		return false;
+	}
+	if (iceberg_format_version >= 2 && !name_to_vec.count("content")) {
+		return false;
+	}
+	return true;
+}
+
 vector<IcebergManifest> IcebergTable::ReadManifestListFile(ClientContext &context, const string &path, idx_t iceberg_format_version) {
 	vector<IcebergManifest> ret;
 
@@ -77,6 +90,10 @@ vector<IcebergManifest> IcebergTable::ReadManifestListFile(ClientContext &contex
 
 		auto name = StringUtil::Lower(return_names[i]);
 		name_to_vec[name] = ColumnIndex(i);
+	}
+
+	if (!VerifyManifestSchema(name_to_vec, iceberg_format_version)) {
+		throw InvalidInputException("manifest file schema invalid for iceberg version %d", iceberg_format_version);
 	}
 
 	TableFunctionInitInput input(bind_data.get(), column_ids, vector<idx_t>(), nullptr);
@@ -128,6 +145,25 @@ vector<IcebergManifest> IcebergTable::ReadManifestListFile(ClientContext &contex
 		produce_manifests(result, name_to_vec, ret);
 	} while (result.size() != 0);
 	return ret;
+}
+
+static bool VerifyManifestEntrySchema(case_insensitive_map_t<ColumnIndex> &name_to_vec, idx_t iceberg_format_version) {
+	if (!name_to_vec.count("status")) {
+		return false;
+	}
+	if (!name_to_vec.count("file_path")) {
+		return false;
+	}
+	if (!name_to_vec.count("file_format")) {
+		return false;
+	}
+	if (!name_to_vec.count("record_count")) {
+		return false;
+	}
+	if (iceberg_format_version >= 2 && !name_to_vec.count("content")) {
+		return false;
+	}
+	return true;
 }
 
 vector<IcebergManifestEntry> IcebergTable::ReadManifestEntries(ClientContext &context, const string &path,
@@ -183,6 +219,10 @@ vector<IcebergManifestEntry> IcebergTable::ReadManifestEntries(ClientContext &co
 
 			name_to_vec[child_name] = ColumnIndex(i, {ColumnIndex(child_idx)});
 		}
+	}
+
+	if (!VerifyManifestEntrySchema(name_to_vec, iceberg_format_version)) {
+		throw InvalidInputException("manifest entry schema invalid for iceberg version %d", iceberg_format_version);
 	}
 
 	TableFunctionInitInput input(bind_data.get(), column_ids, vector<idx_t>(), nullptr);
