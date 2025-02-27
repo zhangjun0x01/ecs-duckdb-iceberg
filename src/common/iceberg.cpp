@@ -106,6 +106,43 @@ vector<IcebergManifestEntry> IcebergTable::ReadManifestEntries(const string &pat
 	return ret;
 }
 
+IcebergPartitionSpecField IcebergPartitionSpecField::ParseFromJson(yyjson_val *field) {
+	IcebergPartitionSpecField result;
+
+	result.name = IcebergUtils::TryGetStrFromObject(field, "name");
+	result.transform = IcebergUtils::TryGetStrFromObject(field, "transform");
+	result.source_id = IcebergUtils::TryGetNumFromObject(field, "source-id");
+	result.field_id = IcebergUtils::TryGetNumFromObject(field, "field-id");
+	return result;
+}
+
+IcebergPartitionSpec IcebergPartitionSpec::ParseFromJson(yyjson_val *partition_spec) {
+	IcebergPartitionSpec result;
+	result.spec_id = IcebergUtils::TryGetNumFromObject(partition_spec, "spec-id");
+	auto fields = yyjson_obj_getn(partition_spec, "fields", strlen("fields"));
+	if (!fields || yyjson_get_type(fields) != YYJSON_TYPE_ARR) {
+		throw IOException("Invalid field found while parsing field: 'fields'");
+	}
+
+	size_t idx, max;
+	yyjson_val *field;
+	yyjson_arr_foreach(fields, idx, max, field) {
+		result.fields.push_back(IcebergPartitionSpecField::ParseFromJson(field));
+	}
+	return result;
+}
+
+vector<IcebergPartitionSpec> IcebergMetadata::ParsePartitionSpecs() {
+	vector<IcebergPartitionSpec> result;
+
+	size_t idx, max;
+	yyjson_val *partition_spec;
+	yyjson_arr_foreach(partition_specs, idx, max, partition_spec) {
+		result.push_back(IcebergPartitionSpec::ParseFromJson(partition_spec));
+	}
+	return result;
+}
+
 unique_ptr<IcebergMetadata> IcebergMetadata::Parse(const string &path, FileSystem &fs, const string &metadata_compression_codec) {
 	auto metadata = unique_ptr<IcebergMetadata>(new IcebergMetadata);
 
@@ -123,6 +160,7 @@ unique_ptr<IcebergMetadata> IcebergMetadata::Parse(const string &path, FileSyste
 	auto root = yyjson_doc_get_root(info.doc);
 	info.iceberg_version = IcebergUtils::TryGetNumFromObject(root, "format-version");
 	info.snapshots = yyjson_obj_get(root, "snapshots");
+	info.partition_specs = yyjson_obj_get(root, "partition-specs");
 
 	// Multiple schemas can be present in the json metadata 'schemas' list
 	if (yyjson_obj_getn(root, "current-schema-id", string("current-schema-id").size())) {

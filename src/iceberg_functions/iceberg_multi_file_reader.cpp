@@ -148,24 +148,26 @@ void IcebergMultiFileList::InitializeFiles() {
 	auto iceberg_path = GetPath();
 	auto &fs = FileSystem::GetFileSystem(context);
 	auto iceberg_meta_path = IcebergSnapshot::GetMetaDataPath(context, iceberg_path, fs, options);
-	auto parse_info = IcebergMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
+	auto metadata = IcebergMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
 
 	switch (options.snapshot_source) {
 	case SnapshotSource::LATEST: {
-		snapshot = IcebergSnapshot::GetLatestSnapshot(*parse_info, options);
+		snapshot = IcebergSnapshot::GetLatestSnapshot(*metadata, options);
 		break;
 	}
 	case SnapshotSource::FROM_ID: {
-		snapshot = IcebergSnapshot::GetSnapshotById(*parse_info, options.snapshot_id, options);
+		snapshot = IcebergSnapshot::GetSnapshotById(*metadata, options.snapshot_id, options);
 		break;
 	}
 	case SnapshotSource::FROM_TIMESTAMP: {
-		snapshot = IcebergSnapshot::GetSnapshotByTimestamp(*parse_info, options.snapshot_timestamp, options);
+		snapshot = IcebergSnapshot::GetSnapshotByTimestamp(*metadata, options.snapshot_timestamp, options);
 		break;
 	}
 	default:
 		throw InternalException("SnapshotSource type not implemented");
 	}
+
+	partition_specs = metadata->ParsePartitionSpecs();
 
 	//! Set up the manifest + manifest entry readers
 	if (snapshot.iceberg_format_version == 1) {

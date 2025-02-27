@@ -43,16 +43,16 @@ public:
 	string transform;
 	//! NOTE: v3 replaces 'source-id' with 'source-ids'
 	//! "A source column id or a list of source column ids from the table’s schema"
-	idx_t source_id;
+	uint64_t source_id;
 	//! "Used to identify a partition field and is unique within a partition spec"
-	int64_t field_id;
+	uint64_t field_id;
 };
 
 struct IcebergPartitionSpec {
 public:
 	static IcebergPartitionSpec ParseFromJson(yyjson_val *val);
 public:
-	idx_t spec_id;
+	uint64_t spec_id;
 	vector<IcebergPartitionSpecField> fields;
 };
 
@@ -67,7 +67,7 @@ public:
 		}
 	}
 public:
-	//static vector<IcebergPartitionSpec> ParsePartitionSpecs(vector<yyjson_val *> &partition_specs);
+	vector<IcebergPartitionSpec> ParsePartitionSpecs();
 public:
 	// Ownership of parse data
 	yyjson_doc *doc = nullptr;
@@ -75,6 +75,7 @@ public:
 
 	//! Parsed info
 	yyjson_val *snapshots;
+	yyjson_val *partition_specs;
 	vector<yyjson_val *> schemas;
 	uint64_t iceberg_version;
 	uint64_t schema_id;
