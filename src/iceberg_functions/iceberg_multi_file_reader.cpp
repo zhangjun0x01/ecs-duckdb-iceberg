@@ -170,7 +170,7 @@ void IcebergMultiFileList::InitializeFiles() {
 		    make_uniq<ManifestEntryReaderV2>(iceberg_path, snapshot.manifest_list, fs, options);
 		manifest_reader = make_uniq<ManifestReaderV2>(iceberg_path, snapshot.manifest_list, fs, options);
 	} else {
-		throw InvalidInputException("TODO");
+		throw InvalidInputException("Reading from Iceberg version %d is not supported yet", snapshot.iceberg_format_version);
 	}
 
 	// Read the manifest list, we need all the manifests to determine if we've seen all deletes
