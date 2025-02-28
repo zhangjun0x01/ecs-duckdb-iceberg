@@ -2,12 +2,11 @@
 
 namespace duckdb {
 
-AvroReader::AvroReader(avro_reader_name_mapping_t name_mapping, avro_reader_schema_validation schema_validator, avro_reader_manifest_producer manifest_producer) : name_mapping(name_mapping), schema_validator(schema_validator), manifest_producer(manifest_producer) {}
-AvroReader::AvroReader(avro_reader_name_mapping_t name_mapping, avro_reader_schema_validation schema_validator, avro_reader_manifest_entry_producer entry_producer) : name_mapping(name_mapping), schema_validator(schema_validator), manifest_entry_producer(manifest_entry_producer) {}
+AvroReader::AvroReader(avro_reader_name_mapping name_mapping, avro_reader_schema_validation schema_validation) : name_mapping(name_mapping), schema_validation(schema_validation) {}
 
 void AvroReader::Initialize(unique_ptr<AvroScan> scan_p) {
 	scan = std::move(scan_p);
-	scan->InitializeChunk(result);
+	scan->InitializeChunk(input);
 	finished = false;
 	offset = 0;
 	name_to_vec.clear();
@@ -18,9 +17,34 @@ void AvroReader::Initialize(unique_ptr<AvroScan> scan_p) {
 		name_mapping(i, type, name, name_to_vec);
 	}
 
-	if (!schema_validator(name_to_vec)) {
+	if (!schema_validation(name_to_vec)) {
 		throw InvalidInputException("Invalid schema detected in a manifest/manifest entry");
 	}
+}
+
+idx_t AvroReader::ReadEntries(idx_t count, avro_reader_read callback) {
+	if (!scan || finished) {
+		return 0;
+	}
+
+	idx_t scanned = 0;
+	while (scanned < count) {
+		if (offset >= input.size()) {
+			scan->GetNext(input);
+			if (input.size() == 0) {
+				finished = true;
+				return scanned;
+			}
+			offset = 0;
+		}
+
+		idx_t remaining = count - scanned;
+		idx_t to_scan = MinValue(input.size() - offset, remaining);
+
+		scanned += callback(input, offset, to_scan, name_to_vec);
+		offset += count;
+	}
+	return scanned;
 }
 
 bool AvroReader::Finished() const {

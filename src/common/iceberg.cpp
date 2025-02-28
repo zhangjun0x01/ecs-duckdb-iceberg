@@ -25,16 +25,16 @@ IcebergTable IcebergTable::Load(const string &iceberg_path, IcebergSnapshot &sna
 	ret.snapshot = snapshot;
 
 	auto &fs = FileSystem::GetFileSystem(context);
-	auto manifest_list_full_path = allow_moved_paths
+	auto manifest_list_full_path = options.allow_moved_paths
 	                                   ? IcebergUtils::GetFullPath(iceberg_path, snapshot.manifest_list, fs)
 	                                   : snapshot.manifest_list;
 	vector<IcebergManifest> manifests;
 	if (snapshot.iceberg_format_version == 1) {
 		manifests = ScanAvroMetadata<IcebergManifestV1>(context, manifest_list_full_path);
-		ReadManifestEntries<IcebergManifestEntryV1>(context, manifests, allow_moved_paths, fs, iceberg_path, ret.entries);
+		ReadManifestEntries<IcebergManifestEntryV1>(context, manifests, options.allow_moved_paths, fs, iceberg_path, ret.entries);
 	} else if (snapshot.iceberg_format_version == 2) {
 		manifests = ScanAvroMetadata<IcebergManifestV2>(context, manifest_list_full_path);
-		ReadManifestEntries<IcebergManifestEntryV2>(context, manifests, allow_moved_paths, fs, iceberg_path, ret.entries);
+		ReadManifestEntries<IcebergManifestEntryV2>(context, manifests, options.allow_moved_paths, fs, iceberg_path, ret.entries);
 	} else {
 		throw InvalidInputException("iceberg_format_version %d not handled", snapshot.iceberg_format_version);
 	}

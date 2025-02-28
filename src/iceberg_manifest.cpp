@@ -1,4 +1,5 @@
 #include "iceberg_manifest.hpp"
+#include "duckdb/main/database.hpp"
 
 //! Iceberg Manifest scan routines
 
@@ -8,12 +9,21 @@ static void ManifestNameMapping(idx_t column_id, const LogicalType &type, const 
 	name_to_vec[name] = ColumnIndex(column_id);
 }
 
-void IcebergManifestV1::ProduceEntry(DataChunk &input, idx_t result_offset, const case_insensitive_map_t<ColumnIndex> &name_to_vec, entry_type &result) {
+idx_t IcebergManifestV1::ProduceEntries(DataChunk &input, idx_t offset, idx_t count, const case_insensitive_map_t<ColumnIndex> &name_to_vec,
+											vector<entry_type> &result) {
 	auto manifest_path = FlatVector::GetData<string_t>(input.data[name_to_vec.at("manifest_path").GetPrimaryIndex()]);
 
-	result.manifest_path = manifest_path[result_offset].GetString();
-	result.content = IcebergManifestContentType::DATA;
-	result.sequence_number = 0;
+	for (idx_t i = 0; i < count; i++) {
+		idx_t index = i + offset;
+
+		IcebergManifest manifest;
+		manifest.manifest_path = manifest_path[index].GetString();
+		manifest.content = IcebergManifestContentType::DATA;
+		manifest.sequence_number = 0;
+
+		result.push_back(manifest);
+	}
+	return count;
 }
 
 bool IcebergManifestV1::VerifySchema(const case_insensitive_map_t<ColumnIndex> &name_to_vec) {
@@ -23,18 +33,27 @@ bool IcebergManifestV1::VerifySchema(const case_insensitive_map_t<ColumnIndex> &
 	return true;
 }
 
-void IcebergManifestV1::PopulateNameMapping(idx_t column_id, LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec) {
+void IcebergManifestV1::PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec) {
 	ManifestNameMapping(column_id, type, name, name_to_vec);
 }
 
-void IcebergManifestV2::ProduceEntry(DataChunk &input, idx_t result_offset, const case_insensitive_map_t<ColumnIndex> &name_to_vec, entry_type &result) {
+idx_t IcebergManifestV2::ProduceEntries(DataChunk &input, idx_t offset, idx_t count, const case_insensitive_map_t<ColumnIndex> &name_to_vec,
+											vector<entry_type> &result) {
 	auto manifest_path = FlatVector::GetData<string_t>(input.data[name_to_vec.at("manifest_path").GetPrimaryIndex()]);
 	auto content = FlatVector::GetData<int32_t>(input.data[name_to_vec.at("content").GetPrimaryIndex()]);
 	auto sequence_number = FlatVector::GetData<int64_t>(input.data[name_to_vec.at("sequence_number").GetPrimaryIndex()]);
 
-	result.manifest_path = manifest_path[result_offset].GetString();
-	result.content = IcebergManifestContentType(content[result_offset]);
-	result.sequence_number = sequence_number[result_offset];
+	for (idx_t i = 0; i < count; i++) {
+		idx_t index = i + offset;
+
+		IcebergManifest manifest;
+		manifest.manifest_path = manifest_path[index].GetString();
+		manifest.content = IcebergManifestContentType(content[index]);
+		manifest.sequence_number = sequence_number[index];
+
+		result.push_back(manifest);
+	}
+	return count;
 }
 
 bool IcebergManifestV2::VerifySchema(const case_insensitive_map_t<ColumnIndex> &name_to_vec) {
@@ -47,7 +66,7 @@ bool IcebergManifestV2::VerifySchema(const case_insensitive_map_t<ColumnIndex> &
 	return true;
 }
 
-void IcebergManifestV2::PopulateNameMapping(idx_t column_id, LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec) {
+void IcebergManifestV2::PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec) {
 	ManifestNameMapping(column_id, type, name, name_to_vec);
 }
 
@@ -72,7 +91,8 @@ static void EntryNameMapping(idx_t column_id, const LogicalType &type, const str
 	}
 }
 
-void IcebergManifestEntryV1::ProduceEntry(DataChunk &input, idx_t result_offset, const case_insensitive_map_t<ColumnIndex> &name_to_vec, entry_type &result) {
+idx_t IcebergManifestEntryV1::ProduceEntries(DataChunk &input, idx_t offset, idx_t count, const case_insensitive_map_t<ColumnIndex> &name_to_vec,
+													vector<entry_type> &result) {
 	auto status = FlatVector::GetData<int32_t>(input.data[name_to_vec.at("status").GetPrimaryIndex()]);
 
 	auto file_path_idx = name_to_vec.at("file_path");
@@ -85,11 +105,26 @@ void IcebergManifestEntryV1::ProduceEntry(DataChunk &input, idx_t result_offset,
 	auto file_format = FlatVector::GetData<string_t>(*child_entries[name_to_vec.at("file_format").GetChildIndex(0).GetPrimaryIndex()]);
 	auto record_count = FlatVector::GetData<int64_t>(*child_entries[name_to_vec.at("record_count").GetChildIndex(0).GetPrimaryIndex()]);
 
-	result.status = (IcebergManifestEntryStatusType)status[result_offset];
-	result.content = IcebergManifestEntryContentType::DATA;
-	result.file_path = file_path[result_offset].GetString();
-	result.file_format = file_format[result_offset].GetString();
-	result.record_count = record_count[result_offset];
+	idx_t produced = 0;
+	for (idx_t i = 0; i < count; i++) {
+		idx_t index = i + offset;
+
+		IcebergManifestEntry entry;
+
+		entry.status = (IcebergManifestEntryStatusType)status[index];
+		entry.content = IcebergManifestEntryContentType::DATA;
+		entry.file_path = file_path[index].GetString();
+		entry.file_format = file_format[index].GetString();
+		entry.record_count = record_count[index];
+
+		if (entry.status == IcebergManifestEntryStatusType::DELETED) {
+			//! Skip this entry, we don't care about deleted entries
+			continue;
+		}
+		produced++;
+		result.push_back(entry);
+	}
+	return produced;
 }
 
 bool IcebergManifestEntryV1::VerifySchema(const case_insensitive_map_t<ColumnIndex> &name_to_vec) {
@@ -108,11 +143,12 @@ bool IcebergManifestEntryV1::VerifySchema(const case_insensitive_map_t<ColumnInd
 	return true;
 }
 
-void IcebergManifestEntryV1::PopulateNameMapping(idx_t column_id, LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec) {
+void IcebergManifestEntryV1::PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec) {
 	EntryNameMapping(column_id, type, name, name_to_vec);
 }
 
-void IcebergManifestEntryV2::ProduceEntry(DataChunk &input, idx_t result_offset, const case_insensitive_map_t<ColumnIndex> &name_to_vec, entry_type &result) {
+idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &input, idx_t offset, idx_t count, const case_insensitive_map_t<ColumnIndex> &name_to_vec,
+													vector<entry_type> &result) {
 	auto status = FlatVector::GetData<int32_t>(input.data[name_to_vec.at("status").GetPrimaryIndex()]);
 
 	auto file_path_idx = name_to_vec.at("file_path");
@@ -127,11 +163,26 @@ void IcebergManifestEntryV2::ProduceEntry(DataChunk &input, idx_t result_offset,
 	auto file_format = FlatVector::GetData<string_t>(*child_entries[name_to_vec.at("file_format").GetChildIndex(0).GetPrimaryIndex()]);
 	auto record_count = FlatVector::GetData<int64_t>(*child_entries[name_to_vec.at("record_count").GetChildIndex(0).GetPrimaryIndex()]);
 
-	result.status = (IcebergManifestEntryStatusType)status[result_offset];
-	result.content = (IcebergManifestEntryContentType)content[result_offset];
-	result.file_path = file_path[result_offset].GetString();
-	result.file_format = file_format[result_offset].GetString();
-	result.record_count = record_count[result_offset];
+	idx_t produced = 0;
+	for (idx_t i = 0; i < count; i++) {
+		idx_t index = i + offset;
+
+		IcebergManifestEntry entry;
+
+		entry.status = (IcebergManifestEntryStatusType)status[index];
+		entry.content = (IcebergManifestEntryContentType)content[index];
+		entry.file_path = file_path[index].GetString();
+		entry.file_format = file_format[index].GetString();
+		entry.record_count = record_count[index];
+
+		if (entry.status == IcebergManifestEntryStatusType::DELETED) {
+			//! Skip this entry, we don't care about deleted entries
+			continue;
+		}
+		produced++;
+		result.push_back(entry);
+	}
+	return produced;
 }
 
 bool IcebergManifestEntryV2::VerifySchema(const case_insensitive_map_t<ColumnIndex> &name_to_vec) {
@@ -144,11 +195,11 @@ bool IcebergManifestEntryV2::VerifySchema(const case_insensitive_map_t<ColumnInd
 	return true;
 }
 
-void IcebergManifestEntryV2::PopulateNameMapping(idx_t column_id, LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec) {
+void IcebergManifestEntryV2::PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec) {
 	EntryNameMapping(column_id, type, name, name_to_vec);
 }
 
-AvroScan::AvroScan(const string &scan_name, ClientContext &context, const string &path) {
+AvroScan::AvroScan(const string &scan_name, ClientContext &context, const string &path) : context(context) {
 	auto &instance = DatabaseInstance::GetDatabase(context);
 	auto &avro_scan_entry = ExtensionUtil::GetTableFunction(instance, "read_avro");
 	avro_scan = avro_scan_entry.functions.functions[0];
@@ -163,10 +214,10 @@ AvroScan::AvroScan(const string &scan_name, ClientContext &context, const string
 
 	TableFunctionRef empty;
 	TableFunction dummy_table_function;
-	dummy_table_function.name = StringUtil::Format("%sV%d", OP::NAME, OP::FORMAT_VERSION);
+	dummy_table_function.name = scan_name;
 	TableFunctionBindInput bind_input(children, named_params, input_types, input_names, nullptr, nullptr,
 	                                  dummy_table_function, empty);
-	bind_data = avro_scan.bind(context, bind_input, return_types, return_names);
+	bind_data = avro_scan->bind(context, bind_input, return_types, return_names);
 
 	vector<column_t> column_ids;
 	for (idx_t i = 0; i < return_types.size(); i++) {
@@ -174,7 +225,7 @@ AvroScan::AvroScan(const string &scan_name, ClientContext &context, const string
 	}
 
 	TableFunctionInitInput input(bind_data.get(), column_ids, vector<idx_t>(), nullptr);
-	global_state = avro_scan.init_global(context, input);
+	global_state = avro_scan->init_global(context, input);
 }
 
 bool AvroScan::GetNext(DataChunk &result) {
@@ -186,6 +237,7 @@ bool AvroScan::GetNext(DataChunk &result) {
 		vec.Flatten(count);
 	}
 	if (count == 0) {
+		finished = true;
 		return false;
 	}
 	return true;
@@ -193,6 +245,10 @@ bool AvroScan::GetNext(DataChunk &result) {
 
 void AvroScan::InitializeChunk(DataChunk &chunk) {
 	chunk.Initialize(context, return_types, STANDARD_VECTOR_SIZE);
+}
+
+bool AvroScan::Finished() const {
+	return finished;
 }
 
 } // namespace duckdb
