@@ -38,18 +38,9 @@ unique_ptr<MultiFileList> IcebergMultiFileList::ComplexFilterPushdown(ClientCont
                                                                       const MultiFileReaderOptions &options,
                                                                       MultiFilePushdownInfo &info,
                                                                       vector<unique_ptr<Expression>> &filters) {
-	FilterCombiner combiner(context);
-	for (const auto &filter : filters) {
-		combiner.AddFilter(filter->Copy());
-	}
-	auto filterstmp = combiner.GenerateTableScanFilters(info.column_indexes);
-
-	// FIXME: this is where partition/statistics information should be used to filter
-	auto filtered_list = make_uniq<IcebergMultiFileList>(context, paths[0], this->options);
-	filtered_list->table_filters = std::move(filterstmp);
-	filtered_list->names = names;
-
-	return std::move(filtered_list);
+	//! FIXME: We don't handle filter pushdown yet into the file list
+	//! Leaving the skeleton here because we want to add this relatively soon anyways
+	return nullptr;
 }
 
 vector<string> IcebergMultiFileList::GetAllFiles() {
