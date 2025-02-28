@@ -419,12 +419,23 @@ void IcebergMultiFileList::ScanDeleteFile(const string &delete_file_path) const 
 
 		auto names = FlatVector::GetData<string_t>(result.data[0]);
 		auto row_ids = FlatVector::GetData<int64_t>(result.data[1]);
+
+		if (count == 0) {
+			continue;
+		}
+		reference<string_t> current_file_path = names[0];
+		reference<IcebergDeleteData> deletes = delete_data[current_file_path.get().GetString()];
+
 		for (idx_t i = 0; i < count; i++) {
 			auto &name = names[i];
 			auto &row_id = row_ids[i];
 
-			auto &deletes = delete_data[name.GetString()];
-			deletes.AddRow(row_id);
+			if (name != current_file_path.get()) {
+				current_file_path = name;
+				deletes = delete_data[current_file_path.get().GetString()];
+			}
+
+			deletes.get().AddRow(row_id);
 		}
 	} while (result.size() != 0);
 }
