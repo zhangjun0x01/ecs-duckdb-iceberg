@@ -8,7 +8,10 @@
 
 #pragma once
 
+#include "duckdb/common/types.hpp"
 #include "duckdb/common/string.hpp"
+#include "duckdb/common/vector.hpp"
+#include "duckdb/common/printer.hpp"
 
 namespace duckdb {
 
@@ -93,7 +96,7 @@ public:
 	void Print() {
 		Printer::Print("    -> ManifestEntry = { type: " + IcebergManifestEntryStatusTypeToString(status) +
 		               ", content: " + IcebergManifestEntryContentTypeToString(content) + ", file: " + file_path +
-		               ", record_count: " + to_string(record_count) + "}");
+		               ", record_count: " + std::to_string(record_count) + "}");
 	}
 
 	static vector<LogicalType> Types() {

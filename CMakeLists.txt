@@ -13,6 +13,7 @@ include_directories(src/include)
 set(EXTENSION_SOURCES
     src/iceberg_extension.cpp
     src/iceberg_functions.cpp
+    src/iceberg_manifest.cpp
     src/catalog_api.cpp
     src/catalog_utils.cpp 
     src/common/utils.cpp

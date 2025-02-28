@@ -143,8 +143,6 @@ public:
 	vector<IcebergTableEntry> entries;
 
 protected:
-	static vector<IcebergManifest> ReadManifestListFile(ClientContext &context, const string &path, idx_t iceberg_format_version);
-	static vector<IcebergManifestEntry> ReadManifestEntries(ClientContext &context, const string &path, idx_t iceberg_format_version);
 	string path;
 };
 
