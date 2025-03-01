@@ -106,7 +106,7 @@ string IcebergMultiFileList::GetFile(idx_t file_id) {
 			data_manifest_entry_reader->Initialize(std::move(scan));
 		}
 
-		idx_t remaining = file_id - data_files.size();
+		idx_t remaining = (file_id + 1) - data_files.size();
 		data_manifest_entry_reader->ReadEntries(remaining, [&data_files, &entry_producer](DataChunk &input, idx_t offset, idx_t count, const case_insensitive_map_t<ColumnIndex> &mapping) {
 			return entry_producer(input, offset, count, mapping, data_files);
 		});
