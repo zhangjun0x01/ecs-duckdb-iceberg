@@ -1,3 +1,4 @@
+#include "manifest_reader.hpp"
 #include "iceberg_manifest.hpp"
 #include "duckdb/main/database.hpp"
 
@@ -9,9 +10,9 @@ static void ManifestNameMapping(idx_t column_id, const LogicalType &type, const 
 	name_to_vec[name] = ColumnIndex(column_id);
 }
 
-idx_t IcebergManifestV1::ProduceEntries(DataChunk &input, idx_t offset, idx_t count, const case_insensitive_map_t<ColumnIndex> &name_to_vec,
-											vector<entry_type> &result) {
-	auto manifest_path = FlatVector::GetData<string_t>(input.data[name_to_vec.at("manifest_path").GetPrimaryIndex()]);
+idx_t IcebergManifestV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input, vector<entry_type> &result) {
+	auto &name_to_vec = input.name_to_vec;
+	auto manifest_path = FlatVector::GetData<string_t>(chunk.data[name_to_vec.at("manifest_path").GetPrimaryIndex()]);
 
 	for (idx_t i = 0; i < count; i++) {
 		idx_t index = i + offset;
@@ -37,11 +38,12 @@ void IcebergManifestV1::PopulateNameMapping(idx_t column_id, const LogicalType &
 	ManifestNameMapping(column_id, type, name, name_to_vec);
 }
 
-idx_t IcebergManifestV2::ProduceEntries(DataChunk &input, idx_t offset, idx_t count, const case_insensitive_map_t<ColumnIndex> &name_to_vec,
+idx_t IcebergManifestV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input,
 											vector<entry_type> &result) {
-	auto manifest_path = FlatVector::GetData<string_t>(input.data[name_to_vec.at("manifest_path").GetPrimaryIndex()]);
-	auto content = FlatVector::GetData<int32_t>(input.data[name_to_vec.at("content").GetPrimaryIndex()]);
-	auto sequence_number = FlatVector::GetData<int64_t>(input.data[name_to_vec.at("sequence_number").GetPrimaryIndex()]);
+	auto &name_to_vec = input.name_to_vec;
+	auto manifest_path = FlatVector::GetData<string_t>(chunk.data[name_to_vec.at("manifest_path").GetPrimaryIndex()]);
+	auto content = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("content").GetPrimaryIndex()]);
+	auto sequence_number = FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("sequence_number").GetPrimaryIndex()]);
 
 	for (idx_t i = 0; i < count; i++) {
 		idx_t index = i + offset;
@@ -91,13 +93,14 @@ static void EntryNameMapping(idx_t column_id, const LogicalType &type, const str
 	}
 }
 
-idx_t IcebergManifestEntryV1::ProduceEntries(DataChunk &input, idx_t offset, idx_t count, const case_insensitive_map_t<ColumnIndex> &name_to_vec,
+idx_t IcebergManifestEntryV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input,
 													vector<entry_type> &result) {
-	auto status = FlatVector::GetData<int32_t>(input.data[name_to_vec.at("status").GetPrimaryIndex()]);
+	auto &name_to_vec = input.name_to_vec;
+	auto status = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("status").GetPrimaryIndex()]);
 
 	auto file_path_idx = name_to_vec.at("file_path");
 	auto data_file_idx = file_path_idx.GetPrimaryIndex();
-	auto &child_entries = StructVector::GetEntries(input.data[data_file_idx]);
+	auto &child_entries = StructVector::GetEntries(chunk.data[data_file_idx]);
 	D_ASSERT(name_to_vec.at("file_format").GetPrimaryIndex());
 	D_ASSERT(name_to_vec.at("record_count").GetPrimaryIndex());
 
@@ -117,7 +120,7 @@ idx_t IcebergManifestEntryV1::ProduceEntries(DataChunk &input, idx_t offset, idx
 		entry.file_format = file_format[index].GetString();
 		entry.record_count = record_count[index];
 
-		if (entry.status == IcebergManifestEntryStatusType::DELETED) {
+		if (input.skip_deleted && entry.status == IcebergManifestEntryStatusType::DELETED) {
 			//! Skip this entry, we don't care about deleted entries
 			continue;
 		}
@@ -147,13 +150,14 @@ void IcebergManifestEntryV1::PopulateNameMapping(idx_t column_id, const LogicalT
 	EntryNameMapping(column_id, type, name, name_to_vec);
 }
 
-idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &input, idx_t offset, idx_t count, const case_insensitive_map_t<ColumnIndex> &name_to_vec,
+idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input,
 													vector<entry_type> &result) {
-	auto status = FlatVector::GetData<int32_t>(input.data[name_to_vec.at("status").GetPrimaryIndex()]);
+	auto &name_to_vec = input.name_to_vec;
+	auto status = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("status").GetPrimaryIndex()]);
 
 	auto file_path_idx = name_to_vec.at("file_path");
 	auto data_file_idx = file_path_idx.GetPrimaryIndex();
-	auto &child_entries = StructVector::GetEntries(input.data[data_file_idx]);
+	auto &child_entries = StructVector::GetEntries(chunk.data[data_file_idx]);
 	D_ASSERT(name_to_vec.at("file_format").GetPrimaryIndex() == data_file_idx);
 	D_ASSERT(name_to_vec.at("record_count").GetPrimaryIndex() == data_file_idx);
 	D_ASSERT(name_to_vec.at("content").GetPrimaryIndex() == data_file_idx);
@@ -175,7 +179,7 @@ idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &input, idx_t offset, idx
 		entry.file_format = file_format[index].GetString();
 		entry.record_count = record_count[index];
 
-		if (entry.status == IcebergManifestEntryStatusType::DELETED) {
+		if (input.skip_deleted && entry.status == IcebergManifestEntryStatusType::DELETED) {
 			//! Skip this entry, we don't care about deleted entries
 			continue;
 		}

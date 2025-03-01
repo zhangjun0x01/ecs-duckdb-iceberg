@@ -3,7 +3,6 @@
 #include "iceberg_manifest.hpp"
 #include "iceberg_utils.hpp"
 #include "iceberg_types.hpp"
-
 #include "manifest_reader.hpp"
 
 namespace duckdb {
@@ -14,7 +13,7 @@ static void ReadManifestEntries(ClientContext &context, const vector<IcebergMani
 		auto manifest_entry_full_path = allow_moved_paths
 		                                    ? IcebergUtils::GetFullPath(iceberg_path, manifest.manifest_path, fs)
 		                                    : manifest.manifest_path;
-		auto manifest_paths = ScanAvroMetadata<OP>(context, manifest_entry_full_path);
+		auto manifest_paths = ScanAvroMetadata<OP>("IcebergManifest", context, manifest_entry_full_path);
 		result.push_back({std::move(manifest), std::move(manifest_paths)});
 	}
 }
@@ -30,10 +29,10 @@ IcebergTable IcebergTable::Load(const string &iceberg_path, IcebergSnapshot &sna
 	                                   : snapshot.manifest_list;
 	vector<IcebergManifest> manifests;
 	if (snapshot.iceberg_format_version == 1) {
-		manifests = ScanAvroMetadata<IcebergManifestV1>(context, manifest_list_full_path);
+		manifests = ScanAvroMetadata<IcebergManifestV1>("IcebergManifestList", context, manifest_list_full_path);
 		ReadManifestEntries<IcebergManifestEntryV1>(context, manifests, options.allow_moved_paths, fs, iceberg_path, ret.entries);
 	} else if (snapshot.iceberg_format_version == 2) {
-		manifests = ScanAvroMetadata<IcebergManifestV2>(context, manifest_list_full_path);
+		manifests = ScanAvroMetadata<IcebergManifestV2>("IcebergManifestList", context, manifest_list_full_path);
 		ReadManifestEntries<IcebergManifestEntryV2>(context, manifests, options.allow_moved_paths, fs, iceberg_path, ret.entries);
 	} else {
 		throw InvalidInputException("iceberg_format_version %d not handled", snapshot.iceberg_format_version);

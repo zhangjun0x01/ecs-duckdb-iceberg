@@ -107,8 +107,8 @@ string IcebergMultiFileList::GetFile(idx_t file_id) {
 		}
 
 		idx_t remaining = (file_id + 1) - data_files.size();
-		data_manifest_entry_reader->ReadEntries(remaining, [&data_files, &entry_producer](DataChunk &input, idx_t offset, idx_t count, const case_insensitive_map_t<ColumnIndex> &mapping) {
-			return entry_producer(input, offset, count, mapping, data_files);
+		data_manifest_entry_reader->ReadEntries(remaining, [&data_files, &entry_producer](DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input) {
+			return entry_producer(chunk, offset, count, input, data_files);
 		});
 		if (data_manifest_entry_reader->Finished()) {
 			current_data_manifest++;
@@ -172,6 +172,8 @@ void IcebergMultiFileList::InitializeFiles() {
 	if (snapshot.iceberg_format_version == 1) {
 		data_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping, IcebergManifestEntryV1::VerifySchema);
 		delete_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping, IcebergManifestEntryV1::VerifySchema);
+		delete_manifest_entry_reader->skip_deleted = true;
+		data_manifest_entry_reader->skip_deleted = true;
 		manifest_reader = make_uniq<ManifestReader>(IcebergManifestV1::PopulateNameMapping, IcebergManifestV1::VerifySchema);
 
 		manifest_producer = IcebergManifestV1::ProduceEntries;
@@ -179,6 +181,8 @@ void IcebergMultiFileList::InitializeFiles() {
 	} else if (snapshot.iceberg_format_version == 2) {
 		data_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping, IcebergManifestEntryV2::VerifySchema);
 		delete_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping, IcebergManifestEntryV2::VerifySchema);
+		delete_manifest_entry_reader->skip_deleted = true;
+		data_manifest_entry_reader->skip_deleted = true;
 		manifest_reader = make_uniq<ManifestReader>(IcebergManifestV2::PopulateNameMapping, IcebergManifestV2::VerifySchema);
 
 		manifest_producer = IcebergManifestV2::ProduceEntries;
@@ -196,8 +200,8 @@ void IcebergMultiFileList::InitializeFiles() {
 
 	vector<IcebergManifest> all_manifests;
 	while (!manifest_reader->Finished()) {
-		manifest_reader->ReadEntries(STANDARD_VECTOR_SIZE, [&all_manifests, manifest_producer](DataChunk &input, idx_t offset, idx_t count, const case_insensitive_map_t<ColumnIndex> &mapping) {
-			return manifest_producer(input, offset, count, mapping, all_manifests);
+		manifest_reader->ReadEntries(STANDARD_VECTOR_SIZE, [&all_manifests, manifest_producer](DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input) {
+			return manifest_producer(chunk, offset, count, input, all_manifests);
 		});
 	}
 
@@ -492,8 +496,8 @@ void IcebergMultiFileList::ProcessDeletes() const {
 			delete_manifest_entry_reader->Initialize(std::move(scan));
 		}
 
-		delete_manifest_entry_reader->ReadEntries(STANDARD_VECTOR_SIZE, [&delete_files, &entry_producer](DataChunk &input, idx_t offset, idx_t count, const case_insensitive_map_t<ColumnIndex> &mapping) {
-			return entry_producer(input, offset, count, mapping, delete_files);
+		delete_manifest_entry_reader->ReadEntries(STANDARD_VECTOR_SIZE, [&delete_files, &entry_producer](DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input) {
+			return entry_producer(chunk, offset, count, input, delete_files);
 		});
 
 		if (delete_manifest_entry_reader->Finished()) {

@@ -2,15 +2,19 @@
 
 namespace duckdb {
 
+
+ManifestReaderInput::ManifestReaderInput(const case_insensitive_map_t<ColumnIndex> &name_to_vec, bool skip_deleted) : name_to_vec(name_to_vec), skip_deleted(skip_deleted) {
+}
+
 ManifestReader::ManifestReader(manifest_reader_name_mapping name_mapping, manifest_reader_schema_validation schema_validation) : name_mapping(name_mapping), schema_validation(schema_validation) {}
 
 void ManifestReader::Initialize(unique_ptr<AvroScan> scan_p) {
 	const bool first_init = scan == nullptr;
 	scan = std::move(scan_p);
 	if (first_init) {
-		scan->InitializeChunk(input);
+		scan->InitializeChunk(chunk);
 	} else {
-		input.Reset();
+		chunk.Reset();
 	}
 	finished = false;
 	offset = 0;
@@ -34,9 +38,9 @@ idx_t ManifestReader::ReadEntries(idx_t count, manifest_reader_read callback) {
 
 	idx_t scanned = 0;
 	while (scanned < count) {
-		if (offset >= input.size()) {
-			scan->GetNext(input);
-			if (input.size() == 0) {
+		if (offset >= chunk.size()) {
+			scan->GetNext(chunk);
+			if (chunk.size() == 0) {
 				finished = true;
 				return scanned;
 			}
@@ -44,9 +48,10 @@ idx_t ManifestReader::ReadEntries(idx_t count, manifest_reader_read callback) {
 		}
 
 		idx_t remaining = count - scanned;
-		idx_t to_scan = MinValue(input.size() - offset, remaining);
+		idx_t to_scan = MinValue(chunk.size() - offset, remaining);
 
-		scanned += callback(input, offset, to_scan, name_to_vec);
+		ManifestReaderInput input(name_to_vec, skip_deleted);
+		scanned += callback(chunk, offset, to_scan, input);
 		offset += count;
 	}
 	return scanned;
@@ -58,5 +63,6 @@ bool ManifestReader::Finished() const {
 	}
 	return scan->Finished();
 }
+
 
 } // namespace duckdb
