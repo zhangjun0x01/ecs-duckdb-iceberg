@@ -29,21 +29,20 @@ void IcebergMultiFileList::Bind(vector<LogicalType> &return_types, vector<string
 	}
 
 	auto &schema = snapshot.schema;
-	for (auto &entry : schema) {
-		auto &schema_entry = entry.second;
+	for (auto &schema_entry : schema) {
 		names.push_back(schema_entry.name);
 		return_types.push_back(schema_entry.type);
 	}
 }
 
 template <bool LOWER_BOUND = true>
-[[noreturn]] static void ThrowBoundError(const string &bound, IcebergColumnDefinition &column) {
+[[noreturn]] static void ThrowBoundError(const string &bound, const IcebergColumnDefinition &column) {
 	auto bound_type = LOWER_BOUND ? "'lower_bound'" : "'upper_bound'";
 	throw InvalidInputException("Invalid %s size (%d) for column %s with type '%s', bound value: '%s'", bound_type, bound.size(), column.name, column.type.ToString(), bound);
 }
 
 template <bool LOWER_BOUND = true>
-static Value DeserializeBound(const string &bound_value, IcebergColumnDefinition &column) {
+static Value DeserializeBound(const string &bound_value, const IcebergColumnDefinition &column) {
 	auto &type = column.type;
 
 	switch (type.id()) {
@@ -332,6 +331,12 @@ bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 	}
 
 	auto &schema = snapshot.schema;
+	unordered_map<uint64_t, idx_t> source_to_column_id;
+	for (idx_t i = 0; i < schema.size(); i++) {
+		auto &column = schema[i];
+		source_to_column_id[static_cast<uint64_t>(column.id)] = i;
+	}
+
 	for (idx_t i = 0; i < manifest.field_summary.size(); i++) {
 		auto &field_summary = manifest.field_summary[i];
 		auto &field = partition_spec.fields[i];
@@ -340,10 +345,51 @@ bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 			//! FIXME: add support for different transformations
 			continue;
 		}
+		auto column_id = source_to_column_id.at(field.source_id);
 
-		auto &column = schema[field.source_id];
+		// Find if we have a filter for this source column
+		auto filter_it = table_filters.filters.find(column_id);
+		if (filter_it == table_filters.filters.end()) {
+			continue;
+		}
+		// Skip if no bounds available
+		if (field_summary.lower_bound.empty() || field_summary.upper_bound.empty()) {
+			continue;
+		}
+
+		auto &column = schema[column_id];
 		auto lower_bound = DeserializeBound<true>(field_summary.lower_bound, column);
 		auto upper_bound = DeserializeBound<false>(field_summary.upper_bound, column);
+
+		auto &filter = *filter_it->second;
+		if (filter.filter_type != TableFilterType::CONSTANT_COMPARISON) {
+			continue;
+		}
+		auto &constant_filter = filter.Cast<ConstantFilter>();
+		auto &constant_value = constant_filter.constant;
+		
+		// Note: Using inclusive bounds because partition pruning must be conservative
+		bool result = true;
+		switch (constant_filter.comparison_type) {
+		case ExpressionType::COMPARE_EQUAL:
+			result = constant_value >= lower_bound && constant_value <= upper_bound;
+			break;
+		case ExpressionType::COMPARE_GREATERTHAN:
+		case ExpressionType::COMPARE_GREATERTHANOREQUALTO:
+			result = constant_value <= upper_bound;
+			break;
+		case ExpressionType::COMPARE_LESSTHAN:
+		case ExpressionType::COMPARE_LESSTHANOREQUALTO:
+			result = constant_value >= lower_bound;
+			break;
+		default:
+			result = true; // Conservative approach for unsupported comparisons
+			break;
+		}
+		
+		if (!result) {
+			return false; // If any predicate fails, we can skip this manifest
+		}
 	}
 	return true;
 }
@@ -461,8 +507,7 @@ bool IcebergMultiFileReader::Bind(MultiFileReaderOptions &options, MultiFileList
 
 	auto &schema = iceberg_multi_file_list.snapshot.schema;
 	auto &columns = bind_data.schema;
-	for (auto &kv : schema) {
-		auto &item = kv.second;
+	for (auto &item : schema) {
 		MultiFileReaderColumnDefinition column(item.name, item.type);
 		column.default_expression = make_uniq<ConstantExpression>(item.default_value);
 		column.identifier = Value::INTEGER(item.id);

@@ -91,7 +91,7 @@ public:
 	timestamp_t timestamp_ms;
 	idx_t iceberg_format_version;
 	uint64_t schema_id;
-	unordered_map<uint64_t, IcebergColumnDefinition> schema;
+	vector<IcebergColumnDefinition> schema;
 	string metadata_compression_codec = "none";
 public:
 	static IcebergSnapshot GetLatestSnapshot(IcebergMetadata &info, const IcebergOptions &options);
@@ -113,7 +113,7 @@ protected:
 	static yyjson_val *FindLatestSnapshotInternal(yyjson_val *snapshots);
 	static yyjson_val *FindSnapshotByIdInternal(yyjson_val *snapshots, idx_t target_id);
 	static yyjson_val *FindSnapshotByIdTimestampInternal(yyjson_val *snapshots, timestamp_t timestamp);
-	static unordered_map<uint64_t, IcebergColumnDefinition> ParseSchema(vector<yyjson_val *> &schemas, idx_t schema_id);
+	static vector<IcebergColumnDefinition> ParseSchema(vector<yyjson_val *> &schemas, idx_t schema_id);
 };
 
 //! Represents the iceberg table at a specific IcebergSnapshot. Corresponds to a single Manifest List.

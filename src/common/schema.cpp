@@ -151,7 +151,7 @@ IcebergColumnDefinition IcebergColumnDefinition::ParseFromJson(yyjson_val *val) 
 	return ret;
 }
 
-static unordered_map<uint64_t, IcebergColumnDefinition> ParseSchemaFromJson(yyjson_val *schema_json) {
+static vector<IcebergColumnDefinition> ParseSchemaFromJson(yyjson_val *schema_json) {
 	// Assert that the top level 'type' is a struct
 	auto type_str = IcebergUtils::TryGetStrFromObject(schema_json, "type");
 	if (type_str != "struct") {
@@ -161,18 +161,18 @@ static unordered_map<uint64_t, IcebergColumnDefinition> ParseSchemaFromJson(yyjs
 	D_ASSERT(IcebergUtils::TryGetStrFromObject(schema_json, "type") == "struct");
 	yyjson_val *field;
 	size_t max, idx;
-	unordered_map<uint64_t, IcebergColumnDefinition> ret;
+	vector<IcebergColumnDefinition> ret;
 
 	auto fields = yyjson_obj_get(schema_json, "fields");
 	yyjson_arr_foreach(fields, idx, max, field) {
 		auto column = IcebergColumnDefinition::ParseFromJson(field);
-		ret[static_cast<uint64_t>(column.id)] = std::move(column);
+		ret.push_back(column);
 	}
 
 	return ret;
 }
 
-unordered_map<uint64_t, IcebergColumnDefinition> IcebergSnapshot::ParseSchema(vector<yyjson_val *> &schemas, idx_t schema_id) {
+vector<IcebergColumnDefinition> IcebergSnapshot::ParseSchema(vector<yyjson_val *> &schemas, idx_t schema_id) {
 	// Multiple schemas can be present in the json metadata 'schemas' list
 	for (const auto &schema_ptr : schemas) {
 		auto found_schema_id = IcebergUtils::TryGetNumFromObject(schema_ptr, "schema-id");
