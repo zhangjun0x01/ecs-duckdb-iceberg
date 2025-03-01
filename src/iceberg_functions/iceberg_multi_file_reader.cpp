@@ -170,16 +170,16 @@ void IcebergMultiFileList::InitializeFiles() {
 
 	//! Set up the manifest + manifest entry readers
 	if (snapshot.iceberg_format_version == 1) {
-		data_manifest_entry_reader = make_uniq<AvroReader>(IcebergManifestEntryV1::PopulateNameMapping, IcebergManifestEntryV1::VerifySchema);
-		delete_manifest_entry_reader = make_uniq<AvroReader>(IcebergManifestEntryV1::PopulateNameMapping, IcebergManifestEntryV1::VerifySchema);
-		manifest_reader = make_uniq<AvroReader>(IcebergManifestV1::PopulateNameMapping, IcebergManifestV1::VerifySchema);
+		data_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping, IcebergManifestEntryV1::VerifySchema);
+		delete_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping, IcebergManifestEntryV1::VerifySchema);
+		manifest_reader = make_uniq<ManifestReader>(IcebergManifestV1::PopulateNameMapping, IcebergManifestV1::VerifySchema);
 
 		manifest_producer = IcebergManifestV1::ProduceEntries;
 		entry_producer = IcebergManifestEntryV1::ProduceEntries;
 	} else if (snapshot.iceberg_format_version == 2) {
-		data_manifest_entry_reader = make_uniq<AvroReader>(IcebergManifestEntryV2::PopulateNameMapping, IcebergManifestEntryV2::VerifySchema);
-		delete_manifest_entry_reader = make_uniq<AvroReader>(IcebergManifestEntryV2::PopulateNameMapping, IcebergManifestEntryV2::VerifySchema);
-		manifest_reader = make_uniq<AvroReader>(IcebergManifestV2::PopulateNameMapping, IcebergManifestV2::VerifySchema);
+		data_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping, IcebergManifestEntryV2::VerifySchema);
+		delete_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping, IcebergManifestEntryV2::VerifySchema);
+		manifest_reader = make_uniq<ManifestReader>(IcebergManifestV2::PopulateNameMapping, IcebergManifestV2::VerifySchema);
 
 		manifest_producer = IcebergManifestV2::ProduceEntries;
 		entry_producer = IcebergManifestEntryV2::ProduceEntries;

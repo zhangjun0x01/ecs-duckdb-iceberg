@@ -2,11 +2,16 @@
 
 namespace duckdb {
 
-AvroReader::AvroReader(avro_reader_name_mapping name_mapping, avro_reader_schema_validation schema_validation) : name_mapping(name_mapping), schema_validation(schema_validation) {}
+ManifestReader::ManifestReader(manifest_reader_name_mapping name_mapping, manifest_reader_schema_validation schema_validation) : name_mapping(name_mapping), schema_validation(schema_validation) {}
 
-void AvroReader::Initialize(unique_ptr<AvroScan> scan_p) {
+void ManifestReader::Initialize(unique_ptr<AvroScan> scan_p) {
+	const bool first_init = scan == nullptr;
 	scan = std::move(scan_p);
-	scan->InitializeChunk(input);
+	if (first_init) {
+		scan->InitializeChunk(input);
+	} else {
+		input.Reset();
+	}
 	finished = false;
 	offset = 0;
 	name_to_vec.clear();
@@ -22,7 +27,7 @@ void AvroReader::Initialize(unique_ptr<AvroScan> scan_p) {
 	}
 }
 
-idx_t AvroReader::ReadEntries(idx_t count, avro_reader_read callback) {
+idx_t ManifestReader::ReadEntries(idx_t count, manifest_reader_read callback) {
 	if (!scan || finished) {
 		return 0;
 	}
@@ -47,7 +52,7 @@ idx_t AvroReader::ReadEntries(idx_t count, avro_reader_read callback) {
 	return scanned;
 }
 
-bool AvroReader::Finished() const {
+bool ManifestReader::Finished() const {
 	if (!scan) {
 		return true;
 	}

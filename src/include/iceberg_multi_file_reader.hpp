@@ -104,12 +104,12 @@ public:
 	vector<string> names;
 	TableFilterSet table_filters;
 
-	unique_ptr<AvroReader> manifest_reader;
-	unique_ptr<AvroReader> data_manifest_entry_reader;
-	unique_ptr<AvroReader> delete_manifest_entry_reader;
+	unique_ptr<ManifestReader> manifest_reader;
+	unique_ptr<ManifestReader> data_manifest_entry_reader;
+	unique_ptr<ManifestReader> delete_manifest_entry_reader;
 
-	avro_reader_manifest_producer manifest_producer = nullptr;
-	avro_reader_manifest_entry_producer entry_producer = nullptr;
+	manifest_reader_manifest_producer manifest_producer = nullptr;
+	manifest_reader_manifest_entry_producer entry_producer = nullptr;
 
 	vector<IcebergManifestEntry> data_files;
 	vector<IcebergManifest> data_manifests;
