@@ -1,6 +1,7 @@
 #include "manifest_reader.hpp"
 #include "iceberg_manifest.hpp"
 #include "duckdb/main/database.hpp"
+#include "duckdb/common/type_visitor.hpp"
 
 //! Iceberg Manifest scan routines
 
@@ -13,6 +14,38 @@ static void ManifestNameMapping(idx_t column_id, const LogicalType &type, const 
 idx_t IcebergManifestV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input, vector<entry_type> &result) {
 	auto &name_to_vec = input.name_to_vec;
 	auto manifest_path = FlatVector::GetData<string_t>(chunk.data[name_to_vec.at("manifest_path").GetPrimaryIndex()]);
+	auto partition_spec_id = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("partition_spec_id").GetPrimaryIndex()]);
+
+	list_entry_t *field_summary;
+	bool *contains_null = nullptr;
+	bool *contains_nan = nullptr;
+	string_t *lower_bound = nullptr;
+	string_t *upper_bound = nullptr;
+
+	auto partitions_it = name_to_vec.find("partitions");
+	if (partitions_it != name_to_vec.end()) {
+		auto &partitions = chunk.data[name_to_vec.at("partitions").GetPrimaryIndex()];
+
+		auto &field_summary_vec = ListVector::GetEntry(partitions);
+		field_summary = FlatVector::GetData<list_entry_t>(partitions);
+		auto &child_vectors = StructVector::GetEntries(field_summary_vec);
+		auto &child_types = StructType::GetChildTypes(ListType::GetChildType(partitions.GetType()));
+		for (idx_t i = 0; i < child_types.size(); i++) {
+			auto &kv = child_types[i];
+			auto &name = kv.first;
+			auto &type = kv.second;
+
+			if (StringUtil::CIEquals(name, "contains_null")) {
+				contains_null = FlatVector::GetData<bool>(*child_vectors[i]);
+			} else if (StringUtil::CIEquals(name, "contains_nan")) {
+				contains_nan = FlatVector::GetData<bool>(*child_vectors[i]);
+			} else if (StringUtil::CIEquals(name, "lower_bound")) {
+				lower_bound = FlatVector::GetData<string_t>(*child_vectors[i]);
+			} else if (StringUtil::CIEquals(name, "upper_bound")) {
+				upper_bound = FlatVector::GetData<string_t>(*child_vectors[i]);
+			}
+		}
+	}
 
 	for (idx_t i = 0; i < count; i++) {
 		idx_t index = i + offset;
@@ -20,7 +53,29 @@ idx_t IcebergManifestV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 		IcebergManifest manifest;
 		manifest.manifest_path = manifest_path[index].GetString();
 		manifest.content = IcebergManifestContentType::DATA;
+		manifest.partition_spec_id = partition_spec_id[index];
 		manifest.sequence_number = 0;
+
+		if (field_summary) {
+			auto list_entry = field_summary[index];
+			for (idx_t j = 0; j < list_entry.length; j++) {
+				FieldSummary summary;
+				auto list_idx = list_entry.offset + j;
+				if (contains_null) {
+					summary.contains_null = contains_null[list_idx];
+				}
+				if (contains_nan) {
+					summary.contains_nan = contains_nan[list_idx];
+				}
+				if (lower_bound) {
+					summary.lower_bound = lower_bound[list_idx].GetString();
+				}
+				if (upper_bound) {
+					summary.upper_bound = upper_bound[list_idx].GetString();
+				}
+				manifest.field_summary.push_back(summary);
+			}
+		}
 
 		result.push_back(manifest);
 	}
@@ -29,6 +84,9 @@ idx_t IcebergManifestV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 
 bool IcebergManifestV1::VerifySchema(const case_insensitive_map_t<ColumnIndex> &name_to_vec) {
 	if (!name_to_vec.count("manifest_path")) {
+		return false;
+	}
+	if (!name_to_vec.count("partition_spec_id")) {
 		return false;
 	}
 	return true;
@@ -44,6 +102,38 @@ idx_t IcebergManifestV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 	auto manifest_path = FlatVector::GetData<string_t>(chunk.data[name_to_vec.at("manifest_path").GetPrimaryIndex()]);
 	auto content = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("content").GetPrimaryIndex()]);
 	auto sequence_number = FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("sequence_number").GetPrimaryIndex()]);
+	auto partition_spec_id = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("partition_spec_id").GetPrimaryIndex()]);
+
+	list_entry_t *field_summary;
+	bool *contains_null = nullptr;
+	bool *contains_nan = nullptr;
+	string_t *lower_bound = nullptr;
+	string_t *upper_bound = nullptr;
+
+	auto partitions_it = name_to_vec.find("partitions");
+	if (partitions_it != name_to_vec.end()) {
+		auto &partitions = chunk.data[name_to_vec.at("partitions").GetPrimaryIndex()];
+
+		auto &field_summary_vec = ListVector::GetEntry(partitions);
+		field_summary = FlatVector::GetData<list_entry_t>(partitions);
+		auto &child_vectors = StructVector::GetEntries(field_summary_vec);
+		auto &child_types = StructType::GetChildTypes(ListType::GetChildType(partitions.GetType()));
+		for (idx_t i = 0; i < child_types.size(); i++) {
+			auto &kv = child_types[i];
+			auto &name = kv.first;
+			auto &type = kv.second;
+
+			if (StringUtil::CIEquals(name, "contains_null")) {
+				contains_null = FlatVector::GetData<bool>(*child_vectors[i]);
+			} else if (StringUtil::CIEquals(name, "contains_nan")) {
+				contains_nan = FlatVector::GetData<bool>(*child_vectors[i]);
+			} else if (StringUtil::CIEquals(name, "lower_bound")) {
+				lower_bound = FlatVector::GetData<string_t>(*child_vectors[i]);
+			} else if (StringUtil::CIEquals(name, "upper_bound")) {
+				upper_bound = FlatVector::GetData<string_t>(*child_vectors[i]);
+			}
+		}
+	}
 
 	for (idx_t i = 0; i < count; i++) {
 		idx_t index = i + offset;
@@ -51,7 +141,29 @@ idx_t IcebergManifestV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 		IcebergManifest manifest;
 		manifest.manifest_path = manifest_path[index].GetString();
 		manifest.content = IcebergManifestContentType(content[index]);
+		manifest.partition_spec_id = partition_spec_id[index];
 		manifest.sequence_number = sequence_number[index];
+
+		if (field_summary) {
+			auto list_entry = field_summary[index];
+			for (idx_t j = 0; j < list_entry.length; j++) {
+				FieldSummary summary;
+				auto list_idx = list_entry.offset + j;
+				if (contains_null) {
+					summary.contains_null = contains_null[list_idx];
+				}
+				if (contains_nan) {
+					summary.contains_nan = contains_nan[list_idx];
+				}
+				if (lower_bound) {
+					summary.lower_bound = lower_bound[list_idx].GetString();
+				}
+				if (upper_bound) {
+					summary.upper_bound = upper_bound[list_idx].GetString();
+				}
+				manifest.field_summary.push_back(summary);
+			}
+		}
 
 		result.push_back(manifest);
 	}

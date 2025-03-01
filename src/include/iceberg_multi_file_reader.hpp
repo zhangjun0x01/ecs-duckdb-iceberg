@@ -91,6 +91,7 @@ public:
 	void ProcessDeletes() const;
 
 protected:
+	bool ManifestMatchesFilter(IcebergManifest &manifest);
 	bool FileMatchesFilter(IcebergManifestEntry &file);
 	//! Get the i-th expanded file
 	string GetFile(idx_t i) override;
@@ -126,7 +127,7 @@ public:
 	ClientContext &context;
 	const IcebergOptions &options;
 	IcebergSnapshot snapshot;
-	vector<IcebergPartitionSpec> partition_specs;
+	unordered_map<int64_t, IcebergPartitionSpec> partition_specs;
 };
 
 struct IcebergMultiFileReaderGlobalState : public MultiFileReaderGlobalState {

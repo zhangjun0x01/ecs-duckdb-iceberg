@@ -29,7 +29,8 @@ void IcebergMultiFileList::Bind(vector<LogicalType> &return_types, vector<string
 	}
 
 	auto &schema = snapshot.schema;
-	for (auto &schema_entry : schema) {
+	for (auto &entry : schema) {
+		auto &schema_entry = entry.second;
 		names.push_back(schema_entry.name);
 		return_types.push_back(schema_entry.type);
 	}
@@ -314,6 +315,39 @@ string IcebergMultiFileList::GetFile(idx_t file_id) {
 	}
 }
 
+bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
+	auto spec_id = manifest.partition_spec_id;
+	auto partition_spec_it = partition_specs.find(spec_id);
+	if (partition_spec_it == partition_specs.end()) {
+		throw InvalidInputException("Manifest %s references 'partition_spec_id' %d which doesn't exist", manifest.manifest_path, spec_id);
+	}
+	auto &partition_spec = partition_spec_it->second;
+	if (partition_spec.fields.size() != manifest.field_summary.size()) {
+		throw InvalidInputException("Manifest has %d 'field_summary' entries but the referenced partition spec has %d fields", manifest.field_summary.size(), partition_spec.fields.size());
+	}
+
+	if (table_filters.filters.empty()) {
+		//! There are no filters
+		return true;
+	}
+
+	auto &schema = snapshot.schema;
+	for (idx_t i = 0; i < manifest.field_summary.size(); i++) {
+		auto &field_summary = manifest.field_summary[i];
+		auto &field = partition_spec.fields[i];
+
+		if (field.transform != "identity") {
+			//! FIXME: add support for different transformations
+			continue;
+		}
+
+		auto &column = schema[field.source_id];
+		auto lower_bound = DeserializeBound<true>(field_summary.lower_bound, column);
+		auto upper_bound = DeserializeBound<false>(field_summary.upper_bound, column);
+	}
+	return true;
+}
+
 void IcebergMultiFileList::InitializeFiles() {
 	lock_guard<mutex> guard(lock);
 	if (initialized) {
@@ -385,6 +419,11 @@ void IcebergMultiFileList::InitializeFiles() {
 	}
 
 	for (auto &manifest : all_manifests) {
+		if (!ManifestMatchesFilter(manifest)) {
+			//! Skip this manifest
+			continue;
+		}
+
 		if (manifest.content == IcebergManifestContentType::DATA) {
 			data_manifests.push_back(std::move(manifest));
 		} else {
@@ -422,7 +461,8 @@ bool IcebergMultiFileReader::Bind(MultiFileReaderOptions &options, MultiFileList
 
 	auto &schema = iceberg_multi_file_list.snapshot.schema;
 	auto &columns = bind_data.schema;
-	for (auto &item : schema) {
+	for (auto &kv : schema) {
+		auto &item = kv.second;
 		MultiFileReaderColumnDefinition column(item.name, item.type);
 		column.default_expression = make_uniq<ConstantExpression>(item.default_value);
 		column.identifier = Value::INTEGER(item.id);

@@ -47,7 +47,7 @@ IcebergPartitionSpecField IcebergPartitionSpecField::ParseFromJson(yyjson_val *f
 	result.name = IcebergUtils::TryGetStrFromObject(field, "name");
 	result.transform = IcebergUtils::TryGetStrFromObject(field, "transform");
 	result.source_id = IcebergUtils::TryGetNumFromObject(field, "source-id");
-	result.field_id = IcebergUtils::TryGetNumFromObject(field, "field-id");
+	result.partition_field_id = IcebergUtils::TryGetNumFromObject(field, "field-id");
 	return result;
 }
 
@@ -67,13 +67,14 @@ IcebergPartitionSpec IcebergPartitionSpec::ParseFromJson(yyjson_val *partition_s
 	return result;
 }
 
-vector<IcebergPartitionSpec> IcebergMetadata::ParsePartitionSpecs() {
-	vector<IcebergPartitionSpec> result;
+unordered_map<int64_t, IcebergPartitionSpec> IcebergMetadata::ParsePartitionSpecs() {
+	unordered_map<int64_t, IcebergPartitionSpec> result;
 
 	size_t idx, max;
 	yyjson_val *partition_spec;
 	yyjson_arr_foreach(partition_specs, idx, max, partition_spec) {
-		result.push_back(IcebergPartitionSpec::ParseFromJson(partition_spec));
+		auto spec = IcebergPartitionSpec::ParseFromJson(partition_spec);
+		result[spec.spec_id] = spec;
 	}
 	return result;
 }

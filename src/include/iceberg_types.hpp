@@ -55,6 +55,16 @@ static string IcebergManifestEntryContentTypeToString(IcebergManifestEntryConten
 	}
 }
 
+struct FieldSummary {
+	bool contains_null = false;
+	//! Optional
+	bool contains_nan = false;
+	//! Optional
+	string lower_bound;
+	//! Optional
+	string upper_bound;
+};
+
 //! An entry in the manifest list file (top level AVRO file)
 struct IcebergManifest {
 public:
@@ -62,8 +72,12 @@ public:
 	string manifest_path;
 	//! sequence_number when manifest was added to table (0 for Iceberg v1)
 	int64_t sequence_number;
+	//! The id of the partition spec from the metadata that is referenced
+	int32_t partition_spec_id;
 	//! either data or deletes
 	IcebergManifestContentType content;
+
+	vector<FieldSummary> field_summary;
 public:
 	void Print() {
 		Printer::Print("  - Manifest = { content: " + IcebergManifestContentTypeToString(content) +

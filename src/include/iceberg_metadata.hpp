@@ -45,7 +45,7 @@ public:
 	//! "A source column id or a list of source column ids from the table’s schema"
 	uint64_t source_id;
 	//! "Used to identify a partition field and is unique within a partition spec"
-	uint64_t field_id;
+	uint64_t partition_field_id;
 };
 
 struct IcebergPartitionSpec {
@@ -67,7 +67,7 @@ public:
 		}
 	}
 public:
-	vector<IcebergPartitionSpec> ParsePartitionSpecs();
+	unordered_map<int64_t, IcebergPartitionSpec> ParsePartitionSpecs();
 public:
 	// Ownership of parse data
 	yyjson_doc *doc = nullptr;
@@ -91,7 +91,7 @@ public:
 	timestamp_t timestamp_ms;
 	idx_t iceberg_format_version;
 	uint64_t schema_id;
-	vector<IcebergColumnDefinition> schema;
+	unordered_map<uint64_t, IcebergColumnDefinition> schema;
 	string metadata_compression_codec = "none";
 public:
 	static IcebergSnapshot GetLatestSnapshot(IcebergMetadata &info, const IcebergOptions &options);
@@ -113,7 +113,7 @@ protected:
 	static yyjson_val *FindLatestSnapshotInternal(yyjson_val *snapshots);
 	static yyjson_val *FindSnapshotByIdInternal(yyjson_val *snapshots, idx_t target_id);
 	static yyjson_val *FindSnapshotByIdTimestampInternal(yyjson_val *snapshots, timestamp_t timestamp);
-	static vector<IcebergColumnDefinition> ParseSchema(vector<yyjson_val *> &schemas, idx_t schema_id);
+	static unordered_map<uint64_t, IcebergColumnDefinition> ParseSchema(vector<yyjson_val *> &schemas, idx_t schema_id);
 };
 
 //! Represents the iceberg table at a specific IcebergSnapshot. Corresponds to a single Manifest List.
