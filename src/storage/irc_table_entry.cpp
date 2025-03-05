@@ -1,7 +1,6 @@
 #include "storage/irc_catalog.hpp"
 #include "storage/irc_schema_entry.hpp"
 #include "storage/irc_table_entry.hpp"
-#include "storage/irc_transaction.hpp"
 #include "duckdb/storage/statistics/base_statistics.hpp"
 #include "duckdb/storage/table_storage_info.hpp"
 #include "duckdb/main/extension_util.hpp"
@@ -10,9 +9,7 @@
 #include "duckdb/catalog/catalog_entry/table_function_catalog_entry.hpp"
 #include "duckdb/parser/tableref/table_function_ref.hpp"
 #include "catalog_api.hpp"
-#include "../../duckdb/third_party/catch/catch.hpp"
 #include "duckdb/planner/binder.hpp"
-#include "duckdb/planner/tableref/bound_table_function.hpp"
 #include "duckdb/planner/logical_operator.hpp"
 #include "duckdb/planner/operator/logical_get.hpp"
 
