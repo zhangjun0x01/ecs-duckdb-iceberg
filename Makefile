@@ -5,7 +5,7 @@ EXT_NAME=iceberg
 EXT_CONFIG=${PROJ_DIR}extension_config.cmake
 
 # We need this for testing
-CORE_EXTENSIONS='parquet;httpfs'
+CORE_EXTENSIONS='httpfs;parquet'
 
 # Include the Makefile from extension-ci-tools
 include extension-ci-tools/makefiles/duckdb_extension.Makefile

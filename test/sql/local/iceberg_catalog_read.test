@@ -12,23 +12,19 @@ require httpfs
 
 statement ok
 CREATE SECRET (
-       TYPE ICEBERG,
-       ENDPOINT 'http://127.0.0.1:8181'
-  );
-
-
-statement ok
-CREATE SECRET (
     TYPE S3,
     KEY_ID 'admin',
     SECRET 'password',
     ENDPOINT '127.0.0.1:9000',
     URL_STYLE 'path',
     USE_SSL 0
-  );
+);
 
 statement ok
-ATTACH '' AS my_datalake (TYPE ICEBERG);
+ATTACH '' AS my_datalake (
+    TYPE ICEBERG,
+    ENDPOINT 'http://127.0.0.1:8181'
+);
 
 statement error
 select * from table_unpartitioned
@@ -36,7 +32,7 @@ select * from table_unpartitioned
 <REGEX>:.*table_unpartitioned does not exist.*
 
 statement error
-select * from table_unpartitioned
+select * from table_unpartitioned;
 ----
 <REGEX>:.*Did you mean.*my_datalake.default.table_unpartitioned.*
 
