@@ -52,6 +52,7 @@ void IRCCatalogSet::ClearEntries() {
 }
 
 ICInSchemaSet::ICInSchemaSet(IRCSchemaEntry &schema) : IRCCatalogSet(schema.ParentCatalog()), schema(schema) {
+	auto breaK_here = 0;
 }
 
 optional_ptr<CatalogEntry> ICInSchemaSet::CreateEntry(unique_ptr<CatalogEntry> entry) {

@@ -7,3 +7,9 @@ duckdb_extension_load(iceberg
 )
 
 duckdb_extension_load(tpch)
+
+duckdb_extension_load(aws
+        LOAD_TESTS
+        GIT_URL https://github.com/duckdb/duckdb-aws
+        GIT_TAG main
+)

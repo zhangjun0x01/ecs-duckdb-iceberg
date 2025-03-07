@@ -55,8 +55,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	auto &secret_manager = SecretManager::Get(context);
 	
 	// Get Credentials from IRC API
-	auto table_credentials = IRCAPI::GetTableCredentials(
-		ic_catalog.internal_name, table_data->schema_name, table_data->name, ic_catalog.credentials);
+	auto table_credentials = IRCAPI::GetTableCredentials(context, ic_catalog, table_data->schema_name, table_data->name, ic_catalog.credentials);
 	// First check if table credentials are set (possible the IC catalog does not return credentials)
 	if (!table_credentials.key_id.empty()) {
 		// Inject secret into secret manager scoped to this path
@@ -69,7 +68,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 			{"key_id", table_credentials.key_id},
 			{"secret", table_credentials.secret},
 			{"session_token", table_credentials.session_token},
-			{"region", ic_catalog.credentials.aws_region},
+			{"region", table_credentials.region},
 		};
 
 		std::string lc_storage_location;

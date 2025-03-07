@@ -17,10 +17,12 @@
 #include "iceberg_functions.hpp"
 #include "yyjson.hpp"
 #include "catalog_api.hpp"
+#include <aws/core/Aws.h>
+#include <aws/s3/S3Client.h>
 
 namespace duckdb {
 
-static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &, CreateSecretInput &input) {
+static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context, CreateSecretInput &input) {
 	// apply any overridden settings
 	vector<string> prefix_paths;
 	auto result = make_uniq<KeyValueSecret>(prefix_paths, "iceberg", "config", input.name);
@@ -40,6 +42,7 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &, Creat
 
 	// Get token from catalog
 	result->secret_map["token"] = IRCAPI::GetToken(
+		context,
 		result->secret_map["client_id"].ToString(), 
 		result->secret_map["client_secret"].ToString(),
 		result->secret_map["endpoint"].ToString());
@@ -78,6 +81,11 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
                                            AttachedDatabase &db, const string &name, AttachInfo &info,
                                            AccessMode access_mode) {
 	IRCCredentials credentials;
+	IRCEndpointBuilder endpoint_builder;
+
+	string account_id;
+	string service;
+	string endpoint_type;
 
 	// check if we have a secret provided
 	string secret_name;
@@ -86,11 +94,34 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		if (lower_name == "type" || lower_name == "read_only") {
 			// already handled
 		} else if (lower_name == "secret") {
-			secret_name = entry.second.ToString();
+			secret_name = StringUtil::Lower(entry.second.ToString());
+		} else if (lower_name == "endpoint_type") {
+			endpoint_type = StringUtil::Lower(entry.second.ToString());
 		} else {
 			throw BinderException("Unrecognized option for PC attach: %s", entry.first);
 		}
 	}
+	auto warehouse = info.path;
+
+	if (endpoint_type == "s3_tables_glue") {
+		service = "glue";
+		// look up any s3 secret
+		auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
+
+		auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials);
+		// get the secret ti get the region
+		// if there is no secret, an error will be thrown
+		auto secret_entry = IRCatalog::GetSecret(context, secret_name);
+        auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+		auto region = kv_secret.TryGetValue("region").ToString();
+		catalog->host = service + "." + region + ".amazonaws.com";
+		catalog->warehouse = warehouse;
+		catalog->version = "v1";
+		catalog->secret_name = secret_name;
+		return std::move(catalog);
+	}
+
+	// Default IRC path
 
 	// if no iceberg secret is specified we default to the unnamed mysql secret, if it
 	// exists
@@ -102,6 +133,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	}
 
 	string connection_string = info.path;
+	Value endpoint_val;
 	auto secret_entry = GetSecret(context, secret_name);
 	if (secret_entry) {
 		// secret found - read data
@@ -114,21 +146,19 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		}
 		credentials.token = token_val.ToString();
 
-		Value endpoint_val = kv_secret.TryGetValue("endpoint");
-		credentials.endpoint = endpoint_val.IsNull() ? "" : endpoint_val.ToString();
-		StringUtil::RTrim(credentials.endpoint, "/");
-
-		Value aws_region_val = kv_secret.TryGetValue("aws_region");
-		credentials.aws_region = endpoint_val.IsNull() ? "" : aws_region_val.ToString();
-
+		endpoint_val = kv_secret.TryGetValue("endpoint");
 	} else if (explicit_secret) {
 		// secret not found and one was explicitly provided - throw an error
 		throw BinderException("Secret with name \"%s\" not found", secret_name);
 	}
-
-	// TODO: Check catalog with name actually exists!
-
-	return make_uniq<IRCatalog>(db, info.path, access_mode, credentials);
+	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials);
+	// get the secret ti get the region
+	// if there is no secret, an error will be thrown
+	catalog->host = endpoint_val.ToString();;
+	catalog->warehouse = warehouse;
+	catalog->version = "v1";
+	catalog->secret_name = secret_name;
+	return std::move(catalog);
 }
 
 static unique_ptr<TransactionManager> CreateTransactionManager(StorageExtensionInfo *storage_info, AttachedDatabase &db,
@@ -146,6 +176,9 @@ public:
 };
 
 static void LoadInternal(DatabaseInstance &instance) {
+	Aws::SDKOptions options;
+	Aws::InitAPI(options); // Should only be called once.
+
 	auto &config = DBConfig::GetConfig(instance);
 
 	config.AddExtensionOption(
