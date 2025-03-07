@@ -2,13 +2,13 @@
 # description: test integration with iceberg catalog read
 # group: [iceberg]
 
-require-env ICEBERG_SERVER_AVAILABLE
-
-require-env AWS_DEFAULT_REGION
-
-require-env AWS_ACCESS_KEY_ID
-
-require-env AWS_SECRET_ACCESS_KEY
+# require-env ICEBERG_SERVER_AVAILABLE
+#
+# require-env AWS_DEFAULT_REGION
+#
+# require-env AWS_ACCESS_KEY_ID
+#
+# require-env AWS_SECRET_ACCESS_KEY
 
 require parquet
 
@@ -30,7 +30,6 @@ CREATE SECRET glue_secret (
 statement ok
 attach '840140254803:s3tablescatalog:pyiceberg-blog-bucket' as my_datalake (
     TYPE ICEBERG,
-    SECRET 'glue_secret',
     ENDPOINT_TYPE 'GLUE'
 );
 

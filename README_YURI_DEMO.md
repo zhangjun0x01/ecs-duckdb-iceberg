@@ -29,7 +29,7 @@ CREATE SECRET (
 
 Now attach the S3 Tables catalog:
 ```SQL
-ATTACH 'pyiceberg-blog-bucket' AS my_datalake (TYPE ICEBERG, CATALOG 'S3_TABLES_GLUE', ACCOUNT_ID 840140254803);
+ATTACH 'pyiceberg-blog-bucket' AS my_datalake (TYPE ICEBERG, CATALOG 'GLUE', ACCOUNT_ID 840140254803);
 ```
 
 Fire away!

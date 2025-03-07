@@ -61,21 +61,21 @@ static void SetCatalogSecretParameters(CreateSecretFunction &function) {
 	function.named_parameters["token"] = LogicalType::VARCHAR;
 }
 
-unique_ptr<SecretEntry> GetSecret(ClientContext &context, const string &secret_name) {
-	auto &secret_manager = SecretManager::Get(context);
-	auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
-	// FIXME: this should be adjusted once the `GetSecretByName` API supports this
-	// use case
-	auto secret_entry = secret_manager.GetSecretByName(transaction, secret_name, "memory");
-	if (secret_entry) {
-		return secret_entry;
-	}
-	secret_entry = secret_manager.GetSecretByName(transaction, secret_name, "local_file");
-	if (secret_entry) {
-		return secret_entry;
-	}
-	return nullptr;
-}
+//unique_ptr<SecretEntry> GetSecret(ClientContext &context, const string &secret_name) {
+//	auto &secret_manager = SecretManager::Get(context);
+//	auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
+//	// FIXME: this should be adjusted once the `GetSecretByName` API supports this
+//	// use case
+//	auto secret_entry = secret_manager.GetSecretByName(transaction, secret_name, "memory");
+//	if (secret_entry) {
+//		return secret_entry;
+//	}
+//	secret_entry = secret_manager.GetSecretByName(transaction, secret_name, "local_file");
+//	if (secret_entry) {
+//		return secret_entry;
+//	}
+//	return nullptr;
+//}
 
 static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_info, ClientContext &context,
                                            AttachedDatabase &db, const string &name, AttachInfo &info,
@@ -86,6 +86,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	string account_id;
 	string service;
 	string endpoint_type;
+	string endpoint;
 
 	// check if we have a secret provided
 	string secret_name;
@@ -97,6 +98,8 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 			secret_name = StringUtil::Lower(entry.second.ToString());
 		} else if (lower_name == "endpoint_type") {
 			endpoint_type = StringUtil::Lower(entry.second.ToString());
+		} else if (lower_name == "endpoint") {
+			endpoint = StringUtil::Lower(entry.second.ToString());
 		} else {
 			throw BinderException("Unrecognized option for PC attach: %s", entry.first);
 		}
@@ -106,8 +109,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	if (endpoint_type == "glue") {
 		service = "glue";
 		// look up any s3 secret
-		auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
-
+//		auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
 		auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials);
 		// get the secret ti get the region
 		// if there is no secret, an error will be thrown
@@ -125,36 +127,15 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 
 	// if no iceberg secret is specified we default to the unnamed mysql secret, if it
 	// exists
-	bool explicit_secret = !secret_name.empty();
-	if (!explicit_secret) {
-		// look up settings from the default unnamed mysql secret if none is
-		// provided
-		secret_name = "__default_iceberg";
-	}
 
 	string connection_string = info.path;
 	Value endpoint_val;
-	auto secret_entry = GetSecret(context, secret_name);
-	if (secret_entry) {
-		// secret found - read data
-		const auto &kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
-		string new_connection_info;
-
-		Value token_val = kv_secret.TryGetValue("token");
-		if (token_val.IsNull()) {
-			throw std::runtime_error("Token is blank");
-		}
-		credentials.token = token_val.ToString();
-
-		endpoint_val = kv_secret.TryGetValue("endpoint");
-	} else if (explicit_secret) {
-		// secret not found and one was explicitly provided - throw an error
-		throw BinderException("Secret with name \"%s\" not found", secret_name);
-	}
+	// Lookup a secret we can use to access the rest catalog.
+	auto secret_entry = IRCatalog::GetSecret(context, secret_name);
 	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials);
 	// get the secret ti get the region
 	// if there is no secret, an error will be thrown
-	catalog->host = endpoint_val.ToString();;
+	catalog->host = endpoint;
 	catalog->warehouse = warehouse;
 	catalog->version = "v1";
 	catalog->secret_name = secret_name;

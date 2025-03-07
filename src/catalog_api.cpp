@@ -2,14 +2,10 @@
 #include "catalog_utils.hpp"
 #include "storage/irc_catalog.hpp"
 #include "yyjson.hpp"
-
 #include <curl/curl.h>
 #include <sys/stat.h>
-#include <optional>
-
 #include <aws/core/Aws.h>
 #include <aws/s3/S3Client.h>
-#include <iostream>
 #include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentialsProviderChain.h>
 #include <aws/core/http/curl/CurlHttpClient.h>
@@ -190,7 +186,6 @@ static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_
 	uri.AddPathSegment(endpoint_builder.GetVersion());
 	// then the warehouse
 	if (service == "glue") {
-		// for glue the warehouse has two path segments. "catalogs/" then a subtring of the ARN.
 		uri.AddPathSegment("catalogs");
 		uri.AddPathSegment(endpoint_builder.GetWarehouse());
 	} else {
@@ -207,8 +202,6 @@ static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_
 	uri.SetAuthority(endpoint_builder.GetHost());
 	auto encoded = uri.GetURLEncodedPath();
 
-	// If you don't encode the arn, then the below code fails
-	// because of some very weird reason (code fails in debug mode, NOT in release mode);
 	const Aws::Http::URI uri_const = Aws::Http::URI(uri);
 	auto create_http_req = Aws::Http::CreateHttpRequest(uri_const,
 									 Aws::Http::HttpMethod::HTTP_GET,
@@ -380,24 +373,23 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, const
 	string api_result = GetTableMetadata(context, catalog, schema, table, catalog.secret_name);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
-	auto *aws_temp_credentials = yyjson_obj_get(root, "config");
-	auto credential_size = yyjson_obj_size(aws_temp_credentials);
+	auto *warehouse_credentials = yyjson_obj_get(root, "config");
+	auto credential_size = yyjson_obj_size(warehouse_credentials);
 	auto catalog_credentials = IRCatalog::GetSecret(context, catalog.secret_name);
-	if (aws_temp_credentials && credential_size > 0) {
-		result.key_id = TryGetStrFromObject(aws_temp_credentials, "s3.access-key-id", false);
-		result.secret = TryGetStrFromObject(aws_temp_credentials, "s3.secret-access-key",  false);
-		result.session_token = TryGetStrFromObject(aws_temp_credentials, "s3.session-token", false);
+	if (warehouse_credentials && credential_size > 0) {
+		result.key_id = TryGetStrFromObject(warehouse_credentials, "s3.access-key-id", false);
+		result.secret = TryGetStrFromObject(warehouse_credentials, "s3.secret-access-key",  false);
+		result.session_token = TryGetStrFromObject(warehouse_credentials, "s3.session-token", false);
 		if (catalog_credentials) {
        		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*catalog_credentials->secret);
 			auto region = kv_secret.TryGetValue("region").ToString();
 			result.region = region;
 		}
 	}
-  return result;
+	return result;
 }
 
 string IRCAPI::GetToken(ClientContext &context, string id, string secret, string endpoint) {
-	return "";
 	string post_data = "grant_type=client_credentials&client_id=" + id + "&client_secret=" + secret + "&scope=PRINCIPAL_ROLE:ALL";
 	string api_result = PostRequest(endpoint + "/v1/oauth/tokens", post_data);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
