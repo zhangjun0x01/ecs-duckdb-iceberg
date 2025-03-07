@@ -26,7 +26,6 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 	// apply any overridden settings
 	vector<string> prefix_paths;
 	auto result = make_uniq<KeyValueSecret>(prefix_paths, "iceberg", "config", input.name);
-	
 	for (const auto &named_param : input.options) {
 		auto lower_name = StringUtil::Lower(named_param.first);
 
@@ -84,6 +83,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 			endpoint_type = StringUtil::Lower(entry.second.ToString());
 		} else if (lower_name == "endpoint") {
 			endpoint = StringUtil::Lower(entry.second.ToString());
+			StringUtil::RTrim(endpoint, "/");
 		} else {
 			throw BinderException("Unrecognized option for PC attach: %s", entry.first);
 		}
@@ -115,10 +115,20 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	string connection_string = info.path;
 	Value endpoint_val;
 	// Lookup a secret we can use to access the rest catalog.
+	// if no secret is referenced, this throw
 	auto secret_entry = IRCatalog::GetSecret(context, secret_name);
+	if (secret_entry) {
+ 		// secret found - read data
+ 		const auto &kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+ 		string new_connection_info;
+
+ 		Value token_val = kv_secret.TryGetValue("token");
+ 		credentials.token = token_val.IsNull() ? "" : token_val.ToString();
+
+ 		Value aws_region_val = kv_secret.TryGetValue("aws_region");
+ 		credentials.aws_region = endpoint_val.IsNull() ? "" : aws_region_val.ToString();
+ 	}
 	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials);
-	// get the secret ti get the region
-	// if there is no secret, an error will be thrown
 	catalog->host = endpoint;
 	catalog->warehouse = warehouse;
 	catalog->version = "v1";

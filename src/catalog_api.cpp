@@ -237,13 +237,11 @@ static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_
 	}
 }
 
-static string GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder, const string &secret_name, curl_slist *extra_headers = NULL) {
+static string GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder, const string &secret_name, const string &token = "", curl_slist *extra_headers = NULL) {
 	if (StringUtil::StartsWith(endpoint_builder.GetHost(), "glue." )) {
 		auto str = GetRequestAws(context, endpoint_builder, secret_name);
 		return str;
 	}
-	// TODO: fix token generation.
-	string token = "";
 	auto url = endpoint_builder.GetURL();
 	CURL *curl;
 	CURLcode res;
@@ -345,6 +343,7 @@ static string GetTableMetadata(ClientContext &context, const IRCatalog &catalog,
 		context,
 		url,
 		secret_name,
+		catalog.credentials.token,
 		extra_headers);
 	curl_slist_free_all(extra_headers);
 	return api_result;
@@ -467,7 +466,7 @@ vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, const IRCatalog &c
 	url.AddPathComponent("namespaces");
 	url.AddPathComponent(schema);
 	url.AddPathComponent("tables");
-	string api_result = GetRequest(context, url, catalog.secret_name);
+	string api_result = GetRequest(context, url, catalog.secret_name, catalog.credentials.token);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *tables = yyjson_obj_get(root, "identifiers");
@@ -486,7 +485,7 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, const IRCatalog 
 	auto endpoint_builder = catalog.GetBaseUrl();
 	endpoint_builder.AddPathComponent("namespaces");
 	string api_result =
-	    GetRequest(context, endpoint_builder, catalog.secret_name);
+	    GetRequest(context, endpoint_builder, catalog.secret_name, catalog.credentials.token);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *schemas = yyjson_obj_get(root, "namespaces");
