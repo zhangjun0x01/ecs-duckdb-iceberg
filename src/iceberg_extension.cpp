@@ -92,10 +92,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 
 	if (endpoint_type == "glue") {
 		service = "glue";
-		// look up any s3 secret
-//		auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
 		auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials);
-		// get the secret ti get the region
 		// if there is no secret, an error will be thrown
 		auto secret_entry = IRCatalog::GetSecret(context, secret_name);
         auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);

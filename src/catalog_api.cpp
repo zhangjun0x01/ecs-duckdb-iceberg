@@ -223,12 +223,11 @@ static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_
 
 	auto signer = make_uniq<Aws::Client::AWSAuthV4Signer>(provider, service.c_str(), region.c_str());
 	signer->SignRequest(*req);
-    DUCKDB_LOG_INFO(context, "duckdb-iceberg.get-request", req->GetUri().GetURIString(true));
 	std::shared_ptr<Aws::Http::HttpResponse> res = MyHttpClient->MakeRequest(req);
 	Aws::Http::HttpResponseCode resCode = res->GetResponseCode();
 	if (resCode == Aws::Http::HttpResponseCode::OK) {
 		Aws::StringStream resBody;
-		resBody <<  res->GetResponseBody().rdbuf();
+		resBody << res->GetResponseBody().rdbuf();
 		return resBody.str();
 	} else {
 		Aws::StringStream resBody;
