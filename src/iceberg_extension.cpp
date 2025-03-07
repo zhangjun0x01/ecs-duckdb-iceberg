@@ -103,7 +103,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	}
 	auto warehouse = info.path;
 
-	if (endpoint_type == "s3_tables_glue") {
+	if (endpoint_type == "glue") {
 		service = "glue";
 		// look up any s3 secret
 		auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);

@@ -31,7 +31,7 @@ statement ok
 attach '840140254803:s3tablescatalog:pyiceberg-blog-bucket' as my_datalake (
     TYPE ICEBERG,
     SECRET 'glue_secret',
-    ENDPOINT_TYPE 'S3_TABLES_GLUE'
+    ENDPOINT_TYPE 'GLUE'
 );
 
 statement ok

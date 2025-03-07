@@ -24,6 +24,11 @@ CREATE SECRET glue_secret (
 );
 
 statement ok
-ATTACH 'iceberg-testing' AS my_datalake (TYPE ICEBERG, CATALOG 'GLUE', ACCOUNT_ID 840140254803);
+attach '840140254803:s3tablescatalog:pyiceberg-blog-bucket' as my_datalake (
+    TYPE ICEBERG,
+    SECRET 'glue_secret',
+    ENDPOINT_TYPE 'GLUE'
+);
 
-mode output_result
+statement ok
+use my_datalake;
