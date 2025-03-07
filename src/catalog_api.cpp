@@ -468,15 +468,6 @@ IRCAPITable IRCAPI::GetTable(ClientContext &context,
 	return table_result;
 }
 
-string IRCAPI::GetOptionallyPrefixedURL(const string &api_version, const string &prefix) {
-	return prefix + "/";
-//	D_ASSERT((int32_t)api_version.find(std::string("/")) < 0 && (int32_t)prefix.find(std::string("/")) < 0);
-//	if (prefix.empty()) {
-//		return "/" + api_version + "/";
-//	}
-//	return "/" + api_version + "/" + prefix + "/";
-}
-
 // TODO: handle out-of-order columns using position property
 vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, const IRCatalog &catalog, const string &schema) {
 	vector<IRCAPITable> result;

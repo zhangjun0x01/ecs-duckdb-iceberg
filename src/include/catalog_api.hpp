@@ -50,9 +50,6 @@ public:
   	//! WARNING: not thread-safe. To be called once on extension initialization
   	static void InitializeCurl();
 
-	// The {prefix} for a catalog is always optional according to the iceberg spec. So no need to
-	// add it if it is not defined.
-	static string GetOptionallyPrefixedURL(const string &api_version, const string &prefix);
 	static IRCAPITableCredentials GetTableCredentials(ClientContext &context, const IRCatalog &catalog, const string &schema, const string &table, IRCCredentials credentials);
 	static vector<string> GetCatalogs(ClientContext &context, const IRCatalog &catalog, IRCCredentials credentials);
 	static vector<IRCAPITable> GetTables(ClientContext &context, const IRCatalog &catalog, const string &schema);
