@@ -11,25 +11,24 @@ Start the CLI:
 ./build/debug/duckdb
 ```
 
-Create valid credentials. Following the blog post these are tmp sts credentials obtained with:
-```shell
- aws sts assume-role --role-arn "arn:aws:iam::<redacted>:role/pyiceberg-etl-role" --role-session-name pyiceberg-etl-role
-```
 
-Then open duckdb and create the secret manually (for now, we have some work todo to make STS work)
+Then open duckdb and add a secret detailing how to assume the role with sts.
 ```SQL
-CREATE SECRET (
+CREATE SECRET my_secret (
     TYPE S3,
-    KEY_ID 'redacted',
-    SECRET 'redacted',
-    SESSION_TOKEN 'redacted',
-    REGION 'us-east-1'
-)
+    PROVIDER credential_chain,
+    CHAIN 'sts',
+    ASSUME_ROLE_ARN 'arn:aws:iam::<account_id>:role/<desired_role>',
+    REGION '<region>'
+);
 ```
 
-Now attach the S3 Tables catalog:
+Now attach the Glue catalog:
 ```SQL
-ATTACH 'pyiceberg-blog-bucket' AS my_datalake (TYPE ICEBERG, CATALOG 'GLUE', ACCOUNT_ID 840140254803);
+attach '<account_id>:s3tablescatalog:<bucket>' as my_datalake (
+    TYPE ICEBERG,
+    ENDPOINT_TYPE 'GLUE'
+);
 ```
 
 Fire away!
