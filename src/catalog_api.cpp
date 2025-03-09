@@ -232,7 +232,7 @@ static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_
 	} else {
 		Aws::StringStream resBody;
 		resBody <<  res->GetResponseBody().rdbuf();
-		throw IOException("Failed to query %s, http error %d thrown", req->GetUri().GetURIString(true), res->GetResponseCode());
+		throw IOException("Failed to query %s, http error %d thrown. Message: %s", req->GetUri().GetURIString(true), res->GetResponseCode(), resBody.str());
 	}
 }
 
