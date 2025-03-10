@@ -12,8 +12,6 @@ require httpfs
 
 require aws
 
-mode skip
-
 statement ok
 CREATE SECRET glue_secret (
     TYPE S3,
@@ -24,11 +22,35 @@ CREATE SECRET glue_secret (
 );
 
 statement ok
-attach '840140254803:s3tablescatalog:pyiceberg-blog-bucket' as my_datalake (
+ATTACH '' AS my_datalake (
     TYPE ICEBERG,
-    SECRET 'glue_secret',
+    ENDPOINT 'http://127.0.0.1:8181'
+);
+
+
+statement ok
+attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as glue_lake (
+    TYPE ICEBERG,
     ENDPOINT_TYPE 'GLUE'
 );
 
 statement ok
+use glue_lake.myblognamespace;
+
+statement ok
+show tables;
+
+statement ok
+use my_datalake.default;
+
+# need catalog and schema name for use.
+statement error
+use glue_lake;
+----
+Catalog Error
+
+# need catalog and schema name for use.
+statement error
 use my_datalake;
+----
+Catalog Error

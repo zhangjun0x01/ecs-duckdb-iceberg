@@ -1,0 +1,45 @@
+# name: test/sql/local/irc/test_multiple_keys.test
+# description: test integration with iceberg catalog read
+# group: [iceberg]
+
+require-env ICEBERG_SERVER_AVAILABLE
+
+require parquet
+
+require iceberg
+
+require httpfs
+
+require aws
+
+statement ok
+CREATE SECRET (
+    TYPE S3,
+    KEY_ID 'admin',
+    SECRET 'password',
+    ENDPOINT '127.0.0.1:9000',
+    URL_STYLE 'path',
+    USE_SSL 0
+);
+
+statement ok
+ATTACH '' AS my_datalake (
+    TYPE ICEBERG,
+    ENDPOINT 'http://127.0.0.1:8181'
+);
+
+statement ok
+CREATE SECRET glue_secret (
+    TYPE S3,
+    PROVIDER credential_chain,
+    CHAIN 'sts',
+    ASSUME_ROLE_ARN 'arn:aws:iam::840140254803:role/pyiceberg-etl-role',
+    REGION 'us-east-1'
+);
+
+statement ok
+attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as my_datalake (
+    TYPE ICEBERG,
+    ENDPOINT_TYPE 'GLUE'
+);
+
