@@ -8,7 +8,7 @@
 #include <aws/s3/S3Client.h>
 #include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentialsProviderChain.h>
-#include <aws/core/http/curl/CurlHttpClient.h>
+#include <aws/core/http/HttpClient.h>
 #include <aws/core/http/HttpRequest.h>
 #include <duckdb/main/secret/secret.hpp>
 #include <duckdb/main/secret/secret_manager.hpp>
@@ -169,7 +169,6 @@ static string GetAwsRegion(const string host) {
 static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_builder, const string &secret_name) {
 	auto clientConfig = make_uniq<Aws::Client::ClientConfiguration>();
 
-	auto curl_client = make_uniq<Aws::Http::CurlHttpClient>(*clientConfig);
 	std::shared_ptr<Aws::Http::HttpClientFactory> MyClientFactory;
 	std::shared_ptr<Aws::Http::HttpClient> MyHttpClient;
 
@@ -232,7 +231,7 @@ static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_
 	} else {
 		Aws::StringStream resBody;
 		resBody <<  res->GetResponseBody().rdbuf();
-		throw IOException("Failed to query %s, http error %d thrown", req->GetUri().GetURIString(true), res->GetResponseCode());
+		throw IOException("Failed to query %s, http error %d thrown. Message: %s", req->GetUri().GetURIString(true), res->GetResponseCode(), resBody.str());
 	}
 }
 

@@ -98,7 +98,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
         auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 		auto region = kv_secret.TryGetValue("region").ToString();
 		catalog->host = service + "." + region + ".amazonaws.com";
-		catalog->warehouse = warehouse;
+		catalog->warehouse = StringUtil::Replace(warehouse, "/", ":");
 		catalog->version = "v1";
 		catalog->secret_name = secret_name;
 		return std::move(catalog);

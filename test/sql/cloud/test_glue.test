@@ -28,7 +28,7 @@ CREATE SECRET glue_secret (
 );
 
 statement ok
-attach '840140254803:s3tablescatalog:pyiceberg-blog-bucket' as my_datalake (
+attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as my_datalake (
     TYPE ICEBERG,
     ENDPOINT_TYPE 'GLUE'
 );

@@ -71,6 +71,14 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 			{"region", table_credentials.region},
 		};
 
+		if (StringUtil::StartsWith(ic_catalog.host, "glue")) {
+			auto secret_entry = IRCatalog::GetSecret(context, ic_catalog.secret_name);
+			auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+			auto region = kv_secret.TryGetValue("region").ToString();
+			auto endpoint = "s3." + region + ".amazonaws.com";
+			info.options["endpoint"] = endpoint;
+		}
+
 		std::string lc_storage_location;
 		lc_storage_location.resize(table_data->storage_location.size());
 		std::transform(table_data->storage_location.begin(), table_data->storage_location.end(), lc_storage_location.begin(), ::tolower);

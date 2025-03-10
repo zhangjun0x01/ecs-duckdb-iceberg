@@ -8,8 +8,11 @@ duckdb_extension_load(iceberg
 
 duckdb_extension_load(tpch)
 
-duckdb_extension_load(aws
-        LOAD_TESTS
-        GIT_URL https://github.com/duckdb/duckdb-aws
-        GIT_TAG main
-)
+################## AWS
+if (NOT MINGW AND NOT ${WASM_ENABLED})
+    duckdb_extension_load(aws
+            LOAD_TESTS
+            GIT_URL https://github.com/duckdb/duckdb-aws
+            GIT_TAG main
+    )
+endif ()
