@@ -30,11 +30,14 @@ public:
 	static void ClearCacheOnSetting(ClientContext &context, SetScope scope, Value &parameter);
 };
 
-//struct MetadataCacheEntry {
-//	std::string data;
-//	std::chrono::steady_clock::time_point timestamp;
-//};
+class MetadataCacheValue {
+public:
+	std::string data;
+	std::chrono::system_clock::time_point expires_at;
+public:
+	MetadataCacheValue() {};
 
+};
 
 class IRCatalog : public Catalog {
 public:
@@ -105,7 +108,7 @@ private:
 	IRCSchemaSet schemas;
 	string default_schema;
 
-	unordered_map<string, string> metadata_cache;
+	unordered_map<string, unique_ptr<MetadataCacheValue>> metadata_cache;
 
 };
 

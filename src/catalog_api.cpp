@@ -2,6 +2,7 @@
 #include "catalog_utils.hpp"
 #include "storage/irc_catalog.hpp"
 #include "yyjson.hpp"
+#include "iceberg_utils.hpp"
 #include <curl/curl.h>
 #include <sys/stat.h>
 #include <aws/core/Aws.h>
@@ -42,14 +43,6 @@ static string certFileLocations[] = {
 
 const string IRCAPI::API_VERSION_1 = "v1";
 
-struct YyjsonDocDeleter {
-    void operator()(yyjson_doc* doc) {
-        yyjson_doc_free(doc);
-    }
-    void operator()(yyjson_mut_doc* doc) {
-        yyjson_mut_doc_free(doc);
-    }
-};
 
 // Look through the the above locations and if one of the files exists, set that as the location curl should use.
 static bool SelectCurlCertPath() {
@@ -77,34 +70,6 @@ static void InitializeCurlObject(CURL * curl, const string &token) {
 		curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BEARER);
 	}
     SetCurlCAFileInfo(curl);
-}
-
-template <class TYPE, uint8_t TYPE_NUM, TYPE (*get_function)(yyjson_val *obj)>
-static TYPE TemplatedTryGetYYJson(yyjson_val *obj, const string &field, TYPE default_val,
-                                  bool fail_on_missing = true) {
-	auto val = yyjson_obj_get(obj, field.c_str());
-	if (val && yyjson_get_type(val) == TYPE_NUM) {
-		return get_function(val);
-	} else if (!fail_on_missing) {
-		return default_val;
-	}
-	throw IOException("Invalid field found while parsing field: " + field);
-}
-
-static uint64_t TryGetNumFromObject(yyjson_val *obj, const string &field, bool fail_on_missing = true,
-                                    uint64_t default_val = 0) {
-	return TemplatedTryGetYYJson<uint64_t, YYJSON_TYPE_NUM, yyjson_get_uint>(obj, field, default_val,
-	                                                                                        fail_on_missing);
-}
-static bool TryGetBoolFromObject(yyjson_val *obj, const string &field, bool fail_on_missing = false,
-								 bool default_val = false) {
-	return TemplatedTryGetYYJson<bool, YYJSON_TYPE_BOOL, yyjson_get_bool>(obj, field, default_val,
-																						 fail_on_missing);
-}
-static string TryGetStrFromObject(yyjson_val *obj, const string &field, bool fail_on_missing = true,
-                                  const char *default_val = "") {
-	return TemplatedTryGetYYJson<const char *, YYJSON_TYPE_STR, yyjson_get_str>(obj, field, default_val,
-	                                                                                           fail_on_missing);
 }
 
 static string DeleteRequest(const string &url, const string &token = "", curl_slist *extra_headers = NULL) {
@@ -222,12 +187,8 @@ static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_
 
 	auto signer = make_uniq<Aws::Client::AWSAuthV4Signer>(provider, service.c_str(), region.c_str());
 	signer->SignRequest(*req);
-	auto start = std::chrono::high_resolution_clock::now();
 	std::shared_ptr<Aws::Http::HttpResponse> res = MyHttpClient->MakeRequest(req);
 	Aws::Http::HttpResponseCode resCode = res->GetResponseCode();
-	auto stop = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> elapsed = stop - start;
-	std::cout << "Elapsed time: " << elapsed.count() << " seconds\n";
 	if (resCode == Aws::Http::HttpResponseCode::OK) {
 		Aws::StringStream resBody;
 		resBody << res->GetResponseBody().rdbuf();
@@ -322,17 +283,6 @@ static string PostRequest(
 	return readBuffer;
 }
 
-static yyjson_doc *api_result_to_doc(const string &api_result) {
-	auto *doc = yyjson_read(api_result.c_str(), api_result.size(), 0);
-	auto *root = yyjson_doc_get_root(doc);
-	auto *error = yyjson_obj_get(root, "error");
-	if (error != NULL) {
-		string err_msg = TryGetStrFromObject(error, "message");
-		throw std::runtime_error(err_msg);
-	}
-	return doc;
-}
-
 static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, const string &secret_name) {
 	struct curl_slist *extra_headers = NULL;
 	auto url = catalog.GetBaseUrl();
@@ -347,6 +297,7 @@ static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const
 		secret_name,
 		catalog.credentials.token,
 		extra_headers);
+
 	catalog.SetCachedValue(url.GetURL(), api_result);
 	curl_slist_free_all(extra_headers);
 	return api_result;
@@ -376,26 +327,26 @@ vector<string> IRCAPI::GetCatalogs(ClientContext &context, IRCatalog &catalog, I
 
 static IRCAPIColumnDefinition ParseColumnDefinition(yyjson_val *column_def) {
 	IRCAPIColumnDefinition result;
-	result.name = TryGetStrFromObject(column_def, "name");
-	result.type_text = TryGetStrFromObject(column_def, "type");
-	result.precision = (result.type_text == "decimal") ? TryGetNumFromObject(column_def, "type_precision") : -1;
-	result.scale = (result.type_text == "decimal") ? TryGetNumFromObject(column_def, "type_scale") : -1;
-	result.position = TryGetNumFromObject(column_def, "id") - 1;
+	result.name = IcebergUtils::TryGetStrFromObject(column_def, "name");
+	result.type_text = IcebergUtils::TryGetStrFromObject(column_def, "type");
+	result.precision = (result.type_text == "decimal") ? IcebergUtils::TryGetNumFromObject(column_def, "type_precision") : -1;
+	result.scale = (result.type_text == "decimal") ? IcebergUtils::TryGetNumFromObject(column_def, "type_scale") : -1;
+	result.position = IcebergUtils::TryGetNumFromObject(column_def, "id") - 1;
 	return result;
 }
 
 IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, IRCCredentials credentials) {
 	IRCAPITableCredentials result;
 	string api_result = GetTableMetadataCached(context, catalog, schema, table, catalog.secret_name);
-	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *warehouse_credentials = yyjson_obj_get(root, "config");
 	auto credential_size = yyjson_obj_size(warehouse_credentials);
 	auto catalog_credentials = IRCatalog::GetSecret(context, catalog.secret_name);
 	if (warehouse_credentials && credential_size > 0) {
-		result.key_id = TryGetStrFromObject(warehouse_credentials, "s3.access-key-id", false);
-		result.secret = TryGetStrFromObject(warehouse_credentials, "s3.secret-access-key",  false);
-		result.session_token = TryGetStrFromObject(warehouse_credentials, "s3.session-token", false);
+		result.key_id = IcebergUtils::TryGetStrFromObject(warehouse_credentials, "s3.access-key-id", false);
+		result.secret = IcebergUtils::TryGetStrFromObject(warehouse_credentials, "s3.secret-access-key",  false);
+		result.session_token = IcebergUtils::TryGetStrFromObject(warehouse_credentials, "s3.session-token", false);
 		if (catalog_credentials) {
        		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*catalog_credentials->secret);
 			auto region = kv_secret.TryGetValue("region").ToString();
@@ -408,23 +359,23 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 string IRCAPI::GetToken(ClientContext &context, string id, string secret, string endpoint) {
 	string post_data = "grant_type=client_credentials&client_id=" + id + "&client_secret=" + secret + "&scope=PRINCIPAL_ROLE:ALL";
 	string api_result = PostRequest(endpoint + "/v1/oauth/tokens", post_data);
-	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
-	return TryGetStrFromObject(root, "access_token");
+	return IcebergUtils::TryGetStrFromObject(root, "access_token");
 }
 
 static void populateTableMetadata(IRCAPITable &table, yyjson_val *metadata_root) {
-	table.storage_location = TryGetStrFromObject(metadata_root, "metadata-location");
+	table.storage_location = IcebergUtils::TryGetStrFromObject(metadata_root, "metadata-location");
 	auto *metadata = yyjson_obj_get(metadata_root, "metadata");
-	//table_result.table_id = TryGetStrFromObject(metadata, "table-uuid");
+	//table_result.table_id = IcebergUtils::TryGetStrFromObject(metadata, "table-uuid");
 
-	uint64_t current_schema_id = TryGetNumFromObject(metadata, "current-schema-id");
+	uint64_t current_schema_id = IcebergUtils::TryGetNumFromObject(metadata, "current-schema-id");
 	auto *schemas = yyjson_obj_get(metadata, "schemas");
 	yyjson_val *schema;
 	size_t schema_idx, schema_max;
 	bool found = false;
 	yyjson_arr_foreach(schemas, schema_idx, schema_max, schema) {
-		uint64_t schema_id = TryGetNumFromObject(schema, "schema-id");
+		uint64_t schema_id = IcebergUtils::TryGetNumFromObject(schema, "schema-id");
 		if (schema_id == current_schema_id) {
 			found = true;
 			auto *columns = yyjson_obj_get(schema, "fields");
@@ -458,7 +409,7 @@ IRCAPITable IRCAPI::GetTable(ClientContext &context,
 	IRCAPITable table_result = createTable(catalog, schema, table_name);
 	if (credentials) {
 		string result = GetTableMetadata(context, catalog, schema, table_result.name, catalog.secret_name);
-		std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(result));
+		std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(result));
 		auto *metadata_root = yyjson_doc_get_root(doc.get());
 		populateTableMetadata(table_result, metadata_root);
 	} else {
@@ -483,13 +434,13 @@ vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog
 	url.AddPathComponent(schema);
 	url.AddPathComponent("tables");
 	string api_result = GetRequest(context, url, catalog.secret_name, catalog.credentials.token);
-	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *tables = yyjson_obj_get(root, "identifiers");
 	size_t idx, max;
 	yyjson_val *table;
 	yyjson_arr_foreach(tables, idx, max, table) {
-		auto table_result = GetTable(context, catalog, schema, TryGetStrFromObject(table, "name"), nullptr);
+		auto table_result = GetTable(context, catalog, schema, IcebergUtils::TryGetStrFromObject(table, "name"), nullptr);
 		result.push_back(table_result);
 	}
 
@@ -502,7 +453,7 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catal
 	endpoint_builder.AddPathComponent("namespaces");
 	string api_result =
 	    GetRequest(context, endpoint_builder, catalog.secret_name, catalog.credentials.token);
-	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *schemas = yyjson_obj_get(root, "namespaces");
 	size_t idx, max;

@@ -1,14 +1,18 @@
 #include "storage/irc_catalog.hpp"
 #include "storage/irc_schema_entry.hpp"
 #include "storage/irc_transaction.hpp"
+#include "catalog_api.hpp"
+#include "catalog_utils.hpp"
+#include "iceberg_utils.hpp"
 #include "duckdb/storage/database_size.hpp"
 #include "duckdb/main/database.hpp"
 #include "duckdb/parser/parsed_data/drop_info.hpp"
 #include "duckdb/parser/parsed_data/create_schema_info.hpp"
 #include "duckdb/main/attached_database.hpp"
 
-namespace duckdb {
 
+using namespace duckdb_yyjson;
+namespace duckdb {
 
 IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode,
                      IRCCredentials credentials)
@@ -86,8 +90,6 @@ void IRCatalog::ClearCache() {
 	schemas.ClearEntries();
 }
 
-
-
 unique_ptr<SecretEntry> IRCatalog::GetSecret(ClientContext &context, const string &secret_name) {
 	auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
 	// make sure a secret exists to connect to an AWS catalog
@@ -131,19 +133,45 @@ unique_ptr<LogicalOperator> IRCatalog::BindCreateIndex(Binder &binder, CreateSta
 
 
 bool IRCatalog::HasCachedValue(string url) const {
-	return metadata_cache.find(url) != metadata_cache.end();
+	auto value = metadata_cache.find(url);
+    if (value != metadata_cache.end()) {
+        auto now = std::chrono::system_clock::now();
+        if (now < value->second->expires_at) {
+			return true;
+		}
+    }
+	return false;
 }
 
 string IRCatalog::GetCachedValue(string url) const {
-	if (metadata_cache.find(url) != metadata_cache.end()) {
-		return metadata_cache.find(url)->second;
-	}
+	auto value = metadata_cache.find(url);
+    if (value != metadata_cache.end()) {
+        auto now = std::chrono::system_clock::now();
+        if (now < value->second->expires_at) {
+            return value->second->data;
+        }
+    }
 	throw InternalException("Cached value does not exist");
 }
 
 bool IRCatalog::SetCachedValue(string url, string value) {
-	metadata_cache[url] = value;
-	return true;
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(value));
+	auto *root = yyjson_doc_get_root(doc.get());
+	auto *credentials = yyjson_obj_get(root, "config");
+	auto credential_size = yyjson_obj_size(credentials);
+	if (credentials && credential_size > 0) {
+		auto expires_at = IcebergUtils::TryGetStrFromObject(credentials, "s3.session-token-expires-at-ms", false);
+		if (expires_at == "") {
+			return false;
+		}
+		auto epochMillis = std::stoll(expires_at);
+// 		auto inputTime = std::chrono::system_clock::time_point(std::chrono::milliseconds(epochMillis));
+		auto val = make_uniq<MetadataCacheValue>();
+		val->data = value;
+		val->expires_at = std::chrono::system_clock::time_point(std::chrono::milliseconds(epochMillis));
+		metadata_cache[url] = std::move(val);
+	}
+	return false;
 }
 
 } // namespace duckdb
