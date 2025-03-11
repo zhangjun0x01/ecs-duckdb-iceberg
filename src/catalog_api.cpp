@@ -7,7 +7,9 @@
 #include <aws/core/Aws.h>
 #include <aws/s3/S3Client.h>
 #include <aws/core/Aws.h>
+#include <aws/core/auth/AWSCredentials.h>
 #include <aws/core/auth/AWSCredentialsProviderChain.h>
+#include <aws/core/auth/AWSCredentialsProvider.h>
 #include <aws/core/http/HttpClient.h>
 #include <aws/core/http/HttpRequest.h>
 #include <duckdb/main/secret/secret.hpp>
@@ -146,6 +148,11 @@ public:
 		credentials.SetSessionToken(sesh_token);
 	}
 
+	DuckDBSecretCredentialProvider(const string& key_id, const string &secret) {
+		credentials.SetAWSAccessKeyId(key_id);
+		credentials.SetAWSSecretKey(secret);
+	}
+
 	~DuckDBSecretCredentialProvider() = default;
 
 	Aws::Auth::AWSCredentials GetAWSCredentials() override {
@@ -183,7 +190,7 @@ static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_
 	auto service = GetAwsService(endpoint_builder.GetHost());
 	auto region = GetAwsRegion(endpoint_builder.GetHost());
 
-	// Add iceberg. This is necessary here and cannot be included in the host
+	// Add iceberg. This is necessary here and should not be included in the host
 	uri.AddPathSegment("iceberg");
 	// push bach the version
 	uri.AddPathSegment(endpoint_builder.GetVersion());
@@ -201,7 +208,7 @@ static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_
 
 	Aws::Http::Scheme scheme = Aws::Http::Scheme::HTTPS;
 	uri.SetScheme(scheme);
-	// set host to glue
+	// set host
 	uri.SetAuthority(endpoint_builder.GetHost());
 	auto encoded = uri.GetURLEncodedPath();
 
@@ -214,17 +221,16 @@ static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_
 
 	// will error if no secret can be found for AWS services
 	auto secret_entry = IRCatalog::GetSecret(context, secret_name);
+	auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 
 	std::shared_ptr<Aws::Auth::AWSCredentialsProviderChain> provider;
-	auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 	provider = std::make_shared<DuckDBSecretCredentialProvider>(
 		kv_secret.secret_map["key_id"].GetValue<string>(),
 		kv_secret.secret_map["secret"].GetValue<string>(),
-		kv_secret.secret_map["session_token"].GetValue<string>()
+		kv_secret.secret_map["session_token"].IsNull() ? "" : kv_secret.secret_map["session_token"].GetValue<string>()
 	);
-
-
 	auto signer = make_uniq<Aws::Client::AWSAuthV4Signer>(provider, service.c_str(), region.c_str());
+
 	signer->SignRequest(*req);
 	std::shared_ptr<Aws::Http::HttpResponse> res = MyHttpClient->MakeRequest(req);
 	Aws::Http::HttpResponseCode resCode = res->GetResponseCode();
