@@ -86,6 +86,8 @@ void IRCatalog::ClearCache() {
 	schemas.ClearEntries();
 }
 
+
+
 unique_ptr<SecretEntry> IRCatalog::GetSecret(ClientContext &context, const string &secret_name) {
 	auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
 	// make sure a secret exists to connect to an AWS catalog
@@ -125,6 +127,23 @@ unique_ptr<PhysicalOperator> IRCatalog::PlanUpdate(ClientContext &context, Logic
 unique_ptr<LogicalOperator> IRCatalog::BindCreateIndex(Binder &binder, CreateStatement &stmt, TableCatalogEntry &table,
                                                        unique_ptr<LogicalOperator> plan) {
 	throw NotImplementedException("ICCatalog BindCreateIndex");
+}
+
+
+bool IRCatalog::HasCachedValue(string url) const {
+	return metadata_cache.find(url) != metadata_cache.end();
+}
+
+string IRCatalog::GetCachedValue(string url) const {
+	if (metadata_cache.find(url) != metadata_cache.end()) {
+		return metadata_cache.find(url)->second;
+	}
+	throw InternalException("Cached value does not exist");
+}
+
+bool IRCatalog::SetCachedValue(string url, string value) {
+	metadata_cache[url] = value;
+	return true;
 }
 
 } // namespace duckdb

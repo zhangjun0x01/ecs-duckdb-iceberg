@@ -30,6 +30,11 @@ public:
 	static void ClearCacheOnSetting(ClientContext &context, SetScope scope, Value &parameter);
 };
 
+//struct MetadataCacheEntry {
+//	std::string data;
+//	std::chrono::steady_clock::time_point timestamp;
+//};
+
 
 class IRCatalog : public Catalog {
 public:
@@ -89,12 +94,19 @@ public:
 
 	void ClearCache();
 
+	bool HasCachedValue(string url) const;
+	string GetCachedValue(string url) const;
+	bool SetCachedValue(string url, string value);
+
 private:
 	void DropSchema(ClientContext &context, DropInfo &info) override;
 
 private:
 	IRCSchemaSet schemas;
 	string default_schema;
+
+	unordered_map<string, string> metadata_cache;
+
 };
 
 } // namespace duckdb

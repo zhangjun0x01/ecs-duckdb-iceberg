@@ -17,6 +17,7 @@ void IRCSchemaSet::LoadEntries(ClientContext &context) {
 	}
 
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
+	std::cout << "Calling Load Entries" << std::endl;
 	auto schemas = IRCAPI::GetSchemas(context, ic_catalog, ic_catalog.credentials);
 	for (const auto &schema : schemas) {
 		CreateSchemaInfo info;
