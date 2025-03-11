@@ -169,6 +169,10 @@ static string GetAwsRegion(const string host) {
 static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_builder, const string &secret_name) {
 	auto clientConfig = make_uniq<Aws::Client::ClientConfiguration>();
 
+	if (!SELECTED_CURL_CERT_PATH.empty()) {
+		clientConfig->caFile = SELECTED_CURL_CERT_PATH;
+	}
+
 	std::shared_ptr<Aws::Http::HttpClientFactory> MyClientFactory;
 	std::shared_ptr<Aws::Http::HttpClient> MyHttpClient;
 
