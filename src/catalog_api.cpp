@@ -333,19 +333,6 @@ static yyjson_doc *api_result_to_doc(const string &api_result) {
 	return doc;
 }
 
-static string GetTableMetadataCached(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, const string &secret_name) {
-	struct curl_slist *extra_headers = NULL;
-	auto url = catalog.GetBaseUrl();
-	url.AddPathComponent("namespaces");
-	url.AddPathComponent(schema);
-	url.AddPathComponent("tables");
-	url.AddPathComponent(table);
-	if (catalog.HasCachedValue(url.GetURL())) {
-		return catalog.GetCachedValue(url.GetURL());
-	}
-	return GetTableMetadata(context, catalog, secret_name, secret_name);
-}
-
 static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, const string &secret_name) {
 	struct curl_slist *extra_headers = NULL;
 	auto url = catalog.GetBaseUrl();
@@ -364,6 +351,20 @@ static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const
 	curl_slist_free_all(extra_headers);
 	return api_result;
 }
+
+static string GetTableMetadataCached(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, const string &secret_name) {
+	struct curl_slist *extra_headers = NULL;
+	auto url = catalog.GetBaseUrl();
+	url.AddPathComponent("namespaces");
+	url.AddPathComponent(schema);
+	url.AddPathComponent("tables");
+	url.AddPathComponent(table);
+	if (catalog.HasCachedValue(url.GetURL())) {
+		return catalog.GetCachedValue(url.GetURL());
+	}
+	return GetTableMetadata(context, catalog, schema, table, secret_name);
+}
+
 
 void IRCAPI::InitializeCurl() {
 	SelectCurlCertPath();
