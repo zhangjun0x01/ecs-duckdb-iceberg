@@ -333,18 +333,26 @@ static yyjson_doc *api_result_to_doc(const string &api_result) {
 	return doc;
 }
 
-static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, const string &secret_name) {
+static string GetTableMetadataCached(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, const string &secret_name) {
 	struct curl_slist *extra_headers = NULL;
 	auto url = catalog.GetBaseUrl();
-	Printer::Print("get table metadata for " + schema + "." + table);
 	url.AddPathComponent("namespaces");
 	url.AddPathComponent(schema);
 	url.AddPathComponent("tables");
 	url.AddPathComponent(table);
-//	if (catalog.HasCachedValue(url.GetURL())) {
-//        Printer::Print("returning cached value");
-//		return catalog.GetCachedValue(url.GetURL());
-//	}
+	if (catalog.HasCachedValue(url.GetURL())) {
+		return catalog.GetCachedValue(url.GetURL());
+	}
+	return GetTableMetadata(context, catalog, secret_name, secret_name);
+}
+
+static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, const string &secret_name) {
+	struct curl_slist *extra_headers = NULL;
+	auto url = catalog.GetBaseUrl();
+	url.AddPathComponent("namespaces");
+	url.AddPathComponent(schema);
+	url.AddPathComponent("tables");
+	url.AddPathComponent(table);
 	extra_headers = curl_slist_append(extra_headers, "X-Iceberg-Access-Delegation: vended-credentials");
 	string api_result = GetRequest(
 		context,
@@ -352,7 +360,7 @@ static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const
 		secret_name,
 		catalog.credentials.token,
 		extra_headers);
-//	catalog.SetCachedValue(url.GetURL(), api_result);
+	catalog.SetCachedValue(url.GetURL(), api_result);
 	curl_slist_free_all(extra_headers);
 	return api_result;
 }
@@ -377,7 +385,7 @@ static IRCAPIColumnDefinition ParseColumnDefinition(yyjson_val *column_def) {
 
 IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, IRCCredentials credentials) {
 	IRCAPITableCredentials result;
-	string api_result = GetTableMetadata(context, catalog, schema, table, catalog.secret_name);
+	string api_result = GetTableMetadataCached(context, catalog, schema, table, catalog.secret_name);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *warehouse_credentials = yyjson_obj_get(root, "config");
@@ -448,7 +456,6 @@ IRCAPITable IRCAPI::GetTable(ClientContext &context,
 	IRCatalog &catalog, const string &schema, const string &table_name, optional_ptr<IRCCredentials> credentials) {
 	IRCAPITable table_result = createTable(catalog, schema, table_name);
 	if (credentials) {
-		Printer::Print("Calling Get Table*");
 		string result = GetTableMetadata(context, catalog, schema, table_result.name, catalog.secret_name);
 		std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(api_result_to_doc(result));
 		auto *metadata_root = yyjson_doc_get_root(doc.get());
@@ -470,7 +477,6 @@ IRCAPITable IRCAPI::GetTable(ClientContext &context,
 // TODO: handle out-of-order columns using position property
 vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog, const string &schema) {
 	vector<IRCAPITable> result;
-	Printer::Print("Calling GetTables on schema " + schema);
 	auto url = catalog.GetBaseUrl();
 	url.AddPathComponent("namespaces");
 	url.AddPathComponent(schema);
@@ -491,7 +497,6 @@ vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog
 
 vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catalog, IRCCredentials credentials) {
 	vector<IRCAPISchema> result;
-	Printer::Print("GetSchemas");
 	auto endpoint_builder = catalog.GetBaseUrl();
 	endpoint_builder.AddPathComponent("namespaces");
 	string api_result =

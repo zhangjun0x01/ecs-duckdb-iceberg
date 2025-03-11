@@ -130,7 +130,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	auto &get = op->Cast<LogicalGet>();
 	bind_data = std::move(get.bind_data);
 
-	Printer::Print("returning parquet scan function");
+//	Printer::Print("returning parquet scan function");
 	return parquet_scan_function;
 }
 
