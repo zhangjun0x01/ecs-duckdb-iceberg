@@ -1,5 +1,5 @@
-# name: test/sql/cloud/test_glue.test
-# description: test integration with iceberg catalog read
+# name: test/sql/cloud/irc/test_use.test
+# description: test use
 # group: [iceberg]
 
 require-env ICEBERG_SERVER_AVAILABLE
@@ -28,30 +28,29 @@ CREATE SECRET glue_secret (
 );
 
 statement ok
-attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as my_datalake (
+attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as glue_lake (
     TYPE ICEBERG,
     ENDPOINT_TYPE 'GLUE'
 );
 
+statement ok
+use glue_lake.myblognamespace;
+
+statement error
+use glue_lake;
+----
+Catalog Error
+
+statement error
+use glue_secret;
+----
+Catalog Error
+
+# even after showing all tables. use statement needs catalog + schema.
 statement ok
 show all tables;
 
-statement ok
-SELECT count(*) FROM my_datalake.myblognamespace.lineitem;
-
 statement error
-attach '84014028:s3tablescatalog/pyiceberg-blog-bucket' as bad_account_id (
-    TYPE ICEBERG,
-    ENDPOINT_TYPE 'GLUE'
-);
+use glue_lake;
 ----
-IO Error
-
-statement error
-attach '840140254803:incorrect/pyiceberg-blog-bucket' as no_s3tables (
-    TYPE ICEBERG,
-    ENDPOINT_TYPE 'GLUE'
-);
-----
-IO Error
-
+Catalog Error

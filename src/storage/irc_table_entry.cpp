@@ -103,7 +103,6 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 									  iceberg_scan_function, empty_ref);
 
 	auto table_ref = iceberg_scan_function.bind_replace(context, bind_input);
-
 	// 1) Create a Binder and bind the parser-level TableRef -> BoundTableRef
 	auto binder = Binder::CreateBinder(context);
 	auto bound_ref = binder->Bind(*table_ref);
@@ -127,6 +126,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	auto &get = op->Cast<LogicalGet>();
 	bind_data = std::move(get.bind_data);
 
+//	Printer::Print("returning parquet scan function");
 	return parquet_scan_function;
 }
 

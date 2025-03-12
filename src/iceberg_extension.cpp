@@ -29,10 +29,10 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 	for (const auto &named_param : input.options) {
 		auto lower_name = StringUtil::Lower(named_param.first);
 
-		if (lower_name == "client_id" || 
-				lower_name == "client_secret" ||
-				lower_name == "endpoint" ||
-				lower_name == "aws_region") {
+		if (lower_name == "key_id" ||
+		    lower_name == "secret" ||
+		    lower_name == "endpoint" ||
+		    lower_name == "aws_region") {
 			result->secret_map[lower_name] = named_param.second.ToString();
 		} else {
 			throw InternalException("Unknown named parameter passed to CreateIRCSecretFunction: " + lower_name);
@@ -42,9 +42,9 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 	// Get token from catalog
 	result->secret_map["token"] = IRCAPI::GetToken(
 		context,
-		result->secret_map["client_id"].ToString(), 
-		result->secret_map["client_secret"].ToString(),
-		result->secret_map["endpoint"].ToString());
+	    result->secret_map["key_id"].ToString(),
+	    result->secret_map["secret"].ToString(),
+	    result->secret_map["endpoint"].ToString());
 	
 	//! Set redact keys
 	result->redact_keys = {"token", "client_id", "client_secret"};
@@ -58,6 +58,21 @@ static void SetCatalogSecretParameters(CreateSecretFunction &function) {
 	function.named_parameters["endpoint"] = LogicalType::VARCHAR;
 	function.named_parameters["aws_region"] = LogicalType::VARCHAR;
 	function.named_parameters["token"] = LogicalType::VARCHAR;
+}
+
+static bool CheckGlueWarehouseValidity(string warehouse) {
+	// valid glue catalog warehouse is <account_id>:s3tablescatalog/<bucket>
+	auto end_account_id = warehouse.find_first_of(':');
+	bool account_id_correct = end_account_id == 12;
+	auto bucket_sep = warehouse.find_first_of('/');
+	bool bucket_sep_correct = bucket_sep == 28;
+	if (!bucket_sep_correct) {
+		throw IOException("Invalid Glue Catalog Format: '" + warehouse + "'. Expect 12 digits for account_id.");
+	}
+	if (bucket_sep_correct) {
+		return true;
+	}
+	throw IOException("Invalid Glue Catalog Format: '" + warehouse + "'. Expected '<account_id>:s3tablescatalog/<bucket>");
 }
 
 static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_info, ClientContext &context,
@@ -96,8 +111,12 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		// if there is no secret, an error will be thrown
 		auto secret_entry = IRCatalog::GetSecret(context, secret_name);
         auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
-		auto region = kv_secret.TryGetValue("region").ToString();
-		catalog->host = service + "." + region + ".amazonaws.com";
+		auto region = kv_secret.TryGetValue("region");
+		if (region.IsNull()) {
+			throw IOException("Assumed catalog secret " + secret_entry->secret->GetName() + " for catalog " + name + " does not have a region");
+		}
+		CheckGlueWarehouseValidity(warehouse);
+		catalog->host = service + "." + region.ToString() + ".amazonaws.com";
 		catalog->warehouse = StringUtil::Replace(warehouse, "/", ":");
 		catalog->version = "v1";
 		catalog->secret_name = secret_name;
@@ -105,26 +124,28 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	}
 
 	// Default IRC path
-
-	// if no iceberg secret is specified we default to the unnamed mysql secret, if it
-	// exists
-
-	string connection_string = info.path;
 	Value endpoint_val;
 	// Lookup a secret we can use to access the rest catalog.
 	// if no secret is referenced, this throw
 	auto secret_entry = IRCatalog::GetSecret(context, secret_name);
-	if (secret_entry) {
- 		// secret found - read data
- 		const auto &kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
- 		string new_connection_info;
-
- 		Value token_val = kv_secret.TryGetValue("token");
- 		credentials.token = token_val.IsNull() ? "" : token_val.ToString();
-
- 		Value aws_region_val = kv_secret.TryGetValue("aws_region");
- 		credentials.aws_region = endpoint_val.IsNull() ? "" : aws_region_val.ToString();
- 	}
+	if (!secret_entry) {
+		throw IOException("No secret found to use with catalog " + name);
+	}
+ 	// secret found - read data
+ 	const auto &kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+	Value key_val = kv_secret.TryGetValue("key_id");
+	Value secret_val = kv_secret.TryGetValue("secret");
+	CreateSecretInput create_secret_input;
+	create_secret_input.options["key_id"] = key_val;
+	create_secret_input.options["secret"] = secret_val;
+	create_secret_input.options["endpoint"] = endpoint;
+	auto new_secret = CreateCatalogSecretFunction(context, create_secret_input);
+	auto &kv_secret_new = dynamic_cast<KeyValueSecret &>(*new_secret);
+	Value token = kv_secret_new.TryGetValue("token");
+	if (token.IsNull()) {
+		throw IOException("Failed to generate oath token");
+	}
+	credentials.token = token.ToString();
 	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials);
 	catalog->host = endpoint;
 	catalog->warehouse = warehouse;
