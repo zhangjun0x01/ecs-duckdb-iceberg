@@ -148,11 +148,6 @@ public:
 		credentials.SetSessionToken(sesh_token);
 	}
 
-	DuckDBSecretCredentialProvider(const string& key_id, const string &secret) {
-		credentials.SetAWSAccessKeyId(key_id);
-		credentials.SetAWSSecretKey(secret);
-	}
-
 	~DuckDBSecretCredentialProvider() = default;
 
 	Aws::Auth::AWSCredentials GetAWSCredentials() override {
