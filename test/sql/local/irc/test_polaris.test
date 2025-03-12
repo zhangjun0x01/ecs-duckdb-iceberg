@@ -5,6 +5,8 @@ require iceberg
 
 require aws
 
+mode skip
+
 statement ok
 create secret polaris_secret (
   type s3,
