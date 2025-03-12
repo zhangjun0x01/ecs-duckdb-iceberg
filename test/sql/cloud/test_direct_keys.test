@@ -23,9 +23,10 @@ statement ok
 CREATE SECRET s1 (
       TYPE S3,
       KEY_ID '${AWS_ACCESS_KEY_ID}',
-      SECRET '${AWS_SECRET_ACCESS_KEY_ID}',
+      SECRET '${AWS_SECRET_ACCESS_KEY}',
       REGION '${AWS_DEFAULT_REGION}'
 );
+
 
 statement ok
 attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as my_datalake (
