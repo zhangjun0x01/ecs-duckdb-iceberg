@@ -2,16 +2,17 @@
 #include "storage/irc_schema_entry.hpp"
 #include "storage/irc_transaction.hpp"
 #include "duckdb/storage/database_size.hpp"
+#include "duckdb/main/database.hpp"
 #include "duckdb/parser/parsed_data/drop_info.hpp"
 #include "duckdb/parser/parsed_data/create_schema_info.hpp"
 #include "duckdb/main/attached_database.hpp"
 
 namespace duckdb {
 
-IRCatalog::IRCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
+
+IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode,
                      IRCCredentials credentials)
-    : Catalog(db_p), internal_name(internal_name), access_mode(access_mode), credentials(std::move(credentials)),
-      schemas(*this) {
+    : Catalog(db_p), access_mode(access_mode), credentials(std::move(credentials)), schemas(*this) {
 }
 
 IRCatalog::~IRCatalog() = default;
@@ -44,7 +45,7 @@ optional_ptr<SchemaCatalogEntry> IRCatalog::GetSchema(CatalogTransaction transac
 	if (schema_name == DEFAULT_SCHEMA) {
 		if (default_schema.empty()) {
 			throw InvalidInputException("Attempting to fetch the default schema - but no database was "
-			                            "provided in the connection string");
+			                             "provided in the connection string");
 		}
 		return GetSchema(transaction, default_schema, if_not_found, error_context);
 	}
@@ -72,8 +73,37 @@ DatabaseSize IRCatalog::GetDatabaseSize(ClientContext &context) {
 	return size;
 }
 
+IRCEndpointBuilder IRCatalog::GetBaseUrl() const {
+	auto base_url = IRCEndpointBuilder();
+	base_url.SetPrefix(prefix);
+	base_url.SetWarehouse(warehouse);
+	base_url.SetVersion(version);
+	base_url.SetHost(host);
+	return base_url;
+}
+
 void IRCatalog::ClearCache() {
 	schemas.ClearEntries();
+}
+
+unique_ptr<SecretEntry> IRCatalog::GetSecret(ClientContext &context, const string &secret_name) {
+	auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
+	// make sure a secret exists to connect to an AWS catalog
+	unique_ptr<SecretEntry> secret_entry = nullptr;
+	if (!secret_name.empty()) {
+		secret_entry = context.db->GetSecretManager().GetSecretByName(transaction, secret_name);
+	}
+	if (!secret_entry) {
+		auto secret_match = context.db->GetSecretManager().LookupSecret(transaction, "s3://", "s3");
+		if (!secret_match.HasMatch()) {
+			throw IOException("Failed to find a secret and no explicit secret was passed!");
+		}
+		secret_entry = std::move(secret_match.secret_entry);
+	}
+	if (secret_entry) {
+		return secret_entry;
+	}
+	throw IOException("Could not find valid Iceberg secret");
 }
 
 unique_ptr<PhysicalOperator> IRCatalog::PlanInsert(ClientContext &context, LogicalInsert &op,

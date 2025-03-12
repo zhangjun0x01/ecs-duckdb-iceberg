@@ -4,13 +4,17 @@
 #include "duckdb/catalog/catalog.hpp"
 #include "duckdb/function/table_function.hpp"
 #include "duckdb/common/enums/access_mode.hpp"
+#include "duckdb/main/secret/secret_manager.hpp"
+#include "url_utils.hpp"
 #include "storage/irc_schema_set.hpp"
 
+
+
 namespace duckdb {
+
 class IRCSchemaEntry;
 
 struct IRCCredentials {
-	string endpoint;
 	string client_id;
 	string client_secret;
 	// required to query s3 tables
@@ -29,19 +33,32 @@ public:
 
 class IRCatalog : public Catalog {
 public:
-	explicit IRCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
+	explicit IRCatalog(AttachedDatabase &db_p, AccessMode access_mode,
 	                   IRCCredentials credentials);
 	~IRCatalog();
 
 	string internal_name;
 	AccessMode access_mode;
 	IRCCredentials credentials;
+	IRCEndpointBuilder endpoint_builder;
 
+	//! host of the endpoint, like `glue` or `polaris`
+	string host;
+	//! version
+	string version;
+	//! optional prefix
+	string prefix;
+	//! warehouse
+	string warehouse;
+
+	string secret_name;
 public:
 	void Initialize(bool load_builtin) override;
 	string GetCatalogType() override {
 		return "iceberg";
 	}
+
+	static unique_ptr<SecretEntry> GetSecret(ClientContext &context, const string &secret_name);
 
 	optional_ptr<CatalogEntry> CreateSchema(CatalogTransaction transaction, CreateSchemaInfo &info) override;
 
@@ -63,6 +80,8 @@ public:
 	                                            unique_ptr<LogicalOperator> plan) override;
 
 	DatabaseSize GetDatabaseSize(ClientContext &context) override;
+
+	IRCEndpointBuilder GetBaseUrl() const;
 
 	//! Whether or not this is an in-memory PC database
 	bool InMemory() override;

@@ -1,7 +1,6 @@
 #include "storage/irc_catalog.hpp"
 #include "storage/irc_schema_entry.hpp"
 #include "storage/irc_table_entry.hpp"
-#include "storage/irc_transaction.hpp"
 #include "duckdb/storage/statistics/base_statistics.hpp"
 #include "duckdb/storage/table_storage_info.hpp"
 #include "duckdb/main/extension_util.hpp"
@@ -10,9 +9,7 @@
 #include "duckdb/catalog/catalog_entry/table_function_catalog_entry.hpp"
 #include "duckdb/parser/tableref/table_function_ref.hpp"
 #include "catalog_api.hpp"
-#include "../../duckdb/third_party/catch/catch.hpp"
 #include "duckdb/planner/binder.hpp"
-#include "duckdb/planner/tableref/bound_table_function.hpp"
 #include "duckdb/planner/logical_operator.hpp"
 #include "duckdb/planner/operator/logical_get.hpp"
 
@@ -54,12 +51,11 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	auto &secret_manager = SecretManager::Get(context);
 	
 	// Get Credentials from IRC API
-	auto table_credentials = IRCAPI::GetTableCredentials(
-		ic_catalog.internal_name, table_data->schema_name, table_data->name, ic_catalog.credentials);
+	auto table_credentials = IRCAPI::GetTableCredentials(context, ic_catalog, table_data->schema_name, table_data->name, ic_catalog.credentials);
+	CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
 	// First check if table credentials are set (possible the IC catalog does not return credentials)
 	if (!table_credentials.key_id.empty()) {
 		// Inject secret into secret manager scoped to this path
-		CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
 		info.name = "__internal_ic_" + table_data->table_id;
 		info.type = "s3";
 		info.provider = "config";
@@ -68,8 +64,16 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 			{"key_id", table_credentials.key_id},
 			{"secret", table_credentials.secret},
 			{"session_token", table_credentials.session_token},
-			{"region", ic_catalog.credentials.aws_region},
+			{"region", table_credentials.region},
 		};
+
+		if (StringUtil::StartsWith(ic_catalog.host, "glue")) {
+			auto secret_entry = IRCatalog::GetSecret(context, ic_catalog.secret_name);
+			auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+			auto region = kv_secret.TryGetValue("region").ToString();
+			auto endpoint = "s3." + region + ".amazonaws.com";
+			info.options["endpoint"] = endpoint;
+		}
 
 		std::string lc_storage_location;
 		lc_storage_location.resize(table_data->storage_location.size());

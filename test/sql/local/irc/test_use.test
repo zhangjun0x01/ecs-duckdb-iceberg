@@ -1,0 +1,34 @@
+# name: test/sql/local/irc/test_use.test
+# description: test integration with iceberg catalog read
+# group: [iceberg]
+
+require-env ICEBERG_SERVER_AVAILABLE
+
+require parquet
+
+require iceberg
+
+require httpfs
+
+require aws
+
+mode skip
+
+statement ok
+CREATE SECRET glue_secret (
+    TYPE S3,
+    PROVIDER credential_chain,
+    CHAIN 'sts',
+    ASSUME_ROLE_ARN 'arn:aws:iam::840140254803:role/pyiceberg-etl-role',
+    REGION 'us-east-1'
+);
+
+statement ok
+attach '840140254803:s3tablescatalog:pyiceberg-blog-bucket' as my_datalake (
+    TYPE ICEBERG,
+    SECRET 'glue_secret',
+    ENDPOINT_TYPE 'GLUE'
+);
+
+statement ok
+use my_datalake;
