@@ -38,3 +38,20 @@ show all tables;
 
 statement ok
 SELECT count(*) FROM my_datalake.myblognamespace.lineitem;
+
+statement error
+attach '84014028:s3tablescatalog/pyiceberg-blog-bucket' as bad_account_id (
+    TYPE ICEBERG,
+    ENDPOINT_TYPE 'GLUE'
+);
+----
+IO Error
+
+statement error
+attach '840140254803:incorrect/pyiceberg-blog-bucket' as no_s3tables (
+    TYPE ICEBERG,
+    ENDPOINT_TYPE 'GLUE'
+);
+----
+IO Error
+

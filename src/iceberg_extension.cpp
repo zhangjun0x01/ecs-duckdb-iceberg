@@ -60,6 +60,21 @@ static void SetCatalogSecretParameters(CreateSecretFunction &function) {
 	function.named_parameters["token"] = LogicalType::VARCHAR;
 }
 
+static bool CheckGlueWarehouseValidity(string warehouse) {
+	// valid glue catalog warehouse is <account_id>:s3tablescatalog/<bucket>
+	auto end_account_id = warehouse.find_first_of(':');
+	bool account_id_correct = end_account_id == 12;
+	auto bucket_sep = warehouse.find_first_of('/');
+	bool bucket_sep_correct = bucket_sep == 28;
+	if (!bucket_sep_correct) {
+		throw IOException("Invalid Glue Catalog Format: '" + warehouse + "'. Expect 12 digits for account_id.");
+	}
+	if (bucket_sep_correct) {
+		return true;
+	}
+	throw IOException("Invalid Glue Catalog Format: '" + warehouse + "'. Expected '<account_id>:s3tablescatalog/<bucket>");
+}
+
 static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_info, ClientContext &context,
                                            AttachedDatabase &db, const string &name, AttachInfo &info,
                                            AccessMode access_mode) {
@@ -96,8 +111,12 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		// if there is no secret, an error will be thrown
 		auto secret_entry = IRCatalog::GetSecret(context, secret_name);
         auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
-		auto region = kv_secret.TryGetValue("region").ToString();
-		catalog->host = service + "." + region + ".amazonaws.com";
+		auto region = kv_secret.TryGetValue("region");
+		if (region.IsNull()) {
+			throw IOException("Assumed catalog secret " + secret_entry->secret->GetName() + " for catalog " + name + " does not have a region");
+		}
+		CheckGlueWarehouseValidity(warehouse);
+		catalog->host = service + "." + region.ToString() + ".amazonaws.com";
 		catalog->warehouse = StringUtil::Replace(warehouse, "/", ":");
 		catalog->version = "v1";
 		catalog->secret_name = secret_name;

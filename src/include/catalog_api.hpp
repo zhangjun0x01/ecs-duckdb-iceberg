@@ -50,17 +50,17 @@ public:
   	//! WARNING: not thread-safe. To be called once on extension initialization
   	static void InitializeCurl();
 
-	static IRCAPITableCredentials GetTableCredentials(ClientContext &context, const IRCatalog &catalog, const string &schema, const string &table, IRCCredentials credentials);
-	static vector<string> GetCatalogs(ClientContext &context, const IRCatalog &catalog, IRCCredentials credentials);
-	static vector<IRCAPITable> GetTables(ClientContext &context, const IRCatalog &catalog, const string &schema);
-	static IRCAPITable GetTable(ClientContext &context, const IRCatalog &catalog, const string &schema, const string &table_name, optional_ptr<IRCCredentials> credentials);
-	static vector<IRCAPISchema> GetSchemas(ClientContext &context, const IRCatalog &catalog, IRCCredentials credentials);
-	static vector<IRCAPITable> GetTablesInSchema(ClientContext &context, const IRCatalog &catalog, const string &schema, IRCCredentials credentials);
+	static IRCAPITableCredentials GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, IRCCredentials credentials);
+	static vector<string> GetCatalogs(ClientContext &context, IRCatalog &catalog, IRCCredentials credentials);
+	static vector<IRCAPITable> GetTables(ClientContext &context, IRCatalog &catalog, const string &schema);
+	static IRCAPITable GetTable(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table_name, optional_ptr<IRCCredentials> credentials);
+	static vector<IRCAPISchema> GetSchemas(ClientContext &context, IRCatalog &catalog, IRCCredentials credentials);
+	static vector<IRCAPITable> GetTablesInSchema(ClientContext &context, IRCatalog &catalog, const string &schema, IRCCredentials credentials);
 	static string GetToken(ClientContext &context, string id, string secret, string endpoint);
-	static IRCAPISchema CreateSchema(ClientContext &context, const IRCatalog &catalog, const string &internal, const string &schema, IRCCredentials credentials);
+	static IRCAPISchema CreateSchema(ClientContext &context, IRCatalog &catalog, const string &internal, const string &schema, IRCCredentials credentials);
 	static void DropSchema(ClientContext &context, const string &internal, const string &schema, IRCCredentials credentials);
-	static IRCAPITable CreateTable(ClientContext &context, const IRCatalog &catalog, const string &internal, const string &schema, IRCCredentials credentials, CreateTableInfo *table_info);
-	static void DropTable(ClientContext &context, const IRCatalog &catalog, const string &internal, const string &schema, string &table_name, IRCCredentials credentials);
+	static IRCAPITable CreateTable(ClientContext &context, IRCatalog &catalog, const string &internal, const string &schema, IRCCredentials credentials, CreateTableInfo *table_info);
+	static void DropTable(ClientContext &context, IRCatalog &catalog, const string &internal, const string &schema, string &table_name, IRCCredentials credentials);
 };
 
 } // namespace duckdb
