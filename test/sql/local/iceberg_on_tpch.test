@@ -15,14 +15,6 @@ require httpfs
 
 require tpch
 
-# setup creds
-statement ok
-CREATE SECRET (
-       TYPE ICEBERG,
-       ENDPOINT 'http://127.0.0.1:8181'
-  );
-
-
 statement ok
 CREATE SECRET (
     TYPE S3,
@@ -34,7 +26,10 @@ CREATE SECRET (
   );
 
 statement ok
-ATTACH '' AS my_datalake (TYPE ICEBERG);
+ATTACH '' AS my_datalake (
+    TYPE ICEBERG,
+    ENDPOINT 'http://127.0.0.1:8181'
+);
 
 
 statement ok
