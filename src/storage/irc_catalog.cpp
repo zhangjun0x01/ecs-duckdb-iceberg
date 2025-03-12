@@ -169,10 +169,8 @@ bool IRCatalog::SetCachedValue(string url, string value) {
 			return false;
 		}
 		auto epochMillis = std::stoll(expires_at);
-// 		auto inputTime = std::chrono::system_clock::time_point(std::chrono::milliseconds(epochMillis));
-		auto val = make_uniq<MetadataCacheValue>();
-		val->data = value;
-		val->expires_at = std::chrono::system_clock::time_point(std::chrono::milliseconds(epochMillis));
+		auto expired_time = std::chrono::system_clock::time_point(std::chrono::milliseconds(epochMillis));
+		auto val = make_uniq<MetadataCacheValue>(value, expired_time);
 		metadata_cache[url] = std::move(val);
 	}
 	return false;

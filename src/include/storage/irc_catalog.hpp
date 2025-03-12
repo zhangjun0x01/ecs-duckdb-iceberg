@@ -35,8 +35,8 @@ public:
 	std::string data;
 	std::chrono::system_clock::time_point expires_at;
 public:
-	MetadataCacheValue() {};
-
+	MetadataCacheValue(std::string data_, std::chrono::system_clock::time_point expires_at_) :
+	      data(data_), expires_at(expires_at_) {};
 };
 
 class IRCatalog : public Catalog {
