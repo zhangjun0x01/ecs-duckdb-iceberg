@@ -1,4 +1,4 @@
-# name: test/sql/cloud/test_glue.test
+# name: test/sql/cloud/glue/test_glue.test
 # description: test integration with iceberg catalog read
 # group: [iceberg]
 
@@ -39,6 +39,26 @@ show all tables;
 statement ok
 SELECT count(*) FROM my_datalake.myblognamespace.lineitem;
 
+query IIIIII
+describe my_datalake.myblognamespace.lineitem;
+----
+l_orderkey	BIGINT	YES	NULL	NULL	NULL
+l_partkey	BIGINT	YES	NULL	NULL	NULL
+l_suppkey	BIGINT	YES	NULL	NULL	NULL
+l_linenumber	BIGINT	YES	NULL	NULL	NULL
+l_quantity	DECIMAL(15,2)	YES	NULL	NULL	NULL
+l_extendedprice	DECIMAL(15,2)	YES	NULL	NULL	NULL
+l_discount	DECIMAL(15,2)	YES	NULL	NULL	NULL
+l_tax	DECIMAL(15,2)	YES	NULL	NULL	NULL
+l_returnflag	VARCHAR	YES	NULL	NULL	NULL
+l_linestatus	VARCHAR	YES	NULL	NULL	NULL
+l_shipdate	DATE	YES	NULL	NULL	NULL
+l_commitdate	DATE	YES	NULL	NULL	NULL
+l_receiptdate	DATE	YES	NULL	NULL	NULL
+l_shipinstruct	VARCHAR	YES	NULL	NULL	NULL
+l_shipmode	VARCHAR	YES	NULL	NULL	NULL
+l_comment	VARCHAR	YES	NULL	NULL	NULL
+
 statement error
 attach '84014028:s3tablescatalog/pyiceberg-blog-bucket' as bad_account_id (
     TYPE ICEBERG,
@@ -54,4 +74,5 @@ attach '840140254803:incorrect/pyiceberg-blog-bucket' as no_s3tables (
 );
 ----
 IO Error
+
 

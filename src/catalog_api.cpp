@@ -207,7 +207,7 @@ static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_
 }
 
 static string GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder, const string &secret_name, const string &token = "", curl_slist *extra_headers = NULL) {
-	if (StringUtil::StartsWith(endpoint_builder.GetHost(), "glue." )) {
+	if (StringUtil::StartsWith(endpoint_builder.GetHost(), "glue." ) || StringUtil::StartsWith(endpoint_builder.GetHost(), "s3tables." )) {
 		auto str = GetRequestAws(context, endpoint_builder, secret_name);
 		return str;
 	}

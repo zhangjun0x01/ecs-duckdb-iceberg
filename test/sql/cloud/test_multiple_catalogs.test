@@ -1,0 +1,53 @@
+# name: test/sql/cloud/test_s3tables_and_glue.test
+# description: test integration with iceberg catalog read
+# group: [iceberg]
+
+require-env ICEBERG_SERVER_AVAILABLE
+
+require parquet
+
+require iceberg
+
+require httpfs
+
+require aws
+
+statement ok
+CREATE SECRET s3table_secret (
+    TYPE s3,
+    PROVIDER credential_chain,
+    CHAIN 'sts',
+    ASSUME_ROLE_ARN 'arn:aws:iam::840140254803:role/pyiceberg-etl-role'
+);
+
+statement ok
+CREATE SECRET glue_secret (
+    TYPE s3,
+    PROVIDER credential_chain,
+    CHAIN 'sts',
+    REGION 'us-east-1',
+    ASSUME_ROLE_ARN 'arn:aws:iam::840140254803:role/pyiceberg-etl-role'
+);
+
+statement ok
+attach 'arn:aws:s3tables:us-east-2:840140254803:bucket/iceberg-testing' as s3tables_catalog (
+    TYPE ICEBERG,
+    ENDPOINT_TYPE 'S3_TABLES',
+    SECRET 's3table_secret'
+);
+
+statement ok
+attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as glue_catalog (
+    TYPE ICEBERG,
+    ENDPOINT_TYPE 'GLUE',
+    SECRET 'glue_secret'
+);
+
+
+statement ok
+show all tables;
+
+query I
+select count(*) from s3tables_catalog.tpch_sf1.region;
+----
+5

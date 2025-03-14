@@ -53,7 +53,7 @@ public:
 	static IRCAPITableCredentials GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, IRCCredentials credentials);
 	static vector<string> GetCatalogs(ClientContext &context, IRCatalog &catalog, IRCCredentials credentials);
 	static vector<IRCAPITable> GetTables(ClientContext &context, IRCatalog &catalog, const string &schema);
-	static IRCAPITable GetTable(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table_name, optional_ptr<IRCCredentials> credentials);
+	static IRCAPITable GetTable(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table_name, optional_ptr<IRCCredentials> credentials = nullptr);
 	static vector<IRCAPISchema> GetSchemas(ClientContext &context, IRCatalog &catalog, IRCCredentials credentials);
 	static vector<IRCAPITable> GetTablesInSchema(ClientContext &context, IRCatalog &catalog, const string &schema, IRCCredentials credentials);
 	static string GetToken(ClientContext &context, string id, string secret, string endpoint);
