@@ -2,7 +2,7 @@
 # description: test integration with s3 tables read
 # group: [iceberg]
 
-# require-env ICEBERG_SERVER_AVAILABLE
+require-env ICEBERG_SERVER_AVAILABLE
 
 require-env AWS_DEFAULT_REGION
 
