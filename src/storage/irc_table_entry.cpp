@@ -94,7 +94,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 		CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
 		auto secret_entry = IRCatalog::GetSecret(context, ic_catalog.secret_name);
 		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
-		info.name = "__internal_ic_" + table_data->table_id;
+		info.name = "__internal_ic_" + table_data->table_id + "__" + table_data->schema_name + "__" + table_data->name;
 		info.type = "s3";
 		info.provider = "config";
 		info.storage_type = "memory";

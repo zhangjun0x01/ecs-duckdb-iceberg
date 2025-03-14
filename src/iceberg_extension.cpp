@@ -138,6 +138,13 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		return std::move(catalog);
 	}
 
+	if (!endpoint_type.empty()) {
+		throw IOException("Unrecognized endpoint point: %s. Expected either S3_TABLES or GLUE", endpoint_type);
+	}
+	if (endpoint_type.empty() && endpoint.empty()) {
+		throw IOException("No endpoint type or endpoint provided");
+	}
+
 	// Default IRC path
 	Value endpoint_val;
 	// Lookup a secret we can use to access the rest catalog.
