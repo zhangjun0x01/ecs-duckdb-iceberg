@@ -1,4 +1,4 @@
-# name: test/sql/cloud/test_direct_keys.test
+# name: test/sql/cloud/glue/test_direct_keys_glue.test
 # description: test integration with iceberg catalog read
 # group: [iceberg]
 

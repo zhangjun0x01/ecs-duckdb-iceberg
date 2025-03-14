@@ -8,6 +8,7 @@ duckdb_extension_load(iceberg
 
 duckdb_extension_load(tpch)
 
+
 ################## AWS
 if (NOT MINGW AND NOT ${WASM_ENABLED})
     duckdb_extension_load(aws
@@ -16,3 +17,9 @@ if (NOT MINGW AND NOT ${WASM_ENABLED})
             GIT_TAG main
     )
 endif ()
+
+duckdb_extension_load(httpfs
+        GIT_URL https://github.com/duckdb/duckdb-httpfs
+        GIT_TAG main
+        INCLUDE_DIR extension/httpfs/include
+)

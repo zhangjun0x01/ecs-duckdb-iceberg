@@ -60,13 +60,13 @@ static void SetCatalogSecretParameters(CreateSecretFunction &function) {
 	function.named_parameters["token"] = LogicalType::VARCHAR;
 }
 
-static bool CheckGlueWarehouseValidity(string warehouse) {
+static bool SanityCheckGlueWarehouse(string warehouse) {
 	// valid glue catalog warehouse is <account_id>:s3tablescatalog/<bucket>
 	auto end_account_id = warehouse.find_first_of(':');
 	bool account_id_correct = end_account_id == 12;
 	auto bucket_sep = warehouse.find_first_of('/');
 	bool bucket_sep_correct = bucket_sep == 28;
-	if (!bucket_sep_correct) {
+	if (!account_id_correct) {
 		throw IOException("Invalid Glue Catalog Format: '" + warehouse + "'. Expect 12 digits for account_id.");
 	}
 	if (bucket_sep_correct) {
@@ -105,8 +105,13 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	}
 	auto warehouse = info.path;
 
-	if (endpoint_type == "glue") {
-		service = "glue";
+	if (endpoint_type == "glue" || endpoint_type == "s3_tables") {
+		if (endpoint_type == "s3_tables") {
+			service = "s3tables";
+		} else {
+			service = endpoint_type;
+		}
+		// look up any s3 secret
 		auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials);
 		// if there is no secret, an error will be thrown
 		auto secret_entry = IRCatalog::GetSecret(context, secret_name);
@@ -115,9 +120,19 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		if (region.IsNull()) {
 			throw IOException("Assumed catalog secret " + secret_entry->secret->GetName() + " for catalog " + name + " does not have a region");
 		}
-		CheckGlueWarehouseValidity(warehouse);
+		if (service == "s3tables") {
+			auto substrings = StringUtil::Split(warehouse, ":");
+			if (substrings.size() != 6) {
+				throw InvalidInputException("Could not parse S3 Tables arn warehouse value");
+			}
+			region = Value::CreateValue<string>(substrings[3]);
+			catalog->warehouse = warehouse;
+		}
+		else if (service == "glue") {
+			SanityCheckGlueWarehouse(warehouse);
+			catalog->warehouse = StringUtil::Replace(warehouse, "/", ":");
+		}
 		catalog->host = service + "." + region.ToString() + ".amazonaws.com";
-		catalog->warehouse = StringUtil::Replace(warehouse, "/", ":");
 		catalog->version = "v1";
 		catalog->secret_name = secret_name;
 		return std::move(catalog);
