@@ -64,19 +64,18 @@ static void SetCatalogSecretParameters(CreateSecretFunction &function) {
 static bool SanityCheckGlueWarehouse(string warehouse) {
     // See: https://docs.aws.amazon.com/glue/latest/dg/connect-glu-iceberg-rest.html#prefix-catalog-path-parameters
 
-    const std::regex default_current_account("^:$"); // default catalog in current account
-    const std::regex default_specific_account("^\\d{12}$"); // 12 digits for account ID only
-	const std::regex nested_current_account("^[^:]+/[^:]+$"); // nested catalog in current account
-    const std::regex nested_specific_account("^\\d{12}:[^/]+/[^:]+$");  // nested catalog in a specific account  
+	const std::regex patterns[] = {
+        std::regex("^:$"),                   // Default catalog ":" in current account
+        std::regex("^\\d{12}$"),             // Default catalog in a specific account
+        std::regex("^\\d{12}:[^:/]+$"),      // Specific catalog in a specific account
+        std::regex("^[^:]+/[^:]+$"),         // Nested catalog in the current account
+        std::regex("^\\d{12}:[^/]+/[^:]+$")  // Nested catalog in a specific account
+    };
 
-    if (std::regex_match(warehouse, default_current_account)) {
-        return true;
-    } else if (std::regex_match(warehouse, default_specific_account)) {
-        return true;
-    } else if (std::regex_match(warehouse, nested_current_account)) {
-        return true;
-    } else if (std::regex_match(warehouse, nested_specific_account)) {
-        return true;
+    for (const auto& pattern : patterns) {
+        if (std::regex_match(warehouse, pattern)) {
+            return true;
+        }
     }
 
 	throw IOException("Invalid Glue Catalog Format: '" + warehouse + "'. Expected format: ':', '12-digit account ID', 'catalog1/catalog2', or '12-digit accountId:catalog1/catalog2'.");
