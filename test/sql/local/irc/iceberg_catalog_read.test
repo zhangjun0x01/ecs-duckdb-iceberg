@@ -81,10 +81,10 @@ GET http://127.0.0.1:8181/v1/namespaces/default/tables/table_unpartitioned (curl
 GET http://127.0.0.1:8181/v1/namespaces/default/tables/table_more_deletes (curl code 'No error')
 GET http://127.0.0.1:8181/v1/namespaces/default/tables/table_more_deletes (curl code 'No error')
 
-statement error
-select * from my_datalake.default.pyspark_iceberg_table_v2;
+query I
+select count(*) from my_datalake.default.pyspark_iceberg_table_v2;
 ----
-20352
+6592
 
 statement error
 update my_datalake.default.table_unpartitioned set number = 5 where number < 5;
