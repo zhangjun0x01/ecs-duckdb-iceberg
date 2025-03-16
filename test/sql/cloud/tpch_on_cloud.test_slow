@@ -9,11 +9,11 @@ mode skip
 
 require httpfs
 
+require parquet
+
 require iceberg
 
 require aws
-
-require parquet
 
 require tpch
 
