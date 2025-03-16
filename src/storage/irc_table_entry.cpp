@@ -85,6 +85,38 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 			throw std::runtime_error("Substring not found");
 		}
 		auto my_secret = secret_manager.CreateSecret(context, info);
+	} else if (StringUtil::StartsWith(ic_catalog.host, "s3tables")) {
+		// Inject secret into secret manager with correct endpoint
+		CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
+		auto secret_entry = IRCatalog::GetSecret(context, ic_catalog.secret_name);
+		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+		info.name = "__internal_ic_" + table_data->table_id + "__" + table_data->schema_name + "__" + table_data->name;
+		info.type = "s3";
+		info.provider = "config";
+		info.storage_type = "memory";
+
+		auto substrings = StringUtil::Split(ic_catalog.warehouse, ":");
+		D_ASSERT(substrings.size() == 6);
+		auto region = substrings[3];
+		auto endpoint = "s3." + region + ".amazonaws.com";
+		info.options = {
+			{"key_id", kv_secret.TryGetValue("key_id").ToString()},
+			{"secret", kv_secret.TryGetValue("secret").ToString()},
+			{"session_token", kv_secret.TryGetValue("session_token").IsNull() ? "" :  kv_secret.TryGetValue("session_token").ToString()},
+			{"region", region},
+			{"endpoint", endpoint}
+		};
+
+		std::string lc_storage_location;
+		lc_storage_location.resize(table_data->storage_location.size());
+		std::transform(table_data->storage_location.begin(), table_data->storage_location.end(), lc_storage_location.begin(), ::tolower);
+		size_t metadata_pos = lc_storage_location.find("metadata");
+		if (metadata_pos != std::string::npos) {
+			info.scope = {lc_storage_location.substr(0, metadata_pos)};
+		} else {
+			throw std::runtime_error("Substring not found");
+		}
+		auto my_secret = secret_manager.CreateSecret(context, info);
 	}
 
 	named_parameter_map_t param_map;
