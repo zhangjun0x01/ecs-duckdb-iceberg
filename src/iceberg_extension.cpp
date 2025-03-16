@@ -132,6 +132,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 			SanityCheckGlueWarehouse(warehouse);
 			catalog->warehouse = StringUtil::Replace(warehouse, "/", ":");
 		}
+
 		catalog->host = service + "." + region.ToString() + ".amazonaws.com";
 		catalog->version = "v1";
 		catalog->secret_name = secret_name;
