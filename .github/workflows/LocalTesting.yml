@@ -1,5 +1,5 @@
-name: Rest
-on: [push, pull_request, repository_dispatch]
+name: Local functional tests
+on: [push, pull_request,repository_dispatch]
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.head_ref || '' }}-${{ github.base_ref || '' }}-${{ github.ref != 'refs/heads/main' || github.sha }}
   cancel-in-progress: true
@@ -7,9 +7,12 @@ defaults:
   run:
     shell: bash
 
+env:
+  BASE_BRANCH: ${{ github.base_ref || (endsWith(github.ref, '_feature') && 'feature' || 'main') }}
+
 jobs:
   rest:
-    name: Test against Rest Catalog
+    name: Test against local Rest Catalog
     runs-on: ubuntu-latest
     env:
       VCPKG_TARGET_TRIPLET: 'x64-linux'
