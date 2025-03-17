@@ -10,8 +10,6 @@ require httpfs
 
 require aws
 
-mode output_result
-
 statement error
 attach 'arn:aws:s3tables:us-east-2:840140254803:bucket/iceberg-testing' as s3tables_catalog (
     TYPE ICEBERG,
