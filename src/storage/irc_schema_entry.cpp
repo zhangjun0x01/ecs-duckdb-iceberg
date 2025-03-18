@@ -93,7 +93,7 @@ void IRCSchemaEntry::Alter(CatalogTransaction transaction, AlterInfo &info) {
 	throw NotImplementedException("Alter Schema Entry");
 }
 
-bool CatalogTypeIsSupported(CatalogType type) {
+static bool CatalogTypeIsSupported(CatalogType type) {
 	switch (type) {
 	case CatalogType::INDEX_ENTRY:
 	case CatalogType::TABLE_ENTRY:
