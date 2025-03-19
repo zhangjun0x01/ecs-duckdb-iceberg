@@ -13,11 +13,10 @@ require iceberg
 require httpfs
 
 statement ok
-CREATE SECRET (
-       TYPE ICEBERG,
-       ENDPOINT 'http://127.0.0.1:8181'
-  );
+set enable_logging=true
 
+statement ok
+set logging_level='debug'
 
 statement ok
 CREATE SECRET (
@@ -27,11 +26,14 @@ CREATE SECRET (
     ENDPOINT '127.0.0.1:9000',
     URL_STYLE 'path',
     USE_SSL 0
-  );
+);
 
 
 statement ok
-ATTACH '' AS my_datalake (TYPE ICEBERG);
+ATTACH '' AS my_datalake (
+    TYPE ICEBERG,
+    ENDPOINT 'http://127.0.0.1:8181'
+);
 
 statement error
 select * from table_unpartitioned
@@ -39,7 +41,7 @@ select * from table_unpartitioned
 <REGEX>:.*table_unpartitioned does not exist.*
 
 statement error
-select * from table_unpartitioned
+select * from table_unpartitioned;
 ----
 <REGEX>:.*Did you mean.*my_datalake.default.table_unpartitioned.*
 
@@ -70,11 +72,21 @@ select * from my_datalake.default.table_more_deletes order by all;
 2023-03-11	11	k
 2023-03-12	12	l
 
+query I
+SELECT message FROM duckdb_logs where type='iceberg.Catalog.Curl.HTTPRequest' order by timestamp
+----
+POST http://127.0.0.1:8181/v1/oauth/tokens (curl code 'No error')
+GET http://127.0.0.1:8181/v1/namespaces (curl code 'No error')
+GET http://127.0.0.1:8181/v1/namespaces/default/tables (curl code 'No error')
+GET http://127.0.0.1:8181/v1/namespaces/default/tables/table_unpartitioned (curl code 'No error')
+GET http://127.0.0.1:8181/v1/namespaces/default/tables/table_unpartitioned (curl code 'No error')
+GET http://127.0.0.1:8181/v1/namespaces/default/tables/table_more_deletes (curl code 'No error')
+GET http://127.0.0.1:8181/v1/namespaces/default/tables/table_more_deletes (curl code 'No error')
 
 query I
-select sum(l_suppkey_long) from my_datalake.default.pyspark_iceberg_table_v2;
+select count(*) from my_datalake.default.pyspark_iceberg_table_v2;
 ----
-20352
+6592
 
 statement error
 update my_datalake.default.table_unpartitioned set number = 5 where number < 5;

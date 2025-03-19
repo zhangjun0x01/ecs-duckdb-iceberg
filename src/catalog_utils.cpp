@@ -1,4 +1,5 @@
 #include "catalog_utils.hpp"
+#include "iceberg_utils.hpp"
 #include "duckdb/common/operator/cast_operators.hpp"
 #include "storage/irc_schema_entry.hpp"
 #include "storage/irc_transaction.hpp"
@@ -231,6 +232,17 @@ LogicalType ICUtils::ToICType(const LogicalType &input) {
 	default:
 		return LogicalType::VARCHAR;
 	}
+}
+
+yyjson_doc *ICUtils::api_result_to_doc(const string &api_result) {
+	auto *doc = yyjson_read(api_result.c_str(), api_result.size(), 0);
+	auto *root = yyjson_doc_get_root(doc);
+	auto *error = yyjson_obj_get(root, "error");
+	if (error != NULL) {
+		string err_msg = IcebergUtils::TryGetStrFromObject(error, "message");
+		throw std::runtime_error(err_msg);
+	}
+	return doc;
 }
 
 } // namespace duckdb

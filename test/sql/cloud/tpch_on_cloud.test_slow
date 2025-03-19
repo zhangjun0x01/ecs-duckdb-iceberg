@@ -4,7 +4,33 @@
 # setup creds
 
 # TODO, need to get access to a remote glue catalog merged first
+# TODO, also important to make the sf=0.1
 mode skip
+
+require httpfs
+
+require parquet
+
+require iceberg
+
+require aws
+
+require tpch
+
+statement ok
+CREATE SECRET glue_secret (
+    TYPE S3,
+    PROVIDER credential_chain,
+    CHAIN 'sts',
+    ASSUME_ROLE_ARN 'arn:aws:iam::840140254803:role/pyiceberg-etl-role',
+    REGION 'us-east-1'
+);
+
+statement ok
+attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as my_datalake (
+    TYPE ICEBERG,
+    ENDPOINT_TYPE 'GLUE'
+);
 
 statement ok
 create view customer as select * from my_datalake.myblognamespace.customer;
@@ -36,7 +62,7 @@ loop i 1 9
 query I
 PRAGMA tpch(${i})
 ----
-<FILE>:duckdb/extension/tpch/dbgen/answers/sf0.1/q0${i}.csv
+<FILE>:duckdb/extension/tpch/dbgen/answers/sf1/q0${i}.csv
 
 endloop
 
@@ -45,6 +71,6 @@ loop i 10 23
 query I
 PRAGMA tpch(${i})
 ----
-<FILE>:duckdb/extension/tpch/dbgen/answers/sf0.1/q${i}.csv
+<FILE>:duckdb/extension/tpch/dbgen/answers/sf1/q${i}.csv
 
 endloop

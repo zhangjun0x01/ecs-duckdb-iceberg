@@ -1,7 +1,6 @@
 #include "storage/irc_catalog.hpp"
 #include "storage/irc_schema_entry.hpp"
 #include "storage/irc_table_entry.hpp"
-#include "storage/irc_transaction.hpp"
 #include "duckdb/storage/statistics/base_statistics.hpp"
 #include "duckdb/storage/table_storage_info.hpp"
 #include "duckdb/main/extension_util.hpp"
@@ -10,9 +9,7 @@
 #include "duckdb/catalog/catalog_entry/table_function_catalog_entry.hpp"
 #include "duckdb/parser/tableref/table_function_ref.hpp"
 #include "catalog_api.hpp"
-#include "../../duckdb/third_party/catch/catch.hpp"
 #include "duckdb/planner/binder.hpp"
-#include "duckdb/planner/tableref/bound_table_function.hpp"
 #include "duckdb/planner/logical_operator.hpp"
 #include "duckdb/planner/operator/logical_get.hpp"
 
@@ -54,12 +51,11 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	auto &secret_manager = SecretManager::Get(context);
 	
 	// Get Credentials from IRC API
-	auto table_credentials = IRCAPI::GetTableCredentials(
-		ic_catalog.internal_name, table_data->schema_name, table_data->name, ic_catalog.credentials);
+	auto table_credentials = IRCAPI::GetTableCredentials(context, ic_catalog, table_data->schema_name, table_data->name, ic_catalog.credentials);
+	CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
 	// First check if table credentials are set (possible the IC catalog does not return credentials)
 	if (!table_credentials.key_id.empty()) {
 		// Inject secret into secret manager scoped to this path
-		CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
 		info.name = "__internal_ic_" + table_data->table_id;
 		info.type = "s3";
 		info.provider = "config";
@@ -68,7 +64,47 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 			{"key_id", table_credentials.key_id},
 			{"secret", table_credentials.secret},
 			{"session_token", table_credentials.session_token},
-			{"region", ic_catalog.credentials.aws_region},
+			{"region", table_credentials.region},
+		};
+
+		if (StringUtil::StartsWith(ic_catalog.host, "glue")) {
+			auto secret_entry = IRCatalog::GetSecret(context, ic_catalog.secret_name);
+			auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+			auto region = kv_secret.TryGetValue("region").ToString();
+			auto endpoint = "s3." + region + ".amazonaws.com";
+			info.options["endpoint"] = endpoint;
+		}
+
+		std::string lc_storage_location;
+		lc_storage_location.resize(table_data->storage_location.size());
+		std::transform(table_data->storage_location.begin(), table_data->storage_location.end(), lc_storage_location.begin(), ::tolower);
+		size_t metadata_pos = lc_storage_location.find("metadata");
+		if (metadata_pos != std::string::npos) {
+			info.scope = {lc_storage_location.substr(0, metadata_pos)};
+		} else {
+			throw std::runtime_error("Substring not found");
+		}
+		auto my_secret = secret_manager.CreateSecret(context, info);
+	} else if (StringUtil::StartsWith(ic_catalog.host, "s3tables")) {
+		// Inject secret into secret manager with correct endpoint
+		CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
+		auto secret_entry = IRCatalog::GetSecret(context, ic_catalog.secret_name);
+		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+		info.name = "__internal_ic_" + table_data->table_id + "__" + table_data->schema_name + "__" + table_data->name;
+		info.type = "s3";
+		info.provider = "config";
+		info.storage_type = "memory";
+
+		auto substrings = StringUtil::Split(ic_catalog.warehouse, ":");
+		D_ASSERT(substrings.size() == 6);
+		auto region = substrings[3];
+		auto endpoint = "s3." + region + ".amazonaws.com";
+		info.options = {
+			{"key_id", kv_secret.TryGetValue("key_id").ToString()},
+			{"secret", kv_secret.TryGetValue("secret").ToString()},
+			{"session_token", kv_secret.TryGetValue("session_token").IsNull() ? "" :  kv_secret.TryGetValue("session_token").ToString()},
+			{"region", region},
+			{"endpoint", endpoint}
 		};
 
 		std::string lc_storage_location;

@@ -1,17 +1,22 @@
 #include "storage/irc_catalog.hpp"
 #include "storage/irc_schema_entry.hpp"
 #include "storage/irc_transaction.hpp"
+#include "catalog_api.hpp"
+#include "catalog_utils.hpp"
+#include "iceberg_utils.hpp"
 #include "duckdb/storage/database_size.hpp"
+#include "duckdb/main/database.hpp"
 #include "duckdb/parser/parsed_data/drop_info.hpp"
 #include "duckdb/parser/parsed_data/create_schema_info.hpp"
 #include "duckdb/main/attached_database.hpp"
 
+
+using namespace duckdb_yyjson;
 namespace duckdb {
 
-IRCatalog::IRCatalog(AttachedDatabase &db_p, const string &internal_name, AccessMode access_mode,
+IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode,
                      IRCCredentials credentials)
-    : Catalog(db_p), internal_name(internal_name), access_mode(access_mode), credentials(std::move(credentials)),
-      schemas(*this) {
+    : Catalog(db_p), access_mode(access_mode), credentials(std::move(credentials)), schemas(*this) {
 }
 
 IRCatalog::~IRCatalog() = default;
@@ -43,8 +48,11 @@ optional_ptr<SchemaCatalogEntry> IRCatalog::GetSchema(CatalogTransaction transac
                                                       OnEntryNotFound if_not_found, QueryErrorContext error_context) {
 	if (schema_name == DEFAULT_SCHEMA) {
 		if (default_schema.empty()) {
+			if (if_not_found == OnEntryNotFound::RETURN_NULL) {
+				return nullptr;
+			}
 			throw InvalidInputException("Attempting to fetch the default schema - but no database was "
-			                            "provided in the connection string");
+			                             "provided in the connection string");
 		}
 		return GetSchema(transaction, default_schema, if_not_found, error_context);
 	}
@@ -52,6 +60,7 @@ optional_ptr<SchemaCatalogEntry> IRCatalog::GetSchema(CatalogTransaction transac
 	if (!entry && if_not_found != OnEntryNotFound::RETURN_NULL) {
 		throw BinderException("Schema with name \"%s\" not found", schema_name);
 	}
+
 	return reinterpret_cast<SchemaCatalogEntry *>(entry.get());
 }
 
@@ -72,8 +81,37 @@ DatabaseSize IRCatalog::GetDatabaseSize(ClientContext &context) {
 	return size;
 }
 
+IRCEndpointBuilder IRCatalog::GetBaseUrl() const {
+	auto base_url = IRCEndpointBuilder();
+	base_url.SetPrefix(prefix);
+	base_url.SetWarehouse(warehouse);
+	base_url.SetVersion(version);
+	base_url.SetHost(host);
+	return base_url;
+}
+
 void IRCatalog::ClearCache() {
 	schemas.ClearEntries();
+}
+
+unique_ptr<SecretEntry> IRCatalog::GetSecret(ClientContext &context, const string &secret_name) {
+	auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
+	// make sure a secret exists to connect to an AWS catalog
+	unique_ptr<SecretEntry> secret_entry = nullptr;
+	if (!secret_name.empty()) {
+		secret_entry = context.db->GetSecretManager().GetSecretByName(transaction, secret_name);
+	}
+	if (!secret_entry) {
+		auto secret_match = context.db->GetSecretManager().LookupSecret(transaction, "s3://", "s3");
+		if (!secret_match.HasMatch()) {
+			throw IOException("Failed to find a secret and no explicit secret was passed!");
+		}
+		secret_entry = std::move(secret_match.secret_entry);
+	}
+	if (secret_entry) {
+		return secret_entry;
+	}
+	throw IOException("Could not find valid Iceberg secret");
 }
 
 unique_ptr<PhysicalOperator> IRCatalog::PlanInsert(ClientContext &context, LogicalInsert &op,
@@ -95,6 +133,47 @@ unique_ptr<PhysicalOperator> IRCatalog::PlanUpdate(ClientContext &context, Logic
 unique_ptr<LogicalOperator> IRCatalog::BindCreateIndex(Binder &binder, CreateStatement &stmt, TableCatalogEntry &table,
                                                        unique_ptr<LogicalOperator> plan) {
 	throw NotImplementedException("ICCatalog BindCreateIndex");
+}
+
+
+bool IRCatalog::HasCachedValue(string url) const {
+	auto value = metadata_cache.find(url);
+    if (value != metadata_cache.end()) {
+        auto now = std::chrono::system_clock::now();
+        if (now < value->second->expires_at) {
+			return true;
+		}
+    }
+	return false;
+}
+
+string IRCatalog::GetCachedValue(string url) const {
+	auto value = metadata_cache.find(url);
+    if (value != metadata_cache.end()) {
+        auto now = std::chrono::system_clock::now();
+        if (now < value->second->expires_at) {
+            return value->second->data;
+        }
+    }
+	throw InternalException("Cached value does not exist");
+}
+
+bool IRCatalog::SetCachedValue(string url, string value) {
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(value));
+	auto *root = yyjson_doc_get_root(doc.get());
+	auto *credentials = yyjson_obj_get(root, "config");
+	auto credential_size = yyjson_obj_size(credentials);
+	if (credentials && credential_size > 0) {
+		auto expires_at = IcebergUtils::TryGetStrFromObject(credentials, "s3.session-token-expires-at-ms", false);
+		if (expires_at == "") {
+			return false;
+		}
+		auto epochMillis = std::stoll(expires_at);
+		auto expired_time = std::chrono::system_clock::time_point(std::chrono::milliseconds(epochMillis));
+		auto val = make_uniq<MetadataCacheValue>(value, expired_time);
+		metadata_cache[url] = std::move(val);
+	}
+	return false;
 }
 
 } // namespace duckdb
