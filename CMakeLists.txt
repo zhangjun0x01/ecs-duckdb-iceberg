@@ -42,6 +42,7 @@ set(PARAMETERS "-warnings")
 build_loadable_extension(${TARGET_NAME} ${PARAMETERS} ${EXTENSION_SOURCES})
 
 find_package(CURL REQUIRED)
+find_package(AWSSDK REQUIRED COMPONENTS core sso sts)
 include_directories(${CURL_INCLUDE_DIRS})
 
 # AWS SDK FROM vcpkg

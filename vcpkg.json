@@ -4,8 +4,12 @@
 		"curl",
 		"openssl",
 		{
-		"name": "aws-sdk-cpp",
-		"features": [ "sso", "sts", "identity-management" ]
+			"name": "aws-sdk-cpp",
+			"features": [
+				"sso",
+				"sts",
+				"identity-management"
+			]
 		}
 	],
 	"vcpkg-configuration": {
