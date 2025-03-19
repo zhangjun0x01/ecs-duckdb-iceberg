@@ -119,7 +119,7 @@ IcebergSnapshot IcebergSnapshot::GetSnapshotByTimestamp(const string &path, File
 
 // Function to generate a metadata file url from version and format string
 // default format is "v%s%s.metadata.json" -> v00###-xxxxxxxxx-.gz.metadata.json"
-string GenerateMetaDataUrl(FileSystem &fs, const string &meta_path, string &table_version, const IcebergOptions &options) {
+static string GenerateMetaDataUrl(FileSystem &fs, const string &meta_path, string &table_version, const IcebergOptions &options) {
 	// TODO: Need to URL Encode table_version
 	string compression_suffix = "";
 	string url;
