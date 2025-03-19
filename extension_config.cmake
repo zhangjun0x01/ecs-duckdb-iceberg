@@ -8,8 +8,8 @@ duckdb_extension_load(iceberg
 
 duckdb_extension_load(avro
     LOAD_TESTS
-    GIT_URL https://github.com/tishj/duckdb_avro
-    GIT_TAG 0287790955f98bd8b6fd6aa2993335b16a211791
+    GIT_URL https://github.com/duckdb/duckdb_avro
+    GIT_TAG aa2741544c5b53cc8fda6a85ca56bd0353116de4
 )
 
 duckdb_extension_load(tpch)
