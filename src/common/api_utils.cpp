@@ -1,21 +1,21 @@
-#include "request_utils.hpp"
+#include "api_utils.hpp"
 #include <sys/stat.h>
 #include "storage/irc_catalog.hpp"
 #include "credentials/credential_provider.hpp"
 
 namespace duckdb {
 
-string RequestUtils::GetAwsRegion(const string host) {
+string APIUtils::GetAwsRegion(const string host) {
 	idx_t first_dot = host.find_first_of('.');
 	idx_t second_dot = host.find_first_of('.', first_dot + 1);
 	return host.substr(first_dot + 1, second_dot - first_dot - 1);
 }
 
-string RequestUtils::GetAwsService(const string host) {
+string APIUtils::GetAwsService(const string host) {
 	return host.substr(0, host.find_first_of('.'));
 }
 
-string RequestUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder, const string &secret_name, const string &token, curl_slist *extra_headers) {
+string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder, const string &secret_name, const string &token, curl_slist *extra_headers) {
 	if (StringUtil::StartsWith(endpoint_builder.GetHost(), "glue." ) || StringUtil::StartsWith(endpoint_builder.GetHost(), "s3tables." )) {
 		auto str = GetRequestAws(context, endpoint_builder, secret_name);
 		return str;
@@ -50,7 +50,7 @@ string RequestUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder
 	throw InternalException("Failed to initialize curl");
 }
 
-string RequestUtils::GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_builder, const string &secret_name) {
+string APIUtils::GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_builder, const string &secret_name) {
 	auto clientConfig = make_uniq<Aws::Client::ClientConfiguration>();
 
 	if (!SELECTED_CURL_CERT_PATH.empty()) {
@@ -118,14 +118,14 @@ string RequestUtils::GetRequestAws(ClientContext &context, IRCEndpointBuilder en
 }
 
 
-size_t RequestUtils::RequestWriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+size_t APIUtils::RequestWriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
 	((std::string *)userp)->append((char *)contents, size * nmemb);
 	return size * nmemb;
 }
 
 
 // Look through the the above locations and if one of the files exists, set that as the location curl should use.
-bool RequestUtils::SelectCurlCertPath() {
+bool APIUtils::SelectCurlCertPath() {
 	for (string& caFile : certFileLocations) {
 		struct stat buf;
 		if (stat(caFile.c_str(), &buf) == 0) {
@@ -135,7 +135,7 @@ bool RequestUtils::SelectCurlCertPath() {
 	return false;
 }
 
-bool RequestUtils::SetCurlCAFileInfo(CURL* curl) {
+bool APIUtils::SetCurlCAFileInfo(CURL* curl) {
 	if (!SELECTED_CURL_CERT_PATH.empty()) {
 		curl_easy_setopt(curl, CURLOPT_CAINFO, SELECTED_CURL_CERT_PATH.c_str());
         return true;
@@ -144,7 +144,7 @@ bool RequestUtils::SetCurlCAFileInfo(CURL* curl) {
 }
 
 // Note: every curl object we use should set this, because without it some linux distro's may not find the CA certificate.
-void RequestUtils::InitializeCurlObject(CURL * curl, const string &token) {
+void APIUtils::InitializeCurlObject(CURL * curl, const string &token) {
   	if (!token.empty()) {
 		curl_easy_setopt(curl, CURLOPT_XOAUTH2_BEARER, token.c_str());
 		curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BEARER);
@@ -152,7 +152,7 @@ void RequestUtils::InitializeCurlObject(CURL * curl, const string &token) {
     SetCurlCAFileInfo(curl);
 }
 
-string RequestUtils::DeleteRequest(const string &url, const string &token, curl_slist *extra_headers) {
+string APIUtils::DeleteRequest(const string &url, const string &token, curl_slist *extra_headers) {
     CURL *curl;
     CURLcode res;
     string readBuffer;
@@ -183,7 +183,7 @@ string RequestUtils::DeleteRequest(const string &url, const string &token, curl_
 }
 
 
-string RequestUtils::PostRequest(
+string APIUtils::PostRequest(
 		ClientContext &context,
 		const string &url,
 		const string &post_data,
@@ -199,7 +199,7 @@ string RequestUtils::PostRequest(
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 	curl_easy_setopt(curl, CURLOPT_POST, 1L);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, RequestUtils::RequestWriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, APIUtils::RequestWriteCallback);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
 	// Create default headers for content type

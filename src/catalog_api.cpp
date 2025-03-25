@@ -3,7 +3,7 @@
 #include "storage/irc_catalog.hpp"
 #include "yyjson.hpp"
 #include "iceberg_utils.hpp"
-#include "request_utils.hpp"
+#include "api_utils.hpp"
 #include <curl/curl.h>
 #include <sys/stat.h>
 #include <aws/core/Aws.h>
@@ -31,7 +31,7 @@ static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const
 	url.AddPathComponent("tables");
 	url.AddPathComponent(table);
 	extra_headers = curl_slist_append(extra_headers, "X-Iceberg-Access-Delegation: vended-credentials");
-	string api_result = RequestUtils::GetRequest(
+	string api_result = APIUtils::GetRequest(
 		context,
 		url,
 		secret_name,
@@ -58,7 +58,7 @@ static string GetTableMetadataCached(ClientContext &context, IRCatalog &catalog,
 }
 
 void IRCAPI::InitializeCurl() {
-	RequestUtils::SelectCurlCertPath();
+	APIUtils::SelectCurlCertPath();
 }
 
 vector<string> IRCAPI::GetCatalogs(ClientContext &context, IRCatalog &catalog, IRCCredentials credentials) {
@@ -98,7 +98,7 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 
 string IRCAPI::GetToken(ClientContext &context, string id, string secret, string endpoint) {
 	string post_data = "grant_type=client_credentials&client_id=" + id + "&client_secret=" + secret + "&scope=PRINCIPAL_ROLE:ALL";
-	string api_result = RequestUtils::PostRequest(context, endpoint + "/v1/oauth/tokens", post_data);
+	string api_result = APIUtils::PostRequest(context, endpoint + "/v1/oauth/tokens", post_data);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	return IcebergUtils::TryGetStrFromObject(root, "access_token");
@@ -174,7 +174,7 @@ vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog
 	url.AddPathComponent("namespaces");
 	url.AddPathComponent(schema);
 	url.AddPathComponent("tables");
-	string api_result = RequestUtils::GetRequest(context, url, catalog.secret_name, catalog.credentials.token);
+	string api_result = APIUtils::GetRequest(context, url, catalog.secret_name, catalog.credentials.token);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *tables = yyjson_obj_get(root, "identifiers");
@@ -194,7 +194,7 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catal
 	endpoint_builder.AddPathComponent(catalog.prefix);
 	endpoint_builder.AddPathComponent("namespaces");
 	string api_result =
-	    RequestUtils::GetRequest(context, endpoint_builder, catalog.secret_name, catalog.credentials.token);
+	    APIUtils::GetRequest(context, endpoint_builder, catalog.secret_name, catalog.credentials.token);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *schemas = yyjson_obj_get(root, "namespaces");

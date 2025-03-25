@@ -1,7 +1,7 @@
 //===----------------------------------------------------------------------===//
 //                         DuckDB
 //
-// request_utils.hpp
+// api_utils.hpp
 //
 //
 //===----------------------------------------------------------------------===//
@@ -36,7 +36,7 @@ static string certFileLocations[] = {
 	"/etc/ssl/cert.pem"
 };
 
-class RequestUtils {
+class APIUtils {
 public:
 	//! We use a global here to store the path that is selected on the ICAPI::InitializeCurl call
 

@@ -4,7 +4,7 @@
 #include "catalog_api.hpp"
 #include "catalog_utils.hpp"
 #include "iceberg_utils.hpp"
-#include "request_utils.hpp"
+#include "api_utils.hpp"
 #include "duckdb/storage/database_size.hpp"
 #include "duckdb/main/database.hpp"
 #include "duckdb/parser/parsed_data/drop_info.hpp"
@@ -33,7 +33,7 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	D_ASSERT(prefix.empty());
 	url.AddPathComponent("config");
 	url.SetParam("warehouse", warehouse);
-	auto response = RequestUtils::GetRequest(context, url, secret_name, credentials.token);
+	auto response = APIUtils::GetRequest(context, url, secret_name, credentials.token);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(response));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *overrides_json = yyjson_obj_get(root, "overrides");
