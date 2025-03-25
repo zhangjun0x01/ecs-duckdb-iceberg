@@ -19,6 +19,7 @@
 #include "catalog_api.hpp"
 #include <aws/core/Aws.h>
 #include <aws/s3/S3Client.h>
+#include "duckdb/main/extension_helper.hpp"
 
 namespace duckdb {
 
@@ -203,6 +204,15 @@ public:
 static void LoadInternal(DatabaseInstance &instance) {
 	Aws::SDKOptions options;
 	Aws::InitAPI(options); // Should only be called once.
+
+	ExtensionHelper::AutoLoadExtension(instance, "avro");
+	if (!instance.ExtensionIsLoaded("avro")) {
+		throw MissingExtensionException("The iceberg extension requires the avro extension to be loaded!");
+	}
+	ExtensionHelper::AutoLoadExtension(instance, "parquet");
+	if (!instance.ExtensionIsLoaded("parquet")) {
+		throw MissingExtensionException("The iceberg extension requires the parquet extension to be loaded!");
+	}
 
 	auto &config = DBConfig::GetConfig(instance);
 
