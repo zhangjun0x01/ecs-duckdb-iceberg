@@ -1,12 +1,12 @@
-
 #include "url_utils.hpp"
-
-#include <duckdb.h>
+#include "duckdb/common/string_util.hpp"
 
 namespace duckdb {
 
 void IRCEndpointBuilder::AddPathComponent(std::string component) {
-	path_components.push_back(component);
+	if (!component.empty()) {
+		path_components.push_back(component);
+	}
 }
 
 void IRCEndpointBuilder::SetPrefix(std::string prefix_) {
@@ -68,12 +68,13 @@ std::string IRCEndpointBuilder::GetURL() const {
 	for (auto &component : path_components) {
 		ret += "/" + component;
 	}
-	// TODO: URL encode keys and values.
+
+	// encode params
 	auto sep = "?";
 	if (params.size() > 0) {
 		for (auto &param : params) {
-			auto &key = param.first;
-			auto &value = param.second;
+			auto key = StringUtil::URLEncode(param.first);
+			auto value = StringUtil::URLEncode(param.second);
 			ret += sep + key + "=" + value;
 			sep = "&";
 		}

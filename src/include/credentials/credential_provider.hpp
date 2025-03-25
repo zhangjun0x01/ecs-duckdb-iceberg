@@ -1,6 +1,4 @@
 #include <aws/core/Aws.h>
-#include <aws/s3/S3Client.h>
-#include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentials.h>
 #include <aws/core/auth/AWSCredentialsProviderChain.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>

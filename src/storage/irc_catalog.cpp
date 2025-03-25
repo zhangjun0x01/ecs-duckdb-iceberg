@@ -11,10 +11,10 @@
 #include "duckdb/parser/parsed_data/create_schema_info.hpp"
 #include "duckdb/main/attached_database.hpp"
 
-#include <aws/core/utils/StringUtils.h>
-
 using namespace duckdb_yyjson;
+
 namespace duckdb {
+
 IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode,
 					   IRCCredentials credentials, string warehouse, string host, string secret_name, string version )
 	: Catalog(db_p), access_mode(access_mode), credentials(std::move(credentials)), warehouse(warehouse), host(host), secret_name(secret_name), version(version), schemas(*this) {
@@ -30,7 +30,7 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	auto url = GetBaseUrl();
 	// set the prefix to be empty. To get the config endpoint,
 	// we cannot add a default prefix.
-	url.SetPrefix("");
+	D_ASSERT(prefix.empty());
 	url.AddPathComponent("config");
 	url.SetParam("warehouse", warehouse);
 	auto response = RequestUtils::GetRequest(context, url, secret_name, credentials.token);
@@ -38,7 +38,6 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *overrides_json = yyjson_obj_get(root, "overrides");
 	auto *defaults_json = yyjson_obj_get(root, "defaults");
-	auto *endpoints_json = yyjson_obj_get(root, "endpoints");
 	// save overrides and defaults.
 	// See https://iceberg.apache.org/docs/latest/configuration/#catalog-properties for sometimes used catalog properties
 	if (defaults_json && yyjson_obj_size(defaults_json) > 0) {
@@ -51,7 +50,7 @@ void IRCatalog::GetConfig(ClientContext &context) {
 			defaults[key_str] = val_str;
 			// sometimes there is a prefix in the defaults
 			if (std::strcmp(key_str, "prefix") == 0) {
-				prefix = Aws::Utils::StringUtils::URLDecode(val_str);
+				prefix = StringUtil::URLDecode(val_str);
 			}
 		}
 	}
@@ -64,7 +63,7 @@ void IRCatalog::GetConfig(ClientContext &context) {
 			auto val_str = yyjson_get_str(val);
 			// sometimes the prefix in the overrides. Prefer the override prefix
 			if (std::strcmp(key_str, "prefix") == 0) {
-				prefix = Aws::Utils::StringUtils::URLDecode(val_str);
+				prefix = StringUtil::URLDecode(val_str);
 			}
 			// save the rest of the overrides
 			overrides[key_str] = val_str;
@@ -73,8 +72,8 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	if (prefix.empty()) {
 		DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.HttpReqeust", "No prefix found for catalog with warehouse value %s", warehouse);
 	}
-	// TODO: store optional endpoints param as well. We can enforce per catalog what endpoints are allowed to be
-	//  hit
+	// TODO: store optional endpoints param as well. We can enforce per catalog the endpoints that
+	//  are allowed to be hit
 }
 
 optional_ptr<CatalogEntry> IRCatalog::CreateSchema(CatalogTransaction transaction, CreateSchemaInfo &info) {
