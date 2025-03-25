@@ -112,11 +112,12 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 			service = endpoint_type;
 		}
 		// look up any s3 secret
-		auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials);
+
 		// if there is no secret, an error will be thrown
 		auto secret_entry = IRCatalog::GetSecret(context, secret_name);
         auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 		auto region = kv_secret.TryGetValue("region");
+		string catalog_warehouse = "";
 		if (region.IsNull()) {
 			throw IOException("Assumed catalog secret " + secret_entry->secret->GetName() + " for catalog " + name + " does not have a region");
 		}
@@ -126,16 +127,15 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 				throw InvalidInputException("Could not parse S3 Tables arn warehouse value");
 			}
 			region = Value::CreateValue<string>(substrings[3]);
-			catalog->warehouse = warehouse;
+			catalog_warehouse = warehouse;
 		}
 		else if (service == "glue") {
 			SanityCheckGlueWarehouse(warehouse);
-			catalog->warehouse = StringUtil::Replace(warehouse, "/", ":");
+			catalog_warehouse = StringUtil::Replace(warehouse, "/", ":");
 		}
 
-		catalog->host = service + "." + region.ToString() + ".amazonaws.com";
-		catalog->version = "v1";
-		catalog->secret_name = secret_name;
+		auto catalog_host = service + "." + region.ToString() + ".amazonaws.com";
+		auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, catalog_warehouse, catalog_host, secret_name);
 		return std::move(catalog);
 	}
 
@@ -169,11 +169,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		throw IOException("Failed to generate oath token");
 	}
 	credentials.token = token.ToString();
-	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials);
-	catalog->host = endpoint;
-	catalog->warehouse = warehouse;
-	catalog->version = "v1";
-	catalog->secret_name = secret_name;
+	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, warehouse, endpoint, secret_name);
 	return std::move(catalog);
 }
 

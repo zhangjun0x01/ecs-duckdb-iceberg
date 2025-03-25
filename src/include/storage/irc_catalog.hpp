@@ -42,7 +42,7 @@ public:
 class IRCatalog : public Catalog {
 public:
 	explicit IRCatalog(AttachedDatabase &db_p, AccessMode access_mode,
-	                   IRCCredentials credentials);
+	                   IRCCredentials credentials, string warehouse, string host, string secret_name, string version = "v1");
 	~IRCatalog();
 
 	string internal_name;
@@ -50,23 +50,27 @@ public:
 	IRCCredentials credentials;
 	IRCEndpointBuilder endpoint_builder;
 
+	//! warehouse
+	string warehouse;
 	//! host of the endpoint, like `glue` or `polaris`
 	string host;
+	//! secret name that Iceberg catalog should use for authentication
+	string secret_name;
 	//! version
 	string version;
 	//! optional prefix
 	string prefix;
-	//! warehouse
-	string warehouse;
 
-	string secret_name;
 public:
 	void Initialize(bool load_builtin) override;
+
 	string GetCatalogType() override {
 		return "iceberg";
 	}
 
 	static unique_ptr<SecretEntry> GetSecret(ClientContext &context, const string &secret_name);
+
+	void GetConfig(ClientContext &context);
 
 	optional_ptr<CatalogEntry> CreateSchema(CatalogTransaction transaction, CreateSchemaInfo &info) override;
 

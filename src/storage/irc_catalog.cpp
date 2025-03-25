@@ -4,24 +4,31 @@
 #include "catalog_api.hpp"
 #include "catalog_utils.hpp"
 #include "iceberg_utils.hpp"
+#include "request_utils.hpp"
 #include "duckdb/storage/database_size.hpp"
 #include "duckdb/main/database.hpp"
 #include "duckdb/parser/parsed_data/drop_info.hpp"
 #include "duckdb/parser/parsed_data/create_schema_info.hpp"
 #include "duckdb/main/attached_database.hpp"
 
-
 using namespace duckdb_yyjson;
 namespace duckdb {
 
 IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode,
-                     IRCCredentials credentials)
-    : Catalog(db_p), access_mode(access_mode), credentials(std::move(credentials)), schemas(*this) {
+					   IRCCredentials credentials, string warehouse, string host, string secret_name, string version )
+    : Catalog(db_p), access_mode(access_mode), credentials(std::move(credentials)), warehouse(warehouse), host(host), secret_name(secret_name), version(version), schemas(*this) {
+
 }
 
 IRCatalog::~IRCatalog() = default;
 
 void IRCatalog::Initialize(bool load_builtin) {
+}
+
+void IRCatalog::GetConfig(ClientContext &context) {
+	auto url = GetBaseUrl();
+	url.AddPathComponent("config");
+	RequestUtils::GetRequest(context, url, secret_name, credentials.token);
 }
 
 optional_ptr<CatalogEntry> IRCatalog::CreateSchema(CatalogTransaction transaction, CreateSchemaInfo &info) {
