@@ -234,12 +234,12 @@ LogicalType ICUtils::ToICType(const LogicalType &input) {
 	}
 }
 
-yyjson_doc *ICUtils::api_result_to_doc(const string &api_result) {
+yyjson_doc *ICUtils::api_result_to_doc(const string &api_result, const string &variable) {
 	auto *doc = yyjson_read(api_result.c_str(), api_result.size(), 0);
 	auto *root = yyjson_doc_get_root(doc);
 	auto *error = yyjson_obj_get(root, "error");
 	if (error != NULL) {
-		string err_msg = IcebergUtils::TryGetStrFromObject(error, "message");
+		string err_msg = IcebergUtils::TryGetStrFromObject(error, variable);
 		throw std::runtime_error(err_msg);
 	}
 	return doc;

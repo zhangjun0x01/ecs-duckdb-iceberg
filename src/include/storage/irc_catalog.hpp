@@ -17,10 +17,16 @@ class IRCSchemaEntry;
 struct IRCCredentials {
 	string client_id;
 	string client_secret;
-	// required to query s3 tables
+	//! required to query s3 tables
 	string aws_region;
-	// Catalog generates the token using client id & secret
+	//! Catalog generates the token using client id & secret
 	string token;
+	//! The scope of the OAuth token to request through the client_credentials flow
+	string scope;
+	//! OAuth endpoint
+	string oauth2_endpoint;
+	//! The warehouse where the catalog lives
+	string warehouse;
 };
 
 class ICRClearCacheFunction : public TableFunction {
@@ -56,8 +62,6 @@ public:
 	string version;
 	//! optional prefix
 	string prefix;
-	//! warehouse
-	string warehouse;
 
 	string secret_name;
 public:

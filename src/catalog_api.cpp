@@ -365,10 +365,18 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	return result;
 }
 
-string IRCAPI::GetToken(ClientContext &context, string id, string secret, string endpoint) {
-	string post_data = "grant_type=client_credentials&client_id=" + id + "&client_secret=" + secret + "&scope=PRINCIPAL_ROLE:ALL";
-	string api_result = PostRequest(context, endpoint + "/v1/oauth/tokens", post_data);
-	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
+string IRCAPI::GetToken(ClientContext &context, const string &id, const string &secret, const string &endpoint, const string &scope) {
+	vector<string> parameters;
+	parameters.push_back("client_credentials");
+	parameters.push_back(StringUtil::Format("%s=%s", "client_id", id));
+	parameters.push_back(StringUtil::Format("%s=%s", "client_secret", secret));
+	parameters.push_back(StringUtil::Format("%s=%s", "scope", scope));
+
+	string post_data = StringUtil::Format("grant_type=%s", StringUtil::Join(parameters, "&"));
+	string api_result = PostRequest(context, "http://localhost:30080/realms/iceberg/protocol/openid-connect/token", post_data);
+	//! FIXME: the oauth/tokens endpoint returns, on success;
+	// { 'access_token', 'token_type', 'expires_in', <issued_token_type>, 'refresh_token', 'scope'}
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result, "access_token"));
 	auto *root = yyjson_doc_get_root(doc.get());
 	return IcebergUtils::TryGetStrFromObject(root, "access_token");
 }

@@ -95,7 +95,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 		info.provider = "config";
 		info.storage_type = "memory";
 
-		auto substrings = StringUtil::Split(ic_catalog.warehouse, ":");
+		auto substrings = StringUtil::Split(ic_catalog.credentials.warehouse, ":");
 		D_ASSERT(substrings.size() == 6);
 		auto region = substrings[3];
 		auto endpoint = "s3." + region + ".amazonaws.com";

@@ -32,7 +32,8 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 		if (lower_name == "key_id" ||
 		    lower_name == "secret" ||
 		    lower_name == "endpoint" ||
-		    lower_name == "aws_region") {
+		    lower_name == "aws_region" ||
+		    lower_name == "scope") {
 			result->secret_map[lower_name] = named_param.second.ToString();
 		} else {
 			throw InternalException("Unknown named parameter passed to CreateIRCSecretFunction: " + lower_name);
@@ -44,7 +45,9 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 		context,
 	    result->secret_map["key_id"].ToString(),
 	    result->secret_map["secret"].ToString(),
-	    result->secret_map["endpoint"].ToString());
+	    result->secret_map["endpoint"].ToString(),
+	    result->secret_map["scope"].ToString()
+	);
 	
 	//! Set redact keys
 	result->redact_keys = {"token", "client_id", "client_secret"};
@@ -86,6 +89,9 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	string endpoint_type;
 	string endpoint;
 
+	auto &warehouse = credentials.warehouse;
+	auto &scope = credentials.scope;
+
 	// check if we have a secret provided
 	string secret_name;
 	for (auto &entry : info.options) {
@@ -99,11 +105,23 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		} else if (lower_name == "endpoint") {
 			endpoint = StringUtil::Lower(entry.second.ToString());
 			StringUtil::RTrim(endpoint, "/");
+		} else if (lower_name == "warehouse") {
+			warehouse = StringUtil::Lower(entry.second.ToString());
+		} else if (lower_name == "scope") {
+			scope = StringUtil::Lower(entry.second.ToString());
 		} else {
 			throw BinderException("Unrecognized option for PC attach: %s", entry.first);
 		}
 	}
-	auto warehouse = info.path;
+	if (warehouse.empty()) {
+		//! Default to the path of the catalog as the warehouse if none is provided
+		warehouse = info.path;
+	}
+
+	if (scope.empty()) {
+		//! Default to the Polaris scope: 'PRINCIPAL_ROLE:ALL'
+		scope = "PRINCIPAL_ROLE:ALL";
+	}
 
 	if (endpoint_type == "glue" || endpoint_type == "s3_tables") {
 		if (endpoint_type == "s3_tables") {
@@ -126,11 +144,10 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 				throw InvalidInputException("Could not parse S3 Tables arn warehouse value");
 			}
 			region = Value::CreateValue<string>(substrings[3]);
-			catalog->warehouse = warehouse;
 		}
 		else if (service == "glue") {
 			SanityCheckGlueWarehouse(warehouse);
-			catalog->warehouse = StringUtil::Replace(warehouse, "/", ":");
+			warehouse = StringUtil::Replace(warehouse, "/", ":");
 		}
 
 		catalog->host = service + "." + region.ToString() + ".amazonaws.com";
@@ -162,6 +179,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	create_secret_input.options["key_id"] = key_val;
 	create_secret_input.options["secret"] = secret_val;
 	create_secret_input.options["endpoint"] = endpoint;
+	create_secret_input.options["scope"] = scope;
 	auto new_secret = CreateCatalogSecretFunction(context, create_secret_input);
 	auto &kv_secret_new = dynamic_cast<KeyValueSecret &>(*new_secret);
 	Value token = kv_secret_new.TryGetValue("token");
@@ -171,7 +189,6 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	credentials.token = token.ToString();
 	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials);
 	catalog->host = endpoint;
-	catalog->warehouse = warehouse;
 	catalog->version = "v1";
 	catalog->secret_name = secret_name;
 	return std::move(catalog);

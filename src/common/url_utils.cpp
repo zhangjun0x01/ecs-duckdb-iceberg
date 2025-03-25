@@ -1,46 +1,52 @@
 
 #include "url_utils.hpp"
 
+#include "duckdb/common/string_util.hpp"
+
 namespace duckdb {
 
-void IRCEndpointBuilder::AddPathComponent(std::string component) {
+void IRCEndpointBuilder::AddPathComponent(const string &component) {
 	path_components.push_back(component);
 }
 
-void IRCEndpointBuilder::SetPrefix(std::string prefix_) {
+void IRCEndpointBuilder::AddQueryParameter(const string &key, const string &value) {
+	query_parameters.emplace_back(key, value);
+}
+
+void IRCEndpointBuilder::SetPrefix(const string &prefix_) {
 	prefix = prefix_;
 }
 
-std::string IRCEndpointBuilder::GetHost() const {
+string IRCEndpointBuilder::GetHost() const {
 	return host;
 }
 
-void IRCEndpointBuilder::SetVersion(std::string version_) {
+void IRCEndpointBuilder::SetVersion(const string &version_) {
 	version = version_;
 }
 
-std::string IRCEndpointBuilder::GetVersion() const {
+string IRCEndpointBuilder::GetVersion() const {
 	return version;
 }
 
-void IRCEndpointBuilder::SetWarehouse(std::string warehouse_) {
+void IRCEndpointBuilder::SetWarehouse(const string &warehouse_) {
 	warehouse = warehouse_;
 }
 
-std::string IRCEndpointBuilder::GetWarehouse() const {
+string IRCEndpointBuilder::GetWarehouse() const {
 	return warehouse;
 }
 
-void IRCEndpointBuilder::SetHost(std::string host_) {
+void IRCEndpointBuilder::SetHost(const string &host_) {
 	host = host_;
 }
 
-std::string IRCEndpointBuilder::GetPrefix() const {
+string IRCEndpointBuilder::GetPrefix() const {
 	return prefix;
 }
 
-std::string IRCEndpointBuilder::GetURL() const {
-	std::string ret = host;
+string IRCEndpointBuilder::GetURL() const {
+	string ret = host;
 	if (!version.empty()) {
 		ret = ret + "/" + version;
 	}
@@ -53,6 +59,14 @@ std::string IRCEndpointBuilder::GetURL() const {
 	}
 	for (auto &component : path_components) {
 		ret += "/" + component;
+	}
+	if (!query_parameters.empty()) {
+		ret += "?";
+		vector<string> parameters;
+		for (auto &query_parameter : query_parameters) {
+			parameters.push_back(StringUtil::Format("%s=%s", query_parameter.key, query_parameter.value));
+			ret += StringUtil::Join(parameters, "&");
+		}
 	}
 	return ret;
 }

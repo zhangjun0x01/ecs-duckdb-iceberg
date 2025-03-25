@@ -8,41 +8,54 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include "duckdb/common/string.hpp"
+#include "duckdb/common/vector.hpp"
 
 namespace duckdb {
 
 class IRCEndpointBuilder {
+private:
+	struct QueryParameter {
+	public:
+		QueryParameter(const string &key, const string &value) : key(key), value(value) {}
+	public:
+		string key;
+		string value;
+	};
 public:
-	void AddPathComponent(std::string component);
+	void AddPathComponent(const string &component);
 
-	void SetPrefix(std::string prefix_);
-	std::string GetPrefix() const;
+	void SetPrefix(const string &prefix_);
+	string GetPrefix() const;
 
-	void SetHost(std::string host_);
-	std::string GetHost() const;
+	void SetHost(const string &host_);
+	string GetHost() const;
 
-	void SetWarehouse(std::string warehouse_);
-	std::string GetWarehouse() const;
+	void SetWarehouse(const string &warehouse_);
+	string GetWarehouse() const;
 
-	void SetVersion(std::string version_);
-	std::string GetVersion() const;
+	void SetVersion(const string &version_);
+	string GetVersion() const;
 
-	std::string GetURL() const;
+	void AddQueryParameter(const string &key, const string &value);
+
+	string GetURL() const;
 
 	//! path components when querying. Like namespaces/tables etc.
-	std::vector<std::string> path_components;
+	vector<string> path_components;
+
+	//! query parameters at the end of the url.
+	vector<QueryParameter> query_parameters;
 
 private:
 	//! host of the endpoint, like `glue` or `polaris`
-	std::string host;
+	string host;
 	//! version
-	std::string version;
+	string version;
 	//! optional prefix
-	std::string prefix;
+	string prefix;
 	//! warehouse
-	std::string warehouse;
+	string warehouse;
 };
 
 } // namespace duckdb

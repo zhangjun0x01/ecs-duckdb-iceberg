@@ -56,7 +56,7 @@ public:
 	static IRCAPITable GetTable(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table_name, optional_ptr<IRCCredentials> credentials = nullptr);
 	static vector<IRCAPISchema> GetSchemas(ClientContext &context, IRCatalog &catalog, IRCCredentials credentials);
 	static vector<IRCAPITable> GetTablesInSchema(ClientContext &context, IRCatalog &catalog, const string &schema, IRCCredentials credentials);
-	static string GetToken(ClientContext &context, string id, string secret, string endpoint);
+	static string GetToken(ClientContext &context, const string &id, const string &secret, const string &endpoint, const string &scope);
 	static IRCAPISchema CreateSchema(ClientContext &context, IRCatalog &catalog, const string &internal, const string &schema, IRCCredentials credentials);
 	static void DropSchema(ClientContext &context, const string &internal, const string &schema, IRCCredentials credentials);
 	static IRCAPITable CreateTable(ClientContext &context, IRCatalog &catalog, const string &internal, const string &schema, IRCCredentials credentials, CreateTableInfo *table_info);
