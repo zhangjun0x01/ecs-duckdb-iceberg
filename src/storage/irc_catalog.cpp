@@ -13,10 +13,9 @@
 
 using namespace duckdb_yyjson;
 namespace duckdb {
-
 IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode,
 					   IRCCredentials credentials, string warehouse, string host, string secret_name, string version )
-    : Catalog(db_p), access_mode(access_mode), credentials(std::move(credentials)), warehouse(warehouse), host(host), secret_name(secret_name), version(version), schemas(*this) {
+	: Catalog(db_p), access_mode(access_mode), credentials(std::move(credentials)), warehouse(warehouse), host(host), secret_name(secret_name), version(version), schemas(*this) {
 
 }
 
@@ -27,8 +26,47 @@ void IRCatalog::Initialize(bool load_builtin) {
 
 void IRCatalog::GetConfig(ClientContext &context) {
 	auto url = GetBaseUrl();
+	// set the prefix to be empty. To get the config endpoint,
+	// we cannot add a default prefix.
+	url.SetPrefix("");
 	url.AddPathComponent("config");
-	RequestUtils::GetRequest(context, url, secret_name, credentials.token);
+	url.SetParam("warehouse", warehouse);
+	auto response = RequestUtils::GetRequest(context, url, secret_name, credentials.token);
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(response));
+	auto *root = yyjson_doc_get_root(doc.get());
+	auto *overrides_json = yyjson_obj_get(root, "overrides");
+	auto *defaults_json = yyjson_obj_get(root, "defaults");
+	auto *endpoints_json = yyjson_obj_get(root, "endpoints");
+	// save overrides and defaults.
+	// See https://iceberg.apache.org/docs/latest/configuration/#catalog-properties for sometimes used catalog properties
+	if (overrides_json && yyjson_obj_size(overrides_json) > 0) {
+		yyjson_val *key, *val;
+		yyjson_obj_iter iter = yyjson_obj_iter_with(overrides_json);
+		while ((key = yyjson_obj_iter_next(&iter))) {
+			val = yyjson_obj_iter_get_val(key);
+			auto key_str = yyjson_get_str(key);
+			auto val_str = yyjson_get_str(val);
+			// set the prefix
+			if (std::strcmp(key_str, "prefix") == 0) {
+				prefix = val_str;
+			}
+			// save the rest of the overrides
+			overrides[key_str] = val_str;
+		}
+	}
+	if (defaults_json && yyjson_obj_size(defaults_json) > 0) {
+		yyjson_val *key, *val;
+		yyjson_obj_iter iter = yyjson_obj_iter_with(defaults_json);
+		while ((key = yyjson_obj_iter_next(&iter))) {
+			val = yyjson_obj_iter_get_val(key);
+			auto key_str = yyjson_get_str(key);
+			auto val_str = yyjson_get_str(val);
+			defaults[key_str] = val_str;
+		}
+	}
+	// TODO: handle optional endpoints param as well
+
+	Printer::Print(response);
 }
 
 optional_ptr<CatalogEntry> IRCatalog::CreateSchema(CatalogTransaction transaction, CreateSchemaInfo &info) {
@@ -52,14 +90,14 @@ void IRCatalog::ScanSchemas(ClientContext &context, std::function<void(SchemaCat
 }
 
 optional_ptr<SchemaCatalogEntry> IRCatalog::GetSchema(CatalogTransaction transaction, const string &schema_name,
-                                                      OnEntryNotFound if_not_found, QueryErrorContext error_context) {
+													  OnEntryNotFound if_not_found, QueryErrorContext error_context) {
 	if (schema_name == DEFAULT_SCHEMA) {
 		if (default_schema.empty()) {
 			if (if_not_found == OnEntryNotFound::RETURN_NULL) {
 				return nullptr;
 			}
 			throw InvalidInputException("Attempting to fetch the default schema - but no database was "
-			                             "provided in the connection string");
+										 "provided in the connection string");
 		}
 		return GetSchema(transaction, default_schema, if_not_found, error_context);
 	}
@@ -82,7 +120,7 @@ string IRCatalog::GetDBPath() {
 DatabaseSize IRCatalog::GetDatabaseSize(ClientContext &context) {
 	if (default_schema.empty()) {
 		throw InvalidInputException("Attempting to fetch the database size - but no database was provided "
-		                            "in the connection string");
+									"in the connection string");
 	}
 	DatabaseSize size;
 	return size;

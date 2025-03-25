@@ -1,4 +1,5 @@
 #include "request_utils.hpp"
+#include <sys/stat.h>
 #include "storage/irc_catalog.hpp"
 #include "credentials/credential_provider.hpp"
 

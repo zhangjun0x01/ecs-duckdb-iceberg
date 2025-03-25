@@ -8,8 +8,6 @@
 #include "url_utils.hpp"
 #include "storage/irc_schema_set.hpp"
 
-
-
 namespace duckdb {
 
 class IRCSchemaEntry;
@@ -111,6 +109,11 @@ private:
 private:
 	IRCSchemaSet schemas;
 	string default_schema;
+
+	// defaults and overrides provided by a catalog.
+	unordered_map<string, string> defaults;
+	unordered_map<string, string> overrides;
+
 
 	unordered_map<string, unique_ptr<MetadataCacheValue>> metadata_cache;
 
