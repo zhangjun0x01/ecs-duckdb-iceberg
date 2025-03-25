@@ -139,9 +139,14 @@ IRCEndpointBuilder IRCatalog::GetBaseUrl() const {
 	base_url.SetWarehouse(warehouse);
 	base_url.SetVersion(version);
 	base_url.SetHost(host);
-	if (catalog_type == ICEBERG_CATALOG_TYPE::AWS_GLUE || catalog_type == ICEBERG_CATALOG_TYPE::AWS_S3TABLES) {
+	switch (catalog_type) {
+	case ICEBERG_CATALOG_TYPE::AWS_GLUE:
+	case ICEBERG_CATALOG_TYPE::AWS_S3TABLES: {
 		base_url.AddPathComponent("iceberg");
 		base_url.AddPathComponent(version);
+		break;
+	} default:
+		break;
 	}
 	return base_url;
 }
