@@ -32,6 +32,7 @@ public:
 
 	void SetParam(std::string key, std::string value);
 	std::string GetParam(std::string key) const;
+	const std::unordered_map<std::string, std::string> GetParams();
 
 	std::string GetURL() const;
 

@@ -118,6 +118,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
         auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 		auto region = kv_secret.TryGetValue("region");
 		string catalog_warehouse = "";
+		auto catalog_type = ICEBERG_CATALOG_TYPE::INVALID;
 		if (region.IsNull()) {
 			throw IOException("Assumed catalog secret " + secret_entry->secret->GetName() + " for catalog " + name + " does not have a region");
 		}
@@ -128,14 +129,18 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 			}
 			region = Value::CreateValue<string>(substrings[3]);
 			catalog_warehouse = warehouse;
+			catalog_type = ICEBERG_CATALOG_TYPE::AWS_S3TABLES;
 		}
 		else if (service == "glue") {
 			SanityCheckGlueWarehouse(warehouse);
-			catalog_warehouse = StringUtil::Replace(warehouse, "/", ":");
+			catalog_warehouse = warehouse;
+			catalog_type = ICEBERG_CATALOG_TYPE::AWS_GLUE;
 		}
 
 		auto catalog_host = service + "." + region.ToString() + ".amazonaws.com";
 		auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, catalog_warehouse, catalog_host, secret_name);
+		catalog->catalog_type = catalog_type;
+		catalog->GetConfig(context);
 		return std::move(catalog);
 	}
 
@@ -170,6 +175,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	}
 	credentials.token = token.ToString();
 	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, warehouse, endpoint, secret_name);
+	catalog->catalog_type = ICEBERG_CATALOG_TYPE::OTHER;
 	catalog->GetConfig(context);
 	return std::move(catalog);
 }

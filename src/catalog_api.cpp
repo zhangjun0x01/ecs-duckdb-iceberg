@@ -25,6 +25,7 @@ namespace duckdb {
 static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, const string &secret_name) {
 	struct curl_slist *extra_headers = NULL;
 	auto url = catalog.GetBaseUrl();
+	url.AddPathComponent(catalog.prefix);
 	url.AddPathComponent("namespaces");
 	url.AddPathComponent(schema);
 	url.AddPathComponent("tables");
@@ -45,6 +46,7 @@ static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const
 static string GetTableMetadataCached(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, const string &secret_name) {
 	struct curl_slist *extra_headers = NULL;
 	auto url = catalog.GetBaseUrl();
+	url.AddPathComponent(catalog.prefix);
 	url.AddPathComponent("namespaces");
 	url.AddPathComponent(schema);
 	url.AddPathComponent("tables");
@@ -168,6 +170,7 @@ IRCAPITable IRCAPI::GetTable(ClientContext &context,
 vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog, const string &schema) {
 	vector<IRCAPITable> result;
 	auto url = catalog.GetBaseUrl();
+	url.AddPathComponent(catalog.prefix);
 	url.AddPathComponent("namespaces");
 	url.AddPathComponent(schema);
 	url.AddPathComponent("tables");
@@ -188,6 +191,7 @@ vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog
 vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catalog, IRCCredentials credentials) {
 	vector<IRCAPISchema> result;
 	auto endpoint_builder = catalog.GetBaseUrl();
+	endpoint_builder.AddPathComponent(catalog.prefix);
 	endpoint_builder.AddPathComponent("namespaces");
 	string api_result =
 	    RequestUtils::GetRequest(context, endpoint_builder, catalog.secret_name, catalog.credentials.token);

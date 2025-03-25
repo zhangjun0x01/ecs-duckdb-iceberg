@@ -11,6 +11,8 @@
 #include "duckdb/parser/parsed_data/create_schema_info.hpp"
 #include "duckdb/main/attached_database.hpp"
 
+#include <aws/core/utils/StringUtils.h>
+
 using namespace duckdb_yyjson;
 namespace duckdb {
 IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode,
@@ -39,21 +41,6 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	auto *endpoints_json = yyjson_obj_get(root, "endpoints");
 	// save overrides and defaults.
 	// See https://iceberg.apache.org/docs/latest/configuration/#catalog-properties for sometimes used catalog properties
-	if (overrides_json && yyjson_obj_size(overrides_json) > 0) {
-		yyjson_val *key, *val;
-		yyjson_obj_iter iter = yyjson_obj_iter_with(overrides_json);
-		while ((key = yyjson_obj_iter_next(&iter))) {
-			val = yyjson_obj_iter_get_val(key);
-			auto key_str = yyjson_get_str(key);
-			auto val_str = yyjson_get_str(val);
-			// set the prefix
-			if (std::strcmp(key_str, "prefix") == 0) {
-				prefix = val_str;
-			}
-			// save the rest of the overrides
-			overrides[key_str] = val_str;
-		}
-	}
 	if (defaults_json && yyjson_obj_size(defaults_json) > 0) {
 		yyjson_val *key, *val;
 		yyjson_obj_iter iter = yyjson_obj_iter_with(defaults_json);
@@ -62,11 +49,32 @@ void IRCatalog::GetConfig(ClientContext &context) {
 			auto key_str = yyjson_get_str(key);
 			auto val_str = yyjson_get_str(val);
 			defaults[key_str] = val_str;
+			// sometimes there is a prefix in the defaults
+			if (std::strcmp(key_str, "prefix") == 0) {
+				prefix = Aws::Utils::StringUtils::URLDecode(val_str);
+			}
 		}
 	}
-	// TODO: handle optional endpoints param as well
-
-	Printer::Print(response);
+	if (overrides_json && yyjson_obj_size(overrides_json) > 0) {
+		yyjson_val *key, *val;
+		yyjson_obj_iter iter = yyjson_obj_iter_with(overrides_json);
+		while ((key = yyjson_obj_iter_next(&iter))) {
+			val = yyjson_obj_iter_get_val(key);
+			auto key_str = yyjson_get_str(key);
+			auto val_str = yyjson_get_str(val);
+			// sometimes the prefix in the overrides. Prefer the override prefix
+			if (std::strcmp(key_str, "prefix") == 0) {
+				prefix = Aws::Utils::StringUtils::URLDecode(val_str);
+			}
+			// save the rest of the overrides
+			overrides[key_str] = val_str;
+		}
+	}
+	if (prefix.empty()) {
+		DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.HttpReqeust", "No prefix found for catalog with warehouse value %s", warehouse);
+	}
+	// TODO: store optional endpoints param as well. We can enforce per catalog what endpoints are allowed to be
+	//  hit
 }
 
 optional_ptr<CatalogEntry> IRCatalog::CreateSchema(CatalogTransaction transaction, CreateSchemaInfo &info) {
@@ -132,6 +140,10 @@ IRCEndpointBuilder IRCatalog::GetBaseUrl() const {
 	base_url.SetWarehouse(warehouse);
 	base_url.SetVersion(version);
 	base_url.SetHost(host);
+	if (catalog_type == ICEBERG_CATALOG_TYPE::AWS_GLUE || catalog_type == ICEBERG_CATALOG_TYPE::AWS_S3TABLES) {
+		base_url.AddPathComponent("iceberg");
+		base_url.AddPathComponent(version);
+	}
 	return base_url;
 }
 

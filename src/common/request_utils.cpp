@@ -64,23 +64,17 @@ string RequestUtils::GetRequestAws(ClientContext &context, IRCEndpointBuilder en
 	Aws::Http::URI uri;
 
 	// TODO move this to IRCatalog::GetBaseURL()
-	auto service = RequestUtils::GetAwsService(endpoint_builder.GetHost());
-	auto region = RequestUtils::GetAwsRegion(endpoint_builder.GetHost());
-
-	// Add iceberg. This is necessary here and should not be included in the host
-	uri.AddPathSegment("iceberg");
-	// push bach the version
-	uri.AddPathSegment(endpoint_builder.GetVersion());
-	// then the warehouse
-	if (service == "glue") {
-		uri.AddPathSegment("catalogs");
-		uri.AddPathSegment(endpoint_builder.GetWarehouse());
-	} else {
-		uri.AddPathSegment(endpoint_builder.GetWarehouse());
-	}
+	auto service = GetAwsService(endpoint_builder.GetHost());
+	auto region = GetAwsRegion(endpoint_builder.GetHost());
 
 	for (auto &component : endpoint_builder.path_components) {
 		uri.AddPathSegment(component);
+	}
+
+	for (auto &param : endpoint_builder.GetParams()) {
+		const char *key = param.first.c_str();
+		auto value = param.second.c_str();
+		uri.AddQueryStringParameter(key, value);
 	}
 
 	Aws::Http::Scheme scheme = Aws::Http::Scheme::HTTPS;

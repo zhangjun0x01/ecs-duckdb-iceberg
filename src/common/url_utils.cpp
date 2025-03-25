@@ -52,6 +52,10 @@ std::string IRCEndpointBuilder::GetParam(std::string key) const {
 	return "";
 }
 
+const std::unordered_map<std::string, std::string> IRCEndpointBuilder::GetParams() {
+	return params;
+}
+
 std::string IRCEndpointBuilder::GetURL() const {
 	std::string ret = host;
 	if (!version.empty()) {

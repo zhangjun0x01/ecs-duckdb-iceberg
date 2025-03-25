@@ -28,6 +28,8 @@ public:
 	static void ClearCacheOnSetting(ClientContext &context, SetScope scope, Value &parameter);
 };
 
+enum class ICEBERG_CATALOG_TYPE { AWS_S3TABLES, AWS_GLUE, OTHER, INVALID};
+
 class MetadataCacheValue {
 public:
 	std::string data;
@@ -58,6 +60,8 @@ public:
 	string version;
 	//! optional prefix
 	string prefix;
+
+	ICEBERG_CATALOG_TYPE catalog_type = ICEBERG_CATALOG_TYPE::INVALID;
 
 public:
 	void Initialize(bool load_builtin) override;
@@ -109,6 +113,7 @@ private:
 private:
 	IRCSchemaSet schemas;
 	string default_schema;
+
 
 	// defaults and overrides provided by a catalog.
 	unordered_map<string, string> defaults;
