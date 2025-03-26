@@ -195,6 +195,12 @@ void IcebergMultiFileList::InitializeFiles() {
 	auto manifest_list_full_path = options.allow_moved_paths
 	                                   ? IcebergUtils::GetFullPath(iceberg_path, snapshot.manifest_list, fs)
 	                                   : snapshot.manifest_list;
+
+	if (manifest_list_full_path.empty()) {
+		// If the manifest list full path is empty, we are reading an empty table.
+		// Just return to populate the schema.
+		return;
+	}
 	auto scan = make_uniq<AvroScan>("IcebergManifestList", context, manifest_list_full_path);
 	manifest_reader->Initialize(std::move(scan));
 
