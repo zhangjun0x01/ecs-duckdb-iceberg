@@ -24,7 +24,7 @@ public:
 	static LogicalType TypeToLogicalType(ClientContext &context, const string &columnDefinition);
 	static string TypeToString(const LogicalType &input);
 	static string LogicalToIcebergType(const LogicalType &input);
-	static yyjson_doc *api_result_to_doc(const string &api_result, const string &variable = "message");
+	static yyjson_doc *api_result_to_doc(const string &api_result);
 };
 
 struct YyjsonDocDeleter {

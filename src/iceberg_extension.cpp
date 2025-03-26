@@ -33,7 +33,8 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 		    lower_name == "secret" ||
 		    lower_name == "endpoint" ||
 		    lower_name == "aws_region" ||
-		    lower_name == "scope") {
+		    lower_name == "scope" ||
+		    lower_name == "oauth2_server_uri") {
 			result->secret_map[lower_name] = named_param.second.ToString();
 		} else {
 			throw InternalException("Unknown named parameter passed to CreateIRCSecretFunction: " + lower_name);
@@ -43,12 +44,13 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 	// Get token from catalog
 	result->secret_map["token"] = IRCAPI::GetToken(
 		context,
+	    result->secret_map["oauth2_server_uri"].ToString(),
 	    result->secret_map["key_id"].ToString(),
 	    result->secret_map["secret"].ToString(),
 	    result->secret_map["endpoint"].ToString(),
 	    result->secret_map["scope"].ToString()
 	);
-	
+
 	//! Set redact keys
 	result->redact_keys = {"token", "client_id", "client_secret"};
 
@@ -88,6 +90,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	string service;
 	string endpoint_type;
 	string endpoint;
+	string oauth2_server_uri;
 
 	auto &warehouse = credentials.warehouse;
 	auto &scope = credentials.scope;
@@ -109,6 +112,8 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 			warehouse = StringUtil::Lower(entry.second.ToString());
 		} else if (lower_name == "scope") {
 			scope = StringUtil::Lower(entry.second.ToString());
+		} else if (lower_name == "oauth2_server_uri") {
+			oauth2_server_uri = StringUtil::Lower(entry.second.ToString());
 		} else {
 			throw BinderException("Unrecognized option for PC attach: %s", entry.first);
 		}
@@ -121,6 +126,11 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	if (scope.empty()) {
 		//! Default to the Polaris scope: 'PRINCIPAL_ROLE:ALL'
 		scope = "PRINCIPAL_ROLE:ALL";
+	}
+
+	if (oauth2_server_uri.empty()) {
+		//! If no oauth2_server_uri is provided, default to the (deprecated) REST API endpoint for it
+		oauth2_server_uri = StringUtil::Format("%s/v1/oauth/tokens", endpoint);
 	}
 
 	if (endpoint_type == "glue" || endpoint_type == "s3_tables") {
@@ -176,6 +186,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	Value key_val = kv_secret.TryGetValue("key_id");
 	Value secret_val = kv_secret.TryGetValue("secret");
 	CreateSecretInput create_secret_input;
+	create_secret_input.options["oauth2_server_uri"] = oauth2_server_uri;
 	create_secret_input.options["key_id"] = key_val;
 	create_secret_input.options["secret"] = secret_val;
 	create_secret_input.options["endpoint"] = endpoint;
