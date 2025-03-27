@@ -93,7 +93,6 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	string endpoint;
 	string oauth2_server_uri;
 
-	auto &warehouse = credentials.warehouse;
 	auto &scope = credentials.scope;
 
 	// check if we have a secret provided
@@ -109,8 +108,6 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		} else if (lower_name == "endpoint") {
 			endpoint = StringUtil::Lower(entry.second.ToString());
 			StringUtil::RTrim(endpoint, "/");
-		} else if (lower_name == "warehouse") {
-			warehouse = StringUtil::Lower(entry.second.ToString());
 		} else if (lower_name == "scope") {
 			scope = StringUtil::Lower(entry.second.ToString());
 		} else if (lower_name == "oauth2_server_uri") {
@@ -119,10 +116,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 			throw BinderException("Unrecognized option for PC attach: %s", entry.first);
 		}
 	}
-	if (warehouse.empty()) {
-		//! Default to the path of the catalog as the warehouse if none is provided
-		warehouse = info.path;
-	}
+	auto warehouse = info.path;
 
 	if (scope.empty()) {
 		//! Default to the Polaris scope: 'PRINCIPAL_ROLE:ALL'

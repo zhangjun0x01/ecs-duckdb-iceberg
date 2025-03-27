@@ -23,8 +23,6 @@ struct IRCCredentials {
 	string scope;
 	//! OAuth endpoint
 	string oauth2_endpoint;
-	//! The warehouse where the catalog lives
-	string warehouse;
 };
 
 class ICRClearCacheFunction : public TableFunction {

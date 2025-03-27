@@ -87,7 +87,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 			//! Override all the options if 's3tables' is the host of the catalog
 			auto secret_entry = IRCatalog::GetSecret(context, ic_catalog.secret_name);
 			auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
-			auto substrings = StringUtil::Split(ic_catalog.credentials.warehouse, ":");
+			auto substrings = StringUtil::Split(ic_catalog.warehouse, ":");
 			D_ASSERT(substrings.size() == 6);
 			auto region = substrings[3];
 			auto endpoint = "s3." + region + ".amazonaws.com";
