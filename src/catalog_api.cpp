@@ -207,6 +207,7 @@ static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_
 }
 
 static string GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder, const string &secret_name, const string &token = "", curl_slist *extra_headers = NULL) {
+
 	if (StringUtil::StartsWith(endpoint_builder.GetHost(), "glue." ) || StringUtil::StartsWith(endpoint_builder.GetHost(), "s3tables." )) {
 		auto str = GetRequestAws(context, endpoint_builder, secret_name);
 		return str;
@@ -343,22 +344,97 @@ static IRCAPIColumnDefinition ParseColumnDefinition(yyjson_val *column_def) {
 	return result;
 }
 
+static void ParseConfigOptions(yyjson_val *config, case_insensitive_map_t<Value> &options) {
+	//! Set of recognized config parameters and the duckdb secret option that matches it.
+	static const case_insensitive_map_t<string> config_to_option = {
+		{"s3.access-key-id", "key_id"},
+		{"s3.secret-access-key", "secret"},
+		{"s3.session-token", "session_token"},
+		{"s3.region", "region"},
+		{"s3.endpoint", "endpoint"}
+	};
+
+	auto config_size = yyjson_obj_size(config);
+	if (config && config_size > 0) {
+		for (auto &it : config_to_option) {
+			auto &key = it.first;
+			auto &option = it.second;
+
+			auto *item = yyjson_obj_get(config, key.c_str());
+			if (item) {
+				options[option] = yyjson_get_str(item);
+			}
+		}
+		auto *access_style = yyjson_obj_get(config, "s3.path-style-access");
+		if (access_style) {
+			string value = yyjson_get_str(access_style);
+			bool use_ssl;
+			if (value == "true") {
+				use_ssl = false;
+			} else if (value == "false") {
+				use_ssl = true;
+			} else {
+				throw InternalException("Unexpected value ('%s') for 's3.path-style-access' in 'config' property", value);
+			}
+			options["use_ssl"] = Value(use_ssl);
+		}
+	}
+}
+
 IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, IRCCredentials credentials) {
 	IRCAPITableCredentials result;
 	string api_result = GetTableMetadataCached(context, catalog, schema, table, catalog.secret_name);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
-	auto *warehouse_credentials = yyjson_obj_get(root, "config");
-	auto credential_size = yyjson_obj_size(warehouse_credentials);
 	auto catalog_credentials = IRCatalog::GetSecret(context, catalog.secret_name);
-	if (warehouse_credentials && credential_size > 0) {
-		result.key_id = IcebergUtils::TryGetStrFromObject(warehouse_credentials, "s3.access-key-id", false);
-		result.secret = IcebergUtils::TryGetStrFromObject(warehouse_credentials, "s3.secret-access-key",  false);
-		result.session_token = IcebergUtils::TryGetStrFromObject(warehouse_credentials, "s3.session-token", false);
-		if (catalog_credentials) {
-       		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*catalog_credentials->secret);
-			auto region = kv_secret.TryGetValue("region").ToString();
-			result.region = region;
+
+	// Mapping from config key to a duckdb secret option
+
+	case_insensitive_map_t<Value> config_options;
+	if (catalog_credentials) {
+		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*catalog_credentials->secret);
+		auto region = kv_secret.TryGetValue("region").ToString();
+		config_options["region"] = region;
+	}
+
+	auto *warehouse_credentials = yyjson_obj_get(root, "config");
+	ParseConfigOptions(warehouse_credentials, config_options);
+
+	if (!config_options.empty()) {
+		CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
+		info.options = config_options;
+		info.name = "PLACEHOLDER";
+		info.type = "s3";
+		info.provider = "config";
+		info.storage_type = "memory";
+		result.storage_credentials.push_back(info);
+	}
+
+	auto *storage_credentials = yyjson_obj_get(root, "storage-credentials");
+	auto storage_credentials_size = yyjson_arr_size(storage_credentials);
+	if (storage_credentials && storage_credentials_size > 0) {
+		yyjson_val *storage_credential;
+		size_t index, max;
+		yyjson_arr_foreach(storage_credentials, index, max, storage_credential) {
+			auto *sc_prefix = yyjson_obj_get(storage_credential, "prefix");
+			if (!sc_prefix) {
+				throw InternalException("required property 'prefix' is missing from the StorageCredential schema");
+			}
+
+			CreateSecretInfo create_secret_info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
+			auto prefix_string = yyjson_get_str(sc_prefix);
+			if (!prefix_string) {
+				throw InternalException("property 'prefix' of StorageCredential is NULL");
+			}
+			create_secret_info.scope.push_back(string(prefix_string));
+			create_secret_info.type = "s3";
+			create_secret_info.provider = "config";
+			create_secret_info.storage_type = "memory";
+			create_secret_info.options = config_options;
+
+			auto *sc_config = yyjson_obj_get(storage_credential, "config");
+			ParseConfigOptions(sc_config, create_secret_info.options);
+			result.storage_credentials.push_back(create_secret_info);
 		}
 	}
 	return result;
@@ -471,6 +547,7 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catal
 	    GetRequest(context, endpoint_builder, catalog.secret_name, catalog.credentials.token);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
+	//! 'ListNamespacesResponse'
 	auto *schemas = yyjson_obj_get(root, "namespaces");
 	size_t idx, max;
 	yyjson_val *schema;

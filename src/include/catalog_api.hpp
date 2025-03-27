@@ -3,6 +3,7 @@
 
 #include "duckdb/common/types.hpp"
 #include "duckdb/parser/parsed_data/create_table_info.hpp"
+#include "duckdb/parser/parsed_data/create_secret_info.hpp"
 //#include "storage/irc_catalog.hpp"
 
 namespace duckdb {
@@ -41,6 +42,7 @@ struct IRCAPITableCredentials {
 	string secret;
 	string session_token;
 	string region;
+	vector<CreateSecretInfo> storage_credentials;
 };
 
 class IRCAPI {
