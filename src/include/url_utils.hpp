@@ -9,6 +9,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace duckdb {
@@ -29,6 +30,10 @@ public:
 	void SetVersion(std::string version_);
 	std::string GetVersion() const;
 
+	void SetParam(std::string key, std::string value);
+	std::string GetParam(std::string key) const;
+	const std::unordered_map<std::string, std::string> GetParams();
+
 	std::string GetURL() const;
 
 	//! path components when querying. Like namespaces/tables etc.
@@ -43,6 +48,8 @@ private:
 	std::string prefix;
 	//! warehouse
 	std::string warehouse;
+
+	std::unordered_map<std::string, std::string> params;
 };
 
 } // namespace duckdb
