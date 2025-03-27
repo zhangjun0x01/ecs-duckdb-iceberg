@@ -1,9 +1,9 @@
 #pragma once
 
 #include "yyjson.hpp"
-#include <string>
-#include <vector>
-#include <unordered_map>
+#include "duckdb/common/string.hpp"
+#include "duckdb/common/vector.hpp"
+#include "duckdb/common/unordered_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 
 using namespace duckdb_yyjson;
@@ -13,28 +13,34 @@ namespace rest_api_objects {
 
 class PrimitiveTypeValue {
 public:
-	static PrimitiveTypeValue FromJSON(yyjson_val *val) {
+	static PrimitiveTypeValue FromJSON(yyjson_val *obj) {
 		PrimitiveTypeValue result;
-		if (yyjson_is_bool(val)) {
-			result.value_boolean = yyjson_get_bool(val);
-			result.has_boolean = true;
+		if (yyjson_is_int(obj)) {
+			result.value_int64 = yyjson_get_sint(obj);
+			result.has_int64 = true;
 		}
-		if (yyjson_is_int(val)) {
-			result.value_integer = yyjson_get_sint(val);
-			result.has_integer = true;
+		if (yyjson_is_num(obj)) {
+			result.value_float = yyjson_get_real(obj);
+			result.has_float = true;
 		}
-		if (yyjson_is_str(val)) {
-			result.value_string = yyjson_get_str(val);
+		if (yyjson_is_num(obj)) {
+			result.value_double = yyjson_get_real(obj);
+			result.has_double = true;
+		}
+		if (yyjson_is_str(obj)) {
+			result.value_string = yyjson_get_str(obj);
 			result.has_string = true;
 		}
 		return result;
 	}
 
 public:
-	bool value_boolean;
-	bool has_boolean = false;
-	int64_t value_integer;
-	bool has_integer = false;
+	int64_t value_int64;
+	bool has_int64 = false;
+	float value_float;
+	bool has_float = false;
+	double value_double;
+	bool has_double = false;
 	string value_string;
 	bool has_string = false;
 };

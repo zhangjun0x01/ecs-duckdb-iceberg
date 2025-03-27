@@ -116,10 +116,17 @@ class SchemaType:
 # Global mapping of schema types to C++ types and their yyjson handlers
 TYPE_MAPPINGS = {
     'string': SchemaType('string', 'yyjson_is_str', 'yyjson_get_str'),
-    'integer': SchemaType('int64_t', 'yyjson_is_int', 'yyjson_get_sint'),
+    'integer': {
+        'int64': SchemaType('int64_t', 'yyjson_is_int', 'yyjson_get_sint'),
+        'int32': SchemaType('int32_t', 'yyjson_is_int', 'yyjson_get_sint'),
+        'default': SchemaType('int64_t', 'yyjson_is_int', 'yyjson_get_sint')
+    },
+    'number': {
+        'float': SchemaType('float', 'yyjson_is_num', 'yyjson_get_real'),
+        'double': SchemaType('double', 'yyjson_is_num', 'yyjson_get_real'),
+        'default': SchemaType('double', 'yyjson_is_num', 'yyjson_get_real')
+    },
     'boolean': SchemaType('bool', 'yyjson_is_bool', 'yyjson_get_bool'),
-    'double': SchemaType('double', 'yyjson_is_num', 'yyjson_get_real'),
-    'float': SchemaType('float', 'yyjson_is_num', 'yyjson_get_real'),
     'uuid': SchemaType('string', 'yyjson_is_str', 'yyjson_get_str'),
     'date': SchemaType('string', 'yyjson_is_str', 'yyjson_get_str'),
     'time': SchemaType('string', 'yyjson_is_str', 'yyjson_get_str'),
@@ -129,6 +136,19 @@ TYPE_MAPPINGS = {
     'decimal': SchemaType('string', 'yyjson_is_str', 'yyjson_get_str'),
 }
 
+def get_type_mapping(schema_type: str, schema_format: str = None) -> SchemaType:
+    """Get the appropriate type mapping based on type and format."""
+    if schema_type not in TYPE_MAPPINGS:
+        return TYPE_MAPPINGS['string']  # Default to string for unknown types
+    
+    mapping = TYPE_MAPPINGS[schema_type]
+    if isinstance(mapping, dict):
+        # Handle format-specific types
+        if schema_format and schema_format in mapping:
+            return mapping[schema_format]
+        return mapping['default']
+    return mapping
+
 class Schema:
     def __init__(self, name: str, schema: Dict, all_schemas: Dict):
         self.name = name
@@ -136,7 +156,7 @@ class Schema:
         self.required: Set[str] = set(schema.get('required', []))
         self.properties: Dict[str, Property] = {}
         self.all_of_refs: Set[str] = set()
-        self.one_of_types: Dict[str, SchemaType] = {}
+        self.one_of_schemas: List[Dict] = []  # Replace one_of_types with one_of_schemas
         
         # Handle oneOf
         if 'oneOf' in schema:
@@ -146,10 +166,10 @@ class Schema:
                     ref_name = ref_path.split('/')[-1]
                     ref_schema = all_schemas.get(ref_name)
                     if ref_schema:
-                        # Extract the underlying type from the referenced schema
-                        underlying_type = self._get_underlying_type(ref_schema)
-                        if underlying_type in TYPE_MAPPINGS:
-                            self.one_of_types[underlying_type] = TYPE_MAPPINGS[underlying_type]
+                        self.one_of_schemas.append(ref_schema)
+                else:
+                    # Handle inline schema definitions
+                    self.one_of_schemas.append(sub_schema)
         
         # Handle allOf
         if 'allOf' in schema:
@@ -244,9 +264,9 @@ class Schema:
             "#pragma once",
             "",
             '#include "yyjson.hpp"',
-            '#include <string>',
-            '#include <vector>',
-            '#include <unordered_map>',
+            '#include "duckdb/common/string.hpp"',
+            '#include "duckdb/common/vector.hpp"',
+            '#include "duckdb/common/unordered_map.hpp"',
             '#include "rest_catalog/response_objects.hpp"'
         ]
         
@@ -263,7 +283,7 @@ class Schema:
             ""
         ])
 
-        if self.one_of_types:
+        if self.one_of_schemas:
             lines.extend(self._generate_oneof_class())
         else:
             # Generate regular class
@@ -348,16 +368,38 @@ class Schema:
         lines = [
             f"class {self.name} {{",
             "public:",
-            f"\tstatic {self.name} FromJSON(yyjson_val *val) {{",
+            f"\tstatic {self.name} FromJSON(yyjson_val *obj) {{",
             f"\t\t{self.name} result;"
         ]
 
+        # format -> (type, format)
+        one_of_schemas: Dict[str, object] = {}
+
         # Generate type checking and value assignment
-        for type_name, schema_type in self.one_of_types.items():
+        for schema in self.one_of_schemas:
+            schema_type = schema.get('type')
+            schema_format = schema.get('format')
+            
+            if schema_type in ['integer', 'number', 'boolean', 'string']:
+                if schema_format in [
+                    'int64',
+                    'double',
+                    'float',
+                ]:
+                    one_of_schemas[schema_format] = (schema_type, schema_format)
+                elif schema_type == 'string':
+                    one_of_schemas[schema_type] = (schema_type, schema_format)
+
+        for _, value in one_of_schemas.items():
+            schema_type, schema_format = value
+            type_mapping = get_type_mapping(schema_type, schema_format)
+            var_name = f"value_{schema_format or schema_type}"
+            has_name = f"has_{schema_format or schema_type}"
+            
             lines.extend([
-                f"\t\tif ({schema_type.yyjson_check}(val)) {{",
-                f"\t\t\tresult.value_{type_name} = {schema_type.yyjson_get}(val);",
-                f"\t\t\tresult.has_{type_name} = true;",
+                f"\t\tif ({type_mapping.yyjson_check}(obj)) {{",
+                f"\t\t\tresult.{var_name} = {type_mapping.yyjson_get}(obj);",
+                f"\t\t\tresult.{has_name} = true;",
                 "\t\t}"
             ])
 
@@ -369,10 +411,15 @@ class Schema:
         ])
 
         # Generate member variables
-        for type_name, schema_type in self.one_of_types.items():
+        for _, value in one_of_schemas.items():
+            schema_type, schema_format = value
+            type_mapping = get_type_mapping(schema_type, schema_format)
+            var_name = f"value_{schema_format or schema_type}"
+            has_name = f"has_{schema_format or schema_type}"
+            
             lines.extend([
-                f"\t{schema_type.cpp_type} value_{type_name};",
-                f"\tbool has_{type_name} = false;"
+                f"\t{type_mapping.cpp_type} {var_name};",
+                f"\tbool {has_name} = false;"
             ])
 
         lines.append("};")

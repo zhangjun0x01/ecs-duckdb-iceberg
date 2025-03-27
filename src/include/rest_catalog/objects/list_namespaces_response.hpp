@@ -1,9 +1,9 @@
 #pragma once
 
 #include "yyjson.hpp"
-#include <string>
-#include <vector>
-#include <unordered_map>
+#include "duckdb/common/string.hpp"
+#include "duckdb/common/vector.hpp"
+#include "duckdb/common/unordered_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/page_token.hpp"
 #include "rest_catalog/objects/namespace.hpp"

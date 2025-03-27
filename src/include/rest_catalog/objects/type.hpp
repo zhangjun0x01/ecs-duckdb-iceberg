@@ -1,9 +1,9 @@
 #pragma once
 
 #include "yyjson.hpp"
-#include <string>
-#include <vector>
-#include <unordered_map>
+#include "duckdb/common/string.hpp"
+#include "duckdb/common/vector.hpp"
+#include "duckdb/common/unordered_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 
 using namespace duckdb_yyjson;
@@ -13,10 +13,10 @@ namespace rest_api_objects {
 
 class Type {
 public:
-	static Type FromJSON(yyjson_val *val) {
+	static Type FromJSON(yyjson_val *obj) {
 		Type result;
-		if (yyjson_is_str(val)) {
-			result.value_string = yyjson_get_str(val);
+		if (yyjson_is_str(obj)) {
+			result.value_string = yyjson_get_str(obj);
 			result.has_string = true;
 		}
 		return result;

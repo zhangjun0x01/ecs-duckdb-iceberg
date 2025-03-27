@@ -1,12 +1,12 @@
 #pragma once
 
 #include "yyjson.hpp"
-#include <string>
-#include <vector>
-#include <unordered_map>
+#include "duckdb/common/string.hpp"
+#include "duckdb/common/vector.hpp"
+#include "duckdb/common/unordered_map.hpp"
 #include "rest_catalog/response_objects.hpp"
-#include "rest_catalog/objects/integer_type_value.hpp"
 #include "rest_catalog/objects/primitive_type_value.hpp"
+#include "rest_catalog/objects/integer_type_value.hpp"
 
 using namespace duckdb_yyjson;
 
