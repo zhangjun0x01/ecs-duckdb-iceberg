@@ -16,15 +16,20 @@ class FalseExpression {
 public:
 	static FalseExpression FromJSON(yyjson_val *obj) {
 		FalseExpression result;
+
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = ExpressionType::FromJSON(type_val);
 		}
+		else {
+			throw IOException("FalseExpression required property 'type' is missing");
+		}
+
 		return result;
 	}
+
 public:
 	ExpressionType type;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

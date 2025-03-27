@@ -15,10 +15,11 @@ class Namespace {
 public:
 	static Namespace FromJSON(yyjson_val *obj) {
 		Namespace result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

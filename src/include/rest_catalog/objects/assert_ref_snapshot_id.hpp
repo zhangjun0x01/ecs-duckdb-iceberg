@@ -16,25 +16,39 @@ class AssertRefSnapshotId {
 public:
 	static AssertRefSnapshotId FromJSON(yyjson_val *obj) {
 		AssertRefSnapshotId result;
+
+		// Parse TableRequirement fields
+		result.table_requirement = TableRequirement::FromJSON(obj);
+
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = yyjson_get_str(type_val);
 		}
+
 		auto ref_val = yyjson_obj_get(obj, "ref");
 		if (ref_val) {
 			result.ref = yyjson_get_str(ref_val);
 		}
+		else {
+			throw IOException("AssertRefSnapshotId required property 'ref' is missing");
+		}
+
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 		if (snapshot_id_val) {
 			result.snapshot_id = yyjson_get_sint(snapshot_id_val);
 		}
+		else {
+			throw IOException("AssertRefSnapshotId required property 'snapshot-id' is missing");
+		}
+
 		return result;
 	}
+
 public:
+	TableRequirement table_requirement;
 	string type;
 	string ref;
 	int64_t snapshot_id;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

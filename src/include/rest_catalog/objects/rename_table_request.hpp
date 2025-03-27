@@ -16,20 +16,29 @@ class RenameTableRequest {
 public:
 	static RenameTableRequest FromJSON(yyjson_val *obj) {
 		RenameTableRequest result;
+
 		auto source_val = yyjson_obj_get(obj, "source");
 		if (source_val) {
 			result.source = TableIdentifier::FromJSON(source_val);
 		}
+		else {
+			throw IOException("RenameTableRequest required property 'source' is missing");
+		}
+
 		auto destination_val = yyjson_obj_get(obj, "destination");
 		if (destination_val) {
 			result.destination = TableIdentifier::FromJSON(destination_val);
 		}
+		else {
+			throw IOException("RenameTableRequest required property 'destination' is missing");
+		}
+
 		return result;
 	}
+
 public:
 	TableIdentifier source;
 	TableIdentifier destination;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -15,10 +15,11 @@ class IntegerTypeValue {
 public:
 	static IntegerTypeValue FromJSON(yyjson_val *obj) {
 		IntegerTypeValue result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

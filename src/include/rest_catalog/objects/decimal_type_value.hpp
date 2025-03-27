@@ -15,10 +15,11 @@ class DecimalTypeValue {
 public:
 	static DecimalTypeValue FromJSON(yyjson_val *obj) {
 		DecimalTypeValue result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

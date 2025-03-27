@@ -15,10 +15,11 @@ class Expression {
 public:
 	static Expression FromJSON(yyjson_val *obj) {
 		Expression result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

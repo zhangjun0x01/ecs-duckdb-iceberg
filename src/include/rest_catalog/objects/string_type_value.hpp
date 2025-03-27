@@ -15,10 +15,11 @@ class StringTypeValue {
 public:
 	static StringTypeValue FromJSON(yyjson_val *obj) {
 		StringTypeValue result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

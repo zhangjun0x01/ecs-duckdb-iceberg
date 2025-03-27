@@ -15,10 +15,11 @@ class OAuthTokenRequest {
 public:
 	static OAuthTokenRequest FromJSON(yyjson_val *obj) {
 		OAuthTokenRequest result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -15,10 +15,11 @@ class UUIDTypeValue {
 public:
 	static UUIDTypeValue FromJSON(yyjson_val *obj) {
 		UUIDTypeValue result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

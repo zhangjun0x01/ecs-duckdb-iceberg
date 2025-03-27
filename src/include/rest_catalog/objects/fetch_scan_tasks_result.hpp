@@ -16,10 +16,15 @@ class FetchScanTasksResult {
 public:
 	static FetchScanTasksResult FromJSON(yyjson_val *obj) {
 		FetchScanTasksResult result;
+
+		// Parse ScanTasks fields
+		result.scan_tasks = ScanTasks::FromJSON(obj);
+
 		return result;
 	}
-public:
-};
 
+public:
+	ScanTasks scan_tasks;
+};
 } // namespace rest_api_objects
 } // namespace duckdb

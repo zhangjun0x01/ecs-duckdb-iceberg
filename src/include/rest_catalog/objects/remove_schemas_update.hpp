@@ -16,10 +16,15 @@ class RemoveSchemasUpdate {
 public:
 	static RemoveSchemasUpdate FromJSON(yyjson_val *obj) {
 		RemoveSchemasUpdate result;
+
+		// Parse BaseUpdate fields
+		result.base_update = BaseUpdate::FromJSON(obj);
+
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
 		}
+
 		auto schema_ids_val = yyjson_obj_get(obj, "schema-ids");
 		if (schema_ids_val) {
 			size_t idx, max;
@@ -28,12 +33,17 @@ public:
 				result.schema_ids.push_back(yyjson_get_sint(val));
 			}
 		}
+		else {
+			throw IOException("RemoveSchemasUpdate required property 'schema-ids' is missing");
+		}
+
 		return result;
 	}
+
 public:
+	BaseUpdate base_update;
 	string action;
 	vector<int64_t> schema_ids;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -16,15 +16,20 @@ class IcebergErrorResponse {
 public:
 	static IcebergErrorResponse FromJSON(yyjson_val *obj) {
 		IcebergErrorResponse result;
+
 		auto error_val = yyjson_obj_get(obj, "error");
 		if (error_val) {
 			result.error = ErrorModel::FromJSON(error_val);
 		}
+		else {
+			throw IOException("IcebergErrorResponse required property 'error' is missing");
+		}
+
 		return result;
 	}
+
 public:
 	ErrorModel error;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

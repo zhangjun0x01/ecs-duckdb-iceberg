@@ -15,10 +15,11 @@ class ViewRepresentation {
 public:
 	static ViewRepresentation FromJSON(yyjson_val *obj) {
 		ViewRepresentation result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

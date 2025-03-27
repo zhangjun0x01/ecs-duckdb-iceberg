@@ -15,10 +15,11 @@ class DateTypeValue {
 public:
 	static DateTypeValue FromJSON(yyjson_val *obj) {
 		DateTypeValue result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

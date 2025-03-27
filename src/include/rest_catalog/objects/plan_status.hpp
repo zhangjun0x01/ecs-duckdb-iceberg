@@ -15,10 +15,11 @@ class PlanStatus {
 public:
 	static PlanStatus FromJSON(yyjson_val *obj) {
 		PlanStatus result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

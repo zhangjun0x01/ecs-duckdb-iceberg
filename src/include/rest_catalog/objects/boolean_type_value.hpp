@@ -15,10 +15,11 @@ class BooleanTypeValue {
 public:
 	static BooleanTypeValue FromJSON(yyjson_val *obj) {
 		BooleanTypeValue result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -15,10 +15,11 @@ class LongTypeValue {
 public:
 	static LongTypeValue FromJSON(yyjson_val *obj) {
 		LongTypeValue result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

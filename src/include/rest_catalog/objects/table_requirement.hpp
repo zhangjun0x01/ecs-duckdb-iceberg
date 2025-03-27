@@ -15,15 +15,20 @@ class TableRequirement {
 public:
 	static TableRequirement FromJSON(yyjson_val *obj) {
 		TableRequirement result;
+
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = yyjson_get_str(type_val);
 		}
+		else {
+			throw IOException("TableRequirement required property 'type' is missing");
+		}
+
 		return result;
 	}
+
 public:
 	string type;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -15,10 +15,11 @@ class DeleteFile {
 public:
 	static DeleteFile FromJSON(yyjson_val *obj) {
 		DeleteFile result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

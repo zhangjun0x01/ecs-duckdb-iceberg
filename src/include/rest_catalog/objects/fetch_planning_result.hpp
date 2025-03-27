@@ -15,10 +15,11 @@ class FetchPlanningResult {
 public:
 	static FetchPlanningResult FromJSON(yyjson_val *obj) {
 		FetchPlanningResult result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

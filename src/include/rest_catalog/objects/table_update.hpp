@@ -15,10 +15,11 @@ class TableUpdate {
 public:
 	static TableUpdate FromJSON(yyjson_val *obj) {
 		TableUpdate result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

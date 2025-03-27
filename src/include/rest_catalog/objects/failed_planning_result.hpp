@@ -17,15 +17,24 @@ class FailedPlanningResult {
 public:
 	static FailedPlanningResult FromJSON(yyjson_val *obj) {
 		FailedPlanningResult result;
+
+		// Parse IcebergErrorResponse fields
+		result.iceberg_error_response = IcebergErrorResponse::FromJSON(obj);
+
 		auto status_val = yyjson_obj_get(obj, "status");
 		if (status_val) {
 			result.status = PlanStatus::FromJSON(status_val);
 		}
+		else {
+			throw IOException("FailedPlanningResult required property 'status' is missing");
+		}
+
 		return result;
 	}
+
 public:
+	IcebergErrorResponse iceberg_error_response;
 	PlanStatus status;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

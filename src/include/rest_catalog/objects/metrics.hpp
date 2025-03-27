@@ -15,10 +15,11 @@ class Metrics {
 public:
 	static Metrics FromJSON(yyjson_val *obj) {
 		Metrics result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

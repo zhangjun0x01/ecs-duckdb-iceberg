@@ -15,6 +15,7 @@ class UpdateNamespacePropertiesRequest {
 public:
 	static UpdateNamespacePropertiesRequest FromJSON(yyjson_val *obj) {
 		UpdateNamespacePropertiesRequest result;
+
 		auto removals_val = yyjson_obj_get(obj, "removals");
 		if (removals_val) {
 			size_t idx, max;
@@ -23,16 +24,18 @@ public:
 				result.removals.push_back(yyjson_get_str(val));
 			}
 		}
+
 		auto updates_val = yyjson_obj_get(obj, "updates");
 		if (updates_val) {
 			result.updates = parse_object_of_strings(updates_val);
 		}
+
 		return result;
 	}
+
 public:
 	vector<string> removals;
 	ObjectOfStrings updates;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

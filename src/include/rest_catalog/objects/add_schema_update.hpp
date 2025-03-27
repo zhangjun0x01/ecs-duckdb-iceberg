@@ -17,25 +17,36 @@ class AddSchemaUpdate {
 public:
 	static AddSchemaUpdate FromJSON(yyjson_val *obj) {
 		AddSchemaUpdate result;
+
+		// Parse BaseUpdate fields
+		result.base_update = BaseUpdate::FromJSON(obj);
+
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
 		}
+
 		auto schema_val = yyjson_obj_get(obj, "schema");
 		if (schema_val) {
 			result.schema = Schema::FromJSON(schema_val);
 		}
+		else {
+			throw IOException("AddSchemaUpdate required property 'schema' is missing");
+		}
+
 		auto last_column_id_val = yyjson_obj_get(obj, "last-column-id");
 		if (last_column_id_val) {
 			result.last_column_id = yyjson_get_sint(last_column_id_val);
 		}
+
 		return result;
 	}
+
 public:
+	BaseUpdate base_update;
 	string action;
 	Schema schema;
 	int64_t last_column_id;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

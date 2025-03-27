@@ -15,10 +15,11 @@ class TimestampTzNanoTypeValue {
 public:
 	static TimestampTzNanoTypeValue FromJSON(yyjson_val *obj) {
 		TimestampTzNanoTypeValue result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -16,20 +16,30 @@ class SetCurrentSchemaUpdate {
 public:
 	static SetCurrentSchemaUpdate FromJSON(yyjson_val *obj) {
 		SetCurrentSchemaUpdate result;
+
+		// Parse BaseUpdate fields
+		result.base_update = BaseUpdate::FromJSON(obj);
+
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
 		}
+
 		auto schema_id_val = yyjson_obj_get(obj, "schema-id");
 		if (schema_id_val) {
 			result.schema_id = yyjson_get_sint(schema_id_val);
 		}
+		else {
+			throw IOException("SetCurrentSchemaUpdate required property 'schema-id' is missing");
+		}
+
 		return result;
 	}
+
 public:
+	BaseUpdate base_update;
 	string action;
 	int64_t schema_id;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

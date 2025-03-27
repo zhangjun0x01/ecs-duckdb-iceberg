@@ -15,10 +15,11 @@ class SortDirection {
 public:
 	static SortDirection FromJSON(yyjson_val *obj) {
 		SortDirection result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

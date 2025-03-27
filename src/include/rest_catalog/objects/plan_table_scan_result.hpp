@@ -15,10 +15,11 @@ class PlanTableScanResult {
 public:
 	static PlanTableScanResult FromJSON(yyjson_val *obj) {
 		PlanTableScanResult result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

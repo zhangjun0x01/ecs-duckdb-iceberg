@@ -13,12 +13,18 @@ namespace rest_api_objects {
 
 class Term {
 public:
-	static Term FromJSON(yyjson_val *obj) {
+	static Term FromJSON(yyjson_val *val) {
 		Term result;
+		if (yyjson_is_str(val)) {
+			result.value_string = yyjson_get_str(val);
+			result.has_string = true;
+		}
 		return result;
 	}
-public:
-};
 
+public:
+	string value_string;
+	bool has_string = false;
+};
 } // namespace rest_api_objects
 } // namespace duckdb

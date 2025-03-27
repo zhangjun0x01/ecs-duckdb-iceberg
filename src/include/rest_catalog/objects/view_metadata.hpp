@@ -5,9 +5,9 @@
 #include <vector>
 #include <unordered_map>
 #include "rest_catalog/response_objects.hpp"
+#include "rest_catalog/objects/view_history_entry.hpp"
 #include "rest_catalog/objects/view_version.hpp"
 #include "rest_catalog/objects/schema.hpp"
-#include "rest_catalog/objects/view_history_entry.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -18,22 +18,39 @@ class ViewMetadata {
 public:
 	static ViewMetadata FromJSON(yyjson_val *obj) {
 		ViewMetadata result;
+
 		auto view_uuid_val = yyjson_obj_get(obj, "view-uuid");
 		if (view_uuid_val) {
 			result.view_uuid = yyjson_get_str(view_uuid_val);
 		}
+		else {
+			throw IOException("ViewMetadata required property 'view-uuid' is missing");
+		}
+
 		auto format_version_val = yyjson_obj_get(obj, "format-version");
 		if (format_version_val) {
 			result.format_version = yyjson_get_sint(format_version_val);
 		}
+		else {
+			throw IOException("ViewMetadata required property 'format-version' is missing");
+		}
+
 		auto location_val = yyjson_obj_get(obj, "location");
 		if (location_val) {
 			result.location = yyjson_get_str(location_val);
 		}
+		else {
+			throw IOException("ViewMetadata required property 'location' is missing");
+		}
+
 		auto current_version_id_val = yyjson_obj_get(obj, "current-version-id");
 		if (current_version_id_val) {
 			result.current_version_id = yyjson_get_sint(current_version_id_val);
 		}
+		else {
+			throw IOException("ViewMetadata required property 'current-version-id' is missing");
+		}
+
 		auto versions_val = yyjson_obj_get(obj, "versions");
 		if (versions_val) {
 			size_t idx, max;
@@ -42,6 +59,10 @@ public:
 				result.versions.push_back(ViewVersion::FromJSON(val));
 			}
 		}
+		else {
+			throw IOException("ViewMetadata required property 'versions' is missing");
+		}
+
 		auto version_log_val = yyjson_obj_get(obj, "version-log");
 		if (version_log_val) {
 			size_t idx, max;
@@ -50,6 +71,10 @@ public:
 				result.version_log.push_back(ViewHistoryEntry::FromJSON(val));
 			}
 		}
+		else {
+			throw IOException("ViewMetadata required property 'version-log' is missing");
+		}
+
 		auto schemas_val = yyjson_obj_get(obj, "schemas");
 		if (schemas_val) {
 			size_t idx, max;
@@ -58,12 +83,18 @@ public:
 				result.schemas.push_back(Schema::FromJSON(val));
 			}
 		}
+		else {
+			throw IOException("ViewMetadata required property 'schemas' is missing");
+		}
+
 		auto properties_val = yyjson_obj_get(obj, "properties");
 		if (properties_val) {
 			result.properties = parse_object_of_strings(properties_val);
 		}
+
 		return result;
 	}
+
 public:
 	string view_uuid;
 	int64_t format_version;
@@ -74,6 +105,5 @@ public:
 	vector<Schema> schemas;
 	ObjectOfStrings properties;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

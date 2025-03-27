@@ -15,10 +15,11 @@ class FixedTypeValue {
 public:
 	static FixedTypeValue FromJSON(yyjson_val *obj) {
 		FixedTypeValue result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

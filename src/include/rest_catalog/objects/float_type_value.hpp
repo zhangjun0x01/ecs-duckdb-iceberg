@@ -15,10 +15,11 @@ class FloatTypeValue {
 public:
 	static FloatTypeValue FromJSON(yyjson_val *obj) {
 		FloatTypeValue result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

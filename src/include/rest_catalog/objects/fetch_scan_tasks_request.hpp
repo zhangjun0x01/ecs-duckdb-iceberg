@@ -16,15 +16,20 @@ class FetchScanTasksRequest {
 public:
 	static FetchScanTasksRequest FromJSON(yyjson_val *obj) {
 		FetchScanTasksRequest result;
+
 		auto plan_task_val = yyjson_obj_get(obj, "plan-task");
 		if (plan_task_val) {
 			result.plan_task = PlanTask::FromJSON(plan_task_val);
 		}
+		else {
+			throw IOException("FetchScanTasksRequest required property 'plan-task' is missing");
+		}
+
 		return result;
 	}
+
 public:
 	PlanTask plan_task;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

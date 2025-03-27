@@ -15,10 +15,11 @@ class SnapshotReferences {
 public:
 	static SnapshotReferences FromJSON(yyjson_val *obj) {
 		SnapshotReferences result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

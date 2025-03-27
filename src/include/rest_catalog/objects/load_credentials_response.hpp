@@ -16,6 +16,7 @@ class LoadCredentialsResponse {
 public:
 	static LoadCredentialsResponse FromJSON(yyjson_val *obj) {
 		LoadCredentialsResponse result;
+
 		auto storage_credentials_val = yyjson_obj_get(obj, "storage-credentials");
 		if (storage_credentials_val) {
 			size_t idx, max;
@@ -24,11 +25,15 @@ public:
 				result.storage_credentials.push_back(StorageCredential::FromJSON(val));
 			}
 		}
+		else {
+			throw IOException("LoadCredentialsResponse required property 'storage-credentials' is missing");
+		}
+
 		return result;
 	}
+
 public:
 	vector<StorageCredential> storage_credentials;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

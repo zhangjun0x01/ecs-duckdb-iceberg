@@ -15,10 +15,11 @@ class PrimitiveType {
 public:
 	static PrimitiveType FromJSON(yyjson_val *obj) {
 		PrimitiveType result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

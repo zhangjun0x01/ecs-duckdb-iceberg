@@ -15,10 +15,11 @@ class TokenType {
 public:
 	static TokenType FromJSON(yyjson_val *obj) {
 		TokenType result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

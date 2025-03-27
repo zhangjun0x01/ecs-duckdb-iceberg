@@ -15,10 +15,11 @@ class PlanTask {
 public:
 	static PlanTask FromJSON(yyjson_val *obj) {
 		PlanTask result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

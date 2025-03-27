@@ -15,10 +15,11 @@ class Reference {
 public:
 	static Reference FromJSON(yyjson_val *obj) {
 		Reference result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -15,15 +15,20 @@ class BaseUpdate {
 public:
 	static BaseUpdate FromJSON(yyjson_val *obj) {
 		BaseUpdate result;
+
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
 		}
+		else {
+			throw IOException("BaseUpdate required property 'action' is missing");
+		}
+
 		return result;
 	}
+
 public:
 	string action;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

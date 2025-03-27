@@ -15,6 +15,7 @@ class UpdateNamespacePropertiesResponse {
 public:
 	static UpdateNamespacePropertiesResponse FromJSON(yyjson_val *obj) {
 		UpdateNamespacePropertiesResponse result;
+
 		auto updated_val = yyjson_obj_get(obj, "updated");
 		if (updated_val) {
 			size_t idx, max;
@@ -23,6 +24,10 @@ public:
 				result.updated.push_back(yyjson_get_str(val));
 			}
 		}
+		else {
+			throw IOException("UpdateNamespacePropertiesResponse required property 'updated' is missing");
+		}
+
 		auto removed_val = yyjson_obj_get(obj, "removed");
 		if (removed_val) {
 			size_t idx, max;
@@ -31,6 +36,10 @@ public:
 				result.removed.push_back(yyjson_get_str(val));
 			}
 		}
+		else {
+			throw IOException("UpdateNamespacePropertiesResponse required property 'removed' is missing");
+		}
+
 		auto missing_val = yyjson_obj_get(obj, "missing");
 		if (missing_val) {
 			size_t idx, max;
@@ -39,13 +48,14 @@ public:
 				result.missing.push_back(yyjson_get_str(val));
 			}
 		}
+
 		return result;
 	}
+
 public:
 	vector<string> updated;
 	vector<string> removed;
 	vector<string> missing;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

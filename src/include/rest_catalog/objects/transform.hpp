@@ -15,10 +15,11 @@ class Transform {
 public:
 	static Transform FromJSON(yyjson_val *obj) {
 		Transform result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

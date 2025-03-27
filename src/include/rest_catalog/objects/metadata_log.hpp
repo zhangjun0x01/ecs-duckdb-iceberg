@@ -15,10 +15,11 @@ class MetadataLog {
 public:
 	static MetadataLog FromJSON(yyjson_val *obj) {
 		MetadataLog result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -15,10 +15,11 @@ class SnapshotLog {
 public:
 	static SnapshotLog FromJSON(yyjson_val *obj) {
 		SnapshotLog result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

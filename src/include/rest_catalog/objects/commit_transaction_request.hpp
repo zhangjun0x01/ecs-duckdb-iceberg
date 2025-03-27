@@ -16,6 +16,7 @@ class CommitTransactionRequest {
 public:
 	static CommitTransactionRequest FromJSON(yyjson_val *obj) {
 		CommitTransactionRequest result;
+
 		auto table_changes_val = yyjson_obj_get(obj, "table-changes");
 		if (table_changes_val) {
 			size_t idx, max;
@@ -24,11 +25,15 @@ public:
 				result.table_changes.push_back(CommitTableRequest::FromJSON(val));
 			}
 		}
+		else {
+			throw IOException("CommitTransactionRequest required property 'table-changes' is missing");
+		}
+
 		return result;
 	}
+
 public:
 	vector<CommitTableRequest> table_changes;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

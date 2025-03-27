@@ -5,8 +5,8 @@
 #include <vector>
 #include <unordered_map>
 #include "rest_catalog/response_objects.hpp"
-#include "rest_catalog/objects/table_update.hpp"
 #include "rest_catalog/objects/table_requirement.hpp"
+#include "rest_catalog/objects/table_update.hpp"
 #include "rest_catalog/objects/table_identifier.hpp"
 
 using namespace duckdb_yyjson;
@@ -18,10 +18,12 @@ class CommitTableRequest {
 public:
 	static CommitTableRequest FromJSON(yyjson_val *obj) {
 		CommitTableRequest result;
+
 		auto identifier_val = yyjson_obj_get(obj, "identifier");
 		if (identifier_val) {
 			result.identifier = TableIdentifier::FromJSON(identifier_val);
 		}
+
 		auto requirements_val = yyjson_obj_get(obj, "requirements");
 		if (requirements_val) {
 			size_t idx, max;
@@ -30,6 +32,10 @@ public:
 				result.requirements.push_back(TableRequirement::FromJSON(val));
 			}
 		}
+		else {
+			throw IOException("CommitTableRequest required property 'requirements' is missing");
+		}
+
 		auto updates_val = yyjson_obj_get(obj, "updates");
 		if (updates_val) {
 			size_t idx, max;
@@ -38,13 +44,17 @@ public:
 				result.updates.push_back(TableUpdate::FromJSON(val));
 			}
 		}
+		else {
+			throw IOException("CommitTableRequest required property 'updates' is missing");
+		}
+
 		return result;
 	}
+
 public:
 	TableIdentifier identifier;
 	vector<TableRequirement> requirements;
 	vector<TableUpdate> updates;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -16,20 +16,26 @@ class GetNamespaceResponse {
 public:
 	static GetNamespaceResponse FromJSON(yyjson_val *obj) {
 		GetNamespaceResponse result;
+
 		auto _namespace_val = yyjson_obj_get(obj, "namespace");
 		if (_namespace_val) {
 			result._namespace = Namespace::FromJSON(_namespace_val);
 		}
+		else {
+			throw IOException("GetNamespaceResponse required property 'namespace' is missing");
+		}
+
 		auto properties_val = yyjson_obj_get(obj, "properties");
 		if (properties_val) {
 			result.properties = parse_object_of_strings(properties_val);
 		}
+
 		return result;
 	}
+
 public:
 	Namespace _namespace;
 	ObjectOfStrings properties;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

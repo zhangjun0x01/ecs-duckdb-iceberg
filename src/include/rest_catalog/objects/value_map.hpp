@@ -17,6 +17,7 @@ class ValueMap {
 public:
 	static ValueMap FromJSON(yyjson_val *obj) {
 		ValueMap result;
+
 		auto keys_val = yyjson_obj_get(obj, "keys");
 		if (keys_val) {
 			size_t idx, max;
@@ -25,6 +26,7 @@ public:
 				result.keys.push_back(IntegerTypeValue::FromJSON(val));
 			}
 		}
+
 		auto values_val = yyjson_obj_get(obj, "values");
 		if (values_val) {
 			size_t idx, max;
@@ -33,12 +35,13 @@ public:
 				result.values.push_back(PrimitiveTypeValue::FromJSON(val));
 			}
 		}
+
 		return result;
 	}
+
 public:
 	vector<IntegerTypeValue> keys;
 	vector<PrimitiveTypeValue> values;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

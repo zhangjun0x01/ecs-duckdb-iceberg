@@ -15,10 +15,11 @@ class ViewRequirement {
 public:
 	static ViewRequirement FromJSON(yyjson_val *obj) {
 		ViewRequirement result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

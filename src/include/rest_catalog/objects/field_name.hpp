@@ -15,10 +15,11 @@ class FieldName {
 public:
 	static FieldName FromJSON(yyjson_val *obj) {
 		FieldName result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

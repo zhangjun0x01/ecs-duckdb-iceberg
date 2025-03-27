@@ -17,25 +17,38 @@ class UnaryExpression {
 public:
 	static UnaryExpression FromJSON(yyjson_val *obj) {
 		UnaryExpression result;
+
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = ExpressionType::FromJSON(type_val);
 		}
+		else {
+			throw IOException("UnaryExpression required property 'type' is missing");
+		}
+
 		auto term_val = yyjson_obj_get(obj, "term");
 		if (term_val) {
 			result.term = Term::FromJSON(term_val);
 		}
+		else {
+			throw IOException("UnaryExpression required property 'term' is missing");
+		}
+
 		auto value_val = yyjson_obj_get(obj, "value");
 		if (value_val) {
 			result.value = value_val;
 		}
+		else {
+			throw IOException("UnaryExpression required property 'value' is missing");
+		}
+
 		return result;
 	}
+
 public:
 	ExpressionType type;
 	Term term;
 	yyjson_val * value;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

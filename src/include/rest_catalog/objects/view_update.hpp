@@ -15,10 +15,11 @@ class ViewUpdate {
 public:
 	static ViewUpdate FromJSON(yyjson_val *obj) {
 		ViewUpdate result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

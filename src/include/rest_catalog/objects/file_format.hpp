@@ -15,10 +15,11 @@ class FileFormat {
 public:
 	static FileFormat FromJSON(yyjson_val *obj) {
 		FileFormat result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

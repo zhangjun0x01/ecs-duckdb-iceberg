@@ -15,10 +15,11 @@ class TimestampTzTypeValue {
 public:
 	static TimestampTzTypeValue FromJSON(yyjson_val *obj) {
 		TimestampTzTypeValue result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

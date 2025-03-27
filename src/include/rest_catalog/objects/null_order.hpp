@@ -15,10 +15,11 @@ class NullOrder {
 public:
 	static NullOrder FromJSON(yyjson_val *obj) {
 		NullOrder result;
+
 		return result;
 	}
+
 public:
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

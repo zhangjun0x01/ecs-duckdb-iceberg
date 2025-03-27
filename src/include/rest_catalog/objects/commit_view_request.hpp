@@ -5,9 +5,9 @@
 #include <vector>
 #include <unordered_map>
 #include "rest_catalog/response_objects.hpp"
+#include "rest_catalog/objects/view_update.hpp"
 #include "rest_catalog/objects/view_requirement.hpp"
 #include "rest_catalog/objects/table_identifier.hpp"
-#include "rest_catalog/objects/view_update.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -18,10 +18,12 @@ class CommitViewRequest {
 public:
 	static CommitViewRequest FromJSON(yyjson_val *obj) {
 		CommitViewRequest result;
+
 		auto identifier_val = yyjson_obj_get(obj, "identifier");
 		if (identifier_val) {
 			result.identifier = TableIdentifier::FromJSON(identifier_val);
 		}
+
 		auto requirements_val = yyjson_obj_get(obj, "requirements");
 		if (requirements_val) {
 			size_t idx, max;
@@ -30,6 +32,7 @@ public:
 				result.requirements.push_back(ViewRequirement::FromJSON(val));
 			}
 		}
+
 		auto updates_val = yyjson_obj_get(obj, "updates");
 		if (updates_val) {
 			size_t idx, max;
@@ -38,13 +41,17 @@ public:
 				result.updates.push_back(ViewUpdate::FromJSON(val));
 			}
 		}
+		else {
+			throw IOException("CommitViewRequest required property 'updates' is missing");
+		}
+
 		return result;
 	}
+
 public:
 	TableIdentifier identifier;
 	vector<ViewRequirement> requirements;
 	vector<ViewUpdate> updates;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -16,10 +16,18 @@ class EqualityDeleteFile {
 public:
 	static EqualityDeleteFile FromJSON(yyjson_val *obj) {
 		EqualityDeleteFile result;
+
+		// Parse ContentFile fields
+		result.content_file = ContentFile::FromJSON(obj);
+
 		auto content_val = yyjson_obj_get(obj, "content");
 		if (content_val) {
 			result.content = yyjson_get_str(content_val);
 		}
+		else {
+			throw IOException("EqualityDeleteFile required property 'content' is missing");
+		}
+
 		auto equality_ids_val = yyjson_obj_get(obj, "equality-ids");
 		if (equality_ids_val) {
 			size_t idx, max;
@@ -28,12 +36,14 @@ public:
 				result.equality_ids.push_back(yyjson_get_sint(val));
 			}
 		}
+
 		return result;
 	}
+
 public:
+	ContentFile content_file;
 	string content;
 	vector<int64_t> equality_ids;
 };
-
 } // namespace rest_api_objects
 } // namespace duckdb
