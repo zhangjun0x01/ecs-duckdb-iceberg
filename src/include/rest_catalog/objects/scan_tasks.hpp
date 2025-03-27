@@ -6,8 +6,8 @@
 #include <unordered_map>
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/plan_task.hpp"
-#include "rest_catalog/objects/delete_file.hpp"
 #include "rest_catalog/objects/file_scan_task.hpp"
+#include "rest_catalog/objects/delete_file.hpp"
 
 using namespace duckdb_yyjson;
 

@@ -5,8 +5,8 @@
 #include <vector>
 #include <unordered_map>
 #include "rest_catalog/response_objects.hpp"
-#include "rest_catalog/objects/schema.hpp"
 #include "rest_catalog/objects/view_version.hpp"
+#include "rest_catalog/objects/schema.hpp"
 
 using namespace duckdb_yyjson;
 

@@ -5,15 +5,15 @@
 #include <vector>
 #include <unordered_map>
 #include "rest_catalog/response_objects.hpp"
-#include "rest_catalog/objects/schema.hpp"
 #include "rest_catalog/objects/metadata_log.hpp"
-#include "rest_catalog/objects/sort_order.hpp"
-#include "rest_catalog/objects/snapshot_references.hpp"
-#include "rest_catalog/objects/partition_statistics_file.hpp"
-#include "rest_catalog/objects/statistics_file.hpp"
 #include "rest_catalog/objects/snapshot.hpp"
-#include "rest_catalog/objects/snapshot_log.hpp"
 #include "rest_catalog/objects/partition_spec.hpp"
+#include "rest_catalog/objects/partition_statistics_file.hpp"
+#include "rest_catalog/objects/schema.hpp"
+#include "rest_catalog/objects/snapshot_references.hpp"
+#include "rest_catalog/objects/sort_order.hpp"
+#include "rest_catalog/objects/statistics_file.hpp"
+#include "rest_catalog/objects/snapshot_log.hpp"
 
 using namespace duckdb_yyjson;
 
