@@ -355,30 +355,47 @@ static void ParseConfigOptions(yyjson_val *config, case_insensitive_map_t<Value>
 	};
 
 	auto config_size = yyjson_obj_size(config);
-	if (config && config_size > 0) {
-		for (auto &it : config_to_option) {
-			auto &key = it.first;
-			auto &option = it.second;
+	if (!config || config_size == 0) {
+		return;
+	}
+	for (auto &it : config_to_option) {
+		auto &key = it.first;
+		auto &option = it.second;
 
-			auto *item = yyjson_obj_get(config, key.c_str());
-			if (item) {
-				options[option] = yyjson_get_str(item);
-			}
-		}
-		auto *access_style = yyjson_obj_get(config, "s3.path-style-access");
-		if (access_style) {
-			string value = yyjson_get_str(access_style);
-			bool use_ssl;
-			if (value == "true") {
-				use_ssl = false;
-			} else if (value == "false") {
-				use_ssl = true;
-			} else {
-				throw InternalException("Unexpected value ('%s') for 's3.path-style-access' in 'config' property", value);
-			}
-			options["use_ssl"] = Value(use_ssl);
+		auto *item = yyjson_obj_get(config, key.c_str());
+		if (item) {
+			options[option] = yyjson_get_str(item);
 		}
 	}
+	auto *access_style = yyjson_obj_get(config, "s3.path-style-access");
+	if (access_style) {
+		string value = yyjson_get_str(access_style);
+		bool path_style;
+		if (value == "true") {
+			path_style = true;
+		} else if (value == "false") {
+			path_style = false;
+		} else {
+			throw InternalException("Unexpected value ('%s') for 's3.path-style-access' in 'config' property", value);
+		}
+		options["use_ssl"] = Value(!path_style);
+		if (path_style) {
+			options["url_style"] = "path";
+		}
+	}
+
+	auto endpoint_it = options.find("endpoint");
+	if (endpoint_it == options.end()) {
+		return;
+	}
+	auto endpoint = endpoint_it->second.ToString();
+	if (StringUtil::StartsWith(endpoint, "http://")) {
+		endpoint = endpoint.substr(7, std::string::npos);
+	}
+	if (StringUtil::EndsWith(endpoint, "/")) {
+		endpoint = endpoint.substr(0, endpoint.size() - 1);
+	}
+	endpoint_it->second = endpoint;
 }
 
 IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, IRCCredentials credentials) {
