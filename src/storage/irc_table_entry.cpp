@@ -13,7 +13,7 @@
 #include "duckdb/planner/logical_operator.hpp"
 #include "duckdb/planner/operator/logical_get.hpp"
 
-#include "rest_catalog/response_objects.hpp"
+#include "rest_catalog/objects/list.hpp"
 
 namespace duckdb {
 
