@@ -10,6 +10,7 @@
 
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
+#include "duckdb/common/unordered_map.hpp"
 
 namespace duckdb {
 
@@ -24,6 +25,7 @@ private:
 	};
 public:
 	void AddPathComponent(const string &component);
+	void AddQueryParameter(const string &key, const string &value);
 
 	void SetPrefix(const string &prefix_);
 	string GetPrefix() const;
@@ -37,7 +39,9 @@ public:
 	void SetVersion(const string &version_);
 	string GetVersion() const;
 
-	void AddQueryParameter(const string &key, const string &value);
+	void SetParam(const string &key, const string &value);
+	string GetParam(const string &key) const;
+	const unordered_map<string, string> GetParams();
 
 	string GetURL() const;
 
@@ -56,6 +60,8 @@ private:
 	string prefix;
 	//! warehouse
 	string warehouse;
+
+	unordered_map<string, string> params;
 };
 
 } // namespace duckdb

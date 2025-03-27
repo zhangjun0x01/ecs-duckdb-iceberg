@@ -1,12 +1,12 @@
-
 #include "url_utils.hpp"
-
 #include "duckdb/common/string_util.hpp"
 
 namespace duckdb {
 
 void IRCEndpointBuilder::AddPathComponent(const string &component) {
-	path_components.push_back(component);
+	if (!component.empty()) {
+		path_components.push_back(component);
+	}
 }
 
 void IRCEndpointBuilder::AddQueryParameter(const string &key, const string &value) {
@@ -45,27 +45,42 @@ string IRCEndpointBuilder::GetPrefix() const {
 	return prefix;
 }
 
+void IRCEndpointBuilder::SetParam(const string &key, const string &value) {
+	params[key] = value;
+}
+
+string IRCEndpointBuilder::GetParam(const string &key) const {
+	if (params.find(key) != params.end()) {
+		return params.at(key);
+	}
+	return "";
+}
+
+const std::unordered_map<string, string> IRCEndpointBuilder::GetParams() {
+	return params;
+}
+
 string IRCEndpointBuilder::GetURL() const {
 	string ret = host;
 	if (!version.empty()) {
 		ret = ret + "/" + version;
 	}
 	// usually the warehouse is the prefix.
-	if (prefix.empty() && !warehouse.empty()) {
-		ret = ret + "/" + warehouse;
-	}
-	else if (!prefix.empty()) {
+	if (!prefix.empty()) {
 		ret = ret + "/" + prefix;
 	}
 	for (auto &component : path_components) {
 		ret += "/" + component;
 	}
-	if (!query_parameters.empty()) {
-		ret += "?";
-		vector<string> parameters;
-		for (auto &query_parameter : query_parameters) {
-			parameters.push_back(StringUtil::Format("%s=%s", query_parameter.key, query_parameter.value));
-			ret += StringUtil::Join(parameters, "&");
+
+	// encode params
+	auto sep = "?";
+	if (params.size() > 0) {
+		for (auto &param : params) {
+			auto key = StringUtil::URLEncode(param.first);
+			auto value = StringUtil::URLEncode(param.second);
+			ret += sep + key + "=" + value;
+			sep = "&";
 		}
 	}
 	return ret;

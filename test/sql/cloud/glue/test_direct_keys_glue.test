@@ -2,11 +2,13 @@
 # description: test integration with iceberg catalog read
 # group: [iceberg]
 
-require-env ICEBERG_AWS_REMOTE_AVAILABLE
+# require-env ICEBERG_AWS_REMOTE_AVAILABLE
 
 require-env AWS_ACCESS_KEY_ID
 
 require-env AWS_SECRET_ACCESS_KEY
+
+require avro
 
 require parquet
 
@@ -15,9 +17,6 @@ require iceberg
 require httpfs
 
 require aws
-
-# # TODO: fix this test
-mode skip
 
 # test using keys directory
 statement ok
@@ -46,8 +45,6 @@ drop secret s1;
 
 statement ok
 detach my_datalake;
-
-mode unskip
 
 # test using assume role
 statement ok
@@ -78,13 +75,12 @@ drop secret assume_role_secret;
 statement ok
 detach my_datalake
 
-mode skip
-
 # test using provider credential chain
 statement ok
 CREATE SECRET (
   TYPE S3,
-  PROVIDER credential_chain
+  PROVIDER credential_chain,
+  REGION 'us-east-1'
 );
 
 statement ok
