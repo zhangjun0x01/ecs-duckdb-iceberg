@@ -105,41 +105,51 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		}
 	}
 	auto warehouse = info.path;
+	auto catalog_type = ICEBERG_CATALOG_TYPE::INVALID;
 
 	if (endpoint_type == "glue" || endpoint_type == "s3_tables") {
 		if (endpoint_type == "s3_tables") {
 			service = "s3tables";
+			catalog_type = ICEBERG_CATALOG_TYPE::AWS_S3TABLES;
 		} else {
 			service = endpoint_type;
+			catalog_type = ICEBERG_CATALOG_TYPE::AWS_GLUE;
 		}
 		// look up any s3 secret
-		auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials);
+
 		// if there is no secret, an error will be thrown
 		auto secret_entry = IRCatalog::GetSecret(context, secret_name);
         auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 		auto region = kv_secret.TryGetValue("region");
+
 		if (region.IsNull()) {
 			throw IOException("Assumed catalog secret " + secret_entry->secret->GetName() + " for catalog " + name + " does not have a region");
 		}
-		if (service == "s3tables") {
+		switch (catalog_type) {
+		case ICEBERG_CATALOG_TYPE::AWS_S3TABLES: {
+			// extract region from the amazon ARN
 			auto substrings = StringUtil::Split(warehouse, ":");
 			if (substrings.size() != 6) {
 				throw InvalidInputException("Could not parse S3 Tables arn warehouse value");
 			}
 			region = Value::CreateValue<string>(substrings[3]);
-			catalog->warehouse = warehouse;
+			break;
 		}
-		else if (service == "glue") {
-			SanityCheckGlueWarehouse(warehouse);
-			catalog->warehouse = StringUtil::Replace(warehouse, "/", ":");
+	    case ICEBERG_CATALOG_TYPE::AWS_GLUE:
+	    	SanityCheckGlueWarehouse(warehouse);
+			break;
+		default:
+			throw IOException("Unsupported AWS catalog type");
 		}
 
-		catalog->host = service + "." + region.ToString() + ".amazonaws.com";
-		catalog->version = "v1";
-		catalog->secret_name = secret_name;
+		auto catalog_host = service + "." + region.ToString() + ".amazonaws.com";
+		auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, warehouse, catalog_host, secret_name);
+		catalog->catalog_type = catalog_type;
+		catalog->GetConfig(context);
 		return std::move(catalog);
 	}
 
+	// Check no endpoint type has been passed.
 	if (!endpoint_type.empty()) {
 		throw IOException("Unrecognized endpoint point: %s. Expected either S3_TABLES or GLUE", endpoint_type);
 	}
@@ -147,6 +157,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		throw IOException("No endpoint type or endpoint provided");
 	}
 
+	catalog_type = ICEBERG_CATALOG_TYPE::OTHER;
 	// Default IRC path
 	Value endpoint_val;
 	// Lookup a secret we can use to access the rest catalog.
@@ -170,11 +181,9 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		throw IOException("Failed to generate oath token");
 	}
 	credentials.token = token.ToString();
-	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials);
-	catalog->host = endpoint;
-	catalog->warehouse = warehouse;
-	catalog->version = "v1";
-	catalog->secret_name = secret_name;
+	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, warehouse, endpoint, secret_name);
+	catalog->catalog_type = catalog_type;
+	catalog->GetConfig(context);
 	return std::move(catalog);
 }
 
