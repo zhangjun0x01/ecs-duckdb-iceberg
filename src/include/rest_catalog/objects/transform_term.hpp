@@ -5,8 +5,8 @@
 #include "duckdb/common/vector.hpp"
 #include "duckdb/common/unordered_map.hpp"
 #include "rest_catalog/response_objects.hpp"
-#include "rest_catalog/objects/transform.hpp"
 #include "rest_catalog/objects/reference.hpp"
+#include "rest_catalog/objects/transform.hpp"
 
 using namespace duckdb_yyjson;
 

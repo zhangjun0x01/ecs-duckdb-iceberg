@@ -271,7 +271,7 @@ class Schema:
         ]
         
         # Add required includes
-        for include in self.get_required_includes():
+        for include in sorted(self.get_required_includes()):
             lines.append(f'#include "{include}"')
         
         lines.extend([

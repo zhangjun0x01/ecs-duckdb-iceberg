@@ -5,8 +5,8 @@
 #include "duckdb/common/vector.hpp"
 #include "duckdb/common/unordered_map.hpp"
 #include "rest_catalog/response_objects.hpp"
-#include "rest_catalog/objects/snapshot_reference.hpp"
 #include "rest_catalog/objects/base_update.hpp"
+#include "rest_catalog/objects/snapshot_reference.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -18,11 +18,11 @@ public:
 	static SetSnapshotRefUpdate FromJSON(yyjson_val *obj) {
 		SetSnapshotRefUpdate result;
 
-		// Parse SnapshotReference fields
-		result.snapshot_reference = SnapshotReference::FromJSON(obj);
-
 		// Parse BaseUpdate fields
 		result.base_update = BaseUpdate::FromJSON(obj);
+
+		// Parse SnapshotReference fields
+		result.snapshot_reference = SnapshotReference::FromJSON(obj);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
@@ -41,8 +41,8 @@ public:
 	}
 
 public:
-	SnapshotReference snapshot_reference;
 	BaseUpdate base_update;
+	SnapshotReference snapshot_reference;
 	string action;
 	string ref_name;
 };
