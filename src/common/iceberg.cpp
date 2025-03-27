@@ -192,7 +192,7 @@ IcebergSnapshot IcebergSnapshot::ParseSnapShot(yyjson_val *snapshot, idx_t icebe
 		ret.timestamp_ms = Timestamp::FromEpochMs(IcebergUtils::TryGetNumFromObject(snapshot, "timestamp-ms"));
 		ret.manifest_list = IcebergUtils::TryGetStrFromObject(snapshot, "manifest-list");
 	} else {
-		ret.sequence_number = 0;
+		ret.snapshot_id = DConstants::INVALID_INDEX;
 	}
 
 	ret.iceberg_format_version = iceberg_format_version;
