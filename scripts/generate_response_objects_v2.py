@@ -1,14 +1,40 @@
 import yaml
 import os
 from typing import Dict, List, Set
+import re
 
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 API_SPEC_PATH = os.path.join(SCRIPT_PATH, 'api.yaml')
 
-HEADER_PATH = os.path.join(SCRIPT_PATH, '..', 'src', 'include', 'rest_catalog', 'response_objects.hpp')
+OUTPUT_DIR = os.path.join(SCRIPT_PATH, '..', 'src', 'include', 'rest_catalog', 'objects')
 
-CPP_KEYWORDS = {'namespace', 'class', 'template', 'operator', 'private', 'public', 
-                'protected', 'virtual', 'default', 'delete', 'final', 'override'}
+CPP_KEYWORDS = {
+    'namespace',
+    'class',
+    'template',
+    'operator',
+    'private',
+    'public',
+    'protected',
+    'virtual',
+    'default',
+    'delete',
+    'final',
+    'override'
+}
+
+
+def to_snake_case(name: str):
+    res = ''
+    prev_was_lower = False
+    for x in name:
+        is_lower = x.islower()
+        if not is_lower and prev_was_lower:
+            res += '_'
+        prev_was_lower = is_lower
+        res += x.lower()
+    return res
+
 
 def safe_cpp_name(name: str) -> str:
     """Convert property name to safe C++ variable name."""
@@ -23,6 +49,16 @@ class Property:
         self.type = schema.get('type', '')
         self.description = schema.get('description', '')
         self.ref = schema.get('$ref', '')
+        self.additional_properties_type = None
+        
+        # Handle allOf reference
+        if 'allOf' in schema:
+            for sub_schema in schema['allOf']:
+                if '$ref' in sub_schema:
+                    self.ref = sub_schema['$ref']
+                    self.type = self.ref.split('/')[-1]
+                    break
+
         # Store items type for arrays
         self.items_type = None
         self.items_ref = None
@@ -33,26 +69,43 @@ class Property:
             if self.items_ref:
                 self.items_type = self.items_ref.split('/')[-1]
 
-        if self.ref:
+        # Handle additionalProperties for objects
+        if self.type == 'object' and 'additionalProperties' in schema:
+            additional_props = schema['additionalProperties']
+            self.additional_properties_type = additional_props.get('type')
+
+        if self.ref and not self.type:
             self.type = self.ref.split('/')[-1]
-        
+
+    def is_object_of_strings(self) -> bool:
+        return self.type == 'object' and getattr(self, 'additional_properties_type', None) == 'string'
+
     def get_cpp_type(self) -> str:
+        """Get the C++ type for this property."""
+        if self.type == 'array':
+            if self.items_type in {'string', 'integer', 'boolean'}:
+                type_mapping = {
+                    'string': 'string',
+                    'integer': 'int64_t',
+                    'boolean': 'bool'
+                }
+                return f'vector<{type_mapping[self.items_type]}>'
+            elif self.items_type == 'object':
+                return 'vector<yyjson_val *>'
+            return f'vector<{self.items_type}>'
+        
         type_mapping = {
             'string': 'string',
             'integer': 'int64_t',
             'boolean': 'bool',
-            'object': 'ObjectOfStrings'
+            'object': 'yyjson_val *'
         }
-        if self.type == 'array':
-            if self.items_type == 'string':
-                return 'vector<string>'
-            elif self.items_type in type_mapping:
-                return f'vector<{type_mapping[self.items_type]}>'
-            else:
-                return f'vector<{self.items_type}>'
-        if self.type in type_mapping:
-            return type_mapping[self.type]
-        return self.type  # For custom types (refs)
+        
+        # Special case for objects with string additionalProperties
+        if self.is_object_of_strings():
+            return 'ObjectOfStrings'
+
+        return type_mapping.get(self.type, self.type)
 
 class Schema:
     def __init__(self, name: str, schema: Dict):
@@ -129,47 +182,93 @@ class Schema:
             var_name = safe_cpp_name(prop_name)
             lines.append(f'\tauto {var_name}_val = yyjson_obj_get(obj, "{prop_name}");')
             
+            parse_statement = self._get_parse_statement(var_name, prop)
+            
             if prop_name in self.required:
-                lines.extend([
-                    f'\tif ({var_name}_val) {{',
-                    f'\t\tresult.{var_name} = {self._get_parse_statement(var_name, prop)};',
-                    '\t} else {',
-                    f'\t\tthrow IOException("{self.name} required property \'{prop_name}\' is missing");',
-                    '\t}'
-                ])
+                lines.append(f'\t\tif ({var_name}_val) {{')
+                if prop.type == 'array':
+                    if prop.items_type in {'string', 'integer', 'boolean'}:
+                        parse_func = {
+                            'string': 'yyjson_get_str',
+                            'integer': 'yyjson_get_sint',
+                            'boolean': 'yyjson_get_bool'
+                        }[prop.items_type]
+                        lines.extend([
+                            '\t\t\tsize_t idx, max;',
+                            '\t\t\tyyjson_val *val;',
+                            f'\t\t\tyyjson_arr_foreach({var_name}_val, idx, max, val) {{',
+                            f'\t\t\t\tresult.{var_name}.push_back({parse_func}(val));',
+                            '\t\t\t}'
+                        ])
+                    else:
+                        lines.extend([
+                            '\t\t\tsize_t idx, max;',
+                            '\t\t\tyyjson_val *val;',
+                            f'\t\t\tyyjson_arr_foreach({var_name}_val, idx, max, val) {{',
+                            f'\t\t\t\tresult.{var_name}.push_back({prop.items_type}::FromJSON(val));',
+                            '\t\t\t}'
+                        ])
+                else:
+                    lines.append(f'\t\t\tresult.{var_name} = {parse_statement};')
+                lines.append('\t\t} else {')
+                lines.append(f'\t\t\tthrow IOException("{self.name} required property \'{prop_name}\' is missing");')
+                lines.append('\t\t}')
             else:
-                lines.extend([
-                    f'\tif ({var_name}_val) {{',
-                    f'\t\tresult.{var_name} = {self._get_parse_statement(var_name, prop)};',
-                    '\t}'
-                ])
-        
-        lines.append('\treturn result;')
-        lines.append('}')
+                lines.append(f'\t\tif ({var_name}_val) {{')
+                if prop.type == 'array':
+                    if prop.items_type in {'string', 'integer', 'boolean'}:
+                        parse_func = {
+                            'string': 'yyjson_get_str',
+                            'integer': 'yyjson_get_sint',
+                            'boolean': 'yyjson_get_bool'
+                        }[prop.items_type]
+                        lines.extend([
+                            '\t\t\tsize_t idx, max;',
+                            '\t\t\tyyjson_val *val;',
+                            f'\t\t\tyyjson_arr_foreach({var_name}_val, idx, max, val) {{',
+                            f'\t\t\t\tresult.{var_name}.push_back({parse_func}(val));',
+                            '\t\t\t}'
+                        ])
+                    else:
+                        lines.extend([
+                            '\t\t\tsize_t idx, max;',
+                            '\t\t\tyyjson_val *val;',
+                            f'\t\t\tyyjson_arr_foreach({var_name}_val, idx, max, val) {{',
+                            f'\t\t\t\tresult.{var_name}.push_back({prop.items_type}::FromJSON(val));',
+                            '\t\t\t}'
+                        ])
+                else:
+                    lines.append(f'\t\t\tresult.{var_name} = {parse_statement};')
+                lines.append('\t\t}')
+
+        lines.append('\t\treturn result;')
+        lines.append('\t}')
         return '\n'.join(lines)
 
     def _get_parse_statement(self, var_name: str, prop: Property) -> str:
+        """Get the parsing statement for a property."""
+        if prop.type == 'array':
+            if prop.items_type in {'string', 'integer', 'boolean'}:
+                parse_func = {
+                    'string': 'yyjson_get_str',
+                    'integer': 'yyjson_get_sint',
+                    'boolean': 'yyjson_get_bool'
+                }[prop.items_type]
+                return None  # Signal that we need special handling for arrays
+            else:
+                return None  # Signal that we need special handling for arrays
+
         type_mapping = {
             'string': f'yyjson_get_str({var_name}_val)',
             'integer': f'yyjson_get_sint({var_name}_val)',
             'boolean': f'yyjson_get_bool({var_name}_val)',
-            'object': f'parse_object_of_strings({var_name}_val)'
+            'object': f'{var_name}_val'  # Default for objects is raw pointer
         }
-
-        cpp_types = {
-            'integer': 'int64_t',
-            'string': 'string',
-            'boolean': 'bool'
-        }
-
-        if prop.type == 'array':
-            if prop.items_type == 'string':
-                return f'parse_str_array({var_name}_val)'
-            elif prop.items_type in cpp_types:
-                return f'parse_obj_array<{cpp_types[prop.items_type]}>({var_name}_val)'
-            else:
-                return f'parse_obj_array<{prop.items_type}>({var_name}_val)'
-
+        
+        # Special case for objects with string additionalProperties
+        if prop.type == 'object' and getattr(prop, 'additional_properties_type', None) == 'string':
+            return f'parse_object_of_strings({var_name}_val)'
+            
         if prop.type in type_mapping:
             return type_mapping[prop.type]
         # For custom types (refs)
@@ -180,11 +279,11 @@ class Schema:
         includes = set()
         for prop in self.properties.values():
             if prop.type not in {'string', 'integer', 'boolean', 'object', 'array'}:
-                includes.add(f"rest_catalog/objects/{prop.type}.hpp")
+                includes.add(prop.type)
             if prop.type == 'array' and prop.items_type not in {'string', 'integer', 'boolean', 'object'}:
-                includes.add(f"rest_catalog/objects/{prop.items_type}.hpp")
-        includes.update(f"rest_catalog/objects/{ref}.hpp" for ref in self.all_of_refs)
-        return includes
+                includes.add(prop.items_type)
+        includes.update(ref for ref in self.all_of_refs)
+        return [f'rest_catalog/objects/{to_snake_case(x)}.hpp' for x in includes]
 
     def generate_header_file(self) -> str:
         lines = [
@@ -225,20 +324,31 @@ class Schema:
             var_name = safe_cpp_name(prop_name)
             lines.append(f'\t\tauto {var_name}_val = yyjson_obj_get(obj, "{prop_name}");')
             
-            if prop_name in self.required:
-                lines.extend([
-                    f'\t\tif ({var_name}_val) {{',
-                    f'\t\t\tresult.{var_name} = {self._get_parse_statement(var_name, prop)};',
-                    '\t\t} else {',
-                    f'\t\t\tthrow IOException("{self.name} required property \'{prop_name}\' is missing");',
-                    '\t\t}'
-                ])
+            if prop.type == 'array':
+                lines.append(f'\t\tif ({var_name}_val) {{')
+                # First declare the variables
+                lines.append('\t\t\tsize_t idx, max;')
+                lines.append('\t\t\tyyjson_val *val;')
+                # Then do the array iteration
+                lines.append(f'\t\t\tyyjson_arr_foreach({var_name}_val, idx, max, val) {{')
+                if prop.items_type in {'string', 'integer', 'boolean'}:
+                    parse_func = {
+                        'string': 'yyjson_get_str',
+                        'integer': 'yyjson_get_sint',
+                        'boolean': 'yyjson_get_bool'
+                    }[prop.items_type]
+                    lines.append(f'\t\t\t\tresult.{var_name}.push_back({parse_func}(val));')
+                elif prop.items_type == 'object':
+                    lines.append(f'\t\t\t\tresult.{var_name}.push_back(val);')
+                else:
+                    lines.append(f'\t\t\t\tresult.{var_name}.push_back({prop.items_type}::FromJSON(val));')
+                lines.append('\t\t\t}')
+                lines.append('\t\t}')
             else:
-                lines.extend([
-                    f'\t\tif ({var_name}_val) {{',
-                    f'\t\t\tresult.{var_name} = {self._get_parse_statement(var_name, prop)};',
-                    '\t\t}'
-                ])
+                parse_statement = self._get_parse_statement(var_name, prop)
+                lines.append(f'\t\tif ({var_name}_val) {{')
+                lines.append(f'\t\t\tresult.{var_name} = {parse_statement};')
+                lines.append('\t\t}')
         
         lines.extend([
             '\t\treturn result;',
@@ -249,7 +359,8 @@ class Schema:
         # Generate properties
         for prop_name, prop in self.properties.items():
             var_name = safe_cpp_name(prop_name)
-            lines.append(f'\t{prop.get_cpp_type()} {var_name};')
+            cpp_type = prop.get_cpp_type()
+            lines.append(f'\t{cpp_type} {var_name};')
         
         lines.extend([
             '};',
@@ -277,63 +388,6 @@ vector<string> parse_str_array(yyjson_val *arr);
 // Forward declarations
 '''
 
-def generate_header_implementations():
-    return '''#include "rest_catalog/response_objects.hpp"
-
-namespace duckdb {
-namespace rest_api_objects {
-
-template<typename T>
-vector<T> parse_obj_array(yyjson_val *arr) {
-    vector<T> result;
-    size_t idx, max;
-    yyjson_val *val;
-    yyjson_arr_foreach(arr, idx, max, val) {
-        result.push_back(T::FromJSON(val));
-    }
-    return result;
-}
-
-inline vector<string> parse_str_array(yyjson_val *arr) {
-    vector<string> result;
-    size_t idx, max;
-    yyjson_val *val;
-    yyjson_arr_foreach(arr, idx, max, val) {
-        result.push_back(yyjson_get_str(val));
-    }
-    return result;
-}
-
-ObjectOfStrings ObjectOfStrings::FromJSON(yyjson_val *obj) {
-    ObjectOfStrings result;
-    size_t idx, max;
-    yyjson_val *key, *val;
-    yyjson_obj_foreach(obj, idx, max, key, val) {
-        auto key_str = yyjson_get_str(key);
-        auto val_str = yyjson_get_str(val);
-        result[key_str] = val_str;
-    }
-    return result;
-}
-
-'''
-
-def get_dependencies(schema: Schema) -> Set[str]:
-    """Get all type dependencies for a schema."""
-    deps = set()
-    for prop in schema.properties.values():
-        if prop.type != prop.name and prop.type not in {'string', 'integer', 'boolean', 'object'}:
-            deps.add(prop.type)
-        # Add array item type dependencies
-        if prop.type == 'array':
-            if prop.items_type not in {'string', 'integer', 'boolean', 'object'}:
-                deps.add(prop.items_type)
-    
-    # Also check allOf references
-    if hasattr(schema, 'all_of_refs'):
-        deps.update(schema.all_of_refs)
-    return deps
-
 def generate_list_header(schema_objects: Dict[str, Schema]) -> str:
     lines = [
         "",
@@ -343,9 +397,10 @@ def generate_list_header(schema_objects: Dict[str, Schema]) -> str:
     
     # Add includes for all generated headers
     for name in schema_objects:
-        lines.append(f'#include "rest_catalog/objects/{name}.hpp"')
+        lines.append(f'#include "rest_catalog/objects/{to_snake_case(name)}.hpp"')
     
     return '\n'.join(lines)
+
 
 def main():
     # Load OpenAPI spec
@@ -360,72 +415,17 @@ def main():
     }
 
     # Create directory if it doesn't exist
-    output_dir = os.path.join(SCRIPT_PATH, '..', 'src', 'include', 'rest_catalog', 'objects')
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     
     # Generate a header file for each schema
     for name in schema_objects:
         schema = schema_objects[name]
-        output_path = os.path.join(output_dir, f'{name}.hpp')
+        output_path = os.path.join(OUTPUT_DIR, f'{to_snake_case(name)}.hpp')
         with open(output_path, 'w') as f:
             f.write(schema.generate_header_file())
 
-    with open(os.path.join(output_dir, 'list.hpp'), 'w') as f:
+    with open(os.path.join(OUTPUT_DIR, 'list.hpp'), 'w') as f:
         f.write(generate_list_header(schema_objects))
-
-    # Generate base header file with only helper methods
-    base_header_path = os.path.join(SCRIPT_PATH, '..', 'src', 'include', 'rest_catalog', 'response_objects.hpp')
-    with open(base_header_path, 'w') as f:
-        f.write('''#pragma once
-
-#include "yyjson.hpp"
-#include <string>
-#include <vector>
-#include <unordered_map>
-
-using namespace duckdb_yyjson;
-
-namespace duckdb {
-namespace rest_api_objects {
-
-template<typename T>
-vector<T> parse_obj_array(yyjson_val *arr) {
-    vector<T> result;
-    size_t idx, max;
-    yyjson_val *val;
-    yyjson_arr_foreach(arr, idx, max, val) {
-        result.push_back(T::FromJSON(val));
-    }
-    return result;
-}
-
-inline vector<string> parse_str_array(yyjson_val *arr) {
-    vector<string> result;
-    size_t idx, max;
-    yyjson_val *val;
-    yyjson_arr_foreach(arr, idx, max, val) {
-        result.push_back(yyjson_get_str(val));
-    }
-    return result;
-}
-
-using ObjectOfStrings = unordered_map<string, string>;
-
-inline ObjectOfStrings parse_object_of_strings(yyjson_val *obj) {
-    ObjectOfStrings result;
-    size_t idx, max;
-    yyjson_val *key, *val;
-    yyjson_obj_foreach(obj, idx, max, key, val) {
-        auto key_str = yyjson_get_str(key);
-        auto val_str = yyjson_get_str(val);
-        result[key_str] = val_str;
-    }
-    return result;
-}
-
-} // namespace rest_api_objects
-} // namespace duckdb
-''')
 
 if __name__ == '__main__':
     main()

@@ -1,0 +1,65 @@
+#pragma once
+
+#include "yyjson.hpp"
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include "rest_catalog/response_objects.hpp"
+#include "rest_catalog/objects/view_representation.hpp"
+#include "rest_catalog/objects/namespace.hpp"
+
+using namespace duckdb_yyjson;
+
+namespace duckdb {
+namespace rest_api_objects {
+
+class ViewVersion {
+public:
+	static ViewVersion FromJSON(yyjson_val *obj) {
+		ViewVersion result;
+		auto version_id_val = yyjson_obj_get(obj, "version-id");
+		if (version_id_val) {
+			result.version_id = yyjson_get_sint(version_id_val);
+		}
+		auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
+		if (timestamp_ms_val) {
+			result.timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		}
+		auto schema_id_val = yyjson_obj_get(obj, "schema-id");
+		if (schema_id_val) {
+			result.schema_id = yyjson_get_sint(schema_id_val);
+		}
+		auto summary_val = yyjson_obj_get(obj, "summary");
+		if (summary_val) {
+			result.summary = parse_object_of_strings(summary_val);
+		}
+		auto representations_val = yyjson_obj_get(obj, "representations");
+		if (representations_val) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(representations_val, idx, max, val) {
+				result.representations.push_back(ViewRepresentation::FromJSON(val));
+			}
+		}
+		auto default_catalog_val = yyjson_obj_get(obj, "default-catalog");
+		if (default_catalog_val) {
+			result.default_catalog = yyjson_get_str(default_catalog_val);
+		}
+		auto default_namespace_val = yyjson_obj_get(obj, "default-namespace");
+		if (default_namespace_val) {
+			result.default_namespace = Namespace::FromJSON(default_namespace_val);
+		}
+		return result;
+	}
+public:
+	int64_t version_id;
+	int64_t timestamp_ms;
+	int64_t schema_id;
+	ObjectOfStrings summary;
+	vector<ViewRepresentation> representations;
+	string default_catalog;
+	Namespace default_namespace;
+};
+
+} // namespace rest_api_objects
+} // namespace duckdb

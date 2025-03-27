@@ -1,0 +1,40 @@
+#pragma once
+
+#include "yyjson.hpp"
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include "rest_catalog/response_objects.hpp"
+#include "rest_catalog/objects/content_file.hpp"
+
+using namespace duckdb_yyjson;
+
+namespace duckdb {
+namespace rest_api_objects {
+
+class PositionDeleteFile {
+public:
+	static PositionDeleteFile FromJSON(yyjson_val *obj) {
+		PositionDeleteFile result;
+		auto content_val = yyjson_obj_get(obj, "content");
+		if (content_val) {
+			result.content = yyjson_get_str(content_val);
+		}
+		auto content_offset_val = yyjson_obj_get(obj, "content-offset");
+		if (content_offset_val) {
+			result.content_offset = yyjson_get_sint(content_offset_val);
+		}
+		auto content_size_in_bytes_val = yyjson_obj_get(obj, "content-size-in-bytes");
+		if (content_size_in_bytes_val) {
+			result.content_size_in_bytes = yyjson_get_sint(content_size_in_bytes_val);
+		}
+		return result;
+	}
+public:
+	string content;
+	int64_t content_offset;
+	int64_t content_size_in_bytes;
+};
+
+} // namespace rest_api_objects
+} // namespace duckdb
