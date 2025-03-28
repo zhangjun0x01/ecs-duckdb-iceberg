@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/storage_credential.hpp"
 #include "rest_catalog/objects/table_metadata.hpp"
@@ -18,9 +18,9 @@ public:
 	static LoadTableResult FromJSON(yyjson_val *obj) {
 		LoadTableResult result;
 
-		auto metadata_location_val = yyjson_obj_get(obj, "metadata-location");
-		if (metadata_location_val) {
-			result.metadata_location = yyjson_get_str(metadata_location_val);
+		auto config_val = yyjson_obj_get(obj, "config");
+		if (config_val) {
+			result.config = parse_object_of_strings(config_val);
 		}
 
 		auto metadata_val = yyjson_obj_get(obj, "metadata");
@@ -31,9 +31,9 @@ public:
 			throw IOException("LoadTableResult required property 'metadata' is missing");
 		}
 
-		auto config_val = yyjson_obj_get(obj, "config");
-		if (config_val) {
-			result.config = parse_object_of_strings(config_val);
+		auto metadata_location_val = yyjson_obj_get(obj, "metadata-location");
+		if (metadata_location_val) {
+			result.metadata_location = yyjson_get_str(metadata_location_val);
 		}
 
 		auto storage_credentials_val = yyjson_obj_get(obj, "storage-credentials");
@@ -49,9 +49,9 @@ public:
 	}
 
 public:
-	string metadata_location;
+	case_insensitive_map_t<string> config;
 	TableMetadata metadata;
-	ObjectOfStrings config;
+	string metadata_location;
 	vector<StorageCredential> storage_credentials;
 };
 } // namespace rest_api_objects

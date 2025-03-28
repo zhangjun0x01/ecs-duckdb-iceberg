@@ -103,7 +103,7 @@ class Property:
         
         # Special case for objects with string additionalProperties
         if self.is_object_of_strings():
-            return 'ObjectOfStrings'
+            return 'case_insensitive_map_t<string>'
 
         return type_mapping.get(self.type, self.type)
 
@@ -266,7 +266,7 @@ class Schema:
             '#include "yyjson.hpp"',
             '#include "duckdb/common/string.hpp"',
             '#include "duckdb/common/vector.hpp"',
-            '#include "duckdb/common/unordered_map.hpp"',
+            '#include "duckdb/common/case_insensitive_map.hpp"',
             '#include "rest_catalog/response_objects.hpp"'
         ]
         
@@ -283,7 +283,23 @@ class Schema:
             ""
         ])
 
-        if self.one_of_schemas:
+        # Check if this is a primitive type schema first
+        if self.type in TYPE_MAPPINGS and not self.properties and not self.one_of_schemas:
+            type_mapping = get_type_mapping(self.type)
+            lines.extend([
+                f"class {self.name} {{",
+                "public:",
+                f"\tstatic {self.name} FromJSON(yyjson_val *obj) {{",
+                f"\t\t{self.name} result;",
+                f"\t\tresult.value = {type_mapping.yyjson_get}(obj);",
+                "\t\treturn result;",
+                "\t}",
+                "",
+                "public:",
+                f"\t{type_mapping.cpp_type} value;",
+                "};"
+            ])
+        elif self.one_of_schemas:
             lines.extend(self._generate_oneof_class())
         else:
             # Generate regular class
@@ -296,7 +312,7 @@ class Schema:
             ])
 
             # Generate parsing for allOf references
-            for ref in self.all_of_refs:
+            for ref in sorted(self.all_of_refs):
                 lines.extend([
                     f"\t\t// Parse {ref} fields",
                     f"\t\tresult.{to_snake_case(ref)} = {ref}::FromJSON(obj);",
@@ -304,7 +320,7 @@ class Schema:
                 ])
 
             # Generate parsing for properties
-            for prop_name, prop in self.properties.items():
+            for prop_name, prop in sorted(self.properties.items()):
                 val_name = f"{safe_cpp_name(prop_name)}_val"
                 lines.extend([
                     f"\t\tauto {val_name} = yyjson_obj_get(obj, \"{prop_name}\");",
@@ -348,10 +364,10 @@ class Schema:
             ])
 
             # Generate member variables
-            for ref in self.all_of_refs:
+            for ref in sorted(self.all_of_refs):
                 lines.append(f"\t{ref} {to_snake_case(ref)};")
             
-            for prop_name, prop in self.properties.items():
+            for prop_name, prop in sorted(self.properties.items()):
                 cpp_type = prop.get_cpp_type()
                 lines.append(f"\t{cpp_type} {safe_cpp_name(prop_name)};")
 

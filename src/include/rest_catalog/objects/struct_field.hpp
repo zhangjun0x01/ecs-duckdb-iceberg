@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/primitive_type_value.hpp"
 #include "rest_catalog/objects/type.hpp"
@@ -18,12 +18,22 @@ public:
 	static StructField FromJSON(yyjson_val *obj) {
 		StructField result;
 
+		auto doc_val = yyjson_obj_get(obj, "doc");
+		if (doc_val) {
+			result.doc = yyjson_get_str(doc_val);
+		}
+
 		auto id_val = yyjson_obj_get(obj, "id");
 		if (id_val) {
 			result.id = yyjson_get_sint(id_val);
 		}
 		else {
 			throw IOException("StructField required property 'id' is missing");
+		}
+
+		auto initial_default_val = yyjson_obj_get(obj, "initial-default");
+		if (initial_default_val) {
+			result.initial_default = PrimitiveTypeValue::FromJSON(initial_default_val);
 		}
 
 		auto name_val = yyjson_obj_get(obj, "name");
@@ -34,14 +44,6 @@ public:
 			throw IOException("StructField required property 'name' is missing");
 		}
 
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = Type::FromJSON(type_val);
-		}
-		else {
-			throw IOException("StructField required property 'type' is missing");
-		}
-
 		auto required_val = yyjson_obj_get(obj, "required");
 		if (required_val) {
 			result.required = yyjson_get_bool(required_val);
@@ -50,14 +52,12 @@ public:
 			throw IOException("StructField required property 'required' is missing");
 		}
 
-		auto doc_val = yyjson_obj_get(obj, "doc");
-		if (doc_val) {
-			result.doc = yyjson_get_str(doc_val);
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (type_val) {
+			result.type = Type::FromJSON(type_val);
 		}
-
-		auto initial_default_val = yyjson_obj_get(obj, "initial-default");
-		if (initial_default_val) {
-			result.initial_default = PrimitiveTypeValue::FromJSON(initial_default_val);
+		else {
+			throw IOException("StructField required property 'type' is missing");
 		}
 
 		auto write_default_val = yyjson_obj_get(obj, "write-default");
@@ -69,12 +69,12 @@ public:
 	}
 
 public:
-	int64_t id;
-	string name;
-	Type type;
-	bool required;
 	string doc;
+	int64_t id;
 	PrimitiveTypeValue initial_default;
+	string name;
+	bool required;
+	Type type;
 	PrimitiveTypeValue write_default;
 };
 } // namespace rest_api_objects

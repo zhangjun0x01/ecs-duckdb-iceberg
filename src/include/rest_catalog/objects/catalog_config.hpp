@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 
 using namespace duckdb_yyjson;
@@ -15,14 +15,6 @@ class CatalogConfig {
 public:
 	static CatalogConfig FromJSON(yyjson_val *obj) {
 		CatalogConfig result;
-
-		auto overrides_val = yyjson_obj_get(obj, "overrides");
-		if (overrides_val) {
-			result.overrides = parse_object_of_strings(overrides_val);
-		}
-		else {
-			throw IOException("CatalogConfig required property 'overrides' is missing");
-		}
 
 		auto defaults_val = yyjson_obj_get(obj, "defaults");
 		if (defaults_val) {
@@ -41,13 +33,21 @@ public:
 			}
 		}
 
+		auto overrides_val = yyjson_obj_get(obj, "overrides");
+		if (overrides_val) {
+			result.overrides = parse_object_of_strings(overrides_val);
+		}
+		else {
+			throw IOException("CatalogConfig required property 'overrides' is missing");
+		}
+
 		return result;
 	}
 
 public:
-	ObjectOfStrings overrides;
-	ObjectOfStrings defaults;
+	case_insensitive_map_t<string> defaults;
 	vector<string> endpoints;
+	case_insensitive_map_t<string> overrides;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

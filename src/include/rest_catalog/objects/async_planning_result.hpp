@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/plan_status.hpp"
 
@@ -17,6 +17,11 @@ public:
 	static AsyncPlanningResult FromJSON(yyjson_val *obj) {
 		AsyncPlanningResult result;
 
+		auto plan_id_val = yyjson_obj_get(obj, "plan-id");
+		if (plan_id_val) {
+			result.plan_id = yyjson_get_str(plan_id_val);
+		}
+
 		auto status_val = yyjson_obj_get(obj, "status");
 		if (status_val) {
 			result.status = PlanStatus::FromJSON(status_val);
@@ -25,17 +30,12 @@ public:
 			throw IOException("AsyncPlanningResult required property 'status' is missing");
 		}
 
-		auto plan_id_val = yyjson_obj_get(obj, "plan-id");
-		if (plan_id_val) {
-			result.plan_id = yyjson_get_str(plan_id_val);
-		}
-
 		return result;
 	}
 
 public:
-	PlanStatus status;
 	string plan_id;
+	PlanStatus status;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 
 using namespace duckdb_yyjson;
@@ -15,22 +15,6 @@ class SnapshotReference {
 public:
 	static SnapshotReference FromJSON(yyjson_val *obj) {
 		SnapshotReference result;
-
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = yyjson_get_str(type_val);
-		}
-		else {
-			throw IOException("SnapshotReference required property 'type' is missing");
-		}
-
-		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
-		if (snapshot_id_val) {
-			result.snapshot_id = yyjson_get_sint(snapshot_id_val);
-		}
-		else {
-			throw IOException("SnapshotReference required property 'snapshot-id' is missing");
-		}
 
 		auto max_ref_age_ms_val = yyjson_obj_get(obj, "max-ref-age-ms");
 		if (max_ref_age_ms_val) {
@@ -47,15 +31,31 @@ public:
 			result.min_snapshots_to_keep = yyjson_get_sint(min_snapshots_to_keep_val);
 		}
 
+		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
+		if (snapshot_id_val) {
+			result.snapshot_id = yyjson_get_sint(snapshot_id_val);
+		}
+		else {
+			throw IOException("SnapshotReference required property 'snapshot-id' is missing");
+		}
+
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (type_val) {
+			result.type = yyjson_get_str(type_val);
+		}
+		else {
+			throw IOException("SnapshotReference required property 'type' is missing");
+		}
+
 		return result;
 	}
 
 public:
-	string type;
-	int64_t snapshot_id;
 	int64_t max_ref_age_ms;
 	int64_t max_snapshot_age_ms;
 	int64_t min_snapshots_to_keep;
+	int64_t snapshot_id;
+	string type;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

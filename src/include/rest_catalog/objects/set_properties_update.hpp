@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/base_update.hpp"
 
@@ -39,7 +39,7 @@ public:
 public:
 	BaseUpdate base_update;
 	string action;
-	ObjectOfStrings updates;
+	case_insensitive_map_t<string> updates;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

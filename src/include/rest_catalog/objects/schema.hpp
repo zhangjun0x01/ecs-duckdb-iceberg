@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/struct_type.hpp"
 
@@ -20,11 +20,6 @@ public:
 		// Parse StructType fields
 		result.struct_type = StructType::FromJSON(obj);
 
-		auto schema_id_val = yyjson_obj_get(obj, "schema-id");
-		if (schema_id_val) {
-			result.schema_id = yyjson_get_sint(schema_id_val);
-		}
-
 		auto identifier_field_ids_val = yyjson_obj_get(obj, "identifier-field-ids");
 		if (identifier_field_ids_val) {
 			size_t idx, max;
@@ -34,13 +29,18 @@ public:
 			}
 		}
 
+		auto schema_id_val = yyjson_obj_get(obj, "schema-id");
+		if (schema_id_val) {
+			result.schema_id = yyjson_get_sint(schema_id_val);
+		}
+
 		return result;
 	}
 
 public:
 	StructType struct_type;
-	int64_t schema_id;
 	vector<int64_t> identifier_field_ids;
+	int64_t schema_id;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

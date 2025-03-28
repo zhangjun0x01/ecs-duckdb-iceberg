@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/transform.hpp"
 
@@ -22,20 +22,20 @@ public:
 			result.field_id = yyjson_get_sint(field_id_val);
 		}
 
-		auto source_id_val = yyjson_obj_get(obj, "source-id");
-		if (source_id_val) {
-			result.source_id = yyjson_get_sint(source_id_val);
-		}
-		else {
-			throw IOException("PartitionField required property 'source-id' is missing");
-		}
-
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (name_val) {
 			result.name = yyjson_get_str(name_val);
 		}
 		else {
 			throw IOException("PartitionField required property 'name' is missing");
+		}
+
+		auto source_id_val = yyjson_obj_get(obj, "source-id");
+		if (source_id_val) {
+			result.source_id = yyjson_get_sint(source_id_val);
+		}
+		else {
+			throw IOException("PartitionField required property 'source-id' is missing");
 		}
 
 		auto transform_val = yyjson_obj_get(obj, "transform");
@@ -51,8 +51,8 @@ public:
 
 public:
 	int64_t field_id;
-	int64_t source_id;
 	string name;
+	int64_t source_id;
 	Transform transform;
 };
 } // namespace rest_api_objects

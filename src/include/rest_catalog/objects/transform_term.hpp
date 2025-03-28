@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/reference.hpp"
 #include "rest_catalog/objects/transform.hpp"
@@ -18,12 +18,12 @@ public:
 	static TransformTerm FromJSON(yyjson_val *obj) {
 		TransformTerm result;
 
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = yyjson_get_str(type_val);
+		auto term_val = yyjson_obj_get(obj, "term");
+		if (term_val) {
+			result.term = Reference::FromJSON(term_val);
 		}
 		else {
-			throw IOException("TransformTerm required property 'type' is missing");
+			throw IOException("TransformTerm required property 'term' is missing");
 		}
 
 		auto transform_val = yyjson_obj_get(obj, "transform");
@@ -34,21 +34,21 @@ public:
 			throw IOException("TransformTerm required property 'transform' is missing");
 		}
 
-		auto term_val = yyjson_obj_get(obj, "term");
-		if (term_val) {
-			result.term = Reference::FromJSON(term_val);
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (type_val) {
+			result.type = yyjson_get_str(type_val);
 		}
 		else {
-			throw IOException("TransformTerm required property 'term' is missing");
+			throw IOException("TransformTerm required property 'type' is missing");
 		}
 
 		return result;
 	}
 
 public:
-	string type;
-	Transform transform;
 	Reference term;
+	Transform transform;
+	string type;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

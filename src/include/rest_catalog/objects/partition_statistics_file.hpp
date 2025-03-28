@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 
 using namespace duckdb_yyjson;
@@ -15,6 +15,14 @@ class PartitionStatisticsFile {
 public:
 	static PartitionStatisticsFile FromJSON(yyjson_val *obj) {
 		PartitionStatisticsFile result;
+
+		auto file_size_in_bytes_val = yyjson_obj_get(obj, "file-size-in-bytes");
+		if (file_size_in_bytes_val) {
+			result.file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
+		}
+		else {
+			throw IOException("PartitionStatisticsFile required property 'file-size-in-bytes' is missing");
+		}
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 		if (snapshot_id_val) {
@@ -32,21 +40,13 @@ public:
 			throw IOException("PartitionStatisticsFile required property 'statistics-path' is missing");
 		}
 
-		auto file_size_in_bytes_val = yyjson_obj_get(obj, "file-size-in-bytes");
-		if (file_size_in_bytes_val) {
-			result.file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
-		}
-		else {
-			throw IOException("PartitionStatisticsFile required property 'file-size-in-bytes' is missing");
-		}
-
 		return result;
 	}
 
 public:
+	int64_t file_size_in_bytes;
 	int64_t snapshot_id;
 	string statistics_path;
-	int64_t file_size_in_bytes;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

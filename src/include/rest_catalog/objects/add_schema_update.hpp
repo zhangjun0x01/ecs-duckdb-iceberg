@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/base_update.hpp"
 #include "rest_catalog/objects/schema.hpp"
@@ -26,6 +26,11 @@ public:
 			result.action = yyjson_get_str(action_val);
 		}
 
+		auto last_column_id_val = yyjson_obj_get(obj, "last-column-id");
+		if (last_column_id_val) {
+			result.last_column_id = yyjson_get_sint(last_column_id_val);
+		}
+
 		auto schema_val = yyjson_obj_get(obj, "schema");
 		if (schema_val) {
 			result.schema = Schema::FromJSON(schema_val);
@@ -34,19 +39,14 @@ public:
 			throw IOException("AddSchemaUpdate required property 'schema' is missing");
 		}
 
-		auto last_column_id_val = yyjson_obj_get(obj, "last-column-id");
-		if (last_column_id_val) {
-			result.last_column_id = yyjson_get_sint(last_column_id_val);
-		}
-
 		return result;
 	}
 
 public:
 	BaseUpdate base_update;
 	string action;
-	Schema schema;
 	int64_t last_column_id;
+	Schema schema;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

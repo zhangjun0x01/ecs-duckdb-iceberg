@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 
 using namespace duckdb_yyjson;
@@ -16,12 +16,12 @@ public:
 	static SQLViewRepresentation FromJSON(yyjson_val *obj) {
 		SQLViewRepresentation result;
 
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = yyjson_get_str(type_val);
+		auto dialect_val = yyjson_obj_get(obj, "dialect");
+		if (dialect_val) {
+			result.dialect = yyjson_get_str(dialect_val);
 		}
 		else {
-			throw IOException("SQLViewRepresentation required property 'type' is missing");
+			throw IOException("SQLViewRepresentation required property 'dialect' is missing");
 		}
 
 		auto sql_val = yyjson_obj_get(obj, "sql");
@@ -32,21 +32,21 @@ public:
 			throw IOException("SQLViewRepresentation required property 'sql' is missing");
 		}
 
-		auto dialect_val = yyjson_obj_get(obj, "dialect");
-		if (dialect_val) {
-			result.dialect = yyjson_get_str(dialect_val);
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (type_val) {
+			result.type = yyjson_get_str(type_val);
 		}
 		else {
-			throw IOException("SQLViewRepresentation required property 'dialect' is missing");
+			throw IOException("SQLViewRepresentation required property 'type' is missing");
 		}
 
 		return result;
 	}
 
 public:
-	string type;
-	string sql;
 	string dialect;
+	string sql;
+	string type;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

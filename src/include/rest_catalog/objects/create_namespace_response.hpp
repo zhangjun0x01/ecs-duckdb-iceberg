@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/namespace.hpp"
 
@@ -35,7 +35,7 @@ public:
 
 public:
 	Namespace _namespace;
-	ObjectOfStrings properties;
+	case_insensitive_map_t<string> properties;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

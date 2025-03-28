@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/type.hpp"
 
@@ -17,12 +17,12 @@ public:
 	static MapType FromJSON(yyjson_val *obj) {
 		MapType result;
 
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = yyjson_get_str(type_val);
+		auto key_val = yyjson_obj_get(obj, "key");
+		if (key_val) {
+			result.key = Type::FromJSON(key_val);
 		}
 		else {
-			throw IOException("MapType required property 'type' is missing");
+			throw IOException("MapType required property 'key' is missing");
 		}
 
 		auto key_id_val = yyjson_obj_get(obj, "key-id");
@@ -33,20 +33,12 @@ public:
 			throw IOException("MapType required property 'key-id' is missing");
 		}
 
-		auto key_val = yyjson_obj_get(obj, "key");
-		if (key_val) {
-			result.key = Type::FromJSON(key_val);
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (type_val) {
+			result.type = yyjson_get_str(type_val);
 		}
 		else {
-			throw IOException("MapType required property 'key' is missing");
-		}
-
-		auto value_id_val = yyjson_obj_get(obj, "value-id");
-		if (value_id_val) {
-			result.value_id = yyjson_get_sint(value_id_val);
-		}
-		else {
-			throw IOException("MapType required property 'value-id' is missing");
+			throw IOException("MapType required property 'type' is missing");
 		}
 
 		auto value_val = yyjson_obj_get(obj, "value");
@@ -55,6 +47,14 @@ public:
 		}
 		else {
 			throw IOException("MapType required property 'value' is missing");
+		}
+
+		auto value_id_val = yyjson_obj_get(obj, "value-id");
+		if (value_id_val) {
+			result.value_id = yyjson_get_sint(value_id_val);
+		}
+		else {
+			throw IOException("MapType required property 'value-id' is missing");
 		}
 
 		auto value_required_val = yyjson_obj_get(obj, "value-required");
@@ -69,11 +69,11 @@ public:
 	}
 
 public:
-	string type;
-	int64_t key_id;
 	Type key;
-	int64_t value_id;
+	int64_t key_id;
+	string type;
 	Type value;
+	int64_t value_id;
 	bool value_required;
 };
 } // namespace rest_api_objects

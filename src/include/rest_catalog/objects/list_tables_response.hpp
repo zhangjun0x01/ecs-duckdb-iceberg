@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/page_token.hpp"
 #include "rest_catalog/objects/table_identifier.hpp"
@@ -18,11 +18,6 @@ public:
 	static ListTablesResponse FromJSON(yyjson_val *obj) {
 		ListTablesResponse result;
 
-		auto next_page_token_val = yyjson_obj_get(obj, "next-page-token");
-		if (next_page_token_val) {
-			result.next_page_token = PageToken::FromJSON(next_page_token_val);
-		}
-
 		auto identifiers_val = yyjson_obj_get(obj, "identifiers");
 		if (identifiers_val) {
 			size_t idx, max;
@@ -32,12 +27,17 @@ public:
 			}
 		}
 
+		auto next_page_token_val = yyjson_obj_get(obj, "next-page-token");
+		if (next_page_token_val) {
+			result.next_page_token = PageToken::FromJSON(next_page_token_val);
+		}
+
 		return result;
 	}
 
 public:
-	PageToken next_page_token;
 	vector<TableIdentifier> identifiers;
+	PageToken next_page_token;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

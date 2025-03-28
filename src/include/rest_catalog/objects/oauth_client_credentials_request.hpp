@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 
 using namespace duckdb_yyjson;
@@ -15,19 +15,6 @@ class OAuthClientCredentialsRequest {
 public:
 	static OAuthClientCredentialsRequest FromJSON(yyjson_val *obj) {
 		OAuthClientCredentialsRequest result;
-
-		auto grant_type_val = yyjson_obj_get(obj, "grant_type");
-		if (grant_type_val) {
-			result.grant_type = yyjson_get_str(grant_type_val);
-		}
-		else {
-			throw IOException("OAuthClientCredentialsRequest required property 'grant_type' is missing");
-		}
-
-		auto scope_val = yyjson_obj_get(obj, "scope");
-		if (scope_val) {
-			result.scope = yyjson_get_str(scope_val);
-		}
 
 		auto client_id_val = yyjson_obj_get(obj, "client_id");
 		if (client_id_val) {
@@ -45,14 +32,27 @@ public:
 			throw IOException("OAuthClientCredentialsRequest required property 'client_secret' is missing");
 		}
 
+		auto grant_type_val = yyjson_obj_get(obj, "grant_type");
+		if (grant_type_val) {
+			result.grant_type = yyjson_get_str(grant_type_val);
+		}
+		else {
+			throw IOException("OAuthClientCredentialsRequest required property 'grant_type' is missing");
+		}
+
+		auto scope_val = yyjson_obj_get(obj, "scope");
+		if (scope_val) {
+			result.scope = yyjson_get_str(scope_val);
+		}
+
 		return result;
 	}
 
 public:
-	string grant_type;
-	string scope;
 	string client_id;
 	string client_secret;
+	string grant_type;
+	string scope;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

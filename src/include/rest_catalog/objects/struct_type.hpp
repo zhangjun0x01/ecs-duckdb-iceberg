@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/struct_field.hpp"
 
@@ -17,14 +17,6 @@ public:
 	static StructType FromJSON(yyjson_val *obj) {
 		StructType result;
 
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = yyjson_get_str(type_val);
-		}
-		else {
-			throw IOException("StructType required property 'type' is missing");
-		}
-
 		auto fields_val = yyjson_obj_get(obj, "fields");
 		if (fields_val) {
 			size_t idx, max;
@@ -37,12 +29,20 @@ public:
 			throw IOException("StructType required property 'fields' is missing");
 		}
 
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (type_val) {
+			result.type = yyjson_get_str(type_val);
+		}
+		else {
+			throw IOException("StructType required property 'type' is missing");
+		}
+
 		return result;
 	}
 
 public:
-	string type;
 	vector<StructField> fields;
+	string type;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

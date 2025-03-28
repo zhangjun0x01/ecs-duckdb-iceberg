@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/token_type.hpp"
 
@@ -23,14 +23,6 @@ public:
 		}
 		else {
 			throw IOException("OAuthTokenResponse required property 'access_token' is missing");
-		}
-
-		auto token_type_val = yyjson_obj_get(obj, "token_type");
-		if (token_type_val) {
-			result.token_type = yyjson_get_str(token_type_val);
-		}
-		else {
-			throw IOException("OAuthTokenResponse required property 'token_type' is missing");
 		}
 
 		auto expires_in_val = yyjson_obj_get(obj, "expires_in");
@@ -53,16 +45,24 @@ public:
 			result.scope = yyjson_get_str(scope_val);
 		}
 
+		auto token_type_val = yyjson_obj_get(obj, "token_type");
+		if (token_type_val) {
+			result.token_type = yyjson_get_str(token_type_val);
+		}
+		else {
+			throw IOException("OAuthTokenResponse required property 'token_type' is missing");
+		}
+
 		return result;
 	}
 
 public:
 	string access_token;
-	string token_type;
 	int64_t expires_in;
 	TokenType issued_token_type;
 	string refresh_token;
 	string scope;
+	string token_type;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

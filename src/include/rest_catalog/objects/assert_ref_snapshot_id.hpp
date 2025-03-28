@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/table_requirement.hpp"
 
@@ -19,11 +19,6 @@ public:
 
 		// Parse TableRequirement fields
 		result.table_requirement = TableRequirement::FromJSON(obj);
-
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = yyjson_get_str(type_val);
-		}
 
 		auto ref_val = yyjson_obj_get(obj, "ref");
 		if (ref_val) {
@@ -41,14 +36,19 @@ public:
 			throw IOException("AssertRefSnapshotId required property 'snapshot-id' is missing");
 		}
 
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (type_val) {
+			result.type = yyjson_get_str(type_val);
+		}
+
 		return result;
 	}
 
 public:
 	TableRequirement table_requirement;
-	string type;
 	string ref;
 	int64_t snapshot_id;
+	string type;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

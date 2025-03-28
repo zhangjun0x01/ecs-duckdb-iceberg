@@ -3,7 +3,7 @@
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
-#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 
 using namespace duckdb_yyjson;
@@ -16,20 +16,20 @@ public:
 	static TimerResult FromJSON(yyjson_val *obj) {
 		TimerResult result;
 
-		auto time_unit_val = yyjson_obj_get(obj, "time-unit");
-		if (time_unit_val) {
-			result.time_unit = yyjson_get_str(time_unit_val);
-		}
-		else {
-			throw IOException("TimerResult required property 'time-unit' is missing");
-		}
-
 		auto count_val = yyjson_obj_get(obj, "count");
 		if (count_val) {
 			result.count = yyjson_get_sint(count_val);
 		}
 		else {
 			throw IOException("TimerResult required property 'count' is missing");
+		}
+
+		auto time_unit_val = yyjson_obj_get(obj, "time-unit");
+		if (time_unit_val) {
+			result.time_unit = yyjson_get_str(time_unit_val);
+		}
+		else {
+			throw IOException("TimerResult required property 'time-unit' is missing");
 		}
 
 		auto total_duration_val = yyjson_obj_get(obj, "total-duration");
@@ -44,8 +44,8 @@ public:
 	}
 
 public:
-	string time_unit;
 	int64_t count;
+	string time_unit;
 	int64_t total_duration;
 };
 } // namespace rest_api_objects
