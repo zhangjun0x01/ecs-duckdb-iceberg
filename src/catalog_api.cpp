@@ -198,7 +198,20 @@ string IRCAPI::GetToken(ClientContext &context, const string &uri, const string 
 	// { 'access_token', 'token_type', 'expires_in', <issued_token_type>, 'refresh_token', 'scope'}
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
-	return IcebergUtils::TryGetStrFromObject(root, "access_token");
+	auto access_token_val = yyjson_obj_get(root, "access_token");
+	auto token_type_val = yyjson_obj_get(root, "token_type");
+	if (!access_token_val) {
+		throw IOException("OAuthTokenResponse is missing required property 'access_token'");
+	}
+	if (!token_type_val) {
+		throw IOException("OAuthTokenResponse is missing required property 'token_type'");
+	}
+	string token_type = yyjson_get_str(token_type_val);
+	if (!StringUtil::CIEquals(token_type, "bearer")) {
+		throw NotImplementedException("token_type return value '%s' is not supported, only supports 'bearer' currently.", token_type);
+	}
+	string access_token = yyjson_get_str(access_token_val);
+	return access_token;
 }
 
 static void populateTableMetadata(IRCAPITable &table, yyjson_val *metadata_root) {
