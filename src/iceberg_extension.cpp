@@ -125,6 +125,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 
 	if (oauth2_server_uri.empty()) {
 		//! If no oauth2_server_uri is provided, default to the (deprecated) REST API endpoint for it
+		DUCKDB_LOG_WARN(context, "iceberg", "'oauth2_server_uri' is not set, defaulting to deprecated '{endpoint}/v1/oauth/tokens' oauth2_server_uri");
 		oauth2_server_uri = StringUtil::Format("%s/v1/oauth/tokens", endpoint);
 	}
 	auto catalog_type = ICEBERG_CATALOG_TYPE::INVALID;
