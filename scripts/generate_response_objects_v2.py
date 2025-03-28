@@ -338,25 +338,9 @@ class Schema:
                 f"\tstatic {self.name} FromJSON(yyjson_val *obj) {{",
                 f"\t\t{self.name} result;",
             ])
-            # First declare the variables
-            lines.append('\t\tsize_t idx, max;')
-            lines.append('\t\tyyjson_val *val;')
-            # Then do the array iteration
-            lines.append(f'\t\tyyjson_arr_foreach(obj, idx, max, val) {{')
-            
-            prop_name = 'value'
-            if self.item_type in {'string', 'integer', 'boolean'}:
-                parse_func = {
-                    'string': 'yyjson_get_str',
-                    'integer': 'yyjson_get_sint',
-                    'boolean': 'yyjson_get_bool'
-                }[self.item_type]
-                lines.append(f"\t\t\tresult.{safe_cpp_name(prop_name)}.push_back({parse_func}(val));")
-            elif self.item_type == 'object':
-                lines.append(f'\t\t\tresult.{safe_cpp_name(prop_name)}.push_back(val);')
-            else:
-                lines.append(f"\t\t\tresult.{safe_cpp_name(prop_name)}.push_back({self.item_type}::FromJSON(val));")
-            lines.append("\t\t}")
+            lines.extend(
+                generate_array_loop(2, 'obj', 'value', self.item_type)
+            )
             lines.extend([
                 "\t\treturn result;",
                 "\t}",
