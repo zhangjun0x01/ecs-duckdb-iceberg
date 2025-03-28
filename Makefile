@@ -41,3 +41,6 @@ format-changes:
 
 format-main:
 	python3 scripts/format.py main --fix --noconfirm
+
+format-check-silent:
+	python3 scripts/format.py --all --check --silent
