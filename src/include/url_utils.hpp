@@ -15,14 +15,6 @@
 namespace duckdb {
 
 class IRCEndpointBuilder {
-private:
-	struct QueryParameter {
-	public:
-		QueryParameter(const string &key, const string &value) : key(key), value(value) {}
-	public:
-		string key;
-		string value;
-	};
 public:
 	void AddPathComponent(const string &component);
 	void AddQueryParameter(const string &key, const string &value);
@@ -32,9 +24,6 @@ public:
 
 	void SetHost(const string &host_);
 	string GetHost() const;
-
-	void SetWarehouse(const string &warehouse_);
-	string GetWarehouse() const;
 
 	void SetVersion(const string &version_);
 	string GetVersion() const;
@@ -47,10 +36,6 @@ public:
 
 	//! path components when querying. Like namespaces/tables etc.
 	vector<string> path_components;
-
-	//! query parameters at the end of the url.
-	vector<QueryParameter> query_parameters;
-
 private:
 	//! host of the endpoint, like `glue` or `polaris`
 	string host;
@@ -58,8 +43,6 @@ private:
 	string version;
 	//! optional prefix
 	string prefix;
-	//! warehouse
-	string warehouse;
 
 	unordered_map<string, string> params;
 };
