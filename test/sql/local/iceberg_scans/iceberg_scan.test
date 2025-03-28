@@ -72,10 +72,11 @@ SELECT count(*) FROM ICEBERG_SCAN('data/persistent/iceberg/lineitem_iceberg_gz',
 ----
 111968
 
-statement error
+
+query I
 SELECT count(*) FROM ICEBERG_SCAN('data/persistent/iceberg/lineitem_iceberg_gz', ALLOW_MOVED_PATHS=TRUE, METADATA_COMPRESSION_CODEC="gzip", version='1');
 ----
-IO Error: No snapshots found
+0
 
 query I
 SELECT count(*) FROM ICEBERG_SCAN('data/persistent/iceberg/lineitem_iceberg_gz', ALLOW_MOVED_PATHS=TRUE, METADATA_COMPRESSION_CODEC="gzip", version='2', version_name_format='v%s%s.metadata.json');

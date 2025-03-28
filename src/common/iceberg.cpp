@@ -88,10 +88,6 @@ IcebergSnapshot IcebergSnapshot::GetLatestSnapshot(const string &path, FileSyste
 	auto info = GetParseInfo(path, fs, options.metadata_compression_codec);
 	auto latest_snapshot = FindLatestSnapshotInternal(info->snapshots);
 
-	if (!latest_snapshot) {
-		throw IOException("No snapshots found");
-	}
-
 	return ParseSnapShot(latest_snapshot, info->iceberg_version, info->schema_id, info->schemas, options);
 }
 
@@ -181,20 +177,24 @@ string IcebergSnapshot::ReadMetaData(const string &path, FileSystem &fs, const s
 
 IcebergSnapshot IcebergSnapshot::ParseSnapShot(yyjson_val *snapshot, idx_t iceberg_format_version, idx_t schema_id, vector<yyjson_val *> &schemas, const IcebergOptions &options) {
 	IcebergSnapshot ret;
-	auto snapshot_tag = yyjson_get_type(snapshot);
-	if (snapshot_tag != YYJSON_TYPE_OBJ) {
-		throw IOException("Invalid snapshot field found parsing iceberg metadata.json");
-	}
-	ret.metadata_compression_codec = options.metadata_compression_codec;
-	if (iceberg_format_version == 1) {
-		ret.sequence_number = 0;
-	} else if (iceberg_format_version == 2) {
-		ret.sequence_number = IcebergUtils::TryGetNumFromObject(snapshot, "sequence-number");
+	if (snapshot) {
+ 		auto snapshot_tag = yyjson_get_type(snapshot);
+		if (snapshot_tag != YYJSON_TYPE_OBJ) {
+			throw IOException("Invalid snapshot field found parsing iceberg metadata.json");
+		}
+		ret.metadata_compression_codec = options.metadata_compression_codec;
+		if (iceberg_format_version == 1) {
+			ret.sequence_number = 0;
+		} else if (iceberg_format_version == 2) {
+			ret.sequence_number = IcebergUtils::TryGetNumFromObject(snapshot, "sequence-number");
+		}
+		ret.snapshot_id = IcebergUtils::TryGetNumFromObject(snapshot, "snapshot-id");
+		ret.timestamp_ms = Timestamp::FromEpochMs(IcebergUtils::TryGetNumFromObject(snapshot, "timestamp-ms"));
+		ret.manifest_list = IcebergUtils::TryGetStrFromObject(snapshot, "manifest-list");
+	} else {
+		ret.snapshot_id = DConstants::INVALID_INDEX;
 	}
 
-	ret.snapshot_id = IcebergUtils::TryGetNumFromObject(snapshot, "snapshot-id");
-	ret.timestamp_ms = Timestamp::FromEpochMs(IcebergUtils::TryGetNumFromObject(snapshot, "timestamp-ms"));
-	ret.manifest_list = IcebergUtils::TryGetStrFromObject(snapshot, "manifest-list");
 	ret.iceberg_format_version = iceberg_format_version;
 	ret.schema_id = schema_id;
 	if (!options.skip_schema_inference) {

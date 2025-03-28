@@ -191,10 +191,18 @@ void IcebergMultiFileList::InitializeFiles() {
 		throw InvalidInputException("Reading from Iceberg version %d is not supported yet", snapshot.iceberg_format_version);
 	}
 
+	if (snapshot.snapshot_id == DConstants::INVALID_INDEX) {
+		// we are in an empty table
+		current_data_manifest = data_manifests.begin();
+		current_delete_manifest = delete_manifests.begin();
+		return;
+	}
+
 	// Read the manifest list, we need all the manifests to determine if we've seen all deletes
 	auto manifest_list_full_path = options.allow_moved_paths
 	                                   ? IcebergUtils::GetFullPath(iceberg_path, snapshot.manifest_list, fs)
 	                                   : snapshot.manifest_list;
+
 	auto scan = make_uniq<AvroScan>("IcebergManifestList", context, manifest_list_full_path);
 	manifest_reader->Initialize(std::move(scan));
 
