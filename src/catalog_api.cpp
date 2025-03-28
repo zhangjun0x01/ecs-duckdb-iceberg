@@ -126,7 +126,7 @@ static void ParseConfigOptions(yyjson_val *config, case_insensitive_map_t<Value>
 	endpoint_it->second = endpoint;
 }
 
-IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, IRCCredentials credentials) {
+IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table) {
 	IRCAPITableCredentials result;
 	string api_result = GetTableMetadataCached(context, catalog, schema, table, catalog.secret_name);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));

@@ -50,7 +50,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	auto &secret_manager = SecretManager::Get(context);
 	
 	// Get Credentials from IRC API
-	auto table_credentials = IRCAPI::GetTableCredentials(context, ic_catalog, table_data->schema_name, table_data->name, ic_catalog.credentials);
+	auto table_credentials = IRCAPI::GetTableCredentials(context, ic_catalog, table_data->schema_name, table_data->name);
 	CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
 	// First check if table credentials are set (possible the IC catalog does not return credentials)
 	for (auto &info : table_credentials.storage_credentials) {
