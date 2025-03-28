@@ -13,7 +13,6 @@
 #include "duckdb/planner/logical_operator.hpp"
 #include "duckdb/planner/operator/logical_get.hpp"
 
-
 namespace duckdb {
 
 ICTableEntry::ICTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, CreateTableInfo &info)
@@ -38,7 +37,8 @@ void ICTableEntry::BindUpdateConstraints(Binder &binder, LogicalGet &, LogicalPr
 TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) {
 	auto &db = DatabaseInstance::GetDatabase(context);
 	auto &iceberg_scan_function_set = ExtensionUtil::GetTableFunction(db, "iceberg_scan");
-	auto iceberg_scan_function = iceberg_scan_function_set.functions.GetFunctionByArguments(context, {LogicalType::VARCHAR});
+	auto iceberg_scan_function =
+	    iceberg_scan_function_set.functions.GetFunctionByArguments(context, {LogicalType::VARCHAR});
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
 
 	D_ASSERT(table_data);
@@ -49,9 +49,10 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	}
 
 	auto &secret_manager = SecretManager::Get(context);
-	
+
 	// Get Credentials from IRC API
-	auto table_credentials = IRCAPI::GetTableCredentials(context, ic_catalog, table_data->schema_name, table_data->name, ic_catalog.credentials);
+	auto table_credentials = IRCAPI::GetTableCredentials(context, ic_catalog, table_data->schema_name, table_data->name,
+	                                                     ic_catalog.credentials);
 	CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
 	// First check if table credentials are set (possible the IC catalog does not return credentials)
 	if (!table_credentials.key_id.empty()) {
@@ -61,10 +62,10 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 		info.provider = "config";
 		info.storage_type = "memory";
 		info.options = {
-			{"key_id", table_credentials.key_id},
-			{"secret", table_credentials.secret},
-			{"session_token", table_credentials.session_token},
-			{"region", table_credentials.region},
+		    {"key_id", table_credentials.key_id},
+		    {"secret", table_credentials.secret},
+		    {"session_token", table_credentials.session_token},
+		    {"region", table_credentials.region},
 		};
 
 		if (StringUtil::StartsWith(ic_catalog.host, "glue")) {
@@ -77,7 +78,8 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 
 		std::string lc_storage_location;
 		lc_storage_location.resize(table_data->storage_location.size());
-		std::transform(table_data->storage_location.begin(), table_data->storage_location.end(), lc_storage_location.begin(), ::tolower);
+		std::transform(table_data->storage_location.begin(), table_data->storage_location.end(),
+		               lc_storage_location.begin(), ::tolower);
 		size_t metadata_pos = lc_storage_location.find("metadata");
 		if (metadata_pos != std::string::npos) {
 			info.scope = {lc_storage_location.substr(0, metadata_pos)};
@@ -99,17 +101,18 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 		D_ASSERT(substrings.size() == 6);
 		auto region = substrings[3];
 		auto endpoint = "s3." + region + ".amazonaws.com";
-		info.options = {
-			{"key_id", kv_secret.TryGetValue("key_id").ToString()},
-			{"secret", kv_secret.TryGetValue("secret").ToString()},
-			{"session_token", kv_secret.TryGetValue("session_token").IsNull() ? "" :  kv_secret.TryGetValue("session_token").ToString()},
-			{"region", region},
-			{"endpoint", endpoint}
-		};
+		info.options = {{"key_id", kv_secret.TryGetValue("key_id").ToString()},
+		                {"secret", kv_secret.TryGetValue("secret").ToString()},
+		                {"session_token", kv_secret.TryGetValue("session_token").IsNull()
+		                                      ? ""
+		                                      : kv_secret.TryGetValue("session_token").ToString()},
+		                {"region", region},
+		                {"endpoint", endpoint}};
 
 		std::string lc_storage_location;
 		lc_storage_location.resize(table_data->storage_location.size());
-		std::transform(table_data->storage_location.begin(), table_data->storage_location.end(), lc_storage_location.begin(), ::tolower);
+		std::transform(table_data->storage_location.begin(), table_data->storage_location.end(),
+		               lc_storage_location.begin(), ::tolower);
 		size_t metadata_pos = lc_storage_location.find("metadata");
 		if (metadata_pos != std::string::npos) {
 			info.scope = {lc_storage_location.substr(0, metadata_pos)};
@@ -127,8 +130,8 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	// Set the S3 path as input to table function
 	vector<Value> inputs = {table_data->storage_location};
 
-	TableFunctionBindInput bind_input(inputs, param_map, return_types, names, nullptr, nullptr,
-									  iceberg_scan_function, empty_ref);
+	TableFunctionBindInput bind_input(inputs, param_map, return_types, names, nullptr, nullptr, iceberg_scan_function,
+	                                  empty_ref);
 
 	auto result = iceberg_scan_function.bind(context, bind_input, return_types, names);
 	bind_data = std::move(result);

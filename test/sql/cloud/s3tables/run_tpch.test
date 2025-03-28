@@ -1,6 +1,7 @@
 # name: test/sql/cloud/s3tables/run_tpch.test
 # description: test integration with iceberg catalog read
-# group: [iceberg]
+# group: [s3tables]
+
 # setup creds
 
 require-env ICEBERG_AWS_REMOTE_AVAILABLE

@@ -20,9 +20,8 @@
 using namespace duckdb_yyjson;
 namespace duckdb {
 
-
-
-static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, const string &secret_name) {
+static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table,
+                               const string &secret_name) {
 	struct curl_slist *extra_headers = NULL;
 	auto url = catalog.GetBaseUrl();
 	url.AddPathComponent(catalog.prefix);
@@ -31,19 +30,15 @@ static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const
 	url.AddPathComponent("tables");
 	url.AddPathComponent(table);
 	extra_headers = curl_slist_append(extra_headers, "X-Iceberg-Access-Delegation: vended-credentials");
-	string api_result = APIUtils::GetRequest(
-		context,
-		url,
-		secret_name,
-		catalog.credentials.token,
-		extra_headers);
+	string api_result = APIUtils::GetRequest(context, url, secret_name, catalog.credentials.token, extra_headers);
 
 	catalog.SetCachedValue(url.GetURL(), api_result);
 	curl_slist_free_all(extra_headers);
 	return api_result;
 }
 
-static string GetTableMetadataCached(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, const string &secret_name) {
+static string GetTableMetadataCached(ClientContext &context, IRCatalog &catalog, const string &schema,
+                                     const string &table, const string &secret_name) {
 	struct curl_slist *extra_headers = NULL;
 	auto url = catalog.GetBaseUrl();
 	url.AddPathComponent(catalog.prefix);
@@ -69,13 +64,15 @@ static IRCAPIColumnDefinition ParseColumnDefinition(yyjson_val *column_def) {
 	IRCAPIColumnDefinition result;
 	result.name = IcebergUtils::TryGetStrFromObject(column_def, "name");
 	result.type_text = IcebergUtils::TryGetStrFromObject(column_def, "type");
-	result.precision = (result.type_text == "decimal") ? IcebergUtils::TryGetNumFromObject(column_def, "type_precision") : -1;
+	result.precision =
+	    (result.type_text == "decimal") ? IcebergUtils::TryGetNumFromObject(column_def, "type_precision") : -1;
 	result.scale = (result.type_text == "decimal") ? IcebergUtils::TryGetNumFromObject(column_def, "type_scale") : -1;
 	result.position = IcebergUtils::TryGetNumFromObject(column_def, "id") - 1;
 	return result;
 }
 
-IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, IRCCredentials credentials) {
+IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema,
+                                                   const string &table, IRCCredentials credentials) {
 	IRCAPITableCredentials result;
 	string api_result = GetTableMetadataCached(context, catalog, schema, table, catalog.secret_name);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
@@ -85,10 +82,10 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	auto catalog_credentials = IRCatalog::GetSecret(context, catalog.secret_name);
 	if (warehouse_credentials && credential_size > 0) {
 		result.key_id = IcebergUtils::TryGetStrFromObject(warehouse_credentials, "s3.access-key-id", false);
-		result.secret = IcebergUtils::TryGetStrFromObject(warehouse_credentials, "s3.secret-access-key",  false);
+		result.secret = IcebergUtils::TryGetStrFromObject(warehouse_credentials, "s3.secret-access-key", false);
 		result.session_token = IcebergUtils::TryGetStrFromObject(warehouse_credentials, "s3.session-token", false);
 		if (catalog_credentials) {
-       		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*catalog_credentials->secret);
+			auto kv_secret = dynamic_cast<const KeyValueSecret &>(*catalog_credentials->secret);
 			auto region = kv_secret.TryGetValue("region").ToString();
 			result.region = region;
 		}
@@ -97,7 +94,8 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 }
 
 string IRCAPI::GetToken(ClientContext &context, string id, string secret, string endpoint) {
-	string post_data = "grant_type=client_credentials&client_id=" + id + "&client_secret=" + secret + "&scope=PRINCIPAL_ROLE:ALL";
+	string post_data =
+	    "grant_type=client_credentials&client_id=" + id + "&client_secret=" + secret + "&scope=PRINCIPAL_ROLE:ALL";
 	string api_result = APIUtils::PostRequest(context, endpoint + "/v1/oauth/tokens", post_data);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
@@ -107,7 +105,7 @@ string IRCAPI::GetToken(ClientContext &context, string id, string secret, string
 static void populateTableMetadata(IRCAPITable &table, yyjson_val *metadata_root) {
 	table.storage_location = IcebergUtils::TryGetStrFromObject(metadata_root, "metadata-location");
 	auto *metadata = yyjson_obj_get(metadata_root, "metadata");
-	//table_result.table_id = IcebergUtils::TryGetStrFromObject(metadata, "table-uuid");
+	// table_result.table_id = IcebergUtils::TryGetStrFromObject(metadata, "table-uuid");
 
 	uint64_t current_schema_id = IcebergUtils::TryGetNumFromObject(metadata, "current-schema-id");
 	auto *schemas = yyjson_obj_get(metadata, "schemas");
@@ -144,8 +142,8 @@ static IRCAPITable createTable(IRCatalog &catalog, const string &schema, const s
 	return table_result;
 }
 
-IRCAPITable IRCAPI::GetTable(ClientContext &context,
-	IRCatalog &catalog, const string &schema, const string &table_name, optional_ptr<IRCCredentials> credentials) {
+IRCAPITable IRCAPI::GetTable(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table_name,
+                             optional_ptr<IRCCredentials> credentials) {
 	IRCAPITable table_result = createTable(catalog, schema, table_name);
 	if (credentials) {
 		string result = GetTableMetadata(context, catalog, schema, table_result.name, catalog.secret_name);
@@ -181,7 +179,8 @@ vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog
 	size_t idx, max;
 	yyjson_val *table;
 	yyjson_arr_foreach(tables, idx, max, table) {
-		auto table_result = GetTable(context, catalog, schema, IcebergUtils::TryGetStrFromObject(table, "name"), nullptr);
+		auto table_result =
+		    GetTable(context, catalog, schema, IcebergUtils::TryGetStrFromObject(table, "name"), nullptr);
 		result.push_back(table_result);
 	}
 
@@ -193,8 +192,7 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catal
 	auto endpoint_builder = catalog.GetBaseUrl();
 	endpoint_builder.AddPathComponent(catalog.prefix);
 	endpoint_builder.AddPathComponent("namespaces");
-	string api_result =
-	    APIUtils::GetRequest(context, endpoint_builder, catalog.secret_name, catalog.credentials.token);
+	string api_result = APIUtils::GetRequest(context, endpoint_builder, catalog.secret_name, catalog.credentials.token);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *schemas = yyjson_obj_get(root, "namespaces");
@@ -211,26 +209,30 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catal
 	return result;
 }
 
-IRCAPISchema IRCAPI::CreateSchema(ClientContext &context, IRCatalog &catalog, const string &internal, const string &schema, IRCCredentials credentials) {
+IRCAPISchema IRCAPI::CreateSchema(ClientContext &context, IRCatalog &catalog, const string &internal,
+                                  const string &schema, IRCCredentials credentials) {
 	throw NotImplementedException("IRCAPI::Create Schema not Implemented");
 }
 
-void IRCAPI::DropSchema(ClientContext &context, const string &internal, const string &schema, IRCCredentials credentials) {
+void IRCAPI::DropSchema(ClientContext &context, const string &internal, const string &schema,
+                        IRCCredentials credentials) {
 	throw NotImplementedException("IRCAPI Drop Schema not Implemented");
 }
 
-void IRCAPI::DropTable(ClientContext &context, IRCatalog &catalog, const string &internal, const string &schema, string &table_name, IRCCredentials credentials) {
+void IRCAPI::DropTable(ClientContext &context, IRCatalog &catalog, const string &internal, const string &schema,
+                       string &table_name, IRCCredentials credentials) {
 	throw NotImplementedException("IRCAPI Drop Table not Implemented");
 }
 
 static std::string json_to_string(yyjson_mut_doc *doc, yyjson_write_flag flags = YYJSON_WRITE_PRETTY) {
-    char *json_chars = yyjson_mut_write(doc, flags, NULL);
-    std::string json_str(json_chars);
-    free(json_chars);
-    return json_str;
+	char *json_chars = yyjson_mut_write(doc, flags, NULL);
+	std::string json_str(json_chars);
+	free(json_chars);
+	return json_str;
 }
 
-IRCAPITable IRCAPI::CreateTable(ClientContext &context, IRCatalog &catalog, const string &internal, const string &schema, IRCCredentials credentials, CreateTableInfo *table_info) {
+IRCAPITable IRCAPI::CreateTable(ClientContext &context, IRCatalog &catalog, const string &internal,
+                                const string &schema, IRCCredentials credentials, CreateTableInfo *table_info) {
 	throw NotImplementedException("IRCAPI Create Table not Implemented");
 }
 

@@ -1,6 +1,6 @@
-# name: test/sql/local/iceberg_scan_generated_data_0_01.test
+# name: test/sql/local/iceberg_scan_generated_data_0_01_remote.test_slow
 # description: test iceberg extension with the sf0.01 generated test set
-# group: [iceberg]
+# group: [local]
 
 require-env S3_TEST_SERVER_AVAILABLE 1
 

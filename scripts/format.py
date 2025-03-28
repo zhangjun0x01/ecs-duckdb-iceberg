@@ -10,7 +10,32 @@ import subprocess
 import difflib
 import re
 import concurrent.futures
-from python_helpers import open_utf8
+
+
+def open_utf8(fpath, flags):
+    import sys
+
+    if sys.version_info[0] < 3:
+        return open(fpath, flags)
+    else:
+        return open(fpath, flags, encoding="utf8")
+
+
+def normalize_path(path):
+    import os
+
+    def normalize(p):
+        return os.path.sep.join(p.split('/'))
+
+    if isinstance(path, list):
+        normed = map(lambda p: normalize(p), path)
+        return list(normed)
+
+    if isinstance(path, str):
+        return normalize(path)
+
+    raise Exception("Can only be called with a str or list argument")
+
 
 try:
     ver = subprocess.check_output(('black', '--version'), text=True)
@@ -55,62 +80,9 @@ extensions = [
     '.py',
     '.java',
 ]
-formatted_directories = ['src', 'benchmark', 'test', 'tools', 'examples', 'extension', 'scripts']
-ignored_files = [
-    'tpch_constants.hpp',
-    'tpcds_constants.hpp',
-    '_generated',
-    'tpce_flat_input.hpp',
-    'test_csv_header.hpp',
-    'duckdb.cpp',
-    'duckdb.hpp',
-    'json.hpp',
-    'sqlite3.h',
-    'shell.c',
-    'termcolor.hpp',
-    'test_insert_invalid.test',
-    'httplib.hpp',
-    'os_win.c',
-    'glob.c',
-    'printf.c',
-    'helper.hpp',
-    'single_thread_ptr.hpp',
-    'types.hpp',
-    'default_views.cpp',
-    'default_functions.cpp',
-    'release.h',
-    'genrand.cpp',
-    'address.cpp',
-    'visualizer_constants.hpp',
-    'icu-collate.cpp',
-    'icu-collate.hpp',
-    'yyjson.cpp',
-    'yyjson.hpp',
-    'duckdb_pdqsort.hpp',
-    'stubdata.cpp',
-    'nf_calendar.cpp',
-    'nf_calendar.h',
-    'nf_localedata.cpp',
-    'nf_localedata.h',
-    'nf_zformat.cpp',
-    'nf_zformat.h',
-    'expr.cc',
-    'function_list.cpp',
-    'inlined_grammar.hpp',
-]
-ignored_directories = [
-    '.eggs',
-    '__pycache__',
-    'dbgen',
-    os.path.join('tools', 'pythonpkg', 'duckdb'),
-    os.path.join('tools', 'pythonpkg', 'build'),
-    os.path.join('tools', 'rpkg', 'src', 'duckdb'),
-    os.path.join('tools', 'rpkg', 'inst', 'include', 'cpp11'),
-    os.path.join('extension', 'tpcds', 'dsdgen'),
-    os.path.join('extension', 'jemalloc', 'jemalloc'),
-    os.path.join('extension', 'icu', 'third_party'),
-    os.path.join('tools', 'nodejs', 'src', 'duckdb'),
-]
+formatted_directories = ['src', 'test', 'scripts']
+ignored_files = []
+ignored_directories = ['.eggs', '__pycache__']
 format_all = False
 check_only = True
 confirm = True

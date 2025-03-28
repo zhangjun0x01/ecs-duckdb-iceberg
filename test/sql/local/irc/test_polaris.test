@@ -1,6 +1,6 @@
 # name: test/sql/local/irc/test_polaris.test
 # description: test integration with iceberg catalog read
-# group: [iceberg]
+# group: [irc]
 
 require avro
 

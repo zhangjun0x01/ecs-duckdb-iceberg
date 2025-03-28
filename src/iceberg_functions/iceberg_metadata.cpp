@@ -55,7 +55,7 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 	auto iceberg_path = input.inputs[0].ToString();
 
 	IcebergOptions options;
-	
+
 	for (auto &kv : input.named_parameters) {
 		auto loption = StringUtil::Lower(kv.first);
 		if (loption == "allow_moved_paths") {
@@ -75,10 +75,11 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 	IcebergSnapshot snapshot_to_scan;
 	if (input.inputs.size() > 1) {
 		if (input.inputs[1].type() == LogicalType::UBIGINT) {
-			snapshot_to_scan = IcebergSnapshot::GetSnapshotById(iceberg_meta_path, fs, input.inputs[1].GetValue<uint64_t>(), options);
-		} else if (input.inputs[1].type() == LogicalType::TIMESTAMP) {
 			snapshot_to_scan =
-			    IcebergSnapshot::GetSnapshotByTimestamp(iceberg_meta_path, fs, input.inputs[1].GetValue<timestamp_t>(), options);
+			    IcebergSnapshot::GetSnapshotById(iceberg_meta_path, fs, input.inputs[1].GetValue<uint64_t>(), options);
+		} else if (input.inputs[1].type() == LogicalType::TIMESTAMP) {
+			snapshot_to_scan = IcebergSnapshot::GetSnapshotByTimestamp(
+			    iceberg_meta_path, fs, input.inputs[1].GetValue<timestamp_t>(), options);
 		} else {
 			throw InvalidInputException("Unknown argument type in IcebergScanBindReplace.");
 		}
@@ -86,8 +87,7 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 		snapshot_to_scan = IcebergSnapshot::GetLatestSnapshot(iceberg_meta_path, fs, options);
 	}
 
-	ret->iceberg_table =
-	    make_uniq<IcebergTable>(IcebergTable::Load(iceberg_path, snapshot_to_scan, context, options));
+	ret->iceberg_table = make_uniq<IcebergTable>(IcebergTable::Load(iceberg_path, snapshot_to_scan, context, options));
 
 	auto manifest_types = IcebergManifest::Types();
 	return_types.insert(return_types.end(), manifest_types.begin(), manifest_types.end());

@@ -70,6 +70,7 @@ public:
 	int64_t sequence_number;
 	//! either data or deletes
 	IcebergManifestContentType content;
+
 public:
 	void Print() {
 		Printer::Print("  - Manifest = { content: " + IcebergManifestContentTypeToString(content) +
@@ -98,6 +99,7 @@ public:
 	string file_path;
 	string file_format;
 	int64_t record_count;
+
 public:
 	void Print() {
 		Printer::Print("    -> ManifestEntry = { type: " + IcebergManifestEntryStatusTypeToString(status) +
