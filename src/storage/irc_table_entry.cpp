@@ -56,11 +56,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	for (auto &info : table_credentials.storage_credentials) {
 		if (info.name == "PLACEHOLDER") {
 			//! Set a name for the initial secret created from the LoadTableResult's 'config' object
-			if (StringUtil::StartsWith(ic_catalog.host, "s3tables")) {
-				info.name = "__internal_ic_" + table_data->table_id + "__" + table_data->schema_name + "__" + table_data->name;
-			} else {
-				info.name = "__internal_ic_" + table_data->table_id;
-			}
+			info.name = "__internal_ic_" + table_data->table_id + "__" + table_data->schema_name + "__" + table_data->name;
 		}
 
 		//! Limit the scope to the metadata location if no explicit scope was set

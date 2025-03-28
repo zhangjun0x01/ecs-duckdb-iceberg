@@ -136,13 +136,12 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	// Mapping from config key to a duckdb secret option
 
 	case_insensitive_map_t<Value> config_options;
-	if (catalog_credentials) {
+	auto *warehouse_credentials = yyjson_obj_get(root, "config");
+	if (warehouse_credentials && catalog_credentials) {
 		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*catalog_credentials->secret);
 		auto region = kv_secret.TryGetValue("region").ToString();
 		config_options["region"] = region;
 	}
-
-	auto *warehouse_credentials = yyjson_obj_get(root, "config");
 	ParseConfigOptions(warehouse_credentials, config_options);
 
 	if (!config_options.empty()) {
