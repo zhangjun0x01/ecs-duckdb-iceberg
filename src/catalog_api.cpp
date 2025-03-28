@@ -144,16 +144,6 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	}
 	ParseConfigOptions(config_val, config_options);
 
-	if (!config_options.empty()) {
-		result.config = make_uniq<CreateSecretInfo>(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
-		auto &config = *result.config;
-		config.options = config_options;
-		config.name = secret_base_name;
-		config.type = "s3";
-		config.provider = "config";
-		config.storage_type = "memory";
-	}
-
 	auto *storage_credentials = yyjson_obj_get(root, "storage-credentials");
 	auto storage_credentials_size = yyjson_arr_size(storage_credentials);
 	if (storage_credentials && storage_credentials_size > 0) {
@@ -182,6 +172,18 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 			result.storage_credentials.push_back(create_secret_info);
 		}
 	}
+
+	if (result.storage_credentials.empty() && !config_options.empty()) {
+		//! Only create a secret out of the 'config' if there are no 'storage-credentials'
+		result.config = make_uniq<CreateSecretInfo>(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
+		auto &config = *result.config;
+		config.options = config_options;
+		config.name = secret_base_name;
+		config.type = "s3";
+		config.provider = "config";
+		config.storage_type = "memory";
+	}
+
 	return result;
 }
 
