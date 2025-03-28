@@ -220,16 +220,7 @@ class Schema:
 
     def _get_parse_statement(self, var_name: str, prop: Property) -> str:
         """Get the parsing statement for a property."""
-        if prop.type == 'array':
-            if prop.items_type in {'string', 'integer', 'boolean'}:
-                parse_func = {
-                    'string': 'yyjson_get_str',
-                    'integer': 'yyjson_get_sint',
-                    'boolean': 'yyjson_get_bool'
-                }[prop.items_type]
-                return None  # Signal that we need special handling for arrays
-            else:
-                return None  # Signal that we need special handling for arrays
+        assert prop.type != 'array'
 
         type_mapping = {
             'string': f'yyjson_get_str({var_name}_val)',
@@ -237,11 +228,11 @@ class Schema:
             'boolean': f'yyjson_get_bool({var_name}_val)',
             'object': f'{var_name}_val'  # Default for objects is raw pointer
         }
-        
+
         # Special case for objects with string additionalProperties
         if prop.type == 'object' and getattr(prop, 'additional_properties_type', None) == 'string':
             return f'parse_object_of_strings({var_name}_val)'
-            
+
         if prop.type in type_mapping:
             return type_mapping[prop.type]
         # For custom types (refs)
@@ -379,7 +370,6 @@ class Schema:
                 ])
 
                 if prop.type == 'array':
-
                     lines.extend(
                         generate_array_loop(3, f'{safe_cpp_name(prop_name)}_val', safe_cpp_name(prop_name), prop.items_type)
                     )
