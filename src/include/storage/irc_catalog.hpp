@@ -20,7 +20,7 @@ struct IRCCredentials {
 	//! Catalog generates the token using client id & secret
 	string token;
 	//! The scope of the OAuth token to request through the client_credentials flow
-	string scope;
+	string oauth2_scope;
 	//! OAuth endpoint
 	string oauth2_endpoint;
 	//! The warehouse where the catalog lives

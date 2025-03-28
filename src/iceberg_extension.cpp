@@ -34,7 +34,7 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 		    lower_name == "secret" ||
 		    lower_name == "endpoint" ||
 		    lower_name == "aws_region" ||
-		    lower_name == "scope" ||
+		    lower_name == "oauth2_scope" ||
 		    lower_name == "oauth2_server_uri") {
 			result->secret_map[lower_name] = named_param.second.ToString();
 		} else {
@@ -49,7 +49,7 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 	    result->secret_map["key_id"].ToString(),
 	    result->secret_map["secret"].ToString(),
 	    result->secret_map["endpoint"].ToString(),
-	    result->secret_map["scope"].ToString()
+	    result->secret_map["oauth2_scope"].ToString()
 	);
 
 	//! Set redact keys
@@ -93,7 +93,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	string endpoint;
 	string oauth2_server_uri;
 
-	auto &scope = credentials.scope;
+	auto &oauth2_scope = credentials.oauth2_scope;
 
 	// check if we have a secret provided
 	string secret_name;
@@ -108,8 +108,8 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		} else if (lower_name == "endpoint") {
 			endpoint = StringUtil::Lower(entry.second.ToString());
 			StringUtil::RTrim(endpoint, "/");
-		} else if (lower_name == "scope") {
-			scope = StringUtil::Lower(entry.second.ToString());
+		} else if (lower_name == "oauth2_scope") {
+			oauth2_scope = StringUtil::Lower(entry.second.ToString());
 		} else if (lower_name == "oauth2_server_uri") {
 			oauth2_server_uri = StringUtil::Lower(entry.second.ToString());
 		} else {
@@ -118,9 +118,9 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	}
 	auto warehouse = info.path;
 
-	if (scope.empty()) {
+	if (oauth2_scope.empty()) {
 		//! Default to the Polaris scope: 'PRINCIPAL_ROLE:ALL'
-		scope = "PRINCIPAL_ROLE:ALL";
+		oauth2_scope = "PRINCIPAL_ROLE:ALL";
 	}
 
 	if (oauth2_server_uri.empty()) {
@@ -198,7 +198,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	create_secret_input.options["key_id"] = key_val;
 	create_secret_input.options["secret"] = secret_val;
 	create_secret_input.options["endpoint"] = endpoint;
-	create_secret_input.options["scope"] = scope;
+	create_secret_input.options["oauth2_scope"] = oauth2_scope;
 	auto new_secret = CreateCatalogSecretFunction(context, create_secret_input);
 	auto &kv_secret_new = dynamic_cast<KeyValueSecret &>(*new_secret);
 	Value token = kv_secret_new.TryGetValue("token");
