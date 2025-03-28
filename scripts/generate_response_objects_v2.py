@@ -157,6 +157,7 @@ class Schema:
         self.properties: Dict[str, Property] = {}
         self.all_of_refs: Set[str] = set()
         self.one_of_schemas: List[Dict] = []  # Replace one_of_types with one_of_schemas
+        self.item_type: Optional[str] = None
         
         # Handle oneOf
         if 'oneOf' in schema:
@@ -182,7 +183,10 @@ class Schema:
                         self.properties[prop_name] = Property(prop_name, prop_schema)
                 if 'required' in sub_schema:
                     self.required.update(sub_schema['required'])
-        
+
+        if self.type == 'array':
+            self.item_type = schema.get('items').get('type')
+
         # Handle direct properties
         if 'properties' in schema:
             for prop_name, prop_schema in schema['properties'].items():
@@ -297,6 +301,26 @@ class Schema:
                 "",
                 "public:",
                 f"\t{type_mapping.cpp_type} value;",
+                "};"
+            ])
+        # Handle array types with primitive items
+        elif self.type == 'array' and self.item_type in TYPE_MAPPINGS:
+            type_mapping = get_type_mapping(self.item_type)
+            lines.extend([
+                f"class {self.name} {{",
+                "public:",
+                f"\tstatic {self.name} FromJSON(yyjson_val *obj) {{",
+                f"\t\t{self.name} result;",
+                "\t\tsize_t idx, max;",
+                "\t\tyyjson_val *val;",
+                "\t\tyyjson_arr_foreach(obj, idx, max, val) {",
+                f"\t\t\tresult.value.push_back({type_mapping.yyjson_get}(val));",
+                "\t\t}",
+                "\t\treturn result;",
+                "\t}",
+                "",
+                "public:",
+                f"\tvector<{type_mapping.cpp_type}> value;",
                 "};"
             ])
         elif self.one_of_schemas:

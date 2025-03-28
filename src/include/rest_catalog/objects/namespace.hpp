@@ -15,11 +15,16 @@ class Namespace {
 public:
 	static Namespace FromJSON(yyjson_val *obj) {
 		Namespace result;
-
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(obj, idx, max, val) {
+			result.value.push_back(yyjson_get_str(val));
+		}
 		return result;
 	}
 
 public:
+	vector<string> value;
 };
 } // namespace rest_api_objects
 } // namespace duckdb
