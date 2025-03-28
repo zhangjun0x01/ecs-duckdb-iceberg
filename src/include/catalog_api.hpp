@@ -38,10 +38,7 @@ struct IRCAPISchema {
 };
 
 struct IRCAPITableCredentials {
-	string key_id;
-	string secret;
-	string session_token;
-	string region;
+	unique_ptr<CreateSecretInfo> config;
 	vector<CreateSecretInfo> storage_credentials;
 };
 
@@ -52,7 +49,7 @@ public:
   	//! WARNING: not thread-safe. To be called once on extension initialization
   	static void InitializeCurl();
 
-	static IRCAPITableCredentials GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table);
+	static IRCAPITableCredentials GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, const string &secret_base_name);
 	static vector<string> GetCatalogs(ClientContext &context, IRCatalog &catalog, IRCCredentials credentials);
 	static vector<IRCAPITable> GetTables(ClientContext &context, IRCatalog &catalog, const string &schema);
 	static IRCAPITable GetTable(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table_name, optional_ptr<IRCCredentials> credentials = nullptr);

@@ -50,26 +50,23 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	auto &secret_manager = SecretManager::Get(context);
 	
 	// Get Credentials from IRC API
-	auto table_credentials = IRCAPI::GetTableCredentials(context, ic_catalog, table_data->schema_name, table_data->name);
+	auto secret_base_name = StringUtil::Format("__internal_ic_%s__%s__%s", table_data->table_id, table_data->schema_name, table_data->name);
+	auto table_credentials = IRCAPI::GetTableCredentials(context, ic_catalog, table_data->schema_name, table_data->name, secret_base_name);
 	CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
 	// First check if table credentials are set (possible the IC catalog does not return credentials)
-	for (auto &info : table_credentials.storage_credentials) {
-		if (info.name == "PLACEHOLDER") {
-			//! Set a name for the initial secret created from the LoadTableResult's 'config' object
-			info.name = "__internal_ic_" + table_data->table_id + "__" + table_data->schema_name + "__" + table_data->name;
-		}
 
-		//! Limit the scope to the metadata location if no explicit scope was set
-		if (info.scope.empty()) {
-			std::string lc_storage_location;
-			lc_storage_location.resize(table_data->storage_location.size());
-			std::transform(table_data->storage_location.begin(), table_data->storage_location.end(), lc_storage_location.begin(), ::tolower);
-			size_t metadata_pos = lc_storage_location.find("metadata");
-			if (metadata_pos != std::string::npos) {
-				info.scope = {lc_storage_location.substr(0, metadata_pos)};
-			} else {
-				throw std::runtime_error("Substring not found");
-			}
+	if (table_credentials.config) {
+		auto &info = *table_credentials.config;
+		D_ASSERT(info.scope.empty());
+		//! Limit the scope to the metadata location
+		std::string lc_storage_location;
+		lc_storage_location.resize(table_data->storage_location.size());
+		std::transform(table_data->storage_location.begin(), table_data->storage_location.end(), lc_storage_location.begin(), ::tolower);
+		size_t metadata_pos = lc_storage_location.find("metadata");
+		if (metadata_pos != std::string::npos) {
+			info.scope = {lc_storage_location.substr(0, metadata_pos)};
+		} else {
+			throw std::runtime_error("Substring not found");
 		}
 
 		if (StringUtil::StartsWith(ic_catalog.host, "glue")) {
@@ -95,6 +92,10 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 				{"endpoint", endpoint}
 			};
 		}
+		auto my_secret = secret_manager.CreateSecret(context, info);
+	}
+
+	for (auto &info : table_credentials.storage_credentials) {
 		auto my_secret = secret_manager.CreateSecret(context, info);
 	}
 

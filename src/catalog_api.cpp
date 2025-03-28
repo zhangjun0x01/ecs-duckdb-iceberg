@@ -126,7 +126,7 @@ static void ParseConfigOptions(yyjson_val *config, case_insensitive_map_t<Value>
 	endpoint_it->second = endpoint;
 }
 
-IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table) {
+IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table, const string &secret_base_name) {
 	IRCAPITableCredentials result;
 	string api_result = GetTableMetadataCached(context, catalog, schema, table, catalog.secret_name);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
@@ -136,22 +136,22 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	// Mapping from config key to a duckdb secret option
 
 	case_insensitive_map_t<Value> config_options;
-	auto *warehouse_credentials = yyjson_obj_get(root, "config");
-	if (warehouse_credentials && catalog_credentials) {
+	auto *config_val = yyjson_obj_get(root, "config");
+	if (config_val && catalog_credentials) {
 		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*catalog_credentials->secret);
 		auto region = kv_secret.TryGetValue("region").ToString();
 		config_options["region"] = region;
 	}
-	ParseConfigOptions(warehouse_credentials, config_options);
+	ParseConfigOptions(config_val, config_options);
 
 	if (!config_options.empty()) {
-		CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
-		info.options = config_options;
-		info.name = "PLACEHOLDER";
-		info.type = "s3";
-		info.provider = "config";
-		info.storage_type = "memory";
-		result.storage_credentials.push_back(info);
+		result.config = make_uniq<CreateSecretInfo>(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
+		auto &config = *result.config;
+		config.options = config_options;
+		config.name = secret_base_name;
+		config.type = "s3";
+		config.provider = "config";
+		config.storage_type = "memory";
 	}
 
 	auto *storage_credentials = yyjson_obj_get(root, "storage-credentials");
@@ -171,6 +171,7 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 				throw InternalException("property 'prefix' of StorageCredential is NULL");
 			}
 			create_secret_info.scope.push_back(string(prefix_string));
+			create_secret_info.name = StringUtil::Format("%s_%d_%s", secret_base_name, index, prefix_string);
 			create_secret_info.type = "s3";
 			create_secret_info.provider = "config";
 			create_secret_info.storage_type = "memory";
