@@ -152,6 +152,29 @@ def get_type_mapping(schema_type: str, schema_format: str = None) -> SchemaType:
         return mapping['default']
     return mapping
 
+def generate_array_loop(indent: int, array_name, destination_name, item_type):
+    res = []
+    tab = '\t'
+    # First declare the variables
+    res.append(f'{tab * indent}size_t idx, max;')
+    res.append(f'{tab * indent}yyjson_val *val;')
+    # Then do the array iteration
+    res.append(f'{tab * indent}yyjson_arr_foreach({array_name}, idx, max, val) {{')
+
+    if item_type in {'string', 'integer', 'boolean'}:
+        parse_func = {
+            'string': 'yyjson_get_str',
+            'integer': 'yyjson_get_sint',
+            'boolean': 'yyjson_get_bool'
+        }[item_type]
+        res.append(f"{tab * (indent + 1)}result.{destination_name}.push_back({parse_func}(val));")
+    elif item_type == 'object':
+        res.append(f'{tab * (indent + 1)}result.{destination_name}.push_back(val);')
+    else:
+        res.append(f"{tab * (indent + 1)}result.{destination_name}.push_back({item_type}::FromJSON(val));")
+    res.append(f'{tab * indent}}}')
+    return res
+
 class Schema:
     def __init__(self, name: str, schema: Dict, all_schemas: Dict):
         self.name = name
@@ -372,25 +395,10 @@ class Schema:
                 ])
 
                 if prop.type == 'array':
-                    # First declare the variables
-                    lines.append('\t\t\tsize_t idx, max;')
-                    lines.append('\t\t\tyyjson_val *val;')
-                    # Then do the array iteration
-                    lines.append(f'\t\t\tyyjson_arr_foreach({safe_cpp_name(prop_name)}_val, idx, max, val) {{')
-                    
-                    if prop.items_type in {'string', 'integer', 'boolean'}:
-                        parse_func = {
-                            'string': 'yyjson_get_str',
-                            'integer': 'yyjson_get_sint',
-                            'boolean': 'yyjson_get_bool'
-                        }[prop.items_type]
-                        lines.append(f"\t\t\t\tresult.{safe_cpp_name(prop_name)}.push_back({parse_func}(val));")
-                    elif prop.items_type == 'object':
-                        lines.append(f'\t\t\t\tresult.{safe_cpp_name(prop_name)}.push_back(val);')
-                    else:
-                        lines.append(f"\t\t\t\tresult.{safe_cpp_name(prop_name)}.push_back({prop.items_type}::FromJSON(val));")
-                    
-                    lines.append("\t\t\t}")
+
+                    lines.extend(
+                        generate_array_loop(3, f'{safe_cpp_name(prop_name)}_val', safe_cpp_name(prop_name), prop.items_type)
+                    )
                 else:
                     parse_stmt = self._get_parse_statement(safe_cpp_name(prop_name), prop)
                     lines.append(f"\t\t\tresult.{safe_cpp_name(prop_name)} = {parse_stmt};")
