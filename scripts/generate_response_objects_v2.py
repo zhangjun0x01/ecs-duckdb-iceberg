@@ -23,6 +23,19 @@ CPP_KEYWORDS = {
     'override'
 }
 
+###
+### FIXME:
+### The following are not generated correctly:
+### - DeleteFile
+### - Expression
+### - FetchPlanningResult
+### - MetricResult (anyOf is not supported yet)
+### - Metrics
+### - OAuthTokenRequest
+### - PlanTableScanResult
+### - SnapshotReferences
+### - TableUpdate
+###
 
 def to_snake_case(name: str):
     res = ''
@@ -248,37 +261,6 @@ class Schema:
                 includes.add(prop.items_type)
         includes.update(ref for ref in self.all_of_refs)
         return [f'rest_catalog/objects/{to_snake_case(x)}.hpp' for x in includes]
-
-    def _get_underlying_type(self, schema: Dict) -> str:
-        """Extract the underlying primitive type from a schema."""
-        if 'type' in schema:
-            return schema['type']
-        
-        # Handle specific schema names that imply types
-        schema_type_mapping = {
-            'BooleanTypeValue': 'boolean',
-            'IntegerTypeValue': 'integer',
-            'LongTypeValue': 'integer',
-            'FloatTypeValue': 'float',
-            'DoubleTypeValue': 'double',
-            'DecimalTypeValue': 'decimal',
-            'StringTypeValue': 'string',
-            'UUIDTypeValue': 'uuid',
-            'DateTypeValue': 'date',
-            'TimeTypeValue': 'time',
-            'TimestampTypeValue': 'timestamp',
-            'TimestampTzTypeValue': 'timestamp_tz',
-            'TimestampNanoTypeValue': 'timestamp',
-            'TimestampTzNanoTypeValue': 'timestamp_tz',
-            'FixedTypeValue': 'binary',
-            'BinaryTypeValue': 'binary',
-        }
-        
-        for name, type_name in schema_type_mapping.items():
-            if name in str(schema):
-                return type_name
-        
-        return 'unknown'
 
     def generate_header_file(self) -> str:
         lines = [
