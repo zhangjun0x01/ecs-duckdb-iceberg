@@ -82,4 +82,4 @@ std::string IRCEndpointBuilder::GetURL() const {
 	return ret;
 }
 
-}
+} // namespace duckdb

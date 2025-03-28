@@ -30,9 +30,7 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 	for (const auto &named_param : input.options) {
 		auto lower_name = StringUtil::Lower(named_param.first);
 
-		if (lower_name == "key_id" ||
-		    lower_name == "secret" ||
-		    lower_name == "endpoint" ||
+		if (lower_name == "key_id" || lower_name == "secret" || lower_name == "endpoint" ||
 		    lower_name == "aws_region") {
 			result->secret_map[lower_name] = named_param.second.ToString();
 		} else {
@@ -41,12 +39,10 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 	}
 
 	// Get token from catalog
-	result->secret_map["token"] = IRCAPI::GetToken(
-		context,
-	    result->secret_map["key_id"].ToString(),
-	    result->secret_map["secret"].ToString(),
-	    result->secret_map["endpoint"].ToString());
-	
+	result->secret_map["token"] =
+	    IRCAPI::GetToken(context, result->secret_map["key_id"].ToString(), result->secret_map["secret"].ToString(),
+	                     result->secret_map["endpoint"].ToString());
+
 	//! Set redact keys
 	result->redact_keys = {"token", "client_id", "client_secret"};
 
@@ -73,12 +69,13 @@ static bool SanityCheckGlueWarehouse(string warehouse) {
 	if (bucket_sep_correct) {
 		return true;
 	}
-	throw IOException("Invalid Glue Catalog Format: '" + warehouse + "'. Expected '<account_id>:s3tablescatalog/<bucket>");
+	throw IOException("Invalid Glue Catalog Format: '" + warehouse +
+	                  "'. Expected '<account_id>:s3tablescatalog/<bucket>");
 }
 
 static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_info, ClientContext &context,
-                                           AttachedDatabase &db, const string &name, AttachInfo &info,
-                                           AccessMode access_mode) {
+                                                AttachedDatabase &db, const string &name, AttachInfo &info,
+                                                AccessMode access_mode) {
 	IRCCredentials credentials;
 	IRCEndpointBuilder endpoint_builder;
 
@@ -119,11 +116,12 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 
 		// if there is no secret, an error will be thrown
 		auto secret_entry = IRCatalog::GetSecret(context, secret_name);
-        auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 		auto region = kv_secret.TryGetValue("region");
 
 		if (region.IsNull()) {
-			throw IOException("Assumed catalog secret " + secret_entry->secret->GetName() + " for catalog " + name + " does not have a region");
+			throw IOException("Assumed catalog secret " + secret_entry->secret->GetName() + " for catalog " + name +
+			                  " does not have a region");
 		}
 		switch (catalog_type) {
 		case ICEBERG_CATALOG_TYPE::AWS_S3TABLES: {
@@ -135,8 +133,8 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 			region = Value::CreateValue<string>(substrings[3]);
 			break;
 		}
-	    case ICEBERG_CATALOG_TYPE::AWS_GLUE:
-	    	SanityCheckGlueWarehouse(warehouse);
+		case ICEBERG_CATALOG_TYPE::AWS_GLUE:
+			SanityCheckGlueWarehouse(warehouse);
 			break;
 		default:
 			throw IOException("Unsupported AWS catalog type");
@@ -166,8 +164,8 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	if (!secret_entry) {
 		throw IOException("No secret found to use with catalog " + name);
 	}
- 	// secret found - read data
- 	const auto &kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+	// secret found - read data
+	const auto &kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 	Value key_val = kv_secret.TryGetValue("key_id");
 	Value secret_val = kv_secret.TryGetValue("secret");
 	CreateSecretInput create_secret_input;
@@ -216,12 +214,10 @@ static void LoadInternal(DatabaseInstance &instance) {
 
 	auto &config = DBConfig::GetConfig(instance);
 
-	config.AddExtensionOption(
-		"unsafe_enable_version_guessing",
-		"Enable globbing the filesystem (if possible) to find the latest version metadata. This could result in reading an uncommitted version.",
-		LogicalType::BOOLEAN,
-		Value::BOOLEAN(false)
-	);
+	config.AddExtensionOption("unsafe_enable_version_guessing",
+	                          "Enable globbing the filesystem (if possible) to find the latest version metadata. This "
+	                          "could result in reading an uncommitted version.",
+	                          LogicalType::BOOLEAN, Value::BOOLEAN(false));
 
 	// Iceberg Table Functions
 	for (auto &fun : IcebergFunctions::GetTableFunctions(instance)) {

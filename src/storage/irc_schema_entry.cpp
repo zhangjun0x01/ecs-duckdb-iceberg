@@ -50,7 +50,7 @@ void ICUnqualifyColumnRef(ParsedExpression &expr) {
 }
 
 optional_ptr<CatalogEntry> IRCSchemaEntry::CreateIndex(CatalogTransaction transaction, CreateIndexInfo &info,
-                                                      TableCatalogEntry &table) {
+                                                       TableCatalogEntry &table) {
 	throw NotImplementedException("Create Index");
 }
 
@@ -71,17 +71,17 @@ optional_ptr<CatalogEntry> IRCSchemaEntry::CreateSequence(CatalogTransaction tra
 }
 
 optional_ptr<CatalogEntry> IRCSchemaEntry::CreateTableFunction(CatalogTransaction transaction,
-                                                              CreateTableFunctionInfo &info) {
+                                                               CreateTableFunctionInfo &info) {
 	throw BinderException("PC databases do not support creating table functions");
 }
 
 optional_ptr<CatalogEntry> IRCSchemaEntry::CreateCopyFunction(CatalogTransaction transaction,
-                                                             CreateCopyFunctionInfo &info) {
+                                                              CreateCopyFunctionInfo &info) {
 	throw BinderException("PC databases do not support creating copy functions");
 }
 
 optional_ptr<CatalogEntry> IRCSchemaEntry::CreatePragmaFunction(CatalogTransaction transaction,
-                                                               CreatePragmaFunctionInfo &info) {
+                                                                CreatePragmaFunctionInfo &info) {
 	throw BinderException("PC databases do not support creating pragma functions");
 }
 
@@ -105,7 +105,7 @@ static bool CatalogTypeIsSupported(CatalogType type) {
 }
 
 void IRCSchemaEntry::Scan(ClientContext &context, CatalogType type,
-                         const std::function<void(CatalogEntry &)> &callback) {
+                          const std::function<void(CatalogEntry &)> &callback) {
 	if (!CatalogTypeIsSupported(type)) {
 		return;
 	}
@@ -116,7 +116,7 @@ void IRCSchemaEntry::Scan(CatalogType type, const std::function<void(CatalogEntr
 }
 
 optional_ptr<CatalogEntry> IRCSchemaEntry::GetEntry(CatalogTransaction transaction, CatalogType type,
-                                                   const string &name) {
+                                                    const string &name) {
 	if (!CatalogTypeIsSupported(type)) {
 		return nullptr;
 	}

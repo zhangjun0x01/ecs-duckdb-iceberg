@@ -1,6 +1,6 @@
 # name: test/sql/local/irc/test_use.test
 # description: test integration with iceberg catalog read
-# group: [iceberg]
+# group: [irc]
 
 require-env ICEBERG_SERVER_AVAILABLE
 

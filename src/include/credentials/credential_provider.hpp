@@ -7,10 +7,9 @@
 
 namespace duckdb {
 
-class DuckDBSecretCredentialProvider : public Aws::Auth::AWSCredentialsProviderChain
-{
+class DuckDBSecretCredentialProvider : public Aws::Auth::AWSCredentialsProviderChain {
 public:
-	DuckDBSecretCredentialProvider(const string& key_id, const string &secret, const string &sesh_token) {
+	DuckDBSecretCredentialProvider(const string &key_id, const string &secret, const string &sesh_token) {
 		credentials.SetAWSAccessKeyId(key_id);
 		credentials.SetAWSSecretKey(secret);
 		credentials.SetSessionToken(sesh_token);
@@ -26,4 +25,4 @@ protected:
 	Aws::Auth::AWSCredentials credentials;
 };
 
-}
+} // namespace duckdb

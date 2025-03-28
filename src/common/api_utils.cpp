@@ -15,8 +15,10 @@ string APIUtils::GetAwsService(const string host) {
 	return host.substr(0, host.find_first_of('.'));
 }
 
-string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder, const string &secret_name, const string &token, curl_slist *extra_headers) {
-	if (StringUtil::StartsWith(endpoint_builder.GetHost(), "glue." ) || StringUtil::StartsWith(endpoint_builder.GetHost(), "s3tables." )) {
+string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
+                            const string &secret_name, const string &token, curl_slist *extra_headers) {
+	if (StringUtil::StartsWith(endpoint_builder.GetHost(), "glue.") ||
+	    StringUtil::StartsWith(endpoint_builder.GetHost(), "s3tables.")) {
 		auto str = GetRequestAws(context, endpoint_builder, secret_name);
 		return str;
 	}
@@ -31,7 +33,7 @@ string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &en
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, RequestWriteCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
-		if(extra_headers) {
+		if (extra_headers) {
 			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, extra_headers);
 		}
 
@@ -39,7 +41,8 @@ string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &en
 		res = curl_easy_perform(curl);
 		curl_easy_cleanup(curl);
 
-		DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.Curl.HTTPRequest", "GET %s (curl code '%s')", url, curl_easy_strerror(res));
+		DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.Curl.HTTPRequest", "GET %s (curl code '%s')", url,
+		                 curl_easy_strerror(res));
 		if (res != CURLcode::CURLE_OK) {
 			string error = curl_easy_strerror(res);
 			throw IOException("Curl Request to '%s' failed with error: '%s'", url, error);
@@ -84,9 +87,8 @@ string APIUtils::GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoi
 	auto encoded = uri.GetURLEncodedPath();
 
 	const Aws::Http::URI uri_const = Aws::Http::URI(uri);
-	auto create_http_req = Aws::Http::CreateHttpRequest(uri_const,
-									 Aws::Http::HttpMethod::HTTP_GET,
-									 Aws::Utils::Stream::DefaultResponseStreamFactoryMethod);
+	auto create_http_req = Aws::Http::CreateHttpRequest(uri_const, Aws::Http::HttpMethod::HTTP_GET,
+	                                                    Aws::Utils::Stream::DefaultResponseStreamFactoryMethod);
 
 	std::shared_ptr<Aws::Http::HttpRequest> req(create_http_req);
 
@@ -96,37 +98,37 @@ string APIUtils::GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoi
 
 	std::shared_ptr<Aws::Auth::AWSCredentialsProviderChain> provider;
 	provider = std::make_shared<DuckDBSecretCredentialProvider>(
-		kv_secret.secret_map["key_id"].GetValue<string>(),
-		kv_secret.secret_map["secret"].GetValue<string>(),
-		kv_secret.secret_map["session_token"].IsNull() ? "" : kv_secret.secret_map["session_token"].GetValue<string>()
-	);
+	    kv_secret.secret_map["key_id"].GetValue<string>(), kv_secret.secret_map["secret"].GetValue<string>(),
+	    kv_secret.secret_map["session_token"].IsNull() ? "" : kv_secret.secret_map["session_token"].GetValue<string>());
 	auto signer = make_uniq<Aws::Client::AWSAuthV4Signer>(provider, service.c_str(), region.c_str());
 
 	signer->SignRequest(*req);
 	std::shared_ptr<Aws::Http::HttpResponse> res = MyHttpClient->MakeRequest(req);
 	Aws::Http::HttpResponseCode resCode = res->GetResponseCode();
-	DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.Aws.HTTPRequest", "GET %s (response %d) (signed with key_id '%s' for service '%s', in region '%s')", uri.GetURIString(), resCode, kv_secret.secret_map["key_id"].GetValue<string>(), service.c_str(), region.c_str());
+	DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.Aws.HTTPRequest",
+	                 "GET %s (response %d) (signed with key_id '%s' for service '%s', in region '%s')",
+	                 uri.GetURIString(), resCode, kv_secret.secret_map["key_id"].GetValue<string>(), service.c_str(),
+	                 region.c_str());
 	if (resCode == Aws::Http::HttpResponseCode::OK) {
 		Aws::StringStream resBody;
 		resBody << res->GetResponseBody().rdbuf();
 		return resBody.str();
 	} else {
 		Aws::StringStream resBody;
-		resBody <<  res->GetResponseBody().rdbuf();
-		throw IOException("Failed to query %s, http error %d thrown. Message: %s", req->GetUri().GetURIString(true), res->GetResponseCode(), resBody.str());
+		resBody << res->GetResponseBody().rdbuf();
+		throw IOException("Failed to query %s, http error %d thrown. Message: %s", req->GetUri().GetURIString(true),
+		                  res->GetResponseCode(), resBody.str());
 	}
 }
-
 
 size_t APIUtils::RequestWriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
 	((std::string *)userp)->append((char *)contents, size * nmemb);
 	return size * nmemb;
 }
 
-
 // Look through the the above locations and if one of the files exists, set that as the location curl should use.
 bool APIUtils::SelectCurlCertPath() {
-	for (string& caFile : certFileLocations) {
+	for (string &caFile : certFileLocations) {
 		struct stat buf;
 		if (stat(caFile.c_str(), &buf) == 0) {
 			SELECTED_CURL_CERT_PATH = caFile;
@@ -135,61 +137,56 @@ bool APIUtils::SelectCurlCertPath() {
 	return false;
 }
 
-bool APIUtils::SetCurlCAFileInfo(CURL* curl) {
+bool APIUtils::SetCurlCAFileInfo(CURL *curl) {
 	if (!SELECTED_CURL_CERT_PATH.empty()) {
 		curl_easy_setopt(curl, CURLOPT_CAINFO, SELECTED_CURL_CERT_PATH.c_str());
-        return true;
+		return true;
 	}
-    return false;
+	return false;
 }
 
-// Note: every curl object we use should set this, because without it some linux distro's may not find the CA certificate.
-void APIUtils::InitializeCurlObject(CURL * curl, const string &token) {
-  	if (!token.empty()) {
+// Note: every curl object we use should set this, because without it some linux distro's may not find the CA
+// certificate.
+void APIUtils::InitializeCurlObject(CURL *curl, const string &token) {
+	if (!token.empty()) {
 		curl_easy_setopt(curl, CURLOPT_XOAUTH2_BEARER, token.c_str());
 		curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BEARER);
 	}
-    SetCurlCAFileInfo(curl);
+	SetCurlCAFileInfo(curl);
 }
 
 string APIUtils::DeleteRequest(const string &url, const string &token, curl_slist *extra_headers) {
-    CURL *curl;
-    CURLcode res;
-    string readBuffer;
+	CURL *curl;
+	CURLcode res;
+	string readBuffer;
 
-    curl = curl_easy_init();
-    if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, RequestWriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+	curl = curl_easy_init();
+	if (curl) {
+		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, RequestWriteCallback);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
-        if(extra_headers) {
-            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, extra_headers);
-        }
+		if (extra_headers) {
+			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, extra_headers);
+		}
 
-        InitializeCurlObject(curl, token);
-        res = curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
+		InitializeCurlObject(curl, token);
+		res = curl_easy_perform(curl);
+		curl_easy_cleanup(curl);
 
-        if (res != CURLcode::CURLE_OK) {
-            string error = curl_easy_strerror(res);
-            throw IOException("Curl DELETE Request to '%s' failed with error: '%s'", url, error);
-        }
+		if (res != CURLcode::CURLE_OK) {
+			string error = curl_easy_strerror(res);
+			throw IOException("Curl DELETE Request to '%s' failed with error: '%s'", url, error);
+		}
 
-        return readBuffer;
-    }
-    throw InternalException("Failed to initialize curl");
+		return readBuffer;
+	}
+	throw InternalException("Failed to initialize curl");
 }
 
-
-string APIUtils::PostRequest(
-		ClientContext &context,
-		const string &url,
-		const string &post_data,
-		const string &content_type,
-		const string &token,
-		curl_slist *extra_headers) {
+string APIUtils::PostRequest(ClientContext &context, const string &url, const string &post_data,
+                             const string &content_type, const string &token, curl_slist *extra_headers) {
 	string readBuffer;
 	CURL *curl = curl_easy_init();
 	if (!curl) {
@@ -226,7 +223,8 @@ string APIUtils::PostRequest(
 	curl_slist_free_all(headers);
 	curl_easy_cleanup(curl);
 
-	DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.Curl.HTTPRequest", "POST %s (curl code '%s')", url, curl_easy_strerror(res));
+	DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.Curl.HTTPRequest", "POST %s (curl code '%s')", url,
+	                 curl_easy_strerror(res));
 	if (res != CURLcode::CURLE_OK) {
 		string error = curl_easy_strerror(res);
 		throw IOException("Curl Request to '%s' failed with error: '%s'", url, error);
@@ -234,4 +232,4 @@ string APIUtils::PostRequest(
 	return readBuffer;
 }
 
-}
+} // namespace duckdb

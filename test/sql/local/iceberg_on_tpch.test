@@ -1,7 +1,6 @@
 # name: test/sql/local/iceberg_on_tpch.test
 # description: test integration with iceberg catalog read
-# group: [iceberg]
-
+# group: [local]
 
 require-env ICEBERG_SERVER_AVAILABLE
 
