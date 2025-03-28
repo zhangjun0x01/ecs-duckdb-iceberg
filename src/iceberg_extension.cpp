@@ -12,29 +12,28 @@
 #include "duckdb/main/extension_util.hpp"
 #include "duckdb/catalog/catalog_entry/macro_catalog_entry.hpp"
 #include "duckdb/catalog/default/default_functions.hpp"
-#include "duckdb/parser/parsed_data/create_scalar_function_info.hpp"
 #include "duckdb/parser/parsed_data/attach_info.hpp"
 #include "duckdb/storage/storage_extension.hpp"
 #include "iceberg_functions.hpp"
 #include "yyjson.hpp"
-#include "duckdb/main/extension_util.hpp"
-#include <duckdb/parser/parsed_data/create_scalar_function_info.hpp>
 #include "catalog_api.hpp"
+#include <aws/core/Aws.h>
+#include <aws/s3/S3Client.h>
+#include "duckdb/main/extension_helper.hpp"
 
 namespace duckdb {
 
-static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &, CreateSecretInput &input) {
+static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context, CreateSecretInput &input) {
 	// apply any overridden settings
 	vector<string> prefix_paths;
 	auto result = make_uniq<KeyValueSecret>(prefix_paths, "iceberg", "config", input.name);
-	
 	for (const auto &named_param : input.options) {
 		auto lower_name = StringUtil::Lower(named_param.first);
 
-		if (lower_name == "client_id" || 
-				lower_name == "client_secret" ||
-				lower_name == "endpoint" ||
-				lower_name == "aws_region") {
+		if (lower_name == "key_id" ||
+		    lower_name == "secret" ||
+		    lower_name == "endpoint" ||
+		    lower_name == "aws_region") {
 			result->secret_map[lower_name] = named_param.second.ToString();
 		} else {
 			throw InternalException("Unknown named parameter passed to CreateIRCSecretFunction: " + lower_name);
@@ -43,9 +42,10 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &, Creat
 
 	// Get token from catalog
 	result->secret_map["token"] = IRCAPI::GetToken(
-		result->secret_map["client_id"].ToString(), 
-		result->secret_map["client_secret"].ToString(),
-		result->secret_map["endpoint"].ToString());
+		context,
+	    result->secret_map["key_id"].ToString(),
+	    result->secret_map["secret"].ToString(),
+	    result->secret_map["endpoint"].ToString());
 	
 	//! Set redact keys
 	result->redact_keys = {"token", "client_id", "client_secret"};
@@ -61,26 +61,31 @@ static void SetCatalogSecretParameters(CreateSecretFunction &function) {
 	function.named_parameters["token"] = LogicalType::VARCHAR;
 }
 
-unique_ptr<SecretEntry> GetSecret(ClientContext &context, const string &secret_name) {
-	auto &secret_manager = SecretManager::Get(context);
-	auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
-	// FIXME: this should be adjusted once the `GetSecretByName` API supports this
-	// use case
-	auto secret_entry = secret_manager.GetSecretByName(transaction, secret_name, "memory");
-	if (secret_entry) {
-		return secret_entry;
+static bool SanityCheckGlueWarehouse(string warehouse) {
+	// valid glue catalog warehouse is <account_id>:s3tablescatalog/<bucket>
+	auto end_account_id = warehouse.find_first_of(':');
+	bool account_id_correct = end_account_id == 12;
+	auto bucket_sep = warehouse.find_first_of('/');
+	bool bucket_sep_correct = bucket_sep == 28;
+	if (!account_id_correct) {
+		throw IOException("Invalid Glue Catalog Format: '" + warehouse + "'. Expect 12 digits for account_id.");
 	}
-	secret_entry = secret_manager.GetSecretByName(transaction, secret_name, "local_file");
-	if (secret_entry) {
-		return secret_entry;
+	if (bucket_sep_correct) {
+		return true;
 	}
-	return nullptr;
+	throw IOException("Invalid Glue Catalog Format: '" + warehouse + "'. Expected '<account_id>:s3tablescatalog/<bucket>");
 }
 
 static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_info, ClientContext &context,
                                            AttachedDatabase &db, const string &name, AttachInfo &info,
                                            AccessMode access_mode) {
 	IRCCredentials credentials;
+	IRCEndpointBuilder endpoint_builder;
+
+	string account_id;
+	string service;
+	string endpoint_type;
+	string endpoint;
 
 	// check if we have a secret provided
 	string secret_name;
@@ -89,49 +94,97 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		if (lower_name == "type" || lower_name == "read_only") {
 			// already handled
 		} else if (lower_name == "secret") {
-			secret_name = entry.second.ToString();
+			secret_name = StringUtil::Lower(entry.second.ToString());
+		} else if (lower_name == "endpoint_type") {
+			endpoint_type = StringUtil::Lower(entry.second.ToString());
+		} else if (lower_name == "endpoint") {
+			endpoint = StringUtil::Lower(entry.second.ToString());
+			StringUtil::RTrim(endpoint, "/");
 		} else {
 			throw BinderException("Unrecognized option for PC attach: %s", entry.first);
 		}
 	}
+	auto warehouse = info.path;
+	auto catalog_type = ICEBERG_CATALOG_TYPE::INVALID;
 
-	// if no iceberg secret is specified we default to the unnamed mysql secret, if it
-	// exists
-	bool explicit_secret = !secret_name.empty();
-	if (!explicit_secret) {
-		// look up settings from the default unnamed mysql secret if none is
-		// provided
-		secret_name = "__default_iceberg";
-	}
-
-	string connection_string = info.path;
-	auto secret_entry = GetSecret(context, secret_name);
-	if (secret_entry) {
-		// secret found - read data
-		const auto &kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
-		string new_connection_info;
-
-		Value token_val = kv_secret.TryGetValue("token");
-		if (token_val.IsNull()) {
-			throw std::runtime_error("Token is blank");
+	if (endpoint_type == "glue" || endpoint_type == "s3_tables") {
+		if (endpoint_type == "s3_tables") {
+			service = "s3tables";
+			catalog_type = ICEBERG_CATALOG_TYPE::AWS_S3TABLES;
+		} else {
+			service = endpoint_type;
+			catalog_type = ICEBERG_CATALOG_TYPE::AWS_GLUE;
 		}
-		credentials.token = token_val.ToString();
+		// look up any s3 secret
 
-		Value endpoint_val = kv_secret.TryGetValue("endpoint");
-		credentials.endpoint = endpoint_val.IsNull() ? "" : endpoint_val.ToString();
-		StringUtil::RTrim(credentials.endpoint, "/");
+		// if there is no secret, an error will be thrown
+		auto secret_entry = IRCatalog::GetSecret(context, secret_name);
+        auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+		auto region = kv_secret.TryGetValue("region");
 
-		Value aws_region_val = kv_secret.TryGetValue("aws_region");
-		credentials.aws_region = endpoint_val.IsNull() ? "" : aws_region_val.ToString();
+		if (region.IsNull()) {
+			throw IOException("Assumed catalog secret " + secret_entry->secret->GetName() + " for catalog " + name + " does not have a region");
+		}
+		switch (catalog_type) {
+		case ICEBERG_CATALOG_TYPE::AWS_S3TABLES: {
+			// extract region from the amazon ARN
+			auto substrings = StringUtil::Split(warehouse, ":");
+			if (substrings.size() != 6) {
+				throw InvalidInputException("Could not parse S3 Tables arn warehouse value");
+			}
+			region = Value::CreateValue<string>(substrings[3]);
+			break;
+		}
+	    case ICEBERG_CATALOG_TYPE::AWS_GLUE:
+	    	SanityCheckGlueWarehouse(warehouse);
+			break;
+		default:
+			throw IOException("Unsupported AWS catalog type");
+		}
 
-	} else if (explicit_secret) {
-		// secret not found and one was explicitly provided - throw an error
-		throw BinderException("Secret with name \"%s\" not found", secret_name);
+		auto catalog_host = service + "." + region.ToString() + ".amazonaws.com";
+		auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, warehouse, catalog_host, secret_name);
+		catalog->catalog_type = catalog_type;
+		catalog->GetConfig(context);
+		return std::move(catalog);
 	}
 
-	// TODO: Check catalog with name actually exists!
+	// Check no endpoint type has been passed.
+	if (!endpoint_type.empty()) {
+		throw IOException("Unrecognized endpoint point: %s. Expected either S3_TABLES or GLUE", endpoint_type);
+	}
+	if (endpoint_type.empty() && endpoint.empty()) {
+		throw IOException("No endpoint type or endpoint provided");
+	}
 
-	return make_uniq<IRCatalog>(db, info.path, access_mode, credentials);
+	catalog_type = ICEBERG_CATALOG_TYPE::OTHER;
+	// Default IRC path
+	Value endpoint_val;
+	// Lookup a secret we can use to access the rest catalog.
+	// if no secret is referenced, this throw
+	auto secret_entry = IRCatalog::GetSecret(context, secret_name);
+	if (!secret_entry) {
+		throw IOException("No secret found to use with catalog " + name);
+	}
+ 	// secret found - read data
+ 	const auto &kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+	Value key_val = kv_secret.TryGetValue("key_id");
+	Value secret_val = kv_secret.TryGetValue("secret");
+	CreateSecretInput create_secret_input;
+	create_secret_input.options["key_id"] = key_val;
+	create_secret_input.options["secret"] = secret_val;
+	create_secret_input.options["endpoint"] = endpoint;
+	auto new_secret = CreateCatalogSecretFunction(context, create_secret_input);
+	auto &kv_secret_new = dynamic_cast<KeyValueSecret &>(*new_secret);
+	Value token = kv_secret_new.TryGetValue("token");
+	if (token.IsNull()) {
+		throw IOException("Failed to generate oath token");
+	}
+	credentials.token = token.ToString();
+	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, warehouse, endpoint, secret_name);
+	catalog->catalog_type = catalog_type;
+	catalog->GetConfig(context);
+	return std::move(catalog);
 }
 
 static unique_ptr<TransactionManager> CreateTransactionManager(StorageExtensionInfo *storage_info, AttachedDatabase &db,
@@ -149,6 +202,18 @@ public:
 };
 
 static void LoadInternal(DatabaseInstance &instance) {
+	Aws::SDKOptions options;
+	Aws::InitAPI(options); // Should only be called once.
+
+	ExtensionHelper::AutoLoadExtension(instance, "avro");
+	if (!instance.ExtensionIsLoaded("avro")) {
+		throw MissingExtensionException("The iceberg extension requires the avro extension to be loaded!");
+	}
+	ExtensionHelper::AutoLoadExtension(instance, "parquet");
+	if (!instance.ExtensionIsLoaded("parquet")) {
+		throw MissingExtensionException("The iceberg extension requires the parquet extension to be loaded!");
+	}
+
 	auto &config = DBConfig::GetConfig(instance);
 
 	config.AddExtensionOption(
@@ -159,7 +224,7 @@ static void LoadInternal(DatabaseInstance &instance) {
 	);
 
 	// Iceberg Table Functions
-	for (auto &fun : IcebergFunctions::GetTableFunctions()) {
+	for (auto &fun : IcebergFunctions::GetTableFunctions(instance)) {
 		ExtensionUtil::RegisterFunction(instance, fun);
 	}
 

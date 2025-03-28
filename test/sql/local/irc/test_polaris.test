@@ -1,0 +1,38 @@
+# name: test/sql/local/irc/test_polaris.test
+# description: test integration with iceberg catalog read
+# group: [iceberg]
+
+require avro
+
+require parquet
+
+require httpfs
+
+require iceberg
+
+require aws
+
+mode skip
+
+statement ok
+create secret polaris_secret (
+  type s3,
+  KEY_ID '',
+  SECRET ''
+);
+
+statement ok
+attach 'polaris_demo' as my_datalake (
+    type ICEBERG,
+    ENDPOINT 'http://0.0.0.0:8181/api/catalog'
+);
+
+statement ok
+show all tables;
+
+query II
+select * from namespace.catalog.table;
+----
+1
+2
+
