@@ -15,11 +15,16 @@ class SnapshotLog {
 public:
 	static SnapshotLog FromJSON(yyjson_val *obj) {
 		SnapshotLog result;
-
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(obj, idx, max, val) {
+			result.value.push_back(val);
+		}
 		return result;
 	}
 
 public:
+	vector<yyjson_val *> value;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -43,6 +43,18 @@ def safe_cpp_name(name: str) -> str:
         return '_' + name
     return name
 
+def array_cpp_type(item_type):
+    if item_type in {'string', 'integer', 'boolean'}:
+        type_mapping = {
+            'string': 'string',
+            'integer': 'int64_t',
+            'boolean': 'bool'
+        }
+        return f'vector<{type_mapping[item_type]}>'
+    elif item_type == 'object':
+        return 'vector<yyjson_val *>'
+    return f'vector<{item_type}>'
+
 class Property:
     def __init__(self, name: str, schema: Dict):
         self.name = name
@@ -83,16 +95,7 @@ class Property:
     def get_cpp_type(self) -> str:
         """Get the C++ type for this property."""
         if self.type == 'array':
-            if self.items_type in {'string', 'integer', 'boolean'}:
-                type_mapping = {
-                    'string': 'string',
-                    'integer': 'int64_t',
-                    'boolean': 'bool'
-                }
-                return f'vector<{type_mapping[self.items_type]}>'
-            elif self.items_type == 'object':
-                return 'vector<yyjson_val *>'
-            return f'vector<{self.items_type}>'
+            return array_cpp_type(self.items_type)
         
         type_mapping = {
             'string': 'string',
@@ -304,25 +307,42 @@ class Schema:
                 "};"
             ])
         # Handle array types with primitive items
-        elif self.type == 'array' and self.item_type in TYPE_MAPPINGS:
-            type_mapping = get_type_mapping(self.item_type)
+        elif self.type == 'array':
+            # Generate regular class
             lines.extend([
                 f"class {self.name} {{",
                 "public:",
                 f"\tstatic {self.name} FromJSON(yyjson_val *obj) {{",
                 f"\t\t{self.name} result;",
-                "\t\tsize_t idx, max;",
-                "\t\tyyjson_val *val;",
-                "\t\tyyjson_arr_foreach(obj, idx, max, val) {",
-                f"\t\t\tresult.value.push_back({type_mapping.yyjson_get}(val));",
-                "\t\t}",
+            ])
+            # First declare the variables
+            lines.append('\t\tsize_t idx, max;')
+            lines.append('\t\tyyjson_val *val;')
+            # Then do the array iteration
+            lines.append(f'\t\tyyjson_arr_foreach(obj, idx, max, val) {{')
+            
+            prop_name = 'value'
+            if self.item_type in {'string', 'integer', 'boolean'}:
+                parse_func = {
+                    'string': 'yyjson_get_str',
+                    'integer': 'yyjson_get_sint',
+                    'boolean': 'yyjson_get_bool'
+                }[self.item_type]
+                lines.append(f"\t\t\tresult.{safe_cpp_name(prop_name)}.push_back({parse_func}(val));")
+            elif self.item_type == 'object':
+                lines.append(f'\t\t\tresult.{safe_cpp_name(prop_name)}.push_back(val);')
+            else:
+                lines.append(f"\t\t\tresult.{safe_cpp_name(prop_name)}.push_back({self.item_type}::FromJSON(val));")
+            lines.append("\t\t}")
+            lines.extend([
                 "\t\treturn result;",
                 "\t}",
                 "",
                 "public:",
-                f"\tvector<{type_mapping.cpp_type}> value;",
+                f"\t{array_cpp_type(self.item_type)} value;",
                 "};"
             ])
+
         elif self.one_of_schemas:
             lines.extend(self._generate_oneof_class())
         else:
