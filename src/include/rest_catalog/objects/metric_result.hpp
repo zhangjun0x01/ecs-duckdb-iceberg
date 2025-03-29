@@ -16,12 +16,12 @@ public:
 	static MetricResult FromJSON(yyjson_val *obj) {
 		MetricResult result;
 		if (yyjson_is_obj(obj)) {
-			if (yyjson_obj_get(obj, "value") && yyjson_obj_get(obj, "unit")) {
+			if (yyjson_obj_get(obj, "unit") && yyjson_obj_get(obj, "value")) {
 				result.counter_result = CounterResult::FromJSON(obj);
 				result.has_counter_result = true;
 			}
-			if (yyjson_obj_get(obj, "count") && yyjson_obj_get(obj, "total-duration") &&
-			    yyjson_obj_get(obj, "time-unit")) {
+			if (yyjson_obj_get(obj, "count") && yyjson_obj_get(obj, "time-unit") &&
+			    yyjson_obj_get(obj, "total-duration")) {
 				result.timer_result = TimerResult::FromJSON(obj);
 				result.has_timer_result = true;
 			}

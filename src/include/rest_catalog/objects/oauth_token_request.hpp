@@ -16,8 +16,8 @@ public:
 	static OAuthTokenRequest FromJSON(yyjson_val *obj) {
 		OAuthTokenRequest result;
 		if (yyjson_is_obj(obj)) {
-			if (yyjson_obj_get(obj, "grant_type") && yyjson_obj_get(obj, "client_id") &&
-			    yyjson_obj_get(obj, "client_secret")) {
+			if (yyjson_obj_get(obj, "client_id") && yyjson_obj_get(obj, "client_secret") &&
+			    yyjson_obj_get(obj, "grant_type")) {
 				result.oauth_client_credentials_request = OAuthClientCredentialsRequest::FromJSON(obj);
 				result.has_oauth_client_credentials_request = true;
 			}

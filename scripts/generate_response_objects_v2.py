@@ -23,7 +23,7 @@ CPP_KEYWORDS = {
     'override',
 }
 
-SCHEMA_BLACKLIST = set('PrimitiveTypeValue')
+SCHEMA_BLACKLIST = set(['PrimitiveTypeValue'])
 
 ###
 ### FIXME:
@@ -443,7 +443,7 @@ class Schema:
             lines.append(f"\t\tauto discriminator_val = yyjson_obj_get(obj, \"{property_name}\");")
 
             first = True
-            for value, ref in mapping.items():
+            for value, ref in sorted(mapping.items()):
                 schema_name = ref.split('/')[-1]
                 if first:
                     lines.append(
@@ -527,7 +527,7 @@ class Schema:
                 field_checks.append(f'yyjson_obj_get(obj, "{field}")')
 
             if field_checks:
-                lines.append(f"\t\t\tif ({' && '.join(field_checks)}) {{")
+                lines.append(f"\t\t\tif ({' && '.join(sorted(field_checks))}) {{")
                 lines.append(f"\t\t\t\tresult.{to_snake_case(schema.name)} = {schema.name}::FromJSON(obj);")
                 lines.append(f"\t\t\t\tresult.has_{to_snake_case(schema.name)} = true;")
                 lines.append("\t\t\t}")
