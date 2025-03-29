@@ -36,6 +36,7 @@ public:
 
 	//! path components when querying. Like namespaces/tables etc.
 	vector<string> path_components;
+
 private:
 	//! host of the endpoint, like `glue` or `polaris`
 	string host;

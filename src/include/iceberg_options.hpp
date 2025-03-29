@@ -8,7 +8,7 @@ namespace duckdb {
 static string VERSION_GUESSING_CONFIG_VARIABLE = "unsafe_enable_version_guessing";
 
 // When this is provided (and unsafe_enable_version_guessing is true)
-// we first look for DEFAULT_VERSION_HINT_FILE, if it doesn't exist we 
+// we first look for DEFAULT_VERSION_HINT_FILE, if it doesn't exist we
 // then search for versions matching the DEFAULT_TABLE_VERSION_FORMAT
 // We take the lexographically "greatest" one as the latest version
 // Note that this will voliate ACID constraints in some situations.
@@ -24,11 +24,7 @@ static string DEFAULT_VERSION_HINT_FILE = "version-hint.text";
 // By default we will use the unknown version behavior mentioned above
 static string DEFAULT_TABLE_VERSION = UNKNOWN_TABLE_VERSION;
 
-enum class SnapshotSource : uint8_t {
-	LATEST,
-	FROM_TIMESTAMP,
-	FROM_ID
-};
+enum class SnapshotSource : uint8_t { LATEST, FROM_TIMESTAMP, FROM_ID };
 
 struct IcebergOptions {
 	bool allow_moved_paths = false;

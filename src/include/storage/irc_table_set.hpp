@@ -9,7 +9,6 @@ struct CreateTableInfo;
 class ICResult;
 class IRCSchemaEntry;
 
-
 class ICInSchemaSet : public IRCCatalogSet {
 public:
 	ICInSchemaSet(IRCSchemaEntry &schema);
@@ -20,14 +19,14 @@ protected:
 	IRCSchemaEntry &schema;
 };
 
-
 class ICTableSet : public ICInSchemaSet {
 public:
 	explicit ICTableSet(IRCSchemaEntry &schema);
 
 public:
 	optional_ptr<CatalogEntry> CreateTable(ClientContext &context, BoundCreateTableInfo &info);
-	static unique_ptr<ICTableInfo> GetTableInfo(ClientContext &context, IRCSchemaEntry &schema, const string &table_name);
+	static unique_ptr<ICTableInfo> GetTableInfo(ClientContext &context, IRCSchemaEntry &schema,
+	                                            const string &table_name);
 	optional_ptr<CatalogEntry> RefreshTable(ClientContext &context, const string &table_name);
 	void AlterTable(ClientContext &context, AlterTableInfo &info);
 	void DropTable(ClientContext &context, DropInfo &info);
@@ -46,6 +45,5 @@ protected:
 private:
 	unique_ptr<CatalogEntry> _CreateCatalogEntry(ClientContext &context, IRCAPITable table);
 };
-
 
 } // namespace duckdb

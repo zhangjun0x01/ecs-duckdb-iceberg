@@ -34,7 +34,8 @@ void IRCSchemaSet::FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &e
 
 optional_ptr<CatalogEntry> IRCSchemaSet::CreateSchema(ClientContext &context, CreateSchemaInfo &info) {
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
-	auto schema = IRCAPI::CreateSchema(context, ic_catalog, ic_catalog.internal_name, info.schema, ic_catalog.credentials);
+	auto schema =
+	    IRCAPI::CreateSchema(context, ic_catalog, ic_catalog.internal_name, info.schema, ic_catalog.credentials);
 	auto schema_entry = make_uniq<IRCSchemaEntry>(catalog, info);
 	schema_entry->schema_data = make_uniq<IRCAPISchema>(schema);
 	return CreateEntry(std::move(schema_entry));

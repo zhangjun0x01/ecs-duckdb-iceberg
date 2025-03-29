@@ -26,17 +26,21 @@ struct ManifestReaderInput;
 struct IcebergManifestV1 {
 	static constexpr idx_t FORMAT_VERSION = 1;
 	using entry_type = IcebergManifest;
-	static idx_t ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input, vector<entry_type> &entries);
+	static idx_t ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input,
+	                            vector<entry_type> &entries);
 	static bool VerifySchema(const case_insensitive_map_t<ColumnIndex> &name_to_vec);
-	static void PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec);
+	static void PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name,
+	                                case_insensitive_map_t<ColumnIndex> &name_to_vec);
 };
 
 struct IcebergManifestV2 {
 	static constexpr idx_t FORMAT_VERSION = 2;
 	using entry_type = IcebergManifest;
-	static idx_t ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input, vector<entry_type> &entries);
+	static idx_t ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input,
+	                            vector<entry_type> &entries);
 	static bool VerifySchema(const case_insensitive_map_t<ColumnIndex> &name_to_vec);
-	static void PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec);
+	static void PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name,
+	                                case_insensitive_map_t<ColumnIndex> &name_to_vec);
 };
 
 //! Iceberg Manifest Entry scan routines
@@ -44,26 +48,32 @@ struct IcebergManifestV2 {
 struct IcebergManifestEntryV1 {
 	static constexpr idx_t FORMAT_VERSION = 1;
 	using entry_type = IcebergManifestEntry;
-	static idx_t ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input, vector<entry_type> &entries);
+	static idx_t ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input,
+	                            vector<entry_type> &entries);
 	static bool VerifySchema(const case_insensitive_map_t<ColumnIndex> &name_to_vec);
-	static void PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec);
+	static void PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name,
+	                                case_insensitive_map_t<ColumnIndex> &name_to_vec);
 };
 
 struct IcebergManifestEntryV2 {
 	static constexpr idx_t FORMAT_VERSION = 2;
 	using entry_type = IcebergManifestEntry;
-	static idx_t ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input, vector<entry_type> &entries);
+	static idx_t ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input,
+	                            vector<entry_type> &entries);
 	static bool VerifySchema(const case_insensitive_map_t<ColumnIndex> &name_to_vec);
-	static void PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec);
+	static void PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name,
+	                                case_insensitive_map_t<ColumnIndex> &name_to_vec);
 };
 
 class AvroScan {
 public:
 	AvroScan(const string &scan_name, ClientContext &context, const string &path);
+
 public:
 	bool GetNext(DataChunk &chunk);
 	void InitializeChunk(DataChunk &chunk);
 	bool Finished() const;
+
 public:
 	optional_ptr<TableFunction> avro_scan;
 	ClientContext &context;
@@ -74,6 +84,5 @@ public:
 
 	bool finished = false;
 };
-
 
 } // namespace duckdb

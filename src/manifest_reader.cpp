@@ -2,11 +2,14 @@
 
 namespace duckdb {
 
-
-ManifestReaderInput::ManifestReaderInput(const case_insensitive_map_t<ColumnIndex> &name_to_vec, bool skip_deleted) : name_to_vec(name_to_vec), skip_deleted(skip_deleted) {
+ManifestReaderInput::ManifestReaderInput(const case_insensitive_map_t<ColumnIndex> &name_to_vec, bool skip_deleted)
+    : name_to_vec(name_to_vec), skip_deleted(skip_deleted) {
 }
 
-ManifestReader::ManifestReader(manifest_reader_name_mapping name_mapping, manifest_reader_schema_validation schema_validation) : name_mapping(name_mapping), schema_validation(schema_validation) {}
+ManifestReader::ManifestReader(manifest_reader_name_mapping name_mapping,
+                               manifest_reader_schema_validation schema_validation)
+    : name_mapping(name_mapping), schema_validation(schema_validation) {
+}
 
 void ManifestReader::Initialize(unique_ptr<AvroScan> scan_p) {
 	const bool first_init = scan == nullptr;
@@ -63,6 +66,5 @@ bool ManifestReader::Finished() const {
 	}
 	return scan->Finished();
 }
-
 
 } // namespace duckdb

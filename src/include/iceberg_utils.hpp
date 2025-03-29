@@ -34,11 +34,11 @@ public:
 	static bool TryGetBoolFromObject(yyjson_val *obj, const string &field);
 
 	static uint64_t TryGetNumFromObject(yyjson_val *obj, const string &field, bool fail_on_missing,
-									uint64_t default_val = 0);
+	                                    uint64_t default_val = 0);
 	static bool TryGetBoolFromObject(yyjson_val *obj, const string &field, bool fail_on_missing,
-								 bool default_val = false);
+	                                 bool default_val = false);
 	static string TryGetStrFromObject(yyjson_val *obj, const string &field, bool fail_on_missing,
-								  const char *default_val = "");
+	                                  const char *default_val = "");
 };
 
 } // namespace duckdb
