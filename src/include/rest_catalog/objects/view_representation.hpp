@@ -15,9 +15,8 @@ class ViewRepresentation {
 public:
 	static ViewRepresentation FromJSON(yyjson_val *obj) {
 		ViewRepresentation result;
-		if (yyjson_is_obj(obj)) {
-			auto type_val = yyjson_obj_get(obj, "type");
-		}
+		result.sqlview_representation = SQLViewRepresentation::FromJSON(obj);
+		result.has_sqlview_representation = true;
 		return result;
 	}
 

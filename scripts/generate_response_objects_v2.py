@@ -388,6 +388,26 @@ class Schema:
         return '\n'.join(lines)
 
     def _generate_oneof_class(self) -> List[str]:
+        # If there's only one schema in oneOf, we can parse it directly
+        if len(self.one_of_schemas) == 1:
+            schema = self.one_of_schemas[0]
+            lines = [
+                f"class {self.name} {{",
+                "public:",
+                f"\tstatic {self.name} FromJSON(yyjson_val *obj) {{",
+                f"\t\t{self.name} result;",
+                f"\t\tresult.{to_snake_case(schema.name)} = {schema.name}::FromJSON(obj);",
+                f"\t\tresult.has_{to_snake_case(schema.name)} = true;",
+                "\t\treturn result;",
+                "\t}",
+                "",
+                "public:",
+                f"\t{schema.name} {to_snake_case(schema.name)};",
+                f"\tbool has_{to_snake_case(schema.name)} = false;",
+                "};",
+            ]
+            return lines
+
         # Group schemas by their base type to avoid duplicates
         primitive_groups = {}
         object_schemas = []

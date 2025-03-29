@@ -15,13 +15,8 @@ class ViewRequirement {
 public:
 	static ViewRequirement FromJSON(yyjson_val *obj) {
 		ViewRequirement result;
-		if (yyjson_is_obj(obj)) {
-			auto discriminator_val = yyjson_obj_get(obj, "type");
-			if (discriminator_val && strcmp(yyjson_get_str(discriminator_val), "assert-view-uuid") == 0) {
-				result.assert_view_uuid = AssertViewUUID::FromJSON(obj);
-				result.has_assert_view_uuid = true;
-			}
-		}
+		result.assert_view_uuid = AssertViewUUID::FromJSON(obj);
+		result.has_assert_view_uuid = true;
 		return result;
 	}
 
