@@ -15,24 +15,21 @@ class FetchPlanningResult {
 public:
 	static FetchPlanningResult FromJSON(yyjson_val *obj) {
 		FetchPlanningResult result;
-		if (yyjson_is_obj(obj)) {
-			auto discriminator_val = yyjson_obj_get(obj, "status");
-			if (discriminator_val && strcmp(yyjson_get_str(discriminator_val), "completed") == 0) {
-				result.completed_planning_result = CompletedPlanningResult::FromJSON(obj);
-				result.has_completed_planning_result = true;
-			}
-			if (discriminator_val && strcmp(yyjson_get_str(discriminator_val), "submitted") == 0) {
-				result.empty_planning_result = EmptyPlanningResult::FromJSON(obj);
-				result.has_empty_planning_result = true;
-			}
-			if (discriminator_val && strcmp(yyjson_get_str(discriminator_val), "cancelled") == 0) {
-				result.empty_planning_result = EmptyPlanningResult::FromJSON(obj);
-				result.has_empty_planning_result = true;
-			}
-			if (discriminator_val && strcmp(yyjson_get_str(discriminator_val), "failed") == 0) {
-				result.failed_planning_result = FailedPlanningResult::FromJSON(obj);
-				result.has_failed_planning_result = true;
-			}
+		auto discriminator_val = yyjson_obj_get(obj, "status");
+		if (discriminator_val && strcmp(yyjson_get_str(discriminator_val), "completed") == 0) {
+			result.completed_planning_result = CompletedPlanningResult::FromJSON(obj);
+			result.has_completed_planning_result = true;
+		} else if (discriminator_val && strcmp(yyjson_get_str(discriminator_val), "submitted") == 0) {
+			result.empty_planning_result = EmptyPlanningResult::FromJSON(obj);
+			result.has_empty_planning_result = true;
+		} else if (discriminator_val && strcmp(yyjson_get_str(discriminator_val), "cancelled") == 0) {
+			result.empty_planning_result = EmptyPlanningResult::FromJSON(obj);
+			result.has_empty_planning_result = true;
+		} else if (discriminator_val && strcmp(yyjson_get_str(discriminator_val), "failed") == 0) {
+			result.failed_planning_result = FailedPlanningResult::FromJSON(obj);
+			result.has_failed_planning_result = true;
+		} else {
+			throw IOException("FetchPlanningResult failed to parse, none of the accepted schemas found");
 		}
 		return result;
 	}

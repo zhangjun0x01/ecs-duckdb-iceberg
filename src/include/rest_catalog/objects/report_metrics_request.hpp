@@ -15,19 +15,34 @@ class ReportMetricsRequest {
 public:
 	static ReportMetricsRequest FromJSON(yyjson_val *obj) {
 		ReportMetricsRequest result;
-
-		auto report_type_val = yyjson_obj_get(obj, "report-type");
-		if (report_type_val) {
-			result.report_type = yyjson_get_str(report_type_val);
+		if (yyjson_is_obj(obj)) {
+			if (yyjson_obj_get(obj, "metrics") && yyjson_obj_get(obj, "table-name") &&
+			    yyjson_obj_get(obj, "projected-field-ids") && yyjson_obj_get(obj, "snapshot-id") &&
+			    yyjson_obj_get(obj, "projected-field-names") && yyjson_obj_get(obj, "schema-id") &&
+			    yyjson_obj_get(obj, "filter")) {
+				result.scan_report = ScanReport::FromJSON(obj);
+				result.has_scan_report = true;
+			}
+			if (yyjson_obj_get(obj, "metrics") && yyjson_obj_get(obj, "table-name") &&
+			    yyjson_obj_get(obj, "operation") && yyjson_obj_get(obj, "snapshot-id") &&
+			    yyjson_obj_get(obj, "sequence-number")) {
+				result.commit_report = CommitReport::FromJSON(obj);
+				result.has_commit_report = true;
+			}
+			if (!(result.has_scan_report || result.has_commit_report)) {
+				throw IOException("ReportMetricsRequest failed to parse, none of the accepted schemas found");
+			}
 		} else {
-			throw IOException("ReportMetricsRequest required property 'report-type' is missing");
+			throw IOException("ReportMetricsRequest must be an object");
 		}
-
 		return result;
 	}
 
 public:
-	string report_type;
+	ScanReport scan_report;
+	bool has_scan_report = false;
+	CommitReport commit_report;
+	bool has_commit_report = false;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

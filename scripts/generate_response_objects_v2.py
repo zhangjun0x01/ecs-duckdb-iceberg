@@ -23,6 +23,8 @@ CPP_KEYWORDS = {
     'override',
 }
 
+SCHEMA_BLACKLIST = set('PrimitiveTypeValue')
+
 ###
 ### FIXME:
 ### The following are not generated correctly:
@@ -206,6 +208,7 @@ class Schema:
         self.properties: Dict[str, Property] = {}
         self.all_of_refs: Set[str] = set()
         self.one_of_schemas: List[Schema] = []
+        self.any_of_schemas: List[Schema] = []
         self.item_type: Optional[str] = None
 
         # Handle oneOf
@@ -222,6 +225,20 @@ class Schema:
                     inline_name = f"{name}_Inline_{len(self.one_of_schemas)}"
                     inline_schema = create_schema(inline_name, sub_schema, all_schemas, parsed_schemas)
                     self.one_of_schemas.append(inline_schema)
+
+        # Handle anyOf
+        if 'anyOf' in schema:
+            for sub_schema in schema['anyOf']:
+                if '$ref' in sub_schema:
+                    ref_path = sub_schema['$ref']
+                    ref_name = ref_path.split('/')[-1]
+                    if ref_name in all_schemas:
+                        ref_schema = create_schema(ref_name, all_schemas[ref_name], all_schemas, parsed_schemas)
+                        self.any_of_schemas.append(ref_schema)
+                else:
+                    inline_name = f"{name}_Inline_{len(self.any_of_schemas)}"
+                    inline_schema = create_schema(inline_name, sub_schema, all_schemas, parsed_schemas)
+                    self.any_of_schemas.append(inline_schema)
 
         # Handle allOf
         if 'allOf' in schema:
@@ -329,6 +346,8 @@ class Schema:
 
         elif self.one_of_schemas:
             lines.extend(self._generate_oneof_class())
+        elif self.any_of_schemas:
+            lines.extend(self._generate_anyof_class())
         else:
             # Generate regular class
             lines.extend(
@@ -408,19 +427,6 @@ class Schema:
             ]
             return lines
 
-        # Group schemas by their base type to avoid duplicates
-        primitive_groups = {}
-        object_schemas = []
-
-        for schema in self.one_of_schemas:
-            if schema.type in {'string', 'integer', 'boolean', 'number'}:
-                if schema.type not in primitive_groups:
-                    primitive_groups[schema.type] = {'type_mapping': get_type_mapping(schema.type), 'formats': set()}
-                if schema.format:
-                    primitive_groups[schema.type]['formats'].add(schema.format)
-            else:
-                object_schemas.append(schema)
-
         lines = [
             f"class {self.name} {{",
             "public:",
@@ -428,69 +434,124 @@ class Schema:
             f"\t\t{self.name} result;",
         ]
 
-        # Generate primitive type checks
-        for base_type, info in primitive_groups.items():
-            type_mapping = info['type_mapping']
-            lines.extend(
-                [
-                    f"\t\tif ({type_mapping.yyjson_check}(obj)) {{",
-                    f"\t\t\tresult.value_{base_type} = {type_mapping.yyjson_get}(obj);",
-                    f"\t\t\tresult.has_{base_type} = true;",
-                    "\t\t}",
-                ]
-            )
+        # Generate object type checks with else if chain
+        if 'discriminator' in self.schema:
+            discriminator = self.schema['discriminator']
+            property_name = discriminator['propertyName']
+            mapping = discriminator['mapping']
 
-        # Generate object type checks
-        if object_schemas:
-            lines.extend(["\t\tif (yyjson_is_obj(obj)) {"])
+            lines.append(f"\t\tauto discriminator_val = yyjson_obj_get(obj, \"{property_name}\");")
 
-            # Check if we have a discriminator
-            if 'discriminator' in self.schema:
-                discriminator = self.schema.get('discriminator')
-                property_name = discriminator['propertyName']
-                mapping = discriminator['mapping']
-
-                lines.append(f"\t\t\tauto discriminator_val = yyjson_obj_get(obj, \"{property_name}\");")
-
-                for value, ref in mapping.items():
-                    schema_name = ref.split('/')[-1]  # Get the schema name from the ref
-                    lines.extend(
-                        [
-                            f"\t\t\tif (discriminator_val && strcmp(yyjson_get_str(discriminator_val), \"{value}\") == 0) {{",
-                            f"\t\t\t\tresult.{to_snake_case(schema_name)} = {schema_name}::FromJSON(obj);",
-                            f"\t\t\t\tresult.has_{to_snake_case(schema_name)} = true;",
-                            "\t\t\t}",
-                        ]
+            first = True
+            for value, ref in mapping.items():
+                schema_name = ref.split('/')[-1]
+                if first:
+                    lines.append(
+                        f"\t\tif (discriminator_val && strcmp(yyjson_get_str(discriminator_val), \"{value}\") == 0) {{"
                     )
-            else:
-                # Fall back to type field if no discriminator
-                lines.append("\t\t\tauto type_val = yyjson_obj_get(obj, \"type\");")
+                    first = False
+                else:
+                    lines.append(
+                        f"\t\telse if (discriminator_val && strcmp(yyjson_get_str(discriminator_val), \"{value}\") == 0) {{"
+                    )
 
-                for schema in object_schemas:
-                    if 'properties' in schema.schema and 'type' in schema.schema['properties']:
-                        type_prop = schema.schema['properties']['type']
-                        if 'const' in type_prop:
-                            type_const = type_prop['const']
-                            lines.extend(
-                                [
-                                    f"\t\t\tif (type_val && strcmp(yyjson_get_str(type_val), \"{type_const}\") == 0) {{",
-                                    f"\t\t\t\tresult.{to_snake_case(schema.name)} = {schema.name}::FromJSON(obj);",
-                                    f"\t\t\t\tresult.has_{to_snake_case(schema.name)} = true;",
-                                    "\t\t\t}",
-                                ]
+                lines.extend(
+                    [
+                        f"\t\t\tresult.{to_snake_case(schema_name)} = {schema_name}::FromJSON(obj);",
+                        f"\t\t\tresult.has_{to_snake_case(schema_name)} = true;",
+                        "\t\t}",
+                    ]
+                )
+        else:
+            lines.append("\t\tif (yyjson_is_obj(obj)) {")
+            lines.append("\t\t\tauto type_val = yyjson_obj_get(obj, \"type\");")
+
+            first = True
+            for schema in self.one_of_schemas:
+                if 'properties' in schema.schema and 'type' in schema.schema['properties']:
+                    type_prop = schema.schema['properties']['type']
+                    if 'const' in type_prop:
+                        type_const = type_prop['const']
+                        if first:
+                            lines.append(
+                                f"\t\t\tif (type_val && strcmp(yyjson_get_str(type_val), \"{type_const}\") == 0) {{"
+                            )
+                            first = False
+                        else:
+                            lines.append(
+                                f"\t\t\telse if (type_val && strcmp(yyjson_get_str(type_val), \"{type_const}\") == 0) {{"
                             )
 
+                        lines.extend(
+                            [
+                                f"\t\t\t\tresult.{to_snake_case(schema.name)} = {schema.name}::FromJSON(obj);",
+                                f"\t\t\t\tresult.has_{to_snake_case(schema.name)} = true;",
+                                "\t\t\t}",
+                            ]
+                        )
             lines.append("\t\t}")
+
+        # Add the else clause with error
+        lines.append(f"\t\telse {{")
+        lines.append(f"\t\t\tthrow IOException(\"{self.name} failed to parse, none of the accepted schemas found\");")
+        lines.append("\t\t}")
 
         lines.extend(["\t\treturn result;", "\t}", "", "public:"])
 
-        # Generate primitive member variables
-        for base_type, info in primitive_groups.items():
-            type_mapping = info['type_mapping']
-            lines.extend([f"\t{type_mapping.cpp_type} value_{base_type};", f"\tbool has_{base_type} = false;"])
+        # Generate member variables
+        for schema in self.one_of_schemas:
+            lines.extend(
+                [f"\t{schema.name} {to_snake_case(schema.name)};", f"\tbool has_{to_snake_case(schema.name)} = false;"]
+            )
 
-        # Generate object member variables
-        for schema in object_schemas:
+        lines.append("};")
+        return lines
+
+    def _generate_anyof_class(self) -> List[str]:
+        lines = [
+            f"class {self.name} {{",
+            "public:",
+            f"\tstatic {self.name} FromJSON(yyjson_val *obj) {{",
+            f"\t\t{self.name} result;",
+            "\t\tif (yyjson_is_obj(obj)) {",
+        ]
+
+        # For each schema in anyOf, check its identifying fields
+        for schema in self.any_of_schemas:
+            # Get required fields for this schema
+            required_fields = schema.required if hasattr(schema, 'required') else []
+
+            # Generate field checks
+            field_checks = []
+            for field in required_fields:
+                field_checks.append(f'yyjson_obj_get(obj, "{field}")')
+
+            if field_checks:
+                lines.append(f"\t\t\tif ({' && '.join(field_checks)}) {{")
+                lines.append(f"\t\t\t\tresult.{to_snake_case(schema.name)} = {schema.name}::FromJSON(obj);")
+                lines.append(f"\t\t\t\tresult.has_{to_snake_case(schema.name)} = true;")
+                lines.append("\t\t\t}")
+
+        # Add validation that at least one schema matched
+        lines.extend(
+            [
+                "\t\t\tif (!("
+                + " || ".join([f"result.has_{to_snake_case(s.name)}" for s in self.any_of_schemas])
+                + ")) {",
+                f'\t\t\t\tthrow IOException("{self.name} failed to parse, none of the accepted schemas found");',
+                "\t\t\t}",
+                "\t\t} else {",
+                f'\t\t\tthrow IOException("{self.name} must be an object");',
+                "\t\t}",
+                "\t\treturn result;",
+                "\t}",
+                "",
+                "public:",
+            ]
+        )
+
+        # Generate member variables
+        for schema in self.any_of_schemas:
             lines.extend(
                 [f"\t{schema.name} {to_snake_case(schema.name)};", f"\tbool has_{to_snake_case(schema.name)} = false;"]
             )
@@ -526,6 +587,9 @@ def main():
 
     # Generate a header file for each schema
     for name, schema in parsed_schemas.items():
+        if name in SCHEMA_BLACKLIST:
+            # We don't want to generate this, this file is written/edited manually
+            continue
         output_path = os.path.join(OUTPUT_DIR, f'{to_snake_case(name)}.hpp')
         with open(output_path, 'w') as f:
             f.write(schema.generate_header_file())

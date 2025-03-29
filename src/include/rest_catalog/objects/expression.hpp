@@ -20,15 +20,15 @@ public:
 			if (type_val && strcmp(yyjson_get_str(type_val), "true") == 0) {
 				result.true_expression = TrueExpression::FromJSON(obj);
 				result.has_true_expression = true;
-			}
-			if (type_val && strcmp(yyjson_get_str(type_val), "false") == 0) {
+			} else if (type_val && strcmp(yyjson_get_str(type_val), "false") == 0) {
 				result.false_expression = FalseExpression::FromJSON(obj);
 				result.has_false_expression = true;
-			}
-			if (type_val && strcmp(yyjson_get_str(type_val), "not") == 0) {
+			} else if (type_val && strcmp(yyjson_get_str(type_val), "not") == 0) {
 				result.not_expression = NotExpression::FromJSON(obj);
 				result.has_not_expression = true;
 			}
+		} else {
+			throw IOException("Expression failed to parse, none of the accepted schemas found");
 		}
 		return result;
 	}
