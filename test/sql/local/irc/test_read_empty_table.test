@@ -1,4 +1,4 @@
-# name: test/sql/local/irc/test_use.test
+# name: test/sql/local/irc/test_read_empty_table.test
 # description: test integration with iceberg catalog read
 # group: [irc]
 
@@ -12,10 +12,14 @@ require iceberg
 
 require httpfs
 
-require aws
+statement ok
+set enable_logging=true
 
 statement ok
-CREATE SECRET local_catalog_secret (
+set logging_level='debug'
+
+statement ok
+CREATE SECRET (
     TYPE S3,
     KEY_ID 'admin',
     SECRET 'password',
@@ -24,26 +28,13 @@ CREATE SECRET local_catalog_secret (
     USE_SSL 0
 );
 
+
 statement ok
 ATTACH '' AS my_datalake (
     TYPE ICEBERG,
     ENDPOINT 'http://127.0.0.1:8181'
 );
 
-statement ok
-use my_datalake.default;
-
-# need catalog and schema name for use.
-statement error
-use my_datalake;
+query III
+select * from my_datalake.default.empty_table;
 ----
-Catalog Error
-
-# even after showing all tables. use statement needs catalog + schema.
-statement ok
-show all tables;
-
-statement error
-use my_datalake;
-----
-Catalog Error

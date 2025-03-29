@@ -61,14 +61,18 @@ public:
 	uint64_t schema_id;
 	vector<IcebergColumnDefinition> schema;
 	string metadata_compression_codec = "none";
+
 public:
 	static IcebergSnapshot GetLatestSnapshot(const string &path, FileSystem &fs, const IcebergOptions &options);
-	static IcebergSnapshot GetSnapshotById(const string &path, FileSystem &fs, idx_t snapshot_id, const IcebergOptions &options);
-	static IcebergSnapshot GetSnapshotByTimestamp(const string &path, FileSystem &fs, timestamp_t timestamp, const IcebergOptions &options);
+	static IcebergSnapshot GetSnapshotById(const string &path, FileSystem &fs, idx_t snapshot_id,
+	                                       const IcebergOptions &options);
+	static IcebergSnapshot GetSnapshotByTimestamp(const string &path, FileSystem &fs, timestamp_t timestamp,
+	                                              const IcebergOptions &options);
 
 	static IcebergSnapshot ParseSnapShot(yyjson_val *snapshot, idx_t iceberg_format_version, idx_t schema_id,
 	                                     vector<yyjson_val *> &schemas, const IcebergOptions &options);
-	static string GetMetaDataPath(ClientContext &context, const string &path, FileSystem &fs, const IcebergOptions &options);
+	static string GetMetaDataPath(ClientContext &context, const string &path, FileSystem &fs,
+	                              const IcebergOptions &options);
 	static string ReadMetaData(const string &path, FileSystem &fs, const string &metadata_compression_codec);
 	static yyjson_val *GetSnapshots(const string &path, FileSystem &fs, string GetSnapshotByTimestamp);
 	static unique_ptr<SnapshotParseInfo> GetParseInfo(yyjson_doc &metadata_json);
@@ -85,14 +89,16 @@ protected:
 	static yyjson_val *FindSnapshotByIdInternal(yyjson_val *snapshots, idx_t target_id);
 	static yyjson_val *FindSnapshotByIdTimestampInternal(yyjson_val *snapshots, timestamp_t timestamp);
 	static vector<IcebergColumnDefinition> ParseSchema(vector<yyjson_val *> &schemas, idx_t schema_id);
-	static unique_ptr<SnapshotParseInfo> GetParseInfo(const string &path, FileSystem &fs, const string &metadata_compression_codec);
+	static unique_ptr<SnapshotParseInfo> GetParseInfo(const string &path, FileSystem &fs,
+	                                                  const string &metadata_compression_codec);
 };
 
 //! Represents the iceberg table at a specific IcebergSnapshot. Corresponds to a single Manifest List.
 struct IcebergTable {
 public:
 	//! Loads all(!) metadata of into IcebergTable object
-	static IcebergTable Load(const string &iceberg_path, IcebergSnapshot &snapshot, ClientContext &context, const IcebergOptions &options);
+	static IcebergTable Load(const string &iceberg_path, IcebergSnapshot &snapshot, ClientContext &context,
+	                         const IcebergOptions &options);
 
 public:
 	//! Returns all paths to be scanned for the IcebergManifestContentType

@@ -1,6 +1,7 @@
-# name: test/sql/cloud/iceberg_on_tpch.test
+# name: test/sql/cloud/tpch_on_cloud.test_slow
 # description: test integration with iceberg catalog read
-# group: [iceberg]
+# group: [cloud]
+
 # setup creds
 
 # TODO, need to get access to a remote glue catalog merged first

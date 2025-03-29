@@ -39,11 +39,11 @@ unique_ptr<CatalogEntry> ICTableSet::_CreateCatalogEntry(ClientContext &context,
 }
 
 void ICTableSet::FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &entry) {
-	auto* derived = static_cast<ICTableEntry*>(entry.get());
+	auto *derived = static_cast<ICTableEntry *>(entry.get());
 	if (!derived->table_data->storage_location.empty()) {
 		return;
 	}
-		
+
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
 	auto table = IRCAPI::GetTable(context, ic_catalog, schema.name, entry->name, ic_catalog.credentials);
 	entry = _CreateCatalogEntry(context, table);
@@ -80,7 +80,8 @@ unique_ptr<ICTableInfo> ICTableSet::GetTableInfo(ClientContext &context, IRCSche
 optional_ptr<CatalogEntry> ICTableSet::CreateTable(ClientContext &context, BoundCreateTableInfo &info) {
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
 	auto *table_info = dynamic_cast<CreateTableInfo *>(info.base.get());
-	auto table = IRCAPI::CreateTable(context, ic_catalog, ic_catalog.internal_name, schema.name, ic_catalog.credentials, table_info);
+	auto table = IRCAPI::CreateTable(context, ic_catalog, ic_catalog.internal_name, schema.name, ic_catalog.credentials,
+	                                 table_info);
 	auto entry = _CreateCatalogEntry(context, table);
 	return CreateEntry(std::move(entry));
 }

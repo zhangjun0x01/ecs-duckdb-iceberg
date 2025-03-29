@@ -1,6 +1,6 @@
-# name: test/sql/cloud/irc/test_use.test
+# name: test/sql/cloud/test_use.test
 # description: test use
-# group: [iceberg]
+# group: [cloud]
 
 require-env ICEBERG_AWS_REMOTE_AVAILABLE
 

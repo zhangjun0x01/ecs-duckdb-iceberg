@@ -1,6 +1,6 @@
-# name: test/sql/local/iceberg_scan_generated_data_1.test_slow
+# name: test/sql/local/iceberg_scans/iceberg_scan_generated_data_1.test_slow
 # description: test iceberg extension with the sf1 generated test set
-# group: [iceberg]
+# group: [iceberg_scans]
 
 require avro
 

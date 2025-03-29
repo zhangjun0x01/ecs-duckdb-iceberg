@@ -1,6 +1,6 @@
-# name: test/sql/local/iceberg_catalog_read.test
+# name: test/sql/local/irc/irc_catalog_read_deletes.test
 # description: test integration with iceberg catalog read
-# group: [iceberg]
+# group: [irc]
 
 require-env ICEBERG_SERVER_AVAILABLE
 

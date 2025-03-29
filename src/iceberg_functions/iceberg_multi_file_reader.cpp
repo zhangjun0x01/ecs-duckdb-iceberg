@@ -100,27 +100,29 @@ string IcebergMultiFileList::GetFile(idx_t file_id) {
 			}
 			auto &manifest = *current_data_manifest;
 			auto manifest_entry_full_path = options.allow_moved_paths
-												? IcebergUtils::GetFullPath(iceberg_path, manifest.manifest_path, fs)
-												: manifest.manifest_path;
+			                                    ? IcebergUtils::GetFullPath(iceberg_path, manifest.manifest_path, fs)
+			                                    : manifest.manifest_path;
 			auto scan = make_uniq<AvroScan>("IcebergManifest", context, manifest_entry_full_path);
 			data_manifest_entry_reader->Initialize(std::move(scan));
 		}
 
 		idx_t remaining = (file_id + 1) - data_files.size();
-		data_manifest_entry_reader->ReadEntries(remaining, [&data_files, &entry_producer](DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input) {
-			return entry_producer(chunk, offset, count, input, data_files);
-		});
+		data_manifest_entry_reader->ReadEntries(
+		    remaining, [&data_files, &entry_producer](DataChunk &chunk, idx_t offset, idx_t count,
+		                                              const ManifestReaderInput &input) {
+			    return entry_producer(chunk, offset, count, input, data_files);
+		    });
 		if (data_manifest_entry_reader->Finished()) {
 			current_data_manifest++;
 			continue;
 		}
 	}
-	#ifdef DEBUG
+#ifdef DEBUG
 	for (auto &entry : data_files) {
 		D_ASSERT(entry.content == IcebergManifestEntryContentType::DATA);
 		D_ASSERT(entry.status != IcebergManifestEntryStatusType::DELETED);
 	}
-	#endif
+#endif
 
 	if (file_id >= data_files.size()) {
 		return string();
@@ -170,39 +172,49 @@ void IcebergMultiFileList::InitializeFiles() {
 
 	//! Set up the manifest + manifest entry readers
 	if (snapshot.iceberg_format_version == 1) {
-		data_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping, IcebergManifestEntryV1::VerifySchema);
-		delete_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping, IcebergManifestEntryV1::VerifySchema);
+		data_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping,
+		                                                       IcebergManifestEntryV1::VerifySchema);
+		delete_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping,
+		                                                         IcebergManifestEntryV1::VerifySchema);
 		delete_manifest_entry_reader->skip_deleted = true;
 		data_manifest_entry_reader->skip_deleted = true;
-		manifest_reader = make_uniq<ManifestReader>(IcebergManifestV1::PopulateNameMapping, IcebergManifestV1::VerifySchema);
+		manifest_reader =
+		    make_uniq<ManifestReader>(IcebergManifestV1::PopulateNameMapping, IcebergManifestV1::VerifySchema);
 
 		manifest_producer = IcebergManifestV1::ProduceEntries;
 		entry_producer = IcebergManifestEntryV1::ProduceEntries;
 	} else if (snapshot.iceberg_format_version == 2) {
-		data_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping, IcebergManifestEntryV2::VerifySchema);
-		delete_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping, IcebergManifestEntryV2::VerifySchema);
+		data_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping,
+		                                                       IcebergManifestEntryV2::VerifySchema);
+		delete_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping,
+		                                                         IcebergManifestEntryV2::VerifySchema);
 		delete_manifest_entry_reader->skip_deleted = true;
 		data_manifest_entry_reader->skip_deleted = true;
-		manifest_reader = make_uniq<ManifestReader>(IcebergManifestV2::PopulateNameMapping, IcebergManifestV2::VerifySchema);
+		manifest_reader =
+		    make_uniq<ManifestReader>(IcebergManifestV2::PopulateNameMapping, IcebergManifestV2::VerifySchema);
 
 		manifest_producer = IcebergManifestV2::ProduceEntries;
 		entry_producer = IcebergManifestEntryV2::ProduceEntries;
 	} else {
-		throw InvalidInputException("Reading from Iceberg version %d is not supported yet", snapshot.iceberg_format_version);
+		throw InvalidInputException("Reading from Iceberg version %d is not supported yet",
+		                            snapshot.iceberg_format_version);
 	}
 
 	// Read the manifest list, we need all the manifests to determine if we've seen all deletes
 	auto manifest_list_full_path = options.allow_moved_paths
 	                                   ? IcebergUtils::GetFullPath(iceberg_path, snapshot.manifest_list, fs)
 	                                   : snapshot.manifest_list;
+
 	auto scan = make_uniq<AvroScan>("IcebergManifestList", context, manifest_list_full_path);
 	manifest_reader->Initialize(std::move(scan));
 
 	vector<IcebergManifest> all_manifests;
 	while (!manifest_reader->Finished()) {
-		manifest_reader->ReadEntries(STANDARD_VECTOR_SIZE, [&all_manifests, manifest_producer](DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input) {
-			return manifest_producer(chunk, offset, count, input, all_manifests);
-		});
+		manifest_reader->ReadEntries(STANDARD_VECTOR_SIZE,
+		                             [&all_manifests, manifest_producer](DataChunk &chunk, idx_t offset, idx_t count,
+		                                                                 const ManifestReaderInput &input) {
+			                             return manifest_producer(chunk, offset, count, input, all_manifests);
+		                             });
 	}
 
 	for (auto &manifest : all_manifests) {
@@ -279,33 +291,32 @@ void IcebergMultiFileReader::CreateColumnMapping(const string &file_name,
 	                                              reader_data, bind_data, initial_file, global_state_p);
 
 	auto &global_state = global_state_p->Cast<IcebergMultiFileReaderGlobalState>();
-    // Check if the file_row_number column is an "extra_column" which is not part of the projection
+	// Check if the file_row_number column is an "extra_column" which is not part of the projection
 	if (!global_state.file_row_number_idx.IsValid()) {
 		return;
 	}
 	auto file_row_number_idx = global_state.file_row_number_idx.GetIndex();
-    if (file_row_number_idx >= global_column_ids.size()) {
-        // Build the name map
-        case_insensitive_map_t<idx_t> name_map;
-        for (idx_t col_idx = 0; col_idx < local_columns.size(); col_idx++) {
-            name_map[local_columns[col_idx].name] = col_idx;
-        }
+	if (file_row_number_idx >= global_column_ids.size()) {
+		// Build the name map
+		case_insensitive_map_t<idx_t> name_map;
+		for (idx_t col_idx = 0; col_idx < local_columns.size(); col_idx++) {
+			name_map[local_columns[col_idx].name] = col_idx;
+		}
 
-        // Lookup the required column in the local map
-        auto entry = name_map.find("file_row_number");
-        if (entry == name_map.end()) {
-            throw IOException("Failed to find the file_row_number column");
-        }
+		// Lookup the required column in the local map
+		auto entry = name_map.find("file_row_number");
+		if (entry == name_map.end()) {
+			throw IOException("Failed to find the file_row_number column");
+		}
 
-        // Register the column to be scanned from this file
-        reader_data.column_ids.push_back(entry->second);
-        reader_data.column_indexes.emplace_back(entry->second);
-        reader_data.column_mapping.push_back(file_row_number_idx);
-    }
+		// Register the column to be scanned from this file
+		reader_data.column_ids.push_back(entry->second);
+		reader_data.column_indexes.emplace_back(entry->second);
+		reader_data.column_mapping.push_back(file_row_number_idx);
+	}
 
-    // This may have changed: update it
-    reader_data.empty_columns = reader_data.column_ids.empty();
-
+	// This may have changed: update it
+	reader_data.empty_columns = reader_data.column_ids.empty();
 }
 
 unique_ptr<MultiFileReaderGlobalState>
@@ -378,13 +389,14 @@ IcebergMultiFileReader::InitializeGlobalState(ClientContext &context, const Mult
 }
 
 void IcebergMultiFileReader::FinalizeBind(const MultiFileReaderOptions &file_options,
-	                                     const MultiFileReaderBindData &options, const string &filename,
-	                                     const vector<MultiFileReaderColumnDefinition> &local_columns,
-	                                     const vector<MultiFileReaderColumnDefinition> &global_columns,
-	                                     const vector<ColumnIndex> &global_column_ids, MultiFileReaderData &reader_data,
-	                                     ClientContext &context, optional_ptr<MultiFileReaderGlobalState> global_state) {
-	MultiFileReader::FinalizeBind(file_options, options, filename, local_columns, global_columns,
-	                              global_column_ids, reader_data, context, global_state);
+                                          const MultiFileReaderBindData &options, const string &filename,
+                                          const vector<MultiFileReaderColumnDefinition> &local_columns,
+                                          const vector<MultiFileReaderColumnDefinition> &global_columns,
+                                          const vector<ColumnIndex> &global_column_ids,
+                                          MultiFileReaderData &reader_data, ClientContext &context,
+                                          optional_ptr<MultiFileReaderGlobalState> global_state) {
+	MultiFileReader::FinalizeBind(file_options, options, filename, local_columns, global_columns, global_column_ids,
+	                              reader_data, context, global_state);
 	return;
 }
 
@@ -490,15 +502,17 @@ void IcebergMultiFileList::ProcessDeletes() const {
 			}
 			auto &manifest = *current_delete_manifest;
 			auto manifest_entry_full_path = options.allow_moved_paths
-												? IcebergUtils::GetFullPath(iceberg_path, manifest.manifest_path, fs)
-												: manifest.manifest_path;
+			                                    ? IcebergUtils::GetFullPath(iceberg_path, manifest.manifest_path, fs)
+			                                    : manifest.manifest_path;
 			auto scan = make_uniq<AvroScan>("IcebergManifest", context, manifest_entry_full_path);
 			delete_manifest_entry_reader->Initialize(std::move(scan));
 		}
 
-		delete_manifest_entry_reader->ReadEntries(STANDARD_VECTOR_SIZE, [&delete_files, &entry_producer](DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input) {
-			return entry_producer(chunk, offset, count, input, delete_files);
-		});
+		delete_manifest_entry_reader->ReadEntries(
+		    STANDARD_VECTOR_SIZE, [&delete_files, &entry_producer](DataChunk &chunk, idx_t offset, idx_t count,
+		                                                           const ManifestReaderInput &input) {
+			    return entry_producer(chunk, offset, count, input, delete_files);
+		    });
 
 		if (delete_manifest_entry_reader->Finished()) {
 			current_delete_manifest++;
@@ -506,12 +520,12 @@ void IcebergMultiFileList::ProcessDeletes() const {
 		}
 	}
 
-	#ifdef DEBUG
+#ifdef DEBUG
 	for (auto &entry : data_files) {
 		D_ASSERT(entry.content == IcebergManifestEntryContentType::DATA);
 		D_ASSERT(entry.status != IcebergManifestEntryStatusType::DELETED);
 	}
-	#endif
+#endif
 
 	for (auto &entry : delete_files) {
 		ScanDeleteFile(entry.file_path);

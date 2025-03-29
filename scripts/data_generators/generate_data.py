@@ -15,4 +15,3 @@ if __name__ == "__main__":
     db.CloseConnection(conn)
     del db
     del conn
-

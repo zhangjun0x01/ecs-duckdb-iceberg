@@ -1,6 +1,6 @@
 # name: test/sql/cloud/test_bad_connections.test
 # description: test connections that arent good
-# group: [iceberg]
+# group: [cloud]
 
 require avro
 

@@ -28,10 +28,10 @@ public:
 };
 
 struct YyjsonDocDeleter {
-	void operator()(yyjson_doc* doc) {
+	void operator()(yyjson_doc *doc) {
 		yyjson_doc_free(doc);
 	}
-	void operator()(yyjson_mut_doc* doc) {
+	void operator()(yyjson_mut_doc *doc) {
 		yyjson_mut_doc_free(doc);
 	}
 };

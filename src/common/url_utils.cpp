@@ -9,10 +9,6 @@ void IRCEndpointBuilder::AddPathComponent(const string &component) {
 	}
 }
 
-void IRCEndpointBuilder::AddQueryParameter(const string &key, const string &value) {
-	query_parameters.emplace_back(key, value);
-}
-
 void IRCEndpointBuilder::SetPrefix(const string &prefix_) {
 	prefix = prefix_;
 }
@@ -27,14 +23,6 @@ void IRCEndpointBuilder::SetVersion(const string &version_) {
 
 string IRCEndpointBuilder::GetVersion() const {
 	return version;
-}
-
-void IRCEndpointBuilder::SetWarehouse(const string &warehouse_) {
-	warehouse = warehouse_;
-}
-
-string IRCEndpointBuilder::GetWarehouse() const {
-	return warehouse;
 }
 
 void IRCEndpointBuilder::SetHost(const string &host_) {
@@ -86,4 +74,4 @@ string IRCEndpointBuilder::GetURL() const {
 	return ret;
 }
 
-}
+} // namespace duckdb

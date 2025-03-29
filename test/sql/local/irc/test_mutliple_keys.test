@@ -1,6 +1,6 @@
-# name: test/sql/local/irc/test_multiple_keys.test
+# name: test/sql/local/irc/test_mutliple_keys.test
 # description: test integration with iceberg catalog read
-# group: [iceberg]
+# group: [irc]
 
 require-env ICEBERG_SERVER_AVAILABLE
 

@@ -30,8 +30,7 @@ public:
 
 		FileSystem &fs = FileSystem::GetFileSystem(context);
 
-		auto iceberg_meta_path =
-		    IcebergSnapshot::GetMetaDataPath(context, bind_data.filename, fs, bind_data.options);
+		auto iceberg_meta_path = IcebergSnapshot::GetMetaDataPath(context, bind_data.filename, fs, bind_data.options);
 		global_state->metadata_file =
 		    IcebergSnapshot::ReadMetaData(iceberg_meta_path, fs, bind_data.options.metadata_compression_codec);
 		global_state->metadata_doc =

@@ -20,9 +20,11 @@ struct IRCCredentials {
 	//! Catalog generates the token using client id & secret
 	string token;
 	//! The scope of the OAuth token to request through the client_credentials flow
-	string scope;
+	string oauth2_scope;
 	//! OAuth endpoint
 	string oauth2_endpoint;
+	//! The warehouse where the catalog lives
+	string warehouse;
 };
 
 class ICRClearCacheFunction : public TableFunction {
@@ -32,21 +34,22 @@ public:
 	static void ClearCacheOnSetting(ClientContext &context, SetScope scope, Value &parameter);
 };
 
-enum class ICEBERG_CATALOG_TYPE { AWS_S3TABLES, AWS_GLUE, OTHER, INVALID};
+enum class ICEBERG_CATALOG_TYPE { AWS_S3TABLES, AWS_GLUE, OTHER, INVALID };
 
 class MetadataCacheValue {
 public:
 	std::string data;
 	std::chrono::system_clock::time_point expires_at;
+
 public:
-	MetadataCacheValue(std::string data_, std::chrono::system_clock::time_point expires_at_) :
-	      data(data_), expires_at(expires_at_) {};
+	MetadataCacheValue(std::string data_, std::chrono::system_clock::time_point expires_at_)
+	    : data(data_), expires_at(expires_at_) {};
 };
 
 class IRCatalog : public Catalog {
 public:
-	explicit IRCatalog(AttachedDatabase &db_p, AccessMode access_mode,
-	                   IRCCredentials credentials, string warehouse, string host, string secret_name, string version = "v1");
+	explicit IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, IRCCredentials credentials, string warehouse,
+	                   string host, string secret_name, string version = "v1");
 	~IRCatalog();
 
 	string internal_name;
@@ -118,14 +121,11 @@ private:
 	IRCSchemaSet schemas;
 	string default_schema;
 
-
 	// defaults and overrides provided by a catalog.
 	unordered_map<string, string> defaults;
 	unordered_map<string, string> overrides;
 
-
 	unordered_map<string, unique_ptr<MetadataCacheValue>> metadata_cache;
-
 };
 
 } // namespace duckdb
