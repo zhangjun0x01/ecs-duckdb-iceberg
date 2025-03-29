@@ -1,6 +1,6 @@
-# name: test/sql/local/iceberg_catalog_read.test
+# name: test/sql/local/iceberg_scans/iceberge_read_deletes.test
 # description: test integration with iceberg catalog read
-# group: [iceberg]
+# group: [iceberg_scans]
 
 require-env DUCKDB_ICEBERG_HAVE_GENERATED_DATA
 

@@ -1,6 +1,6 @@
 # name: test/sql/cloud/glue/test_glue.test
 # description: test integration with iceberg catalog read
-# group: [iceberg]
+# group: [glue]
 
 require-env ICEBERG_AWS_REMOTE_AVAILABLE
 

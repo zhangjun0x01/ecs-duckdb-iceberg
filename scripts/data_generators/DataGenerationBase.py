@@ -1,6 +1,6 @@
-
 class DataGenerationBase:
     """Base class for database connections and operations."""
+
     def GetConnection(self):
         """Returns a connection to the database."""
         raise NotImplementedError("Subclasses must implement GetConnection()")

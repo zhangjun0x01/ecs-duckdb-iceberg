@@ -1,6 +1,6 @@
 # name: test/sql/cloud/s3tables/test_direct_keys_s3tables.test
 # description: test integration with s3 tables read
-# group: [iceberg]
+# group: [s3tables]
 
 require-env ICEBERG_AWS_REMOTE_AVAILABLE
 
