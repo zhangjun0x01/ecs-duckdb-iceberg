@@ -24,8 +24,7 @@ public:
 			yyjson_arr_foreach(fields_val, idx, max, val) {
 				result.fields.push_back(PartitionField::FromJSON(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("PartitionSpec required property 'fields' is missing");
 		}
 

@@ -29,8 +29,7 @@ public:
 		auto partition_statistics_val = yyjson_obj_get(obj, "partition-statistics");
 		if (partition_statistics_val) {
 			result.partition_statistics = PartitionStatisticsFile::FromJSON(partition_statistics_val);
-		}
-		else {
+		} else {
 			throw IOException("SetPartitionStatisticsUpdate required property 'partition-statistics' is missing");
 		}
 

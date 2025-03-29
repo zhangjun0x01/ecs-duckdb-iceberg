@@ -32,8 +32,7 @@ public:
 			yyjson_arr_foreach(removals_val, idx, max, val) {
 				result.removals.push_back(yyjson_get_str(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("RemovePropertiesUpdate required property 'removals' is missing");
 		}
 

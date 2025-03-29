@@ -21,16 +21,14 @@ public:
 		auto term_val = yyjson_obj_get(obj, "term");
 		if (term_val) {
 			result.term = Term::FromJSON(term_val);
-		}
-		else {
+		} else {
 			throw IOException("SetExpression required property 'term' is missing");
 		}
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = ExpressionType::FromJSON(type_val);
-		}
-		else {
+		} else {
 			throw IOException("SetExpression required property 'type' is missing");
 		}
 
@@ -41,8 +39,7 @@ public:
 			yyjson_arr_foreach(values_val, idx, max, val) {
 				result.values.push_back(val);
 			}
-		}
-		else {
+		} else {
 			throw IOException("SetExpression required property 'values' is missing");
 		}
 

@@ -34,8 +34,7 @@ public:
 		auto statistics_val = yyjson_obj_get(obj, "statistics");
 		if (statistics_val) {
 			result.statistics = StatisticsFile::FromJSON(statistics_val);
-		}
-		else {
+		} else {
 			throw IOException("SetStatisticsUpdate required property 'statistics' is missing");
 		}
 

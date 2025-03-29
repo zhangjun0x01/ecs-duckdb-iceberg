@@ -20,8 +20,7 @@ public:
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = ExpressionType::FromJSON(type_val);
-		}
-		else {
+		} else {
 			throw IOException("FalseExpression required property 'type' is missing");
 		}
 

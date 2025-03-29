@@ -31,8 +31,7 @@ public:
 			yyjson_arr_foreach(requirements_val, idx, max, val) {
 				result.requirements.push_back(TableRequirement::FromJSON(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("CommitTableRequest required property 'requirements' is missing");
 		}
 
@@ -43,8 +42,7 @@ public:
 			yyjson_arr_foreach(updates_val, idx, max, val) {
 				result.updates.push_back(TableUpdate::FromJSON(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("CommitTableRequest required property 'updates' is missing");
 		}
 

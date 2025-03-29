@@ -26,8 +26,7 @@ public:
 		auto metadata_val = yyjson_obj_get(obj, "metadata");
 		if (metadata_val) {
 			result.metadata = TableMetadata::FromJSON(metadata_val);
-		}
-		else {
+		} else {
 			throw IOException("LoadTableResult required property 'metadata' is missing");
 		}
 

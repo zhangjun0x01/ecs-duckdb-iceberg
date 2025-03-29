@@ -28,8 +28,7 @@ public:
 		auto schema_id_val = yyjson_obj_get(obj, "schema-id");
 		if (schema_id_val) {
 			result.schema_id = yyjson_get_sint(schema_id_val);
-		}
-		else {
+		} else {
 			throw IOException("SetCurrentSchemaUpdate required property 'schema-id' is missing");
 		}
 

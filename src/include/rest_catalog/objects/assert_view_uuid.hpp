@@ -19,16 +19,14 @@ public:
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = yyjson_get_str(type_val);
-		}
-		else {
+		} else {
 			throw IOException("AssertViewUUID required property 'type' is missing");
 		}
 
 		auto uuid_val = yyjson_obj_get(obj, "uuid");
 		if (uuid_val) {
 			result.uuid = yyjson_get_str(uuid_val);
-		}
-		else {
+		} else {
 			throw IOException("AssertViewUUID required property 'uuid' is missing");
 		}
 

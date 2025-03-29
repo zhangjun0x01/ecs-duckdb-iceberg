@@ -32,8 +32,7 @@ public:
 			yyjson_arr_foreach(schema_ids_val, idx, max, val) {
 				result.schema_ids.push_back(yyjson_get_sint(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("RemoveSchemasUpdate required property 'schema-ids' is missing");
 		}
 

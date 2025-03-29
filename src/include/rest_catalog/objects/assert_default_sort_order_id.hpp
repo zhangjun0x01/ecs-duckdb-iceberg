@@ -23,8 +23,7 @@ public:
 		auto default_sort_order_id_val = yyjson_obj_get(obj, "default-sort-order-id");
 		if (default_sort_order_id_val) {
 			result.default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
-		}
-		else {
+		} else {
 			throw IOException("AssertDefaultSortOrderId required property 'default-sort-order-id' is missing");
 		}
 

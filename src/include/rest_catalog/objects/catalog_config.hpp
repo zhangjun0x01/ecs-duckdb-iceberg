@@ -19,8 +19,7 @@ public:
 		auto defaults_val = yyjson_obj_get(obj, "defaults");
 		if (defaults_val) {
 			result.defaults = parse_object_of_strings(defaults_val);
-		}
-		else {
+		} else {
 			throw IOException("CatalogConfig required property 'defaults' is missing");
 		}
 
@@ -36,8 +35,7 @@ public:
 		auto overrides_val = yyjson_obj_get(obj, "overrides");
 		if (overrides_val) {
 			result.overrides = parse_object_of_strings(overrides_val);
-		}
-		else {
+		} else {
 			throw IOException("CatalogConfig required property 'overrides' is missing");
 		}
 

@@ -20,8 +20,7 @@ public:
 		auto plan_task_val = yyjson_obj_get(obj, "plan-task");
 		if (plan_task_val) {
 			result.plan_task = PlanTask::FromJSON(plan_task_val);
-		}
-		else {
+		} else {
 			throw IOException("FetchScanTasksRequest required property 'plan-task' is missing");
 		}
 

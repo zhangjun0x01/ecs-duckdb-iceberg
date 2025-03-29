@@ -23,9 +23,9 @@ public:
 		auto last_assigned_partition_id_val = yyjson_obj_get(obj, "last-assigned-partition-id");
 		if (last_assigned_partition_id_val) {
 			result.last_assigned_partition_id = yyjson_get_sint(last_assigned_partition_id_val);
-		}
-		else {
-			throw IOException("AssertLastAssignedPartitionId required property 'last-assigned-partition-id' is missing");
+		} else {
+			throw IOException(
+			    "AssertLastAssignedPartitionId required property 'last-assigned-partition-id' is missing");
 		}
 
 		auto type_val = yyjson_obj_get(obj, "type");

@@ -29,8 +29,7 @@ public:
 		auto snapshot_val = yyjson_obj_get(obj, "snapshot");
 		if (snapshot_val) {
 			result.snapshot = Snapshot::FromJSON(snapshot_val);
-		}
-		else {
+		} else {
 			throw IOException("AddSnapshotUpdate required property 'snapshot' is missing");
 		}
 

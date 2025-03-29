@@ -19,8 +19,7 @@ public:
 		auto report_type_val = yyjson_obj_get(obj, "report-type");
 		if (report_type_val) {
 			result.report_type = yyjson_get_str(report_type_val);
-		}
-		else {
+		} else {
 			throw IOException("ReportMetricsRequest required property 'report-type' is missing");
 		}
 

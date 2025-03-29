@@ -24,16 +24,14 @@ public:
 			yyjson_arr_foreach(fields_val, idx, max, val) {
 				result.fields.push_back(SortField::FromJSON(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("SortOrder required property 'fields' is missing");
 		}
 
 		auto order_id_val = yyjson_obj_get(obj, "order-id");
 		if (order_id_val) {
 			result.order_id = yyjson_get_sint(order_id_val);
-		}
-		else {
+		} else {
 			throw IOException("SortOrder required property 'order-id' is missing");
 		}
 

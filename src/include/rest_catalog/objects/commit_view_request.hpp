@@ -40,8 +40,7 @@ public:
 			yyjson_arr_foreach(updates_val, idx, max, val) {
 				result.updates.push_back(ViewUpdate::FromJSON(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("CommitViewRequest required property 'updates' is missing");
 		}
 

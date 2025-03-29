@@ -23,8 +23,7 @@ public:
 		auto last_assigned_field_id_val = yyjson_obj_get(obj, "last-assigned-field-id");
 		if (last_assigned_field_id_val) {
 			result.last_assigned_field_id = yyjson_get_sint(last_assigned_field_id_val);
-		}
-		else {
+		} else {
 			throw IOException("AssertLastAssignedFieldId required property 'last-assigned-field-id' is missing");
 		}
 

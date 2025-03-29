@@ -15,10 +15,73 @@ class Expression {
 public:
 	static Expression FromJSON(yyjson_val *obj) {
 		Expression result;
+		if (yyjson_is_obj(obj)) {
+			auto type_val = yyjson_obj_get(obj, "type");
+			if (type_val && strcmp(yyjson_get_str(type_val), "trueexpression") == 0) {
+				result.true_expression = TrueExpression::FromJSON(obj);
+				result.has_true_expression = true;
+			}
+		}
+		if (yyjson_is_obj(obj)) {
+			auto type_val = yyjson_obj_get(obj, "type");
+			if (type_val && strcmp(yyjson_get_str(type_val), "falseexpression") == 0) {
+				result.false_expression = FalseExpression::FromJSON(obj);
+				result.has_false_expression = true;
+			}
+		}
+		if (yyjson_is_obj(obj)) {
+			auto type_val = yyjson_obj_get(obj, "type");
+			if (type_val && strcmp(yyjson_get_str(type_val), "andorexpression") == 0) {
+				result.and_or_expression = AndOrExpression::FromJSON(obj);
+				result.has_and_or_expression = true;
+			}
+		}
+		if (yyjson_is_obj(obj)) {
+			auto type_val = yyjson_obj_get(obj, "type");
+			if (type_val && strcmp(yyjson_get_str(type_val), "notexpression") == 0) {
+				result.not_expression = NotExpression::FromJSON(obj);
+				result.has_not_expression = true;
+			}
+		}
+		if (yyjson_is_obj(obj)) {
+			auto type_val = yyjson_obj_get(obj, "type");
+			if (type_val && strcmp(yyjson_get_str(type_val), "setexpression") == 0) {
+				result.set_expression = SetExpression::FromJSON(obj);
+				result.has_set_expression = true;
+			}
+		}
+		if (yyjson_is_obj(obj)) {
+			auto type_val = yyjson_obj_get(obj, "type");
+			if (type_val && strcmp(yyjson_get_str(type_val), "literalexpression") == 0) {
+				result.literal_expression = LiteralExpression::FromJSON(obj);
+				result.has_literal_expression = true;
+			}
+		}
+		if (yyjson_is_obj(obj)) {
+			auto type_val = yyjson_obj_get(obj, "type");
+			if (type_val && strcmp(yyjson_get_str(type_val), "unaryexpression") == 0) {
+				result.unary_expression = UnaryExpression::FromJSON(obj);
+				result.has_unary_expression = true;
+			}
+		}
 		return result;
 	}
 
 public:
+	TrueExpression true_expression;
+	bool has_true_expression = false;
+	FalseExpression false_expression;
+	bool has_false_expression = false;
+	AndOrExpression and_or_expression;
+	bool has_and_or_expression = false;
+	NotExpression not_expression;
+	bool has_not_expression = false;
+	SetExpression set_expression;
+	bool has_set_expression = false;
+	LiteralExpression literal_expression;
+	bool has_literal_expression = false;
+	UnaryExpression unary_expression;
+	bool has_unary_expression = false;
 };
 } // namespace rest_api_objects
 } // namespace duckdb

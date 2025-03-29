@@ -23,8 +23,7 @@ public:
 			yyjson_arr_foreach(fields_val, idx, max, val) {
 				result.fields.push_back(yyjson_get_sint(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("BlobMetadata required property 'fields' is missing");
 		}
 
@@ -36,24 +35,21 @@ public:
 		auto sequence_number_val = yyjson_obj_get(obj, "sequence-number");
 		if (sequence_number_val) {
 			result.sequence_number = yyjson_get_sint(sequence_number_val);
-		}
-		else {
+		} else {
 			throw IOException("BlobMetadata required property 'sequence-number' is missing");
 		}
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 		if (snapshot_id_val) {
 			result.snapshot_id = yyjson_get_sint(snapshot_id_val);
-		}
-		else {
+		} else {
 			throw IOException("BlobMetadata required property 'snapshot-id' is missing");
 		}
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = yyjson_get_str(type_val);
-		}
-		else {
+		} else {
 			throw IOException("BlobMetadata required property 'type' is missing");
 		}
 

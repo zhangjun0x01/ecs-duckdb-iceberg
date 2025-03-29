@@ -30,8 +30,7 @@ public:
 		auto grant_type_val = yyjson_obj_get(obj, "grant_type");
 		if (grant_type_val) {
 			result.grant_type = yyjson_get_str(grant_type_val);
-		}
-		else {
+		} else {
 			throw IOException("OAuthTokenExchangeRequest required property 'grant_type' is missing");
 		}
 
@@ -48,16 +47,14 @@ public:
 		auto subject_token_val = yyjson_obj_get(obj, "subject_token");
 		if (subject_token_val) {
 			result.subject_token = yyjson_get_str(subject_token_val);
-		}
-		else {
+		} else {
 			throw IOException("OAuthTokenExchangeRequest required property 'subject_token' is missing");
 		}
 
 		auto subject_token_type_val = yyjson_obj_get(obj, "subject_token_type");
 		if (subject_token_type_val) {
 			result.subject_token_type = TokenType::FromJSON(subject_token_type_val);
-		}
-		else {
+		} else {
 			throw IOException("OAuthTokenExchangeRequest required property 'subject_token_type' is missing");
 		}
 

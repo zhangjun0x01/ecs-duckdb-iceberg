@@ -28,8 +28,7 @@ public:
 		auto location_val = yyjson_obj_get(obj, "location");
 		if (location_val) {
 			result.location = yyjson_get_str(location_val);
-		}
-		else {
+		} else {
 			throw IOException("SetLocationUpdate required property 'location' is missing");
 		}
 

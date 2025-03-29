@@ -48,8 +48,7 @@ public:
 		auto format_version_val = yyjson_obj_get(obj, "format-version");
 		if (format_version_val) {
 			result.format_version = yyjson_get_sint(format_version_val);
-		}
-		else {
+		} else {
 			throw IOException("TableMetadata required property 'format-version' is missing");
 		}
 
@@ -155,8 +154,7 @@ public:
 		auto table_uuid_val = yyjson_obj_get(obj, "table-uuid");
 		if (table_uuid_val) {
 			result.table_uuid = yyjson_get_str(table_uuid_val);
-		}
-		else {
+		} else {
 			throw IOException("TableMetadata required property 'table-uuid' is missing");
 		}
 

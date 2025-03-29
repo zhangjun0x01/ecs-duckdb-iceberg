@@ -28,8 +28,7 @@ public:
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 		if (snapshot_id_val) {
 			result.snapshot_id = yyjson_get_sint(snapshot_id_val);
-		}
-		else {
+		} else {
 			throw IOException("RemovePartitionStatisticsUpdate required property 'snapshot-id' is missing");
 		}
 

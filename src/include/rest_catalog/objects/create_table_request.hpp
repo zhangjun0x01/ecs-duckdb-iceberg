@@ -27,8 +27,7 @@ public:
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (name_val) {
 			result.name = yyjson_get_str(name_val);
-		}
-		else {
+		} else {
 			throw IOException("CreateTableRequest required property 'name' is missing");
 		}
 
@@ -45,8 +44,7 @@ public:
 		auto schema_val = yyjson_obj_get(obj, "schema");
 		if (schema_val) {
 			result.schema = Schema::FromJSON(schema_val);
-		}
-		else {
+		} else {
 			throw IOException("CreateTableRequest required property 'schema' is missing");
 		}
 

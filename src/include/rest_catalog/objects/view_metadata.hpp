@@ -22,24 +22,21 @@ public:
 		auto current_version_id_val = yyjson_obj_get(obj, "current-version-id");
 		if (current_version_id_val) {
 			result.current_version_id = yyjson_get_sint(current_version_id_val);
-		}
-		else {
+		} else {
 			throw IOException("ViewMetadata required property 'current-version-id' is missing");
 		}
 
 		auto format_version_val = yyjson_obj_get(obj, "format-version");
 		if (format_version_val) {
 			result.format_version = yyjson_get_sint(format_version_val);
-		}
-		else {
+		} else {
 			throw IOException("ViewMetadata required property 'format-version' is missing");
 		}
 
 		auto location_val = yyjson_obj_get(obj, "location");
 		if (location_val) {
 			result.location = yyjson_get_str(location_val);
-		}
-		else {
+		} else {
 			throw IOException("ViewMetadata required property 'location' is missing");
 		}
 
@@ -55,8 +52,7 @@ public:
 			yyjson_arr_foreach(schemas_val, idx, max, val) {
 				result.schemas.push_back(Schema::FromJSON(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("ViewMetadata required property 'schemas' is missing");
 		}
 
@@ -67,8 +63,7 @@ public:
 			yyjson_arr_foreach(version_log_val, idx, max, val) {
 				result.version_log.push_back(ViewHistoryEntry::FromJSON(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("ViewMetadata required property 'version-log' is missing");
 		}
 
@@ -79,16 +74,14 @@ public:
 			yyjson_arr_foreach(versions_val, idx, max, val) {
 				result.versions.push_back(ViewVersion::FromJSON(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("ViewMetadata required property 'versions' is missing");
 		}
 
 		auto view_uuid_val = yyjson_obj_get(obj, "view-uuid");
 		if (view_uuid_val) {
 			result.view_uuid = yyjson_get_str(view_uuid_val);
-		}
-		else {
+		} else {
 			throw IOException("ViewMetadata required property 'view-uuid' is missing");
 		}
 

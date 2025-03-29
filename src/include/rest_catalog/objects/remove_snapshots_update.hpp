@@ -32,8 +32,7 @@ public:
 			yyjson_arr_foreach(snapshot_ids_val, idx, max, val) {
 				result.snapshot_ids.push_back(yyjson_get_sint(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("RemoveSnapshotsUpdate required property 'snapshot-ids' is missing");
 		}
 

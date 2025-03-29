@@ -26,32 +26,28 @@ public:
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (name_val) {
 			result.name = yyjson_get_str(name_val);
-		}
-		else {
+		} else {
 			throw IOException("CreateViewRequest required property 'name' is missing");
 		}
 
 		auto properties_val = yyjson_obj_get(obj, "properties");
 		if (properties_val) {
 			result.properties = parse_object_of_strings(properties_val);
-		}
-		else {
+		} else {
 			throw IOException("CreateViewRequest required property 'properties' is missing");
 		}
 
 		auto schema_val = yyjson_obj_get(obj, "schema");
 		if (schema_val) {
 			result.schema = Schema::FromJSON(schema_val);
-		}
-		else {
+		} else {
 			throw IOException("CreateViewRequest required property 'schema' is missing");
 		}
 
 		auto view_version_val = yyjson_obj_get(obj, "view-version");
 		if (view_version_val) {
 			result.view_version = ViewVersion::FromJSON(view_version_val);
-		}
-		else {
+		} else {
 			throw IOException("CreateViewRequest required property 'view-version' is missing");
 		}
 

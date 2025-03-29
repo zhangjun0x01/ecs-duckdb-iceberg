@@ -24,8 +24,7 @@ public:
 			yyjson_arr_foreach(storage_credentials_val, idx, max, val) {
 				result.storage_credentials.push_back(StorageCredential::FromJSON(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("LoadCredentialsResponse required property 'storage-credentials' is missing");
 		}
 

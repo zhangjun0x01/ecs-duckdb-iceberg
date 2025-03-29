@@ -23,8 +23,7 @@ public:
 		auto default_spec_id_val = yyjson_obj_get(obj, "default-spec-id");
 		if (default_spec_id_val) {
 			result.default_spec_id = yyjson_get_sint(default_spec_id_val);
-		}
-		else {
+		} else {
 			throw IOException("AssertDefaultSpecId required property 'default-spec-id' is missing");
 		}
 

@@ -26,8 +26,7 @@ public:
 		auto id_val = yyjson_obj_get(obj, "id");
 		if (id_val) {
 			result.id = yyjson_get_sint(id_val);
-		}
-		else {
+		} else {
 			throw IOException("StructField required property 'id' is missing");
 		}
 
@@ -39,24 +38,21 @@ public:
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (name_val) {
 			result.name = yyjson_get_str(name_val);
-		}
-		else {
+		} else {
 			throw IOException("StructField required property 'name' is missing");
 		}
 
 		auto required_val = yyjson_obj_get(obj, "required");
 		if (required_val) {
 			result.required = yyjson_get_bool(required_val);
-		}
-		else {
+		} else {
 			throw IOException("StructField required property 'required' is missing");
 		}
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = Type::FromJSON(type_val);
-		}
-		else {
+		} else {
 			throw IOException("StructField required property 'type' is missing");
 		}
 

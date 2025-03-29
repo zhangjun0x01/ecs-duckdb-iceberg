@@ -19,16 +19,14 @@ public:
 		auto config_val = yyjson_obj_get(obj, "config");
 		if (config_val) {
 			result.config = parse_object_of_strings(config_val);
-		}
-		else {
+		} else {
 			throw IOException("StorageCredential required property 'config' is missing");
 		}
 
 		auto prefix_val = yyjson_obj_get(obj, "prefix");
 		if (prefix_val) {
 			result.prefix = yyjson_get_str(prefix_val);
-		}
-		else {
+		} else {
 			throw IOException("StorageCredential required property 'prefix' is missing");
 		}
 

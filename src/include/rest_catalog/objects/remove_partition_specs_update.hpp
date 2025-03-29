@@ -32,8 +32,7 @@ public:
 			yyjson_arr_foreach(spec_ids_val, idx, max, val) {
 				result.spec_ids.push_back(yyjson_get_sint(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("RemovePartitionSpecsUpdate required property 'spec-ids' is missing");
 		}
 

@@ -21,8 +21,7 @@ public:
 		auto filter_val = yyjson_obj_get(obj, "filter");
 		if (filter_val) {
 			result.filter = Expression::FromJSON(filter_val);
-		}
-		else {
+		} else {
 			throw IOException("ScanReport required property 'filter' is missing");
 		}
 
@@ -34,8 +33,7 @@ public:
 		auto metrics_val = yyjson_obj_get(obj, "metrics");
 		if (metrics_val) {
 			result.metrics = Metrics::FromJSON(metrics_val);
-		}
-		else {
+		} else {
 			throw IOException("ScanReport required property 'metrics' is missing");
 		}
 
@@ -46,8 +44,7 @@ public:
 			yyjson_arr_foreach(projected_field_ids_val, idx, max, val) {
 				result.projected_field_ids.push_back(yyjson_get_sint(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("ScanReport required property 'projected-field-ids' is missing");
 		}
 
@@ -58,32 +55,28 @@ public:
 			yyjson_arr_foreach(projected_field_names_val, idx, max, val) {
 				result.projected_field_names.push_back(yyjson_get_str(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("ScanReport required property 'projected-field-names' is missing");
 		}
 
 		auto schema_id_val = yyjson_obj_get(obj, "schema-id");
 		if (schema_id_val) {
 			result.schema_id = yyjson_get_sint(schema_id_val);
-		}
-		else {
+		} else {
 			throw IOException("ScanReport required property 'schema-id' is missing");
 		}
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 		if (snapshot_id_val) {
 			result.snapshot_id = yyjson_get_sint(snapshot_id_val);
-		}
-		else {
+		} else {
 			throw IOException("ScanReport required property 'snapshot-id' is missing");
 		}
 
 		auto table_name_val = yyjson_obj_get(obj, "table-name");
 		if (table_name_val) {
 			result.table_name = yyjson_get_str(table_name_val);
-		}
-		else {
+		} else {
 			throw IOException("ScanReport required property 'table-name' is missing");
 		}
 

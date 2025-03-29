@@ -24,40 +24,35 @@ public:
 			yyjson_arr_foreach(blob_metadata_val, idx, max, val) {
 				result.blob_metadata.push_back(BlobMetadata::FromJSON(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("StatisticsFile required property 'blob-metadata' is missing");
 		}
 
 		auto file_footer_size_in_bytes_val = yyjson_obj_get(obj, "file-footer-size-in-bytes");
 		if (file_footer_size_in_bytes_val) {
 			result.file_footer_size_in_bytes = yyjson_get_sint(file_footer_size_in_bytes_val);
-		}
-		else {
+		} else {
 			throw IOException("StatisticsFile required property 'file-footer-size-in-bytes' is missing");
 		}
 
 		auto file_size_in_bytes_val = yyjson_obj_get(obj, "file-size-in-bytes");
 		if (file_size_in_bytes_val) {
 			result.file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
-		}
-		else {
+		} else {
 			throw IOException("StatisticsFile required property 'file-size-in-bytes' is missing");
 		}
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 		if (snapshot_id_val) {
 			result.snapshot_id = yyjson_get_sint(snapshot_id_val);
-		}
-		else {
+		} else {
 			throw IOException("StatisticsFile required property 'snapshot-id' is missing");
 		}
 
 		auto statistics_path_val = yyjson_obj_get(obj, "statistics-path");
 		if (statistics_path_val) {
 			result.statistics_path = yyjson_get_str(statistics_path_val);
-		}
-		else {
+		} else {
 			throw IOException("StatisticsFile required property 'statistics-path' is missing");
 		}
 

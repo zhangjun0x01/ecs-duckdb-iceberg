@@ -29,8 +29,7 @@ public:
 		auto spec_val = yyjson_obj_get(obj, "spec");
 		if (spec_val) {
 			result.spec = PartitionSpec::FromJSON(spec_val);
-		}
-		else {
+		} else {
 			throw IOException("AddPartitionSpecUpdate required property 'spec' is missing");
 		}
 

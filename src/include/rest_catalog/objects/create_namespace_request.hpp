@@ -20,8 +20,7 @@ public:
 		auto _namespace_val = yyjson_obj_get(obj, "namespace");
 		if (_namespace_val) {
 			result._namespace = Namespace::FromJSON(_namespace_val);
-		}
-		else {
+		} else {
 			throw IOException("CreateNamespaceRequest required property 'namespace' is missing");
 		}
 

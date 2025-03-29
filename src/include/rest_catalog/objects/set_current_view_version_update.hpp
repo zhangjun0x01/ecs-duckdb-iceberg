@@ -28,8 +28,7 @@ public:
 		auto view_version_id_val = yyjson_obj_get(obj, "view-version-id");
 		if (view_version_id_val) {
 			result.view_version_id = yyjson_get_sint(view_version_id_val);
-		}
-		else {
+		} else {
 			throw IOException("SetCurrentViewVersionUpdate required property 'view-version-id' is missing");
 		}
 

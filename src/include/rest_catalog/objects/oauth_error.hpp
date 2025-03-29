@@ -19,8 +19,7 @@ public:
 		auto error_val = yyjson_obj_get(obj, "error");
 		if (error_val) {
 			result.error = yyjson_get_str(error_val);
-		}
-		else {
+		} else {
 			throw IOException("OAuthError required property 'error' is missing");
 		}
 

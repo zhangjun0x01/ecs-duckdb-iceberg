@@ -25,24 +25,21 @@ public:
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (name_val) {
 			result.name = yyjson_get_str(name_val);
-		}
-		else {
+		} else {
 			throw IOException("PartitionField required property 'name' is missing");
 		}
 
 		auto source_id_val = yyjson_obj_get(obj, "source-id");
 		if (source_id_val) {
 			result.source_id = yyjson_get_sint(source_id_val);
-		}
-		else {
+		} else {
 			throw IOException("PartitionField required property 'source-id' is missing");
 		}
 
 		auto transform_val = yyjson_obj_get(obj, "transform");
 		if (transform_val) {
 			result.transform = Transform::FromJSON(transform_val);
-		}
-		else {
+		} else {
 			throw IOException("PartitionField required property 'transform' is missing");
 		}
 

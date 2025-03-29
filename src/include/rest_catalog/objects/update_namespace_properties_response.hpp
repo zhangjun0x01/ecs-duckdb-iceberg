@@ -32,8 +32,7 @@ public:
 			yyjson_arr_foreach(removed_val, idx, max, val) {
 				result.removed.push_back(yyjson_get_str(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("UpdateNamespacePropertiesResponse required property 'removed' is missing");
 		}
 
@@ -44,8 +43,7 @@ public:
 			yyjson_arr_foreach(updated_val, idx, max, val) {
 				result.updated.push_back(yyjson_get_str(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("UpdateNamespacePropertiesResponse required property 'updated' is missing");
 		}
 

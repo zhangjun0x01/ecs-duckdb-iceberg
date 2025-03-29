@@ -28,8 +28,7 @@ public:
 		auto sort_order_id_val = yyjson_obj_get(obj, "sort-order-id");
 		if (sort_order_id_val) {
 			result.sort_order_id = yyjson_get_sint(sort_order_id_val);
-		}
-		else {
+		} else {
 			throw IOException("SetDefaultSortOrderUpdate required property 'sort-order-id' is missing");
 		}
 

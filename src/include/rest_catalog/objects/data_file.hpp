@@ -30,8 +30,7 @@ public:
 		auto content_val = yyjson_obj_get(obj, "content");
 		if (content_val) {
 			result.content = yyjson_get_str(content_val);
-		}
-		else {
+		} else {
 			throw IOException("DataFile required property 'content' is missing");
 		}
 

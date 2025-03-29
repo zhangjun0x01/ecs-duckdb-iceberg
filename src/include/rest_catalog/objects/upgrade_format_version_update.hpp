@@ -28,8 +28,7 @@ public:
 		auto format_version_val = yyjson_obj_get(obj, "format-version");
 		if (format_version_val) {
 			result.format_version = yyjson_get_sint(format_version_val);
-		}
-		else {
+		} else {
 			throw IOException("UpgradeFormatVersionUpdate required property 'format-version' is missing");
 		}
 

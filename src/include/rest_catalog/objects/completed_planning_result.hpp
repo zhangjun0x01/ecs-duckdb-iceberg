@@ -24,8 +24,7 @@ public:
 		auto status_val = yyjson_obj_get(obj, "status");
 		if (status_val) {
 			result.status = PlanStatus::FromJSON(status_val);
-		}
-		else {
+		} else {
 			throw IOException("CompletedPlanningResult required property 'status' is missing");
 		}
 

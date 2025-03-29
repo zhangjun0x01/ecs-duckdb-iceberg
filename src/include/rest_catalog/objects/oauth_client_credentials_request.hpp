@@ -19,24 +19,21 @@ public:
 		auto client_id_val = yyjson_obj_get(obj, "client_id");
 		if (client_id_val) {
 			result.client_id = yyjson_get_str(client_id_val);
-		}
-		else {
+		} else {
 			throw IOException("OAuthClientCredentialsRequest required property 'client_id' is missing");
 		}
 
 		auto client_secret_val = yyjson_obj_get(obj, "client_secret");
 		if (client_secret_val) {
 			result.client_secret = yyjson_get_str(client_secret_val);
-		}
-		else {
+		} else {
 			throw IOException("OAuthClientCredentialsRequest required property 'client_secret' is missing");
 		}
 
 		auto grant_type_val = yyjson_obj_get(obj, "grant_type");
 		if (grant_type_val) {
 			result.grant_type = yyjson_get_str(grant_type_val);
-		}
-		else {
+		} else {
 			throw IOException("OAuthClientCredentialsRequest required property 'grant_type' is missing");
 		}
 

@@ -21,24 +21,21 @@ public:
 		auto term_val = yyjson_obj_get(obj, "term");
 		if (term_val) {
 			result.term = Reference::FromJSON(term_val);
-		}
-		else {
+		} else {
 			throw IOException("TransformTerm required property 'term' is missing");
 		}
 
 		auto transform_val = yyjson_obj_get(obj, "transform");
 		if (transform_val) {
 			result.transform = Transform::FromJSON(transform_val);
-		}
-		else {
+		} else {
 			throw IOException("TransformTerm required property 'transform' is missing");
 		}
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = yyjson_get_str(type_val);
-		}
-		else {
+		} else {
 			throw IOException("TransformTerm required property 'type' is missing");
 		}
 

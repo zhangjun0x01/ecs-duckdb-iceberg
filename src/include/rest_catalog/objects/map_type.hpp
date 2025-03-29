@@ -20,48 +20,42 @@ public:
 		auto key_val = yyjson_obj_get(obj, "key");
 		if (key_val) {
 			result.key = Type::FromJSON(key_val);
-		}
-		else {
+		} else {
 			throw IOException("MapType required property 'key' is missing");
 		}
 
 		auto key_id_val = yyjson_obj_get(obj, "key-id");
 		if (key_id_val) {
 			result.key_id = yyjson_get_sint(key_id_val);
-		}
-		else {
+		} else {
 			throw IOException("MapType required property 'key-id' is missing");
 		}
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = yyjson_get_str(type_val);
-		}
-		else {
+		} else {
 			throw IOException("MapType required property 'type' is missing");
 		}
 
 		auto value_val = yyjson_obj_get(obj, "value");
 		if (value_val) {
 			result.value = Type::FromJSON(value_val);
-		}
-		else {
+		} else {
 			throw IOException("MapType required property 'value' is missing");
 		}
 
 		auto value_id_val = yyjson_obj_get(obj, "value-id");
 		if (value_id_val) {
 			result.value_id = yyjson_get_sint(value_id_val);
-		}
-		else {
+		} else {
 			throw IOException("MapType required property 'value-id' is missing");
 		}
 
 		auto value_required_val = yyjson_obj_get(obj, "value-required");
 		if (value_required_val) {
 			result.value_required = yyjson_get_bool(value_required_val);
-		}
-		else {
+		} else {
 			throw IOException("MapType required property 'value-required' is missing");
 		}
 

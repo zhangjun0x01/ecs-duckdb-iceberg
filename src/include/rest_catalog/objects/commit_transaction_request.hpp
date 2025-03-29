@@ -24,8 +24,7 @@ public:
 			yyjson_arr_foreach(table_changes_val, idx, max, val) {
 				result.table_changes.push_back(CommitTableRequest::FromJSON(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("CommitTransactionRequest required property 'table-changes' is missing");
 		}
 

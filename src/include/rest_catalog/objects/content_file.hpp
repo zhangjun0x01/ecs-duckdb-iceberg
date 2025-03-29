@@ -22,32 +22,28 @@ public:
 		auto content_val = yyjson_obj_get(obj, "content");
 		if (content_val) {
 			result.content = yyjson_get_str(content_val);
-		}
-		else {
+		} else {
 			throw IOException("ContentFile required property 'content' is missing");
 		}
 
 		auto file_format_val = yyjson_obj_get(obj, "file-format");
 		if (file_format_val) {
 			result.file_format = FileFormat::FromJSON(file_format_val);
-		}
-		else {
+		} else {
 			throw IOException("ContentFile required property 'file-format' is missing");
 		}
 
 		auto file_path_val = yyjson_obj_get(obj, "file-path");
 		if (file_path_val) {
 			result.file_path = yyjson_get_str(file_path_val);
-		}
-		else {
+		} else {
 			throw IOException("ContentFile required property 'file-path' is missing");
 		}
 
 		auto file_size_in_bytes_val = yyjson_obj_get(obj, "file-size-in-bytes");
 		if (file_size_in_bytes_val) {
 			result.file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
-		}
-		else {
+		} else {
 			throw IOException("ContentFile required property 'file-size-in-bytes' is missing");
 		}
 
@@ -63,16 +59,14 @@ public:
 			yyjson_arr_foreach(partition_val, idx, max, val) {
 				result.partition.push_back(PrimitiveTypeValue::FromJSON(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("ContentFile required property 'partition' is missing");
 		}
 
 		auto record_count_val = yyjson_obj_get(obj, "record-count");
 		if (record_count_val) {
 			result.record_count = yyjson_get_sint(record_count_val);
-		}
-		else {
+		} else {
 			throw IOException("ContentFile required property 'record-count' is missing");
 		}
 
@@ -84,8 +78,7 @@ public:
 		auto spec_id_val = yyjson_obj_get(obj, "spec-id");
 		if (spec_id_val) {
 			result.spec_id = yyjson_get_sint(spec_id_val);
-		}
-		else {
+		} else {
 			throw IOException("ContentFile required property 'spec-id' is missing");
 		}
 

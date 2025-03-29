@@ -19,8 +19,7 @@ public:
 		auto manifest_list_val = yyjson_obj_get(obj, "manifest-list");
 		if (manifest_list_val) {
 			result.manifest_list = yyjson_get_str(manifest_list_val);
-		}
-		else {
+		} else {
 			throw IOException("Snapshot required property 'manifest-list' is missing");
 		}
 
@@ -42,24 +41,21 @@ public:
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 		if (snapshot_id_val) {
 			result.snapshot_id = yyjson_get_sint(snapshot_id_val);
-		}
-		else {
+		} else {
 			throw IOException("Snapshot required property 'snapshot-id' is missing");
 		}
 
 		auto summary_val = yyjson_obj_get(obj, "summary");
 		if (summary_val) {
 			result.summary = parse_object_of_strings(summary_val);
-		}
-		else {
+		} else {
 			throw IOException("Snapshot required property 'summary' is missing");
 		}
 
 		auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
 		if (timestamp_ms_val) {
 			result.timestamp_ms = yyjson_get_sint(timestamp_ms_val);
-		}
-		else {
+		} else {
 			throw IOException("Snapshot required property 'timestamp-ms' is missing");
 		}
 

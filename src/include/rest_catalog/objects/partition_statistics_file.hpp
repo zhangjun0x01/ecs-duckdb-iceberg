@@ -19,24 +19,21 @@ public:
 		auto file_size_in_bytes_val = yyjson_obj_get(obj, "file-size-in-bytes");
 		if (file_size_in_bytes_val) {
 			result.file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
-		}
-		else {
+		} else {
 			throw IOException("PartitionStatisticsFile required property 'file-size-in-bytes' is missing");
 		}
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 		if (snapshot_id_val) {
 			result.snapshot_id = yyjson_get_sint(snapshot_id_val);
-		}
-		else {
+		} else {
 			throw IOException("PartitionStatisticsFile required property 'snapshot-id' is missing");
 		}
 
 		auto statistics_path_val = yyjson_obj_get(obj, "statistics-path");
 		if (statistics_path_val) {
 			result.statistics_path = yyjson_get_str(statistics_path_val);
-		}
-		else {
+		} else {
 			throw IOException("PartitionStatisticsFile required property 'statistics-path' is missing");
 		}
 

@@ -20,16 +20,14 @@ public:
 		auto destination_val = yyjson_obj_get(obj, "destination");
 		if (destination_val) {
 			result.destination = TableIdentifier::FromJSON(destination_val);
-		}
-		else {
+		} else {
 			throw IOException("RenameTableRequest required property 'destination' is missing");
 		}
 
 		auto source_val = yyjson_obj_get(obj, "source");
 		if (source_val) {
 			result.source = TableIdentifier::FromJSON(source_val);
-		}
-		else {
+		} else {
 			throw IOException("RenameTableRequest required property 'source' is missing");
 		}
 

@@ -20,16 +20,14 @@ public:
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (name_val) {
 			result.name = yyjson_get_str(name_val);
-		}
-		else {
+		} else {
 			throw IOException("TableIdentifier required property 'name' is missing");
 		}
 
 		auto _namespace_val = yyjson_obj_get(obj, "namespace");
 		if (_namespace_val) {
 			result._namespace = Namespace::FromJSON(_namespace_val);
-		}
-		else {
+		} else {
 			throw IOException("TableIdentifier required property 'namespace' is missing");
 		}
 

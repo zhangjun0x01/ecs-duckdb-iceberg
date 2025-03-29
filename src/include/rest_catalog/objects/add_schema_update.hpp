@@ -34,8 +34,7 @@ public:
 		auto schema_val = yyjson_obj_get(obj, "schema");
 		if (schema_val) {
 			result.schema = Schema::FromJSON(schema_val);
-		}
-		else {
+		} else {
 			throw IOException("AddSchemaUpdate required property 'schema' is missing");
 		}
 

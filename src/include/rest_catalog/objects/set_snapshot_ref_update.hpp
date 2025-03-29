@@ -32,8 +32,7 @@ public:
 		auto ref_name_val = yyjson_obj_get(obj, "ref-name");
 		if (ref_name_val) {
 			result.ref_name = yyjson_get_str(ref_name_val);
-		}
-		else {
+		} else {
 			throw IOException("SetSnapshotRefUpdate required property 'ref-name' is missing");
 		}
 

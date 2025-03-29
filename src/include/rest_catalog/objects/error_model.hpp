@@ -19,16 +19,14 @@ public:
 		auto code_val = yyjson_obj_get(obj, "code");
 		if (code_val) {
 			result.code = yyjson_get_sint(code_val);
-		}
-		else {
+		} else {
 			throw IOException("ErrorModel required property 'code' is missing");
 		}
 
 		auto message_val = yyjson_obj_get(obj, "message");
 		if (message_val) {
 			result.message = yyjson_get_str(message_val);
-		}
-		else {
+		} else {
 			throw IOException("ErrorModel required property 'message' is missing");
 		}
 
@@ -44,8 +42,7 @@ public:
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = yyjson_get_str(type_val);
-		}
-		else {
+		} else {
 			throw IOException("ErrorModel required property 'type' is missing");
 		}
 

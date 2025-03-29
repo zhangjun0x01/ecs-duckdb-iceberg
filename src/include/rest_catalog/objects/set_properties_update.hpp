@@ -28,8 +28,7 @@ public:
 		auto updates_val = yyjson_obj_get(obj, "updates");
 		if (updates_val) {
 			result.updates = parse_object_of_strings(updates_val);
-		}
-		else {
+		} else {
 			throw IOException("SetPropertiesUpdate required property 'updates' is missing");
 		}
 

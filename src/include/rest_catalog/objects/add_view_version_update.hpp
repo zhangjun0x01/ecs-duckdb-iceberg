@@ -29,8 +29,7 @@ public:
 		auto view_version_val = yyjson_obj_get(obj, "view-version");
 		if (view_version_val) {
 			result.view_version = ViewVersion::FromJSON(view_version_val);
-		}
-		else {
+		} else {
 			throw IOException("AddViewVersionUpdate required property 'view-version' is missing");
 		}
 

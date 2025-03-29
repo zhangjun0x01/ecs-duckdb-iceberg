@@ -23,8 +23,7 @@ public:
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = yyjson_get_str(type_val);
-		}
-		else {
+		} else {
 			throw IOException("AssertCreate required property 'type' is missing");
 		}
 

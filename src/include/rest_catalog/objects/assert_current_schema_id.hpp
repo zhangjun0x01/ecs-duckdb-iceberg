@@ -23,8 +23,7 @@ public:
 		auto current_schema_id_val = yyjson_obj_get(obj, "current-schema-id");
 		if (current_schema_id_val) {
 			result.current_schema_id = yyjson_get_sint(current_schema_id_val);
-		}
-		else {
+		} else {
 			throw IOException("AssertCurrentSchemaId required property 'current-schema-id' is missing");
 		}
 

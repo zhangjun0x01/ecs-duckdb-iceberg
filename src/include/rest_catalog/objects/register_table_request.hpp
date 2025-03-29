@@ -19,16 +19,14 @@ public:
 		auto metadata_location_val = yyjson_obj_get(obj, "metadata-location");
 		if (metadata_location_val) {
 			result.metadata_location = yyjson_get_str(metadata_location_val);
-		}
-		else {
+		} else {
 			throw IOException("RegisterTableRequest required property 'metadata-location' is missing");
 		}
 
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (name_val) {
 			result.name = yyjson_get_str(name_val);
-		}
-		else {
+		} else {
 			throw IOException("RegisterTableRequest required property 'name' is missing");
 		}
 

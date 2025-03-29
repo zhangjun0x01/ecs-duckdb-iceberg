@@ -28,8 +28,7 @@ public:
 		auto uuid_val = yyjson_obj_get(obj, "uuid");
 		if (uuid_val) {
 			result.uuid = yyjson_get_str(uuid_val);
-		}
-		else {
+		} else {
 			throw IOException("AssignUUIDUpdate required property 'uuid' is missing");
 		}
 

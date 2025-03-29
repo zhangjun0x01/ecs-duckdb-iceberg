@@ -20,8 +20,7 @@ public:
 		auto access_token_val = yyjson_obj_get(obj, "access_token");
 		if (access_token_val) {
 			result.access_token = yyjson_get_str(access_token_val);
-		}
-		else {
+		} else {
 			throw IOException("OAuthTokenResponse required property 'access_token' is missing");
 		}
 
@@ -48,8 +47,7 @@ public:
 		auto token_type_val = yyjson_obj_get(obj, "token_type");
 		if (token_type_val) {
 			result.token_type = yyjson_get_str(token_type_val);
-		}
-		else {
+		} else {
 			throw IOException("OAuthTokenResponse required property 'token_type' is missing");
 		}
 

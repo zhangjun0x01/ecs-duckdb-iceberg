@@ -24,16 +24,14 @@ public:
 			yyjson_arr_foreach(fields_val, idx, max, val) {
 				result.fields.push_back(StructField::FromJSON(val));
 			}
-		}
-		else {
+		} else {
 			throw IOException("StructType required property 'fields' is missing");
 		}
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = yyjson_get_str(type_val);
-		}
-		else {
+		} else {
 			throw IOException("StructType required property 'type' is missing");
 		}
 

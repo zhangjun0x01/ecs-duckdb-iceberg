@@ -21,8 +21,7 @@ public:
 		auto data_file_val = yyjson_obj_get(obj, "data-file");
 		if (data_file_val) {
 			result.data_file = DataFile::FromJSON(data_file_val);
-		}
-		else {
+		} else {
 			throw IOException("FileScanTask required property 'data-file' is missing");
 		}
 

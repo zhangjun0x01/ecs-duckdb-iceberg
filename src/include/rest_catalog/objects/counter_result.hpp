@@ -19,16 +19,14 @@ public:
 		auto unit_val = yyjson_obj_get(obj, "unit");
 		if (unit_val) {
 			result.unit = yyjson_get_str(unit_val);
-		}
-		else {
+		} else {
 			throw IOException("CounterResult required property 'unit' is missing");
 		}
 
 		auto value_val = yyjson_obj_get(obj, "value");
 		if (value_val) {
 			result.value = yyjson_get_sint(value_val);
-		}
-		else {
+		} else {
 			throw IOException("CounterResult required property 'value' is missing");
 		}
 
