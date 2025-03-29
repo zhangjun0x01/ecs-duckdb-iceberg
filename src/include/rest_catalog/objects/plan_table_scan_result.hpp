@@ -16,22 +16,22 @@ public:
 	static PlanTableScanResult FromJSON(yyjson_val *obj) {
 		PlanTableScanResult result;
 		if (yyjson_is_obj(obj)) {
-			auto type_val = yyjson_obj_get(obj, "type");
-			if (type_val && strcmp(yyjson_get_str(type_val), "completedplanningwithidresult") == 0) {
+			auto discriminator_val = yyjson_obj_get(obj, "status");
+			if (discriminator_val && strcmp(yyjson_get_str(discriminator_val), "completed") == 0) {
 				result.completed_planning_with_idresult = CompletedPlanningWithIDResult::FromJSON(obj);
 				result.has_completed_planning_with_idresult = true;
 			}
-			if (type_val && strcmp(yyjson_get_str(type_val), "failedplanningresult") == 0) {
-				result.failed_planning_result = FailedPlanningResult::FromJSON(obj);
-				result.has_failed_planning_result = true;
-			}
-			if (type_val && strcmp(yyjson_get_str(type_val), "asyncplanningresult") == 0) {
+			if (discriminator_val && strcmp(yyjson_get_str(discriminator_val), "submitted") == 0) {
 				result.async_planning_result = AsyncPlanningResult::FromJSON(obj);
 				result.has_async_planning_result = true;
 			}
-			if (type_val && strcmp(yyjson_get_str(type_val), "emptyplanningresult") == 0) {
+			if (discriminator_val && strcmp(yyjson_get_str(discriminator_val), "cancelled") == 0) {
 				result.empty_planning_result = EmptyPlanningResult::FromJSON(obj);
 				result.has_empty_planning_result = true;
+			}
+			if (discriminator_val && strcmp(yyjson_get_str(discriminator_val), "failed") == 0) {
+				result.failed_planning_result = FailedPlanningResult::FromJSON(obj);
+				result.has_failed_planning_result = true;
 			}
 		}
 		return result;

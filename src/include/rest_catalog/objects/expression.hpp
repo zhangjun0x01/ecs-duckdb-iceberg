@@ -17,33 +17,17 @@ public:
 		Expression result;
 		if (yyjson_is_obj(obj)) {
 			auto type_val = yyjson_obj_get(obj, "type");
-			if (type_val && strcmp(yyjson_get_str(type_val), "trueexpression") == 0) {
+			if (type_val && strcmp(yyjson_get_str(type_val), "true") == 0) {
 				result.true_expression = TrueExpression::FromJSON(obj);
 				result.has_true_expression = true;
 			}
-			if (type_val && strcmp(yyjson_get_str(type_val), "falseexpression") == 0) {
+			if (type_val && strcmp(yyjson_get_str(type_val), "false") == 0) {
 				result.false_expression = FalseExpression::FromJSON(obj);
 				result.has_false_expression = true;
 			}
-			if (type_val && strcmp(yyjson_get_str(type_val), "andorexpression") == 0) {
-				result.and_or_expression = AndOrExpression::FromJSON(obj);
-				result.has_and_or_expression = true;
-			}
-			if (type_val && strcmp(yyjson_get_str(type_val), "notexpression") == 0) {
+			if (type_val && strcmp(yyjson_get_str(type_val), "not") == 0) {
 				result.not_expression = NotExpression::FromJSON(obj);
 				result.has_not_expression = true;
-			}
-			if (type_val && strcmp(yyjson_get_str(type_val), "setexpression") == 0) {
-				result.set_expression = SetExpression::FromJSON(obj);
-				result.has_set_expression = true;
-			}
-			if (type_val && strcmp(yyjson_get_str(type_val), "literalexpression") == 0) {
-				result.literal_expression = LiteralExpression::FromJSON(obj);
-				result.has_literal_expression = true;
-			}
-			if (type_val && strcmp(yyjson_get_str(type_val), "unaryexpression") == 0) {
-				result.unary_expression = UnaryExpression::FromJSON(obj);
-				result.has_unary_expression = true;
 			}
 		}
 		return result;

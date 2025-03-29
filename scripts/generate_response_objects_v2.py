@@ -199,6 +199,7 @@ def create_schema(name: str, schema: Dict, all_schemas: Dict, parsed_schemas: Di
 class Schema:
     def __init__(self, name: str, schema: Dict, all_schemas: Dict, parsed_schemas: Dict[str, 'Schema']):
         self.name = name
+        self.schema = schema  # Store the original schema dictionary
         self.type = schema.get('type', 'object')
         self.format = schema.get('format')  # Add format support
         self.required: Set[str] = set(schema.get('required', []))
@@ -421,18 +422,43 @@ class Schema:
 
         # Generate object type checks
         if object_schemas:
-            lines.extend(["\t\tif (yyjson_is_obj(obj)) {", "\t\t\tauto type_val = yyjson_obj_get(obj, \"type\");"])
+            lines.extend(["\t\tif (yyjson_is_obj(obj)) {"])
 
-            for schema in object_schemas:
-                schema_type = schema.name.lower()
-                lines.extend(
-                    [
-                        f"\t\t\tif (type_val && strcmp(yyjson_get_str(type_val), \"{schema_type}\") == 0) {{",
-                        f"\t\t\t\tresult.{to_snake_case(schema.name)} = {schema.name}::FromJSON(obj);",
-                        f"\t\t\t\tresult.has_{to_snake_case(schema.name)} = true;",
-                        "\t\t\t}",
-                    ]
-                )
+            # Check if we have a discriminator
+            if 'discriminator' in self.schema:
+                discriminator = self.schema.get('discriminator')
+                property_name = discriminator['propertyName']
+                mapping = discriminator['mapping']
+
+                lines.append(f"\t\t\tauto discriminator_val = yyjson_obj_get(obj, \"{property_name}\");")
+
+                for value, ref in mapping.items():
+                    schema_name = ref.split('/')[-1]  # Get the schema name from the ref
+                    lines.extend(
+                        [
+                            f"\t\t\tif (discriminator_val && strcmp(yyjson_get_str(discriminator_val), \"{value}\") == 0) {{",
+                            f"\t\t\t\tresult.{to_snake_case(schema_name)} = {schema_name}::FromJSON(obj);",
+                            f"\t\t\t\tresult.has_{to_snake_case(schema_name)} = true;",
+                            "\t\t\t}",
+                        ]
+                    )
+            else:
+                # Fall back to type field if no discriminator
+                lines.append("\t\t\tauto type_val = yyjson_obj_get(obj, \"type\");")
+
+                for schema in object_schemas:
+                    if 'properties' in schema.schema and 'type' in schema.schema['properties']:
+                        type_prop = schema.schema['properties']['type']
+                        if 'const' in type_prop:
+                            type_const = type_prop['const']
+                            lines.extend(
+                                [
+                                    f"\t\t\tif (type_val && strcmp(yyjson_get_str(type_val), \"{type_const}\") == 0) {{",
+                                    f"\t\t\t\tresult.{to_snake_case(schema.name)} = {schema.name}::FromJSON(obj);",
+                                    f"\t\t\t\tresult.has_{to_snake_case(schema.name)} = true;",
+                                    "\t\t\t}",
+                                ]
+                            )
 
             lines.append("\t\t}")
 
