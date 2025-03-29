@@ -25,16 +25,10 @@ public:
 				result.struct_type = StructType::FromJSON(obj);
 				result.has_struct_type = true;
 			}
-		}
-		if (yyjson_is_obj(obj)) {
-			auto type_val = yyjson_obj_get(obj, "type");
 			if (type_val && strcmp(yyjson_get_str(type_val), "listtype") == 0) {
 				result.list_type = ListType::FromJSON(obj);
 				result.has_list_type = true;
 			}
-		}
-		if (yyjson_is_obj(obj)) {
-			auto type_val = yyjson_obj_get(obj, "type");
 			if (type_val && strcmp(yyjson_get_str(type_val), "maptype") == 0) {
 				result.map_type = MapType::FromJSON(obj);
 				result.has_map_type = true;

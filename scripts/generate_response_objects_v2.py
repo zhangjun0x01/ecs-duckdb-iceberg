@@ -134,9 +134,9 @@ TYPE_MAPPINGS = {
         'default': SchemaType('int64_t', 'yyjson_is_int', 'yyjson_get_sint'),
     },
     'number': {
-        'float': SchemaType('float', 'yyjson_is_num', 'yyjson_get_real'),
-        'double': SchemaType('double', 'yyjson_is_num', 'yyjson_get_real'),
-        'default': SchemaType('double', 'yyjson_is_num', 'yyjson_get_real'),
+        'float': SchemaType('float', 'yyjson_is_real', 'yyjson_get_real'),
+        'double': SchemaType('double', 'yyjson_is_real', 'yyjson_get_real'),
+        'default': SchemaType('double', 'yyjson_is_real', 'yyjson_get_real'),
     },
     'boolean': SchemaType('bool', 'yyjson_is_bool', 'yyjson_get_bool'),
     'uuid': SchemaType('string', 'yyjson_is_str', 'yyjson_get_str'),
@@ -387,6 +387,19 @@ class Schema:
         return '\n'.join(lines)
 
     def _generate_oneof_class(self) -> List[str]:
+        # Group schemas by their base type to avoid duplicates
+        primitive_groups = {}
+        object_schemas = []
+
+        for schema in self.one_of_schemas:
+            if schema.type in {'string', 'integer', 'boolean', 'number'}:
+                if schema.type not in primitive_groups:
+                    primitive_groups[schema.type] = {'type_mapping': get_type_mapping(schema.type), 'formats': set()}
+                if schema.format:
+                    primitive_groups[schema.type]['formats'].add(schema.format)
+            else:
+                object_schemas.append(schema)
+
         lines = [
             f"class {self.name} {{",
             "public:",
@@ -394,54 +407,47 @@ class Schema:
             f"\t\t{self.name} result;",
         ]
 
-        # Handle primitive types and object types
-        for schema in self.one_of_schemas:
-            if schema.type in ['integer', 'number', 'boolean', 'string']:
-                # Handle primitive types
-                type_mapping = get_type_mapping(schema.type, schema.format)
-                var_name = f"value_{schema.format or schema.type}"
-                has_name = f"has_{schema.format or schema.type}"
+        # Generate primitive type checks
+        for base_type, info in primitive_groups.items():
+            type_mapping = info['type_mapping']
+            lines.extend(
+                [
+                    f"\t\tif ({type_mapping.yyjson_check}(obj)) {{",
+                    f"\t\t\tresult.value_{base_type} = {type_mapping.yyjson_get}(obj);",
+                    f"\t\t\tresult.has_{base_type} = true;",
+                    "\t\t}",
+                ]
+            )
 
+        # Generate object type checks
+        if object_schemas:
+            lines.extend(["\t\tif (yyjson_is_obj(obj)) {", "\t\t\tauto type_val = yyjson_obj_get(obj, \"type\");"])
+
+            for schema in object_schemas:
+                schema_type = schema.name.lower()
                 lines.extend(
                     [
-                        f"\t\tif ({type_mapping.yyjson_check}(obj)) {{",
-                        f"\t\t\tresult.{var_name} = {type_mapping.yyjson_get}(obj);",
-                        f"\t\t\tresult.{has_name} = true;",
-                        "\t\t}",
-                    ]
-                )
-            else:
-                # Handle object types
-                var_name = f"{to_snake_case(schema.name)}"
-                has_name = f"has_{to_snake_case(schema.name)}"
-
-                lines.extend(
-                    [
-                        f"\t\tif (yyjson_is_obj(obj)) {{",
-                        f"\t\t\tauto type_val = yyjson_obj_get(obj, \"type\");",
-                        f"\t\t\tif (type_val && strcmp(yyjson_get_str(type_val), \"{schema.name.replace('Term', '').lower()}\") == 0) {{",
-                        f"\t\t\t\tresult.{var_name} = {schema.name}::FromJSON(obj);",
-                        f"\t\t\t\tresult.{has_name} = true;",
+                        f"\t\t\tif (type_val && strcmp(yyjson_get_str(type_val), \"{schema_type}\") == 0) {{",
+                        f"\t\t\t\tresult.{to_snake_case(schema.name)} = {schema.name}::FromJSON(obj);",
+                        f"\t\t\t\tresult.has_{to_snake_case(schema.name)} = true;",
                         "\t\t\t}",
-                        "\t\t}",
                     ]
                 )
+
+            lines.append("\t\t}")
 
         lines.extend(["\t\treturn result;", "\t}", "", "public:"])
 
-        # Generate member variables for both primitive and object types
-        for schema in self.one_of_schemas:
-            if schema.type in ['integer', 'number', 'boolean', 'string']:
-                type_mapping = get_type_mapping(schema.type, schema.format)
-                var_name = f"value_{schema.format or schema.type}"
-                has_name = f"has_{schema.format or schema.type}"
+        # Generate primitive member variables
+        for base_type, info in primitive_groups.items():
+            type_mapping = info['type_mapping']
+            lines.extend([f"\t{type_mapping.cpp_type} value_{base_type};", f"\tbool has_{base_type} = false;"])
 
-                lines.extend([f"\t{type_mapping.cpp_type} {var_name};", f"\tbool {has_name} = false;"])
-            else:
-                var_name = f"{to_snake_case(schema.name)}"
-                has_name = f"has_{to_snake_case(schema.name)}"
-
-                lines.extend([f"\t{schema.name} {var_name};", f"\tbool {has_name} = false;"])
+        # Generate object member variables
+        for schema in object_schemas:
+            lines.extend(
+                [f"\t{schema.name} {to_snake_case(schema.name)};", f"\tbool has_{to_snake_case(schema.name)} = false;"]
+            )
 
         lines.append("};")
         return lines
