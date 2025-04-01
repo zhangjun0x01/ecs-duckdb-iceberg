@@ -45,8 +45,8 @@ jobs:
             gettext \
             unzip \
             build-essential \
-            'cmake=3.22.1*' \
-            'cmake-data=3.22.1*' \
+            'cmake=3.*' \
+            'cmake-data=3.*' \
             checkinstall \
             libffi-dev \
             curl \
