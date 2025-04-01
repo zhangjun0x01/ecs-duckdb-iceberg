@@ -61,9 +61,10 @@ jobs:
           fetch-depth: 0
           submodules: 'true'
 
-      - name: Verify ninja
+      - name: Check installed versions
         run: |
           ninja --version
+          cmake --version
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11.1
