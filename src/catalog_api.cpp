@@ -128,7 +128,7 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	string api_result = GetTableMetadataCached(context, catalog, schema, table, catalog.secret_name);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
-	auto catalog_credentials = IRCatalog::GetSecret(context, catalog.secret_name);
+	auto catalog_credentials = IRCatalog::GetS3Secret(context, catalog.secret_name);
 
 	// Mapping from config key to a duckdb secret option
 

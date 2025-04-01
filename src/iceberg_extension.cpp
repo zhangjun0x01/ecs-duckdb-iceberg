@@ -152,7 +152,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		// look up any s3 secret
 
 		// if there is no secret, an error will be thrown
-		auto secret_entry = IRCatalog::GetSecret(context, secret_name);
+		auto secret_entry = IRCatalog::GetS3Secret(context, secret_name);
 		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 		auto region = kv_secret.TryGetValue("region");
 
@@ -197,7 +197,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	Value endpoint_val;
 	// Lookup a secret we can use to access the rest catalog.
 	// if no secret is referenced, this throw
-	auto secret_entry = IRCatalog::GetSecret(context, secret_name);
+	auto secret_entry = IRCatalog::GetS3Secret(context, secret_name);
 	if (!secret_entry) {
 		throw IOException("No secret found to use with catalog " + name);
 	}
@@ -211,13 +211,22 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	create_secret_input.options["client_secret"] = secret_val;
 	create_secret_input.options["endpoint"] = endpoint;
 	create_secret_input.options["oauth2_scope"] = oauth2_scope;
-	auto new_secret = CreateCatalogSecretFunction(context, create_secret_input);
-	auto &kv_secret_new = dynamic_cast<KeyValueSecret &>(*new_secret);
-	Value token = kv_secret_new.TryGetValue("token");
+
+	Value token;
+	auto iceberg_secret = IRCatalog::GetIcebergSecret(context, "");
+	if (iceberg_secret) {
+		auto &kv_iceberg_secret = dynamic_cast<const KeyValueSecret &>(*iceberg_secret->secret);
+		token = kv_iceberg_secret.TryGetValue("token");
+	} else {
+		auto new_secret = CreateCatalogSecretFunction(context, create_secret_input);
+		auto &kv_iceberg_secret = dynamic_cast<KeyValueSecret &>(*new_secret);
+		token = kv_iceberg_secret.TryGetValue("token");
+	}
 	if (token.IsNull()) {
 		throw IOException("Failed to generate oath token");
 	}
 	credentials.token = token.ToString();
+
 	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, warehouse, endpoint, secret_name);
 	catalog->catalog_type = catalog_type;
 	catalog->GetConfig(context);
