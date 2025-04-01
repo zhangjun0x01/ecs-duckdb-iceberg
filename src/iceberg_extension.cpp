@@ -86,13 +86,12 @@ static bool SanityCheckGlueWarehouse(string warehouse) {
 	auto bucket_sep = warehouse.find_first_of('/');
 	bool bucket_sep_correct = bucket_sep == 28;
 	if (!account_id_correct) {
-		throw IOException("Invalid Glue Catalog Format: '" + warehouse + "'. Expect 12 digits for account_id.");
+		throw IOException("Invalid Glue Catalog Format: '%s'. Expect 12 digits for account_id.", warehouse);
 	}
 	if (bucket_sep_correct) {
 		return true;
 	}
-	throw IOException("Invalid Glue Catalog Format: '" + warehouse +
-	                  "'. Expected '<account_id>:s3tablescatalog/<bucket>");
+	throw IOException("Invalid Glue Catalog Format: '%s'. Expected '<account_id>:s3tablescatalog/<bucket>", warehouse);
 }
 
 static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_info, ClientContext &context,
@@ -178,15 +177,15 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		auto region = kv_secret.TryGetValue("region");
 
 		if (region.IsNull()) {
-			throw IOException("Assumed catalog secret " + secret_entry->secret->GetName() + " for catalog " + name +
-			                  " does not have a region");
+			throw IOException("Assumed catalog secret '%s' for catalog '%s' does not have a region",
+			                  secret_entry->secret->GetName(), name);
 		}
 		switch (catalog_type) {
 		case ICEBERG_CATALOG_TYPE::AWS_S3TABLES: {
 			// extract region from the amazon ARN
 			auto substrings = StringUtil::Split(warehouse, ":");
 			if (substrings.size() != 6) {
-				throw InvalidInputException("Could not parse S3 Tables arn warehouse value");
+				throw InvalidInputException("Could not parse S3 Tables ARN warehouse value");
 			}
 			region = Value::CreateValue<string>(substrings[3]);
 			break;
