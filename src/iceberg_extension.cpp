@@ -27,17 +27,27 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 	// apply any overridden settings
 	vector<string> prefix_paths;
 	auto result = make_uniq<KeyValueSecret>(prefix_paths, "iceberg", "config", input.name);
-	for (const auto &named_param : input.options) {
-		auto lower_name = StringUtil::Lower(named_param.first);
+	result->redact_keys = {"token", "client_id", "client_secret"};
 
-		if (lower_name == "client_id" || lower_name == "client_secret" || lower_name == "endpoint" ||
-		    lower_name == "region" || lower_name == "oauth2_scope" || lower_name == "oauth2_server_uri") {
-			result->secret_map[lower_name] = named_param.second.ToString();
+	case_insensitive_set_t accepted_parameters {"client_id", "client_secret", "endpoint", "oauth2_scope",
+	                                            "oauth2_server_uri"};
+	for (const auto &named_param : input.options) {
+		auto &param_name = named_param.first;
+		auto it = accepted_parameters.find(param_name);
+		if (it != accepted_parameters.end()) {
+			result->secret_map[param_name] = named_param.second.ToString();
 		} else {
-			throw InvalidInputException("Unknown named parameter passed to CreateIRCSecretFunction: " + lower_name);
+			throw InvalidInputException("Unknown named parameter passed to CreateIRCSecretFunction: %s", param_name);
 		}
 	}
 
+	//! If the bearer token is explicitly given, there is no need to make a request, use it directly.
+	auto token_it = result->secret_map.find("token");
+	if (token_it != result->secret_map.end()) {
+		return std::move(result);
+	}
+
+	// Check if we have an oauth2_server_uri, or fall back to the deprecated oauth endpoint
 	string server_uri;
 	auto oauth2_server_uri_it = result->secret_map.find("oauth2_server_uri");
 	auto endpoint_it = result->secret_map.find("endpoint");
@@ -53,14 +63,10 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 		    "No 'oauth2_server_uri' was provided, and no 'endpoint' was provided to fall back on");
 	}
 
-	// Get token from catalog
+	// Make a request to the oauth2 server uri to get the (bearer) token
 	result->secret_map["token"] =
 	    IRCAPI::GetToken(context, server_uri, result->secret_map["client_id"].ToString(),
 	                     result->secret_map["client_secret"].ToString(), result->secret_map["oauth2_scope"].ToString());
-
-	//! Set redact keys
-	result->redact_keys = {"token", "client_id", "client_secret"};
-
 	return std::move(result);
 }
 
@@ -68,7 +74,6 @@ static void SetCatalogSecretParameters(CreateSecretFunction &function) {
 	function.named_parameters["client_id"] = LogicalType::VARCHAR;
 	function.named_parameters["client_secret"] = LogicalType::VARCHAR;
 	function.named_parameters["endpoint"] = LogicalType::VARCHAR;
-	function.named_parameters["region"] = LogicalType::VARCHAR;
 	function.named_parameters["token"] = LogicalType::VARCHAR;
 	function.named_parameters["oauth2_scope"] = LogicalType::VARCHAR;
 	function.named_parameters["oauth2_server_uri"] = LogicalType::VARCHAR;
