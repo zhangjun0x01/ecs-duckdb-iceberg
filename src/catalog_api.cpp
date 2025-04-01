@@ -100,7 +100,8 @@ static void ParseConfigOptions(yyjson_val *config, case_insensitive_map_t<Value>
 		} else if (value == "false") {
 			path_style = false;
 		} else {
-			throw InternalException("Unexpected value ('%s') for 's3.path-style-access' in 'config' property", value);
+			throw InvalidInputException("Unexpected value ('%s') for 's3.path-style-access' in 'config' property",
+			                            value);
 		}
 		options["use_ssl"] = Value(!path_style);
 		if (path_style) {
@@ -149,13 +150,13 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 		yyjson_arr_foreach(storage_credentials, index, max, storage_credential) {
 			auto *sc_prefix = yyjson_obj_get(storage_credential, "prefix");
 			if (!sc_prefix) {
-				throw InternalException("required property 'prefix' is missing from the StorageCredential schema");
+				throw InvalidInputException("required property 'prefix' is missing from the StorageCredential schema");
 			}
 
 			CreateSecretInfo create_secret_info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
 			auto prefix_string = yyjson_get_str(sc_prefix);
 			if (!prefix_string) {
-				throw InternalException("property 'prefix' of StorageCredential is NULL");
+				throw InvalidInputException("property 'prefix' of StorageCredential is NULL");
 			}
 			create_secret_info.scope.push_back(string(prefix_string));
 			create_secret_info.name = StringUtil::Format("%s_%d_%s", secret_base_name, index, prefix_string);
@@ -241,7 +242,7 @@ static void populateTableMetadata(IRCAPITable &table, yyjson_val *metadata_root)
 	}
 
 	if (!found) {
-		throw InternalException("Current schema not found");
+		throw InvalidInputException("Current schema not found");
 	}
 }
 
