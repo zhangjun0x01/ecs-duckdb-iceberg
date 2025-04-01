@@ -30,19 +30,33 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 	for (const auto &named_param : input.options) {
 		auto lower_name = StringUtil::Lower(named_param.first);
 
-		if (lower_name == "key_id" || lower_name == "secret" || lower_name == "endpoint" ||
-		    lower_name == "aws_region" || lower_name == "oauth2_scope" || lower_name == "oauth2_server_uri") {
+		if (lower_name == "client_id" || lower_name == "client_secret" || lower_name == "endpoint" ||
+		    lower_name == "region" || lower_name == "oauth2_scope" || lower_name == "oauth2_server_uri") {
 			result->secret_map[lower_name] = named_param.second.ToString();
 		} else {
-			throw InternalException("Unknown named parameter passed to CreateIRCSecretFunction: " + lower_name);
+			throw InvalidInputException("Unknown named parameter passed to CreateIRCSecretFunction: " + lower_name);
 		}
+	}
+
+	string server_uri;
+	auto oauth2_server_uri_it = result->secret_map.find("oauth2_server_uri");
+	auto endpoint_it = result->secret_map.find("endpoint");
+	if (oauth2_server_uri_it != result->secret_map.end()) {
+		server_uri = oauth2_server_uri_it->second.ToString();
+	} else if (endpoint_it != result->secret_map.end()) {
+		DUCKDB_LOG_WARN(
+		    context, "iceberg",
+		    "'oauth2_server_uri' is not set, defaulting to deprecated '{endpoint}/v1/oauth/tokens' oauth2_server_uri");
+		server_uri = endpoint_it->second.ToString();
+	} else {
+		throw InvalidInputException(
+		    "No 'oauth2_server_uri' was provided, and no 'endpoint' was provided to fall back on");
 	}
 
 	// Get token from catalog
 	result->secret_map["token"] =
-	    IRCAPI::GetToken(context, result->secret_map["oauth2_server_uri"].ToString(),
-	                     result->secret_map["key_id"].ToString(), result->secret_map["secret"].ToString(),
-	                     result->secret_map["endpoint"].ToString(), result->secret_map["oauth2_scope"].ToString());
+	    IRCAPI::GetToken(context, server_uri, result->secret_map["client_id"].ToString(),
+	                     result->secret_map["client_secret"].ToString(), result->secret_map["oauth2_scope"].ToString());
 
 	//! Set redact keys
 	result->redact_keys = {"token", "client_id", "client_secret"};
@@ -54,8 +68,10 @@ static void SetCatalogSecretParameters(CreateSecretFunction &function) {
 	function.named_parameters["client_id"] = LogicalType::VARCHAR;
 	function.named_parameters["client_secret"] = LogicalType::VARCHAR;
 	function.named_parameters["endpoint"] = LogicalType::VARCHAR;
-	function.named_parameters["aws_region"] = LogicalType::VARCHAR;
+	function.named_parameters["region"] = LogicalType::VARCHAR;
 	function.named_parameters["token"] = LogicalType::VARCHAR;
+	function.named_parameters["oauth2_scope"] = LogicalType::VARCHAR;
+	function.named_parameters["oauth2_server_uri"] = LogicalType::VARCHAR;
 }
 
 static bool SanityCheckGlueWarehouse(string warehouse) {
@@ -191,8 +207,8 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	Value secret_val = kv_secret.TryGetValue("secret");
 	CreateSecretInput create_secret_input;
 	create_secret_input.options["oauth2_server_uri"] = oauth2_server_uri;
-	create_secret_input.options["key_id"] = key_val;
-	create_secret_input.options["secret"] = secret_val;
+	create_secret_input.options["client_id"] = key_val;
+	create_secret_input.options["client_secret"] = secret_val;
 	create_secret_input.options["endpoint"] = endpoint;
 	create_secret_input.options["oauth2_scope"] = oauth2_scope;
 	auto new_secret = CreateCatalogSecretFunction(context, create_secret_input);

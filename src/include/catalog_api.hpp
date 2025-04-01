@@ -57,7 +57,7 @@ public:
 	                            const string &table_name, optional_ptr<IRCCredentials> credentials = nullptr);
 	static vector<IRCAPISchema> GetSchemas(ClientContext &context, IRCatalog &catalog, IRCCredentials credentials);
 	static string GetToken(ClientContext &context, const string &uri, const string &id, const string &secret,
-	                       const string &endpoint, const string &scope);
+	                       const string &scope);
 	static IRCAPISchema CreateSchema(ClientContext &context, IRCatalog &catalog, const string &internal,
 	                                 const string &schema, IRCCredentials credentials);
 	static void DropSchema(ClientContext &context, const string &internal, const string &schema,
