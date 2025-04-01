@@ -105,13 +105,29 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	auto &oauth2_scope = credentials.oauth2_scope;
 
 	// check if we have a secret provided
-	string secret_name;
+	string storage_secret;
+	string catalog_secret;
 	for (auto &entry : info.options) {
 		auto lower_name = StringUtil::Lower(entry.first);
 		if (lower_name == "type" || lower_name == "read_only") {
 			// already handled
 		} else if (lower_name == "secret") {
-			secret_name = StringUtil::Lower(entry.second.ToString());
+			if (!storage_secret.empty() && !catalog_secret.empty()) {
+				throw InvalidInputException("duplicate 'secret' (or 'catalog_secret' + 'storage_secret') found");
+			}
+			auto secret_name = StringUtil::Lower(entry.second.ToString());
+			storage_secret = secret_name;
+			catalog_secret = secret_name;
+		} else if (lower_name == "catalog_secret") {
+			if (!catalog_secret.empty()) {
+				throw InvalidInputException("duplicate 'catalog_secret' found (or 'secret' was already set)");
+			}
+			catalog_secret = StringUtil::Lower(entry.second.ToString());
+		} else if (lower_name == "storage_secret") {
+			if (!storage_secret.empty()) {
+				throw InvalidInputException("duplicate 'storage_secret' found (or 'secret' was already set)");
+			}
+			storage_secret = StringUtil::Lower(entry.second.ToString());
 		} else if (lower_name == "endpoint_type") {
 			endpoint_type = StringUtil::Lower(entry.second.ToString());
 		} else if (lower_name == "endpoint") {
@@ -152,7 +168,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		// look up any s3 secret
 
 		// if there is no secret, an error will be thrown
-		auto secret_entry = IRCatalog::GetS3Secret(context, secret_name);
+		auto secret_entry = IRCatalog::GetS3Secret(context, storage_secret);
 		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 		auto region = kv_secret.TryGetValue("region");
 
@@ -177,8 +193,8 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 			throw IOException("Unsupported AWS catalog type");
 		}
 
-		auto catalog_host = service + "." + region.ToString() + ".amazonaws.com";
-		auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, warehouse, catalog_host, secret_name);
+		auto catalog_host = StringUtil::Format("%s.%s.amazonaws.com", service, region.ToString());
+		auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, warehouse, catalog_host, storage_secret);
 		catalog->catalog_type = catalog_type;
 		catalog->GetConfig(context);
 		return std::move(catalog);
@@ -195,7 +211,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	catalog_type = ICEBERG_CATALOG_TYPE::OTHER;
 
 	Value token;
-	auto iceberg_secret = IRCatalog::GetIcebergSecret(context, "");
+	auto iceberg_secret = IRCatalog::GetIcebergSecret(context, catalog_secret);
 	if (iceberg_secret) {
 		auto &kv_iceberg_secret = dynamic_cast<const KeyValueSecret &>(*iceberg_secret->secret);
 		token = kv_iceberg_secret.TryGetValue("token");
@@ -203,11 +219,9 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		// Default IRC path
 		Value endpoint_val;
 		// Lookup a secret we can use to access the rest catalog.
-		// if no secret is referenced, this throw
-		auto secret_entry = IRCatalog::GetS3Secret(context, secret_name);
-		if (!secret_entry) {
-			throw IOException("No secret found to use with catalog '%s'", name);
-		}
+		// if no secret is referenced, this method throws
+		auto secret_entry = IRCatalog::GetS3Secret(context, storage_secret);
+		D_ASSERT(secret_entry);
 		// secret found - read data
 		const auto &kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 		Value key_val = kv_secret.TryGetValue("key_id");
@@ -228,7 +242,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	}
 	credentials.token = token.ToString();
 
-	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, warehouse, endpoint, secret_name);
+	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, warehouse, endpoint, storage_secret);
 	catalog->catalog_type = catalog_type;
 	catalog->GetConfig(context);
 	return std::move(catalog);
