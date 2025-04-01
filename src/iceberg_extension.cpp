@@ -186,31 +186,13 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 
 	// Check no endpoint type has been passed.
 	if (!endpoint_type.empty()) {
-		throw IOException("Unrecognized endpoint point: %s. Expected either S3_TABLES or GLUE", endpoint_type);
+		throw IOException("Unrecognized endpoint_type: %s. Expected either S3_TABLES or GLUE", endpoint_type);
 	}
 	if (endpoint_type.empty() && endpoint.empty()) {
 		throw IOException("No endpoint type or endpoint provided");
 	}
 
 	catalog_type = ICEBERG_CATALOG_TYPE::OTHER;
-	// Default IRC path
-	Value endpoint_val;
-	// Lookup a secret we can use to access the rest catalog.
-	// if no secret is referenced, this throw
-	auto secret_entry = IRCatalog::GetS3Secret(context, secret_name);
-	if (!secret_entry) {
-		throw IOException("No secret found to use with catalog " + name);
-	}
-	// secret found - read data
-	const auto &kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
-	Value key_val = kv_secret.TryGetValue("key_id");
-	Value secret_val = kv_secret.TryGetValue("secret");
-	CreateSecretInput create_secret_input;
-	create_secret_input.options["oauth2_server_uri"] = oauth2_server_uri;
-	create_secret_input.options["client_id"] = key_val;
-	create_secret_input.options["client_secret"] = secret_val;
-	create_secret_input.options["endpoint"] = endpoint;
-	create_secret_input.options["oauth2_scope"] = oauth2_scope;
 
 	Value token;
 	auto iceberg_secret = IRCatalog::GetIcebergSecret(context, "");
@@ -218,6 +200,25 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		auto &kv_iceberg_secret = dynamic_cast<const KeyValueSecret &>(*iceberg_secret->secret);
 		token = kv_iceberg_secret.TryGetValue("token");
 	} else {
+		// Default IRC path
+		Value endpoint_val;
+		// Lookup a secret we can use to access the rest catalog.
+		// if no secret is referenced, this throw
+		auto secret_entry = IRCatalog::GetS3Secret(context, secret_name);
+		if (!secret_entry) {
+			throw IOException("No secret found to use with catalog '%s'", name);
+		}
+		// secret found - read data
+		const auto &kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+		Value key_val = kv_secret.TryGetValue("key_id");
+		Value secret_val = kv_secret.TryGetValue("secret");
+		CreateSecretInput create_secret_input;
+		create_secret_input.options["oauth2_server_uri"] = oauth2_server_uri;
+		create_secret_input.options["client_id"] = key_val;
+		create_secret_input.options["client_secret"] = secret_val;
+		create_secret_input.options["endpoint"] = endpoint;
+		create_secret_input.options["oauth2_scope"] = oauth2_scope;
+
 		auto new_secret = CreateCatalogSecretFunction(context, create_secret_input);
 		auto &kv_iceberg_secret = dynamic_cast<KeyValueSecret &>(*new_secret);
 		token = kv_iceberg_secret.TryGetValue("token");
