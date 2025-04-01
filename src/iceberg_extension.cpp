@@ -213,6 +213,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	}
 
 	catalog_type = ICEBERG_CATALOG_TYPE::OTHER;
+	// Default IRC path - using OAuth2 to authorize to the catalog
 
 	Value token;
 	auto iceberg_secret = IRCatalog::GetIcebergSecret(context, catalog_secret);
@@ -220,7 +221,6 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		auto &kv_iceberg_secret = dynamic_cast<const KeyValueSecret &>(*iceberg_secret->secret);
 		token = kv_iceberg_secret.TryGetValue("token");
 	} else {
-		// Default IRC path
 		Value endpoint_val;
 		// Lookup a secret we can use to access the rest catalog.
 		// if no secret is referenced, this method throws
