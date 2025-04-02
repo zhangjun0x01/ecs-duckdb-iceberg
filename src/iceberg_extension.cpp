@@ -195,6 +195,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		catalog->GetConfig(context);
 		return std::move(catalog);
 	}
+	// Default IRC path - using OAuth2 to authorize to the catalog
 
 	// Check no endpoint type has been passed.
 	if (!endpoint_type.empty()) {
@@ -204,9 +205,14 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		throw IOException("No 'endpoint_type' or 'endpoint' provided");
 	}
 
-	// Default IRC path - using OAuth2 to authorize to the catalog
+	// Check if any of the options are given that indicate intent to provide options inline, rather than use a secret
+	bool user_intends_to_use_secret = true;
+	if (!oauth2_scope.empty() || !oauth2_server_uri.empty() || !client_id.empty() || !client_secret.empty()) {
+		user_intends_to_use_secret = false;
+	}
+
 	Value token;
-	auto iceberg_secret = IRCatalog::GetIcebergSecret(context, catalog_secret);
+	auto iceberg_secret = IRCatalog::GetIcebergSecret(context, catalog_secret, user_intends_to_use_secret);
 	if (iceberg_secret) {
 		//! The catalog secret (iceberg secret) will already have acquired a token, these additional settings in the
 		//! attach options will not be used. Better to explicitly throw than to just ignore the options and cause
