@@ -25,12 +25,11 @@ data_large: data data_clean
 
 # setup polaris server. See PolarisTesting.yml to see instructions for a specific machine.
 setup_polaris:
-    mkdir polaris_catalog
-    git clone https://github.com/apache/polaris.git polaris_catalog
-    cd polairs_catalog
-    jenv local 21
-    ./gradlew --stop
-    nohup ./gradlew run > polaris-server.log 2> polaris-error.log &
+	mkdir polaris_catalog
+	git clone https://github.com/apache/polaris.git polaris_catalog
+	cd polaris_catalog && jenv local 21
+	cd polaris_catalog && ./gradlew --stop
+	cd polaris_catalog && nohup ./gradlew run > polaris-server.log 2> polaris-error.log &
 
 data_clean:
 	rm -rf data/generated

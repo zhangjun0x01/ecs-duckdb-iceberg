@@ -1,21 +1,27 @@
 import re
 import os
-import json
 
-# Read and parse the JSON file
-with open("user_credentials.json", "r") as json_file:
-    config = json.load(json_file)
+log_content = ""
+# Read the log file (hopefully it isn't too big)
+with open("polaris_catalog/user_credentials.json", "r") as file:
+    log_content = file.read()
 
-    client_id = config.get("clientId")
-    client_secret = config.get("clientSecret")
+# Regular expression to capture the credentials
+match = re.search(r"{\"clientId\": \"(\w+)\", \"clientSecret\": \"(\w+)\"}", log_content)
 
-    if client_id and client_secret:
+if match:
+    clientId = match.group(1)
+    clientSecret = match.group(2)
+    if clientId and clientSecret:
         # Write client_id and client_secret to separate files
         with open("polaris_client_id.txt", "w") as id_file:
-            id_file.write(client_id)
+            print(f"clientId {clientId}")`
+            id_file.write(clientId)
 
         with open("polaris_client_secret.txt", "w") as secret_file:
-            secret_file.write(client_secret)
-    else:
-        print("clientId or clientSecret not found in config.json")
+            print(f"clientSecret {clientSecret}")
+            secret_file.write(clientSecret)
 
+else:
+    print("Credentials not found in the log file.")
+    exit(1)

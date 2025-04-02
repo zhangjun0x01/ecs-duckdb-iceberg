@@ -1,7 +1,7 @@
 # TODO: use the python module to execute these steps.
 # Seems like the python module is not yet publicly available/installable, so unsure what to do about this.
 
-./polaris_catalog/polaris \
+./polaris \
   --client-id ${POLARIS_ROOT_ID} \
   --client-secret ${POLARIS_ROOT_SECRET} \
   catalogs \
@@ -11,21 +11,21 @@
   quickstart_catalog
 
 
-./polaris_catalog/polaris \
+./polaris \
   --client-id ${POLARIS_ROOT_ID} \
   --client-secret ${POLARIS_ROOT_SECRET} \
   principals \
   create \
   quickstart_user
 
-./polaris_catalog/polaris \
+./polaris \
   --client-id ${POLARIS_ROOT_ID} \
   --client-secret ${POLARIS_ROOT_SECRET} \
   principal-roles \
   create \
   quickstart_user_role
 
-./polaris_catalog/polaris \
+./polaris \
   --client-id ${POLARIS_ROOT_ID} \
   --client-secret ${POLARIS_ROOT_SECRET} \
   catalog-roles \
@@ -33,7 +33,7 @@
   --catalog quickstart_catalog \
   quickstart_catalog_role
 
-./polaris_catalog/polaris \
+./polaris \
   --client-id ${POLARIS_ROOT_ID} \
   --client-secret ${POLARIS_ROOT_SECRET} \
   principal-roles \
@@ -41,7 +41,7 @@
   --principal quickstart_user \
   quickstart_user_role
 
-./polaris_catalog/polaris \
+./polaris \
   --client-id ${POLARIS_ROOT_ID} \
   --client-secret ${POLARIS_ROOT_SECRET} \
   catalog-roles \
@@ -50,7 +50,7 @@
   --principal-role quickstart_user_role \
   quickstart_catalog_role
 
-./polaris_catalog/polaris \
+./polaris \
   --client-id ${POLARIS_ROOT_ID} \
   --client-secret ${POLARIS_ROOT_SECRET} \
   privileges \
