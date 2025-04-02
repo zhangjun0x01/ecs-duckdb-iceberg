@@ -103,18 +103,22 @@ jobs:
       - name: Setup Polaris
         run: |
           make setup_polaris
+          # let polaris initialize 
+          sleep 30
           python3 -m venv .
           source ./bin/activate
           python3 -m pip install poetry
-          python3 -m pip install spark==3.5.0
+          python3 -m pip install pyspark==3.5.0
           python3 scripts/polaris/get_polaris_root_creds.py
           # needed for setup_polaris_catalog.sh
           export POLARIS_ROOT_ID=$(cat polaris_root_id.txt)
           export POLARIS_ROOT_SECRET=$(cat polaris_root_password.txt)
-          ./scripts/polaris/setup_polaris_catalog.sh > user_credentials.json
+          cd polaris_catalog && ../scripts/polaris/setup_polaris_catalog.sh > user_credentials.json
+          cd ..
+          python3 scripts/polaris/get_polaris_client_creds.py
           export POLARIS_CLIENT_ID=$(cat polaris_client_id.txt)
           export POLARIS_CLIENT_SECRET=$(cat polaris_client_secret.txt)
-          ./scripts/polaris/create_data.py
+          python3 scripts/polaris/create_data.py
 
       - name: Test with rest catalog
         env:

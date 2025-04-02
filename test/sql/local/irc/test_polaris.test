@@ -32,9 +32,15 @@ attach 'quickstart_catalog' as my_datalake (
 statement ok
 show all tables;
 
-query II
-select * from namespace.catalog.table;
+query I
+select count(*) from (show all tables);
 ----
 1
-2
+
+query II
+select * from my_datalake.COLLADO_TEST.quickstart_table;
+----
+1	some data
+2	more data
+3	yet more data
 
