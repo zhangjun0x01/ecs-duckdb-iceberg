@@ -137,8 +137,9 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	auto *config_val = yyjson_obj_get(root, "config");
 	if (config_val && catalog_credentials) {
 		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*catalog_credentials->secret);
-		auto region = kv_secret.TryGetValue("region").ToString();
-		config_options["region"] = region;
+		for (auto &option : kv_secret.secret_map) {
+			config_options.emplace(option);
+		}
 	}
 	ParseConfigOptions(config_val, config_options);
 
