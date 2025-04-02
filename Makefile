@@ -23,6 +23,15 @@ data: data_clean start-rest-catalog
 data_large: data data_clean
 	python3 scripts/data_generators/generate_data.py
 
+# setup polaris server. See PolarisTesting.yml to see instructions for a specific machine.
+setup_polaris:
+    mkdir polaris_catalog
+    git clone https://github.com/apache/polaris.git polaris_catalog
+    cd polairs_catalog
+    jenv local 21
+    ./gradlew --stop
+    nohup ./gradlew run > polaris-server.log 2> polaris-error.log &
+
 data_clean:
 	rm -rf data/generated
 
