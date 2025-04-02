@@ -100,15 +100,14 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	IRCCredentials credentials;
 	IRCEndpointBuilder endpoint_builder;
 
-	string account_id;
-	string service;
 	string endpoint_type;
 	string endpoint;
 	string oauth2_server_uri;
-
+	string client_id;
+	string client_secret;
 	auto &oauth2_scope = credentials.oauth2_scope;
 
-	// check if we have a secret provided
+	// First process all the options passed to attach
 	string storage_secret;
 	string catalog_secret;
 	for (auto &entry : info.options) {
@@ -138,30 +137,23 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 			endpoint = StringUtil::Lower(entry.second.ToString());
 			StringUtil::RTrim(endpoint, "/");
 		} else if (lower_name == "oauth2_scope") {
-			oauth2_scope = StringUtil::Lower(entry.second.ToString());
+			oauth2_scope = entry.second.ToString();
 		} else if (lower_name == "oauth2_server_uri") {
-			oauth2_server_uri = StringUtil::Lower(entry.second.ToString());
+			oauth2_server_uri = entry.second.ToString();
+		} else if (lower_name == "client_id") {
+			client_id = entry.second.ToString();
+		} else if (lower_name == "client_secret") {
+			client_secret = entry.second.ToString();
 		} else {
 			throw BinderException("Unrecognized option for PC attach: %s", entry.first);
 		}
 	}
+
 	auto warehouse = info.path;
-
-	if (oauth2_scope.empty()) {
-		//! Default to the Polaris scope: 'PRINCIPAL_ROLE:ALL'
-		oauth2_scope = "PRINCIPAL_ROLE:ALL";
-	}
-
-	if (oauth2_server_uri.empty()) {
-		//! If no oauth2_server_uri is provided, default to the (deprecated) REST API endpoint for it
-		DUCKDB_LOG_WARN(
-		    context, "iceberg",
-		    "'oauth2_server_uri' is not set, defaulting to deprecated '{endpoint}/v1/oauth/tokens' oauth2_server_uri");
-		oauth2_server_uri = StringUtil::Format("%s/v1/oauth/tokens", endpoint);
-	}
-	auto catalog_type = ICEBERG_CATALOG_TYPE::INVALID;
-
 	if (endpoint_type == "glue" || endpoint_type == "s3_tables") {
+		string service;
+		ICEBERG_CATALOG_TYPE catalog_type;
+
 		if (endpoint_type == "s3_tables") {
 			service = "s3tables";
 			catalog_type = ICEBERG_CATALOG_TYPE::AWS_S3TABLES;
@@ -208,34 +200,65 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	if (!endpoint_type.empty()) {
 		throw IOException("Unrecognized endpoint_type: %s. Expected either S3_TABLES or GLUE", endpoint_type);
 	}
-	if (endpoint_type.empty() && endpoint.empty()) {
-		throw IOException("No endpoint type or endpoint provided");
+	if (endpoint.empty()) {
+		throw IOException("No 'endpoint_type' or 'endpoint' provided");
 	}
 
-	catalog_type = ICEBERG_CATALOG_TYPE::OTHER;
 	// Default IRC path - using OAuth2 to authorize to the catalog
-
 	Value token;
 	auto iceberg_secret = IRCatalog::GetIcebergSecret(context, catalog_secret);
 	if (iceberg_secret) {
+		//! The catalog secret (iceberg secret) will already have acquired a token, these additional settings in the
+		//! attach options will not be used. Better to explicitly throw than to just ignore the options and cause
+		//! confusion for the user.
+		if (!oauth2_scope.empty()) {
+			throw InvalidInputException("Both an 'oauth2_scope' and a 'catalog_secret' (or 'secret') are provided, "
+			                            "these are mutually exclusive.");
+		}
+		if (!oauth2_server_uri.empty()) {
+			throw InvalidInputException("Both an 'oauth2_server_uri' and a 'catalog_secret' (or 'secret') are "
+			                            "provided, these are mutually exclusive.");
+		}
+		if (!client_id.empty()) {
+			throw InvalidInputException("Please provide either a client_id+client_secret pair, or 'catalog_secret', "
+			                            "these options are mutually exclusive");
+		}
+		if (!client_secret.empty()) {
+			throw InvalidInputException("Please provide either a client_id+client_secret pair, or 'catalog_secret', "
+			                            "these options are mutually exclusive");
+		}
+
 		auto &kv_iceberg_secret = dynamic_cast<const KeyValueSecret &>(*iceberg_secret->secret);
 		token = kv_iceberg_secret.TryGetValue("token");
 	} else {
-		Value endpoint_val;
-		// Lookup a secret we can use to access the rest catalog.
-		// if no secret is referenced, this method throws
-		auto secret_entry = IRCatalog::GetS3Secret(context, storage_secret);
-		D_ASSERT(secret_entry);
-		// secret found - read data
-		const auto &kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
-		Value key_val = kv_secret.TryGetValue("key_id");
-		Value secret_val = kv_secret.TryGetValue("secret");
+		if (!catalog_secret.empty()) {
+			throw InvalidInputException("No ICEBERG secret by the name of '%s' could be found", catalog_secret);
+		}
+
+		if (oauth2_scope.empty()) {
+			//! Default to the Polaris scope: 'PRINCIPAL_ROLE:ALL'
+			oauth2_scope = "PRINCIPAL_ROLE:ALL";
+		}
+
+		if (oauth2_server_uri.empty()) {
+			//! If no oauth2_server_uri is provided, default to the (deprecated) REST API endpoint for it
+			DUCKDB_LOG_WARN(context, "iceberg",
+			                "'oauth2_server_uri' is not set, defaulting to deprecated '{endpoint}/v1/oauth/tokens' "
+			                "oauth2_server_uri");
+			oauth2_server_uri = StringUtil::Format("%s/v1/oauth/tokens", endpoint);
+		}
+
+		if (client_id.empty() || client_secret.empty()) {
+			throw InvalidInputException("Please provide either a 'client_id' + 'client_secret' pair or the name of an "
+			                            "ICEBERG secret as 'secret' / 'catalog_secret'");
+		}
+
 		CreateSecretInput create_secret_input;
 		create_secret_input.options["oauth2_server_uri"] = oauth2_server_uri;
-		create_secret_input.options["client_id"] = key_val;
-		create_secret_input.options["client_secret"] = secret_val;
-		create_secret_input.options["endpoint"] = endpoint;
 		create_secret_input.options["oauth2_scope"] = oauth2_scope;
+		create_secret_input.options["client_id"] = client_id;
+		create_secret_input.options["client_secret"] = client_secret;
+		create_secret_input.options["endpoint"] = endpoint;
 
 		auto new_secret = CreateCatalogSecretFunction(context, create_secret_input);
 		auto &kv_iceberg_secret = dynamic_cast<KeyValueSecret &>(*new_secret);
@@ -247,7 +270,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	credentials.token = token.ToString();
 
 	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, warehouse, endpoint, storage_secret);
-	catalog->catalog_type = catalog_type;
+	catalog->catalog_type = ICEBERG_CATALOG_TYPE::OTHER;
 	catalog->GetConfig(context);
 	return std::move(catalog);
 }
