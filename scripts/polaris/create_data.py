@@ -9,7 +9,7 @@ if client_id == '' or client_secret == '':
     exit(1)
 
 spark = (
-    SparkSession.builder.config("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
+    SparkSession.builder.config("spark.sql.catalog.quickstart_catalog", "org.apache.iceberg.spark.SparkCatalog")
     .config(
         "spark.jars.packages",
         "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.8.1,org.apache.hadoop:hadoop-aws:3.4.0,software.amazon.awssdk:bundle:2.23.19,software.amazon.awssdk:url-connection-client:2.23.19",
@@ -17,7 +17,6 @@ spark = (
     .config('spark.sql.iceberg.vectorization.enabled', 'false')
     # Configure the 'polaris' catalog as an Iceberg rest catalog
     .config("spark.sql.catalog.quickstart_catalog.type", "rest")
-    .config("spark.sql.catalog.quickstart_catalog", "org.apache.iceberg.spark.SparkCatalog")
     # Specify the rest catalog endpoint
     .config("spark.sql.catalog.quickstart_catalog.uri", "http://localhost:8181/api/catalog")
     # Enable token refresh
