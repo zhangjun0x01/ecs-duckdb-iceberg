@@ -29,8 +29,6 @@ def GeneratePolarisData():
     del conn
 
 if __name__ == "__main__":
-    import pdb
-    pdb.set_trace()
     argv = sys.argv
     for i in range(1, len(argv)):
         if argv[i] == "polaris":
