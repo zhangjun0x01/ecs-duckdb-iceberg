@@ -1,4 +1,4 @@
-name: Local functional tests
+name: Polaris tests
 on: [push, pull_request,repository_dispatch]
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.head_ref || '' }}-${{ github.base_ref || '' }}-${{ github.ref != 'refs/heads/main' || github.sha }}
@@ -12,7 +12,7 @@ env:
 
 jobs:
   rest:
-    name: Test against local Rest Catalog
+    name: Test against Polaris Catalog
     runs-on: ubuntu-latest
     env:
       VCPKG_TARGET_TRIPLET: 'x64-linux'
