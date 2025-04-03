@@ -32,10 +32,13 @@ if __name__ == "__main__":
     argv = sys.argv
     for i in range(1, len(argv)):
         if argv[i] == "polaris":
+            print("generating polaris data")
             GeneratePolarisData()
         elif argv[i] == "local":
+            print("generating local iceberg data")
             GenerateSparkLocal()
         elif argv[i] == "spark-rest":
-            GenerateSparkRest
+            print("generating local iceberg REST data")
+            GenerateSparkRest()
         else:
             print(f"{argv[i]} not recognized, skipping")
