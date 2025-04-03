@@ -27,7 +27,7 @@ static string IcebergManifestContentTypeToString(IcebergManifestContentType type
 	case IcebergManifestContentType::DELETE:
 		return "DELETE";
 	default:
-		throw InvalidInputException("Invalid Manifest Content Type");
+		throw InvalidConfigurationException("Invalid Manifest Content Type");
 	}
 }
 
@@ -42,7 +42,7 @@ static string IcebergManifestEntryStatusTypeToString(IcebergManifestEntryStatusT
 	case IcebergManifestEntryStatusType::DELETED:
 		return "DELETED";
 	default:
-		throw InvalidInputException("Invalid matifest entry type");
+		throw InvalidConfigurationException("Invalid matifest entry type");
 	}
 }
 
@@ -57,7 +57,7 @@ static string IcebergManifestEntryContentTypeToString(IcebergManifestEntryConten
 	case IcebergManifestEntryContentType::EQUALITY_DELETES:
 		return "EQUALITY_DELETES";
 	default:
-		throw InvalidInputException("Invalid Manifest Entry Content Type");
+		throw InvalidConfigurationException("Invalid Manifest Entry Content Type");
 	}
 }
 
