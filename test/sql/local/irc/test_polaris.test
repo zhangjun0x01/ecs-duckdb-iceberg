@@ -34,10 +34,11 @@ attach 'quickstart_catalog' as my_datalake (
 statement ok
 show all tables;
 
+# tables may be added, we just want to make sure we are accurately getting the information
 query I
-select count(*) from (show all tables);
+select count(*) > 0 from (show all tables);
 ----
-1
+true
 
 query II
 select * from my_datalake.COLLADO_TEST.quickstart_table;

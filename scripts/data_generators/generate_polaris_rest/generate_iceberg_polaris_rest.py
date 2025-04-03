@@ -123,6 +123,17 @@ class IcebergPolarisRest:
     def GenerateTables(self, con):
         # Generate the tpch tables
         self.GenerateTPCH(con)
+        con.sql("CREATE NAMESPACE IF NOT EXISTS COLLADO_TEST")
+        con.sql("USE NAMESPACE COLLADO_TEST")
+        con.sql(
+            """
+        CREATE TABLE IF NOT EXISTS quickstart_table (
+          id BIGINT, data STRING
+        )
+        USING ICEBERG
+        """
+        )
+        con.sql("INSERT INTO quickstart_table VALUES (1, 'some data'), (2, 'more data'), (3, 'yet more data')")
 
 
     def CloseConnection(self, con):
