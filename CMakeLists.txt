@@ -45,6 +45,9 @@ find_package(CURL REQUIRED)
 find_package(AWSSDK REQUIRED COMPONENTS core sso sts)
 include_directories(${CURL_INCLUDE_DIRS})
 
+# Reset the TARGET_NAME, the AWS find_package build could bleed into our build - overriding `TARGET_NAME`
+set(TARGET_NAME iceberg)
+
 # AWS SDK FROM vcpkg
 target_include_directories(${EXTENSION_NAME}
                            PUBLIC $<BUILD_INTERFACE:${AWSSDK_INCLUDE_DIRS}>)
