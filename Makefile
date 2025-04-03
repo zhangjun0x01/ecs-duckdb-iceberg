@@ -24,10 +24,9 @@ data_large: data data_clean
 	python3 scripts/data_generators/generate_data.py
 
 # setup polaris server. See PolarisTesting.yml to see instructions for a specific machine.
-setup_polaris:
+setup_polaris_ci:
 	mkdir polaris_catalog
 	git clone https://github.com/apache/polaris.git polaris_catalog
-	cd polaris_catalog && jenv local 21
 	cd polaris_catalog && ./gradlew clean :polaris-quarkus-server:assemble -Dquarkus.container-image.build=true --no-build-cache
 	cd polaris_catalog && ./gradlew --stop
 	cd polaris_catalog && nohup ./gradlew run > polaris-server.log 2> polaris-error.log &

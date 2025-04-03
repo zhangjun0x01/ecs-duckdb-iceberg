@@ -1,5 +1,5 @@
 name: Polaris tests
-on: [push, pull_request,repository_dispatch]
+on: [push, repository_dispatch]
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.head_ref || '' }}-${{ github.base_ref || '' }}-${{ github.ref != 'refs/heads/main' || github.sha }}
   cancel-in-progress: true
@@ -89,22 +89,11 @@ jobs:
           # install python virtual environment (is this needed?)
           sudo apt-get install -y -qq python3-venv
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
-      - name: Setup Jenv
-        run: |
-          git clone https://github.com/jenv/jenv.git ~/.jenv
-          echo 'export PATH="$HOME/.jenv/bin:$PATH"' >> ~/.bashrc
-          echo 'eval "$(jenv init -)"' >> ~/.bashrc
-          source ~/.bashrc
-          jenv enable-plugin export
-          jenv add /usr/lib/jvm/java-21-openjdk-amd64
-
       - name: Wait for polaris initialization
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-21-openjdk-amd64
         run: |
-          source ~/.bashrc
-          make setup_polaris
+          make setup_polaris_ci
           # let polaris initialize 
           max_attempts=50
           attempt=1
