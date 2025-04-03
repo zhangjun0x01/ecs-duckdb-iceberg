@@ -28,6 +28,7 @@ setup_polaris:
 	mkdir polaris_catalog
 	git clone https://github.com/apache/polaris.git polaris_catalog
 	cd polaris_catalog && jenv local 21
+	cd polaris_catalog && ./gradlew clean :polaris-quarkus-server:assemble -Dquarkus.container-image.build=true --no-build-cache
 	cd polaris_catalog && ./gradlew --stop
 	cd polaris_catalog && nohup ./gradlew run > polaris-server.log 2> polaris-error.log &
 
