@@ -29,8 +29,9 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 	auto result = make_uniq<KeyValueSecret>(prefix_paths, "iceberg", "config", input.name);
 	result->redact_keys = {"token", "client_id", "client_secret"};
 
-	case_insensitive_set_t accepted_parameters {"client_id", "client_secret", "endpoint", "oauth2_scope",
-	                                            "oauth2_server_uri"};
+	case_insensitive_set_t accepted_parameters {"client_id",         "client_secret",     "endpoint",
+	                                            "oauth2_scope",      "oauth2_server_uri", "oauth2_grant_type",
+	                                            "authorization_type"};
 	for (const auto &named_param : input.options) {
 		auto &param_name = named_param.first;
 		auto it = accepted_parameters.find(param_name);
@@ -63,10 +64,49 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 		    "No 'oauth2_server_uri' was provided, and no 'endpoint' was provided to fall back on");
 	}
 
+	auto authorization_type_it = result->secret_map.find("authorization_type");
+	if (authorization_type_it != result->secret_map.end()) {
+		auto authorization_type = authorization_type_it->second.ToString();
+		if (!StringUtil::CIEquals(authorization_type, "oauth2")) {
+			throw InvalidInputException(
+			    "Unsupported option ('%s') for 'authorization_type', only supports 'oauth2' currently",
+			    authorization_type);
+		}
+	} else {
+		//! Default to oauth2 authorization type
+		result->secret_map["authorization_type"] = "oauth2";
+	}
+
+	case_insensitive_set_t required_parameters {"client_id", "client_secret"};
+	for (auto &param : required_parameters) {
+		if (!result->secret_map.count(param)) {
+			throw InvalidInputException("Missing required parameter '%s' for authorization_type 'oauth2'", param);
+		}
+	}
+
+	auto grant_type_it = result->secret_map.find("oauth2_grant_type");
+	if (grant_type_it != result->secret_map.end()) {
+		auto grant_type = grant_type_it->second.ToString();
+		if (!StringUtil::CIEquals(grant_type, "client_credentials")) {
+			throw InvalidInputException(
+			    "Unsupported option ('%s') for 'oauth2_grant_type', only supports 'client_credentials' currently",
+			    grant_type);
+		}
+	} else {
+		//! Default to client_credentials
+		result->secret_map["oauth2_grant_type"] = "client_credentials";
+	}
+
+	if (!result->secret_map.count("oauth2_scope")) {
+		//! Default to default Polaris role
+		result->secret_map["oauth2_scope"] = "PRINCIPAL_ROLE:ALL";
+	}
+
 	// Make a request to the oauth2 server uri to get the (bearer) token
 	result->secret_map["token"] =
-	    IRCAPI::GetToken(context, server_uri, result->secret_map["client_id"].ToString(),
-	                     result->secret_map["client_secret"].ToString(), result->secret_map["oauth2_scope"].ToString());
+	    IRCAPI::GetToken(context, result->secret_map["oauth2_grant_type"].ToString(), server_uri,
+	                     result->secret_map["client_id"].ToString(), result->secret_map["client_secret"].ToString(),
+	                     result->secret_map["oauth2_scope"].ToString());
 	return std::move(result);
 }
 
@@ -77,6 +117,8 @@ static void SetCatalogSecretParameters(CreateSecretFunction &function) {
 	function.named_parameters["token"] = LogicalType::VARCHAR;
 	function.named_parameters["oauth2_scope"] = LogicalType::VARCHAR;
 	function.named_parameters["oauth2_server_uri"] = LogicalType::VARCHAR;
+	function.named_parameters["oauth2_grant_type"] = LogicalType::VARCHAR;
+	function.named_parameters["authorization_type"] = LogicalType::VARCHAR;
 }
 
 static bool SanityCheckGlueWarehouse(string warehouse) {
@@ -105,6 +147,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	string oauth2_server_uri;
 	string client_id;
 	string client_secret;
+	string grant_type;
 	auto &oauth2_scope = credentials.oauth2_scope;
 
 	// First process all the options passed to attach
@@ -144,6 +187,8 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 			client_id = entry.second.ToString();
 		} else if (lower_name == "client_secret") {
 			client_secret = entry.second.ToString();
+		} else if (lower_name == "oauth2_grant_type") {
+			grant_type = entry.second.ToString();
 		} else {
 			throw BinderException("Unrecognized option for PC attach: %s", entry.first);
 		}
@@ -246,6 +291,10 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 			oauth2_scope = "PRINCIPAL_ROLE:ALL";
 		}
 
+		if (grant_type.empty()) {
+			grant_type = "client_credentials";
+		}
+
 		if (oauth2_server_uri.empty()) {
 			//! If no oauth2_server_uri is provided, default to the (deprecated) REST API endpoint for it
 			DUCKDB_LOG_WARN(context, "iceberg",
@@ -262,9 +311,11 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		CreateSecretInput create_secret_input;
 		create_secret_input.options["oauth2_server_uri"] = oauth2_server_uri;
 		create_secret_input.options["oauth2_scope"] = oauth2_scope;
+		create_secret_input.options["oauth2_grant_type"] = grant_type;
 		create_secret_input.options["client_id"] = client_id;
 		create_secret_input.options["client_secret"] = client_secret;
 		create_secret_input.options["endpoint"] = endpoint;
+		create_secret_input.options["authorization_type"] = "oauth2";
 
 		auto new_secret = CreateCatalogSecretFunction(context, create_secret_input);
 		auto &kv_iceberg_secret = dynamic_cast<KeyValueSecret &>(*new_secret);

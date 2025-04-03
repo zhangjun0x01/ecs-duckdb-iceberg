@@ -190,10 +190,10 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	return result;
 }
 
-string IRCAPI::GetToken(ClientContext &context, const string &uri, const string &id, const string &secret,
-                        const string &scope) {
+string IRCAPI::GetToken(ClientContext &context, const string &grant_type, const string &uri, const string &id,
+                        const string &secret, const string &scope) {
 	vector<string> parameters;
-	parameters.push_back(StringUtil::Format("%s=%s", "grant_type", "client_credentials"));
+	parameters.push_back(StringUtil::Format("%s=%s", "grant_type", grant_type));
 	parameters.push_back(StringUtil::Format("%s=%s", "client_id", id));
 	parameters.push_back(StringUtil::Format("%s=%s", "client_secret", secret));
 	parameters.push_back(StringUtil::Format("%s=%s", "scope", scope));
