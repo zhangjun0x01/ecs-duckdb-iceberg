@@ -115,7 +115,7 @@ jobs:
           exec $SHELL -l
           jenv add /usr/lib/jvm/java-21-openjdk-amd64
 
-      - name: Wait for polaris initializatino
+      - name: Wait for polaris initialization
         run: |
           make setup_polaris
           # let polaris initialize 
