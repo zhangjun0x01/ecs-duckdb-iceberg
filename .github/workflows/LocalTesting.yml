@@ -103,7 +103,10 @@ jobs:
           sudo apt install -y -qq openjdk-21-jdk-headless
           # install python virtual environment (is this needed?)
           sudo apt-get install -y -qq python3-venv
-          
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+
       - name: Setup Jenv
         run: |
           git clone https://github.com/jenv/jenv.git ~/.jenv
