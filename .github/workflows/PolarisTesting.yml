@@ -9,6 +9,7 @@ defaults:
 
 env:
   BASE_BRANCH: ${{ github.base_ref || (endsWith(github.ref, '_feature') && 'feature' || 'main') }}
+  CMAKE_POLICY_VERSION_MINIMUM: 3.5
 
 jobs:
   rest:
@@ -93,7 +94,7 @@ jobs:
           git clone https://github.com/jenv/jenv.git ~/.jenv
           echo 'export PATH="$HOME/.jenv/bin:$PATH"' >> ~/.bashrc
           echo 'eval "$(jenv init -)"' >> ~/.bashrc
-          source ~/.bash_profile
+          source ~/.bashrc
           jenv enable-plugin export
           jenv add /usr/lib/jvm/java-21-openjdk-amd64
 
