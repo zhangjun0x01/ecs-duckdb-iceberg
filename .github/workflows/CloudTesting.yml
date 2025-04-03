@@ -7,9 +7,6 @@ defaults:
   run:
     shell: bash
 
-env:
-  CMAKE_POLICY_VERSION_MINIMUM: 3.5
-
 jobs:
   rest:
     name: Test against remote AWS account
