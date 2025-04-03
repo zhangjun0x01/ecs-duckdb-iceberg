@@ -108,15 +108,15 @@ jobs:
       - name: Setup Jenv
         run: |
           git clone https://github.com/jenv/jenv.git ~/.jenv
-          echo 'export PATH="$HOME/.jenv/bin:$PATH"' >> ~/.bash_profile
+          echo 'export PATH="$HOME/.jenv/bin:$PATH"' >> ~/.bashrc
+          echo 'eval "$(jenv init -)"' >> ~/.bashrc
           source ~/.bash_profile
-          eval "$(jenv init -)"
           jenv enable-plugin export
-          exec $SHELL -l
           jenv add /usr/lib/jvm/java-21-openjdk-amd64
 
       - name: Wait for polaris initialization
         run: |
+          source ~/.bashrc
           make setup_polaris
           # let polaris initialize 
           max_attempts=50
