@@ -131,4 +131,5 @@ jobs:
         run: |
           export POLARIS_CLIENT_ID=$(cat polaris_client_id.txt)
           export POLARIS_CLIENT_SECRET=$(cat polaris_client_secret.txt)
-          make test_release
+          ./build/release/test/unittest "$PWD/test/*" --list-test-names-only || true
+          ./build/release/test/unittest "$PWD/test/*"

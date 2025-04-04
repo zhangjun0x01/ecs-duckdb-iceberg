@@ -263,11 +263,20 @@ jobs:
           sudo apt install -y -qq openjdk-21-jre-headless
           sudo apt install -y -qq openjdk-21-jdk-headless
           sudo apt-get install -y -qq python3-venv
+          python3 -m venv .
+          source ./bin/activate
+          python3 -m pip install poetry
+          python3 -m pip install pyspark==3.5.0
+          python3 -m pip install duckdb
+          python3 -m pip install pandas
+          python3 -m pip install setuptools
+          python3 scripts/lakekeeper/setup_lakekeeper_catalog.py
+          python3 scripts/data_generators/generate_data.py lakekeeper
 
       - name: Test with rest catalog
         env:
-          POLARIS_SERVER_AVAILABLE: 1
+          LAKEKEEPER_SERVER_AVAILABLE: 1
         run: |
-          #export POLARIS_CLIENT_ID=$(cat polaris_client_id.txt)
-          #export POLARIS_CLIENT_SECRET=$(cat polaris_client_secret.txt)
-          make test_release
+          ./build/release/test/unittest "$PWD/test/*" --list-test-names-only || true
+          ./build/release/test/unittest "$PWD/test/*"
+
