@@ -255,6 +255,15 @@ jobs:
           done
           echo "Lakekeeper is healthy"
 
+      - name: Populate Lakekeeper
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-21-openjdk-amd64
+        run: |
+          # install java
+          sudo apt install -y -qq openjdk-21-jre-headless
+          sudo apt install -y -qq openjdk-21-jdk-headless
+          sudo apt-get install -y -qq python3-venv
+
       - name: Test with rest catalog
         env:
           POLARIS_SERVER_AVAILABLE: 1
