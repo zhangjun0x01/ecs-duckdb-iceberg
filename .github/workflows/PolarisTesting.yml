@@ -93,7 +93,11 @@ jobs:
         env:
           JAVA_HOME: /usr/lib/jvm/java-21-openjdk-amd64
         run: |
-          make setup_polaris_ci
+          mkdir polaris_catalog
+          git clone https://github.com/apache/polaris.git polaris_catalog
+          cd polaris_catalog && ./gradlew clean :polaris-quarkus-server:assemble -Dquarkus.container-image.build=true --no-build-cache
+          cd polaris_catalog && ./gradlew --stop
+          cd polaris_catalog && nohup ./gradlew run > polaris-server.log 2> polaris-error.log &
           # let polaris initialize 
           max_attempts=50
           attempt=1
