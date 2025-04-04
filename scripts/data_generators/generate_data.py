@@ -19,7 +19,6 @@ def GenerateSparkLocal():
     del db
     del conn
 
-
 def GeneratePolarisData():
     db = IcebergPolarisRest()
     conn = db.GetConnection()

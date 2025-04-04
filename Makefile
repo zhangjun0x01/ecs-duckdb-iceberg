@@ -18,10 +18,10 @@ install_requirements:
 
 # Custom makefile targets
 data: data_clean start-rest-catalog
-	python3 scripts/data_generators/generate_data.py local spark-rest
+	python3 scripts/data_generators/generate_data.py spark-rest local
 
 data_large: data data_clean
-	python3 scripts/data_generators/generate_data.py local spark-rest
+	python3 scripts/data_generators/generate_data.py spark-rest local
 
 # setup polaris server. See PolarisTesting.yml to see instructions for a specific machine.
 setup_polaris_ci:
