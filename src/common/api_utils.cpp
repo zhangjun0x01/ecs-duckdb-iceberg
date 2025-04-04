@@ -1,5 +1,6 @@
 #include "api_utils.hpp"
 #include "credentials/credential_provider.hpp"
+#include "duckdb/common/exception.hpp"
 #include "duckdb/common/exception/http_exception.hpp"
 #include "storage/irc_catalog.hpp"
 #include <sys/stat.h>
@@ -46,7 +47,8 @@ string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &en
 		                 curl_easy_strerror(res));
 		if (res != CURLcode::CURLE_OK) {
 			string error = curl_easy_strerror(res);
-			throw HTTPException("Curl Request to '%s' failed with error: '%s'", url, error);
+			throw HTTPException(
+			    Exception::ConstructMessage("Curl Request to '%s' failed with error: '%s'", url, error));
 		}
 
 		return readBuffer;
@@ -117,8 +119,9 @@ string APIUtils::GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoi
 	} else {
 		Aws::StringStream resBody;
 		resBody << res->GetResponseBody().rdbuf();
-		throw HTTPException("Failed to query %s, http error %d thrown. Message: %s", req->GetUri().GetURIString(true),
-		                    res->GetResponseCode(), resBody.str());
+		throw HTTPException(Exception::ConstructMessage("Failed to query %s, http error %d thrown. Message: %s",
+		                                                req->GetUri().GetURIString(true), res->GetResponseCode(),
+		                                                resBody.str()));
 	}
 }
 
@@ -178,7 +181,8 @@ string APIUtils::DeleteRequest(const string &url, const string &token, curl_slis
 
 		if (res != CURLcode::CURLE_OK) {
 			string error = curl_easy_strerror(res);
-			throw HTTPException("Curl DELETE Request to '%s' failed with error: '%s'", url, error);
+			throw HTTPException(
+			    Exception::ConstructMessage("Curl DELETE Request to '%s' failed with error: '%s'", url, error));
 		}
 
 		return readBuffer;
@@ -228,7 +232,7 @@ string APIUtils::PostRequest(ClientContext &context, const string &url, const st
 	                 curl_easy_strerror(res));
 	if (res != CURLcode::CURLE_OK) {
 		string error = curl_easy_strerror(res);
-		throw HTTPException("Curl Request to '%s' failed with error: '%s'", url, error);
+		throw HTTPException(Exception::ConstructMessage("Curl Request to '%s' failed with error: '%s'", url, error));
 	}
 	return readBuffer;
 }
