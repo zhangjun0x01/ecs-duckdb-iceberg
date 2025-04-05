@@ -96,13 +96,193 @@ class PrimitiveProperty(Property):
 allOf: the object should satisfy all of the constraints of every entry of the allOf list
 (we can add each reference as member variable to the created class, using the base 'obj' as argument to the FromJSON)
 
+class AllOfExample {
+public:
+    AllOfExample() {}
+public:
+    static AllOfExample FromJSON(yyjson_val *obj) {
+        AllOfExample res;
+        auto error = res.TryFromJSON(obj);
+        if (!error.empty()) {
+            throw InvalidInputException(error);
+        }
+        return res;
+    }
+    string TryFromJSON(yyjson_val *obj) {
+        string error;
+
+        error = base_foo.TryFromJSON(obj);
+        if (!error.empty()) {
+            return error;
+        }
+        error = base_bar.TryFromJSON(obj);
+        if (!error.empty()) {
+            return error;
+        }
+        error = base_baz.TryFromJSON(obj);
+        if (!error.empty()) {
+            return error;
+        }
+
+        auto type_val = yyjson_obj_get(obj, "type");
+        if (type_val) {
+            type = yyjson_get_str(type_val);
+        }
+
+        auto content_val = yyjson_obj_get(obj, "content");
+        if (content_val) {
+            content = yyjson_get_str(content_val);
+        }
+
+        auto id_val = yyjson_obj_get(obj, "id");
+        if (id_val) {
+            id = yyjson_get_sint(id_val);
+        }
+        return string();
+    }
+public:
+    Foo base_foo;
+    bool has_foo = false;
+    Bar base_bar;
+    bool has_bar = false;
+    Baz base_baz;
+    bool has_baz = false;
+public:
+    string type;
+    string content;
+    int64_t id;
+};
+
 oneOf: the property will satisfy one of the referenced schemas
 (we can add 'has_<ref>' boolean member variables to the class, along with every referenced schema)
 we probably want to create a TryFromJSON method, which takes in an instance of the class, returns a string
 if string is empty - it was successful, otherwise it wasn't
 
+class OneOfExample {
+public:
+    OneOfExample() {}
+public:
+    static OneOfExample FromJSON(yyjson_val *obj) {
+        OneOfExample res;
+        auto error = res.TryFromJSON(obj);
+        if (!error.empty()) {
+            throw InvalidInputException(error);
+        }
+        return res;
+    }
+    string TryFromJSON(yyjson_val *obj) {
+        string error;
+
+        error = base_foo.TryFromJSON(obj);
+        if (error.empty()) {
+            has_foo = true;
+            return string();
+        }
+        error = base_bar.TryFromJSON(obj);
+        if (error.empty()) {
+            has_bar = true;
+            return string();
+        }
+        error = base_baz.TryFromJSON(obj);
+        if (error.empty()) {
+            has_baz = true;
+            return string();
+        }
+        return "OneOfExample failed to parse, none of the oneOf candidates matched";
+
+        auto type_val = yyjson_obj_get(obj, "type");
+        if (type_val) {
+            type = yyjson_get_str(type_val);
+        }
+
+        auto content_val = yyjson_obj_get(obj, "content");
+        if (content_val) {
+            content = yyjson_get_str(content_val);
+        }
+
+        auto id_val = yyjson_obj_get(obj, "id");
+        if (id_val) {
+            id = yyjson_get_sint(id_val);
+        }
+        return string();
+    }
+public:
+    Foo base_foo;
+    bool has_foo = false;
+    Bar base_bar;
+    bool has_bar = false;
+    Baz base_baz;
+    bool has_baz = false;
+public:
+    string type;
+    string content;
+    int64_t id;
+};
+
 anyOf: same as oneOf but it matches one or more of the referenced schemas
 the TryFromJSON will also be handy here
+(TODO: make sure the base class variables dont collide with any property variable)
+
+class AnyOfExample {
+public:
+    AnyOfExample() {}
+public:
+    static AnyOfExample FromJSON(yyjson_val *obj) {
+        AnyOfExample res;
+        auto error = res.TryFromJSON(obj);
+        if (!error.empty()) {
+            throw InvalidInputException(error);
+        }
+        return res;
+    }
+    string TryFromJSON(yyjson_val *obj) {
+        string error;
+
+        error = base_foo.TryFromJSON(obj);
+        if (error.empty()) {
+            has_foo = true;
+        }
+        error = base_bar.TryFromJSON(obj);
+        if (error.empty()) {
+            has_bar = true;
+        }
+        error = base_baz.TryFromJSON(obj);
+        if (error.empty()) {
+            has_baz = true;
+        }
+        if (!has_foo && !has_bar && !has_baz) {
+            return "AnyOfExample failed to parse, none of the anyOf candidates matched";
+        }
+
+        auto type_val = yyjson_obj_get(obj, "type");
+        if (type_val) {
+            type = yyjson_get_str(type_val);
+        }
+
+        auto content_val = yyjson_obj_get(obj, "content");
+        if (content_val) {
+            content = yyjson_get_str(content_val);
+        }
+
+        auto id_val = yyjson_obj_get(obj, "id");
+        if (id_val) {
+            id = yyjson_get_sint(id_val);
+        }
+        return string();
+    }
+public:
+    Foo base_foo;
+    bool has_foo = false;
+    Bar base_bar;
+    bool has_bar = false;
+    Baz base_baz;
+    bool has_baz = false;
+public:
+    string type;
+    string content;
+    int64_t id;
+};
+
 """
 
 
