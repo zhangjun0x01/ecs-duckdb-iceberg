@@ -72,7 +72,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 		if (metadata_pos != std::string::npos) {
 			info.scope = {lc_storage_location.substr(0, metadata_pos)};
 		} else {
-			throw std::runtime_error("Substring not found");
+			throw InvalidInputException("Substring not found");
 		}
 
 		if (StringUtil::StartsWith(ic_catalog.host, "glue")) {
@@ -98,11 +98,11 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 			                {"region", region},
 			                {"endpoint", endpoint}};
 		}
-		auto my_secret = secret_manager.CreateSecret(context, info);
+		(void)secret_manager.CreateSecret(context, info);
 	}
 
 	for (auto &info : table_credentials.storage_credentials) {
-		auto my_secret = secret_manager.CreateSecret(context, info);
+		(void)secret_manager.CreateSecret(context, info);
 	}
 
 	named_parameter_map_t param_map;
