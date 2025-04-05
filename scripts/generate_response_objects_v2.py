@@ -1,6 +1,6 @@
 import yaml
 import os
-from typing import Dict, List, Set, Optional
+from typing import Dict, List, Set, Optional, cast
 import re
 from enum import Enum, auto
 
@@ -69,24 +69,31 @@ class Property:
         PRIMITIVE = auto()
         ARRAY = auto()
         OBJECT = auto()
+        SCHEMA_REFERENCE = auto()
 
-    def __init__(self, reference: Optional[str], type: "Property.Type"):
+    def __init__(self, type: "Property.Type"):
         self.type = type
-        # The name of the schema that this property has been defined by (if $ref)
-        self.reference = reference
+        # TODO: need to be prepared to generate additional structs, not always a '$ref' (see 'Schema')
+        self.all_of: List[Property] = []
+        self.any_of: List[Property] = []
+        self.one_of: List[Property] = []
+
+
+class SchemaReferenceProperty(Property):
+    def __init__(self, name):
+        super().__init__(Property.Type.SCHEMA_REFERENCE)
+        self.ref = name
 
 
 class ArrayProperty(Property):
-    def __init__(self, spec: dict, reference: Optional[str] = None):
-        super().__init__(reference, Property.Type.ARRAY)
-        self.spec = spec
+    def __init__(self):
+        super().__init__(Property.Type.ARRAY)
         self.item_type = None
 
 
 class PrimitiveProperty(Property):
-    def __init__(self, spec: dict, reference: Optional[str] = None):
-        super().__init__(reference, Property.Type.PRIMITIVE)
-        self.spec = spec
+    def __init__(self):
+        super().__init__(Property.Type.PRIMITIVE)
         self.format = None
         # TODO: if 'enum' is present, we should verify that the value of the property is one of the accepted values
         self.enum: Optional[List[str]] = None
@@ -287,12 +294,12 @@ public:
 
 
 class ObjectProperty(Property):
-    def __init__(self, spec: dict, reference: Optional[str] = None):
-        super().__init__(reference, Property.Type.OBJECT)
-        self.spec = spec
+    def __init__(self):
+        super().__init__(Property.Type.OBJECT)
         # TODO: when generating the C++ code, these properties should be present, anything else is optional
         self.required = []
-        self.properties = Dict[str, Property]
+        self.properties: Dict[str, Property] = {}
+        # TODO: do we need this? the schema validation shouldn't need it
         self.discriminator = None
 
 
@@ -304,6 +311,10 @@ class ResponseObjectsGenerator:
         # Since schemas reference other schemas and are potentially recursive
         # We want to keep track of the schemas that are currently being parsed
         self.schemas_being_parsed: Set[str] = set()
+        # Whenever this schema is referenced, the instance has to be wrapped in a unique_ptr
+        # otherwise the constructor will either be an infinite recursion
+        # or it won't compile (hopefully this)
+        self.recursive_schemas: Set[str] = set()
 
         # Load OpenAPI spec
         with open(API_SPEC_PATH) as f:
@@ -314,11 +325,18 @@ class ResponseObjectsGenerator:
 
     def generate_object_property(self, spec: dict, result: Property):
         # For polymorphic types, this defines a mapping based on the content of a property
-        result.discriminator = spec.get('discriminator')
+        discriminator = spec.get('discriminator')
         # Get the required properties of the schema
-        result.required = spec.get('required')
+        required = spec.get('required')
         # Get the defined properties of the schema
-        result.properties = spec.get('properties')
+        properties = spec.get('properties', {})
+
+        assert result.type == Property.Type.OBJECT
+        object_result = cast(ObjectProperty, result)
+
+        for name in properties:
+            property_spec = properties[name]
+            result.properties[name] = self.generate_property(property_spec)
 
     def generate_primitive_property(self, spec: dict, result: Property):
         primitive_type = spec['type']
@@ -328,13 +346,75 @@ class ResponseObjectsGenerator:
     def generate_array_property(self, spec: dict, result: Property):
         pass
 
+    def generate_property(self, spec: dict, reference: Optional[str] = None) -> Property:
+        ref = spec.get('$ref')
+        if not reference:
+            if ref:
+                parts = ref.split('/')
+                assert parts[-2] == 'schemas'
+                reference = parts[-1]
+                self.generate_schema(reference)
+                return SchemaReferenceProperty(reference)
+        else:
+            print(f"Schema {reference} spec contains '$ref' ???")
+            exit(1)
+
+        # default to 'object' (see 'AssertViewUUID')
+        property_type = spec.get('type', 'object')
+
+        one_of = spec.get('oneOf')
+        all_of = spec.get('allOf')
+        any_of = spec.get('anyOf')
+
+        if property_type == 'object':
+            result = ObjectProperty()
+            self.generate_object_property(spec, result)
+        elif property_type == 'array':
+            result = ArrayProperty()
+            self.generate_array_property(spec, result)
+        elif property_type in PRIMITIVE_TYPES:
+            result = PrimitiveProperty()
+            self.generate_primitive_property(spec, result)
+        else:
+            print(f"Property has unrecognized type: '{property_type}'!")
+            exit(1)
+
+        if one_of:
+            if property_type != 'object':
+                print(f"Property contains both 'oneOf' and a non-object 'type' ({property_type})")
+                exit(1)
+            assert 'allOf' not in spec
+            assert 'anyOf' not in spec
+            for item in one_of:
+                res = self.generate_property(item)
+                result.one_of.append(res)
+        if all_of:
+            if property_type != 'object':
+                print(f"Property contains both 'allOf' and a non-object 'type' ({property_type})")
+                exit(1)
+            assert 'oneOf' not in spec
+            assert 'anyOf' not in spec
+            for item in all_of:
+                res = self.generate_property(item)
+                result.all_of.append(res)
+        if any_of:
+            if property_type != 'object':
+                print(f"Property contains both 'allOf' and a non-object 'type' ({property_type})")
+                exit(1)
+            assert 'allOf' not in spec
+            assert 'oneOf' not in spec
+            for item in any_of:
+                res = self.generate_property(item)
+                result.any_of.append(res)
+
+        return result
+
     def generate_schema(self, name: str):
         if name in self.parsed_schemas:
             return
         if name in self.schemas_being_parsed:
-            print(f"{name} is a recursive schema definition!")
-            print(f"schemas in the stack trace: {list(self.schemas_being_parsed)}")
-            exit(1)
+            self.recursive_schemas.add(name)
+            return
         if name not in self.schemas:
             print(f"{name} is not a schema in the spec!")
             exit(1)
@@ -342,43 +422,11 @@ class ResponseObjectsGenerator:
         self.schemas_being_parsed.add(name)
         schema = self.schemas[name]
 
-        # default to 'object' (see 'AssertViewUUID')
-        schema_type = schema.get('type', 'object')
+        property = self.generate_property(schema)
+        property.reference = name
 
-        one_of = schema.get('oneOf')
-        all_of = schema.get('allOf')
-        any_of = schema.get('anyOf')
-        if one_of:
-            if schema_type != 'object':
-                print(f"{name} contains both 'oneOf' and a non-object 'type' ({schema_type})")
-                exit(1)
-            assert 'allOf' not in schema
-            assert 'anyOf' not in schema
-        elif all_of:
-            if schema_type != 'object':
-                print(f"{name} contains both 'allOf' and a non-object 'type' ({schema_type})")
-                exit(1)
-            assert 'oneOf' not in schema
-            assert 'anyOf' not in schema
-        elif any_of:
-            assert 'allOf' not in schema
-            assert 'oneOf' not in schema
-        else:
-            if schema_type == 'object':
-                result = ObjectProperty(schema, name)
-                self.generate_object_property(schema, result)
-            elif schema_type == 'array':
-                result = ArrayProperty(schema, name)
-                self.generate_array_property(schema, result)
-            elif schema_type in PRIMITIVE_TYPES:
-                result = PrimitiveProperty(schema, name)
-                self.generate_primitive_property(schema, result)
-            else:
-                print(f"Schema '{name} has unrecognized type: '{schema_type}'!")
-                exit(1)
-
-            self.schemas_being_parsed.remove(name)
-            self.parsed_schemas[name] = result
+        self.schemas_being_parsed.remove(name)
+        self.parsed_schemas[name] = property
 
     def generate_all_schemas(self):
         for name in self.schemas:
