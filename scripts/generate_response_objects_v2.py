@@ -88,12 +88,29 @@ class PrimitiveProperty(Property):
         super().__init__(reference, Property.Type.PRIMITIVE)
         self.spec = spec
         self.format = None
+        # TODO: if 'enum' is present, we should verify that the value of the property is one of the accepted values
+        self.enum: Optional[List[str]] = None
+
+
+"""
+allOf: the object should satisfy all of the constraints of every entry of the allOf list
+(we can add each reference as member variable to the created class, using the base 'obj' as argument to the FromJSON)
+
+oneOf: the property will satisfy one of the referenced schemas
+(we can add 'has_<ref>' boolean member variables to the class, along with every referenced schema)
+we probably want to create a TryFromJSON method, which takes in an instance of the class, returns a string
+if string is empty - it was successful, otherwise it wasn't
+
+anyOf: same as oneOf but it matches one or more of the referenced schemas
+the TryFromJSON will also be handy here
+"""
 
 
 class ObjectProperty(Property):
     def __init__(self, spec: dict, reference: Optional[str] = None):
         super().__init__(reference, Property.Type.OBJECT)
         self.spec = spec
+        # TODO: when generating the C++ code, these properties should be present, anything else is optional
         self.required = []
         self.properties = Dict[str, Property]
         self.discriminator = None
