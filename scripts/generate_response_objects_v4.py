@@ -98,9 +98,9 @@ public:
 public:
     string TryFromJSON(yyjson_val *obj) {{
         string error;
-        {BASE_CLASS_PARSING}
-        {REQUIRED_PROPERTIES}
-        {OPTIONAL_PROPERTIES}
+{BASE_CLASS_PARSING}
+{REQUIRED_PROPERTIES}
+{OPTIONAL_PROPERTIES}
         return string();
     }}
 public:
@@ -416,9 +416,7 @@ class ResponseObjectsGenerator:
         # otherwise the constructor will either be an infinite recursion
         # or it won't compile (hopefully this)
         self.recursive_schemas: Set[str] = set()
-
-        # "schemas" made out of the 'object' properties
-        self.object_schemas: Dict[str, Property] = {}
+        self.object_schema_count = 0
 
         # Load OpenAPI spec
         with open(API_SPEC_PATH) as f:
@@ -472,7 +470,7 @@ class ResponseObjectsGenerator:
                 reference = parts[-1]
                 self.parse_schema(reference)
                 return SchemaReferenceProperty(reference)
-        else:
+        elif ref:
             print(f"Schema {reference} spec contains '$ref' ???")
             exit(1)
 
@@ -524,6 +522,17 @@ class ResponseObjectsGenerator:
                 res = self.parse_property(item)
                 result.any_of.append(res)
 
+        if (
+            not reference
+            and result.type == Property.Type.OBJECT
+            and not result.is_object_of_strings()
+            and not result.is_raw_object()
+        ):
+            self.object_schema_count += 1
+            new_name = f'Object{self.object_schema_count}'
+            self.parsed_schemas[new_name] = result
+            print("CUSTOM SCHEMA", new_name, spec)
+            return SchemaReferenceProperty(new_name)
         return result
 
     def parse_schema(self, name: str):
@@ -539,7 +548,7 @@ class ResponseObjectsGenerator:
         self.schemas_being_parsed.add(name)
         schema = self.schemas[name]
 
-        property = self.parse_property(schema)
+        property = self.parse_property(schema, name)
         property.reference = name
 
         self.schemas_being_parsed.remove(name)
@@ -627,7 +636,7 @@ if ({condition}) {{
         res.append('} while (false);')
         return '\n'.join(res)
 
-    def generate_array_loop(self, array_name, destination_name, item_type: Property):
+    def generate_array_loop(self, array_name, destination_name, item_type: Property, referenced_schemas: set):
         res = []
         # First declare the variables
         res.append('size_t idx, max;')
@@ -636,7 +645,7 @@ if ({condition}) {{
         res.append(f'yyjson_arr_foreach({array_name}, idx, max, val) {{')
 
         ARRAY_PUSHBACK_FORMAT = "\tresult.{ARRAY_VARIABLE}.push_back({ITEM_PARSE});"
-        item_parse = self.generate_item_parse(item_type, 'val', nested_classes)
+        item_parse = self.generate_item_parse(item_type, 'val', referenced_schemas)
 
         body = ''
         body += ARRAY_PUSHBACK_FORMAT.format(ARRAY_VARIABLE=destination_name, ITEM_PARSE=item_parse)
@@ -644,9 +653,10 @@ if ({condition}) {{
         res.append('}')
         return '\n'.join(res)
 
-    def generate_item_parse(self, property: Property, source: str, nested_classes: Dict[str, Property]) -> str:
+    def generate_item_parse(self, property: Property, source: str, referenced_schemas: set) -> str:
         if property.type == Property.Type.SCHEMA_REFERENCE:
             schema_property = cast(SchemaReferenceProperty, property)
+            referenced_schemas.add(schema_property.ref)
             return f'{schema_property.ref}::FromJSON({source})'
         elif property.type == Property.Type.ARRAY:
             # TODO: maybe we move the array parse to a function that creates a vector<...>, instead of parsing it inline
@@ -668,42 +678,28 @@ if ({condition}) {{
             return f'parse_object_of_strings({source})'
         elif property.type == Property.Type.OBJECT and property.is_raw_object():
             return source
-        elif property.type == Property.Type.OBJECT:
-            class_name = source.title()
-            nested_classes[source] = property
-            return f'{class_name}::FromJSON({source})'
         else:
             print(f"Unrecognized type in 'generate_item_parse', {property.type}")
             exit(1)
 
-    def generate_assignment(
-        self, property: Property, target: str, source: str, nested_classes: Dict[str, Property]
-    ) -> str:
+    def generate_assignment(self, property: Property, target: str, source: str, referenced_schemas: set) -> str:
         if property.type == Property.Type.ARRAY:
             array_property = cast(ArrayProperty, property)
-            result = self.generate_array_loop(source, target, array_property.item_type, nested_classes)
+            result = self.generate_array_loop(source, target, array_property.item_type, referenced_schemas)
         else:
-            item_parse = self.generate_item_parse(property, source, nested_classes)
+            item_parse = self.generate_item_parse(property, source, referenced_schemas)
             result = f'result.{target} = {item_parse};'
         return result
 
-    def generate_optional_properties(self, name: str, property: Property, nested_classes: Dict[str, Property]):
-        if property.type != Property.Type.OBJECT:
-            return ''
-        object_property = cast(ObjectProperty, property)
-        required = object_property.required
-        if not required:
-            required = []
-        remaining_properties = [x for x in object_property.properties if x not in required]
-        if not remaining_properties:
+    def generate_optional_properties(self, name: str, properties: Dict[str, Property], referenced_schemas: set):
+        if not properties:
             return ''
         res = []
-        for item in remaining_properties:
-            assert item in object_property.properties
-            required_property = object_property.properties[item]
+        for item, optional_property in properties.items():
+            optional_property = properties[item]
             variable_name = safe_cpp_name(item)
             variable_assignment = self.generate_assignment(
-                required_property, variable_name, f'{variable_name}_val', nested_classes
+                optional_property, variable_name, f'{variable_name}_val', referenced_schemas
             )
             variable_assignment = '\n'.join([f'\t{x}' for x in variable_assignment.split('\n')])
             res.append(
@@ -715,21 +711,14 @@ if ({variable_name}_val) {{
             )
         return '\n'.join(res)
 
-    def generate_required_properties(self, name: str, property: Property, nested_classes: Dict[str, Property]):
-        if property.type != Property.Type.OBJECT:
-            return ''
-        object_property = cast(ObjectProperty, property)
-        if not object_property.required:
+    def generate_required_properties(self, name: str, properties: Dict[str, Property], referenced_schemas: set):
+        if not properties:
             return ''
         res = []
-        for item in object_property.required:
-            if item not in object_property.properties:
-                print(f"OpenAPI spec invalid, required property {item} not present in 'properties'")
-                exit(1)
-            required_property = object_property.properties[item]
+        for item, required_property in properties.items():
             variable_name = safe_cpp_name(item)
             variable_assignment = self.generate_assignment(
-                required_property, variable_name, f'{variable_name}_val', nested_classes
+                required_property, variable_name, f'{variable_name}_val', referenced_schemas
             )
             res.append(
                 f"""
@@ -741,12 +730,46 @@ if (!{variable_name}_val) {{
             )
         return '\n'.join(res)
 
-    def generate_schema(self, schema: Property, name: str):
-        print(name)
+    def generate_array_schema(self, schema: Property, name: str):
+        assert schema.type == Property.Type.ARRAY
+        array_property = cast(ArrayProperty, schema)
+
+        referenced_schemas = schema.get_referenced_schemas()
+        include_schemas = [x for x in referenced_schemas if x not in self.schemas]
+        additional_headers = [
+            f'#include "rest_catalog/objects/{to_snake_case(x)}.hpp' for x in sorted(list(include_schemas))
+        ]
+
+        referenced_schemas: Set[str] = set()
+        body = self.generate_array_loop('obj', 'value', array_property.item_type, referenced_schemas)
+        body = '\n'.join([f'\t{x}' for x in body.split('\n')])
+        class_definition = CLASS_FORMAT.format(
+            CLASS_NAME=name,
+            BASE_CLASS_PARSING='',
+            REQUIRED_PROPERTIES=body,
+            OPTIONAL_PROPERTIES='',
+            BASE_CLASS_VARIABLES='',
+            PROPERTY_VARIABLES='',
+        )
+
+        file_contents = HEADER_FORMAT.format(
+            ADDITIONAL_HEADERS='\n'.join(additional_headers), CLASS_DEFINITION=class_definition
+        )
+        return file_contents
+
+    def generate_primitive_schema(self, schema: Property, name: str):
+        # TODO: implement this
+        return ''
+
+    def generate_object_schema(self, schema: Property, name: str):
+        assert schema.type == Property.Type.OBJECT
+        object_property = cast(ObjectProperty, schema)
+
         # Find all the headers we need to include (direct references)
         referenced_schemas = schema.get_referenced_schemas()
+        include_schemas = [x for x in referenced_schemas if x not in self.schemas]
         additional_headers = [
-            f'#include "rest_catalog/objects/{to_snake_case(x)}.hpp' for x in sorted(list(referenced_schemas))
+            f'#include "rest_catalog/objects/{to_snake_case(x)}.hpp' for x in sorted(list(include_schemas))
         ]
 
         nested_classes: Dict[str, Property] = {}
@@ -765,9 +788,33 @@ if (!{variable_name}_val) {{
         if any_of_parsing:
             base_class_parsing.append(any_of_parsing)
 
-        nested_property_classes: Dict[str, Property] = {}
-        required_property_parsing = self.generate_required_properties(name, schema, nested_property_classes)
-        optional_property_parsing = self.generate_optional_properties(name, schema, nested_property_classes)
+        referenced_schemas: Set[str] = set()
+
+        required = object_property.required
+        if not required:
+            required = []
+        remaining_properties = [x for x in object_property.properties if x not in required]
+        if not remaining_properties:
+            return ''
+
+        required_properties = {}
+        optional_properties = {}
+        for item in remaining_properties:
+            optional_properties[item] = object_property.properties[item]
+        for item in required:
+            required_properties[item] = object_property.properties[item]
+
+        required_property_parsing = self.generate_required_properties(name, required_properties, referenced_schemas)
+        required_property_parsing = '\n'.join([f'\t{x}' for x in required_property_parsing.split('\n')])
+
+        optional_property_parsing = self.generate_optional_properties(name, optional_properties, referenced_schemas)
+        optional_property_parsing = '\n'.join([f'\t{x}' for x in optional_property_parsing.split('\n')])
+
+        if any([x.startswith('Object') for x in referenced_schemas]):
+            print("referenced_schemas", referenced_schemas)
+
+        if any([x.startswith('Object') for x in nested_classes.keys()]):
+            print("nested_classes", nested_classes)
 
         # Parse the nested classes (objects that are not $ref, split for easy of generation)
         if nested_classes:
@@ -796,7 +843,19 @@ if (!{variable_name}_val) {{
         file_contents = HEADER_FORMAT.format(
             ADDITIONAL_HEADERS='\n'.join(additional_headers), CLASS_DEFINITION=class_definition
         )
+        print(file_contents)
+        exit(1)
         return file_contents
+
+    def generate_schema(self, schema: Property, name: str):
+        if schema.type == Property.Type.OBJECT:
+            return self.generate_object_schema(schema, name)
+        elif schema.type == Property.Type.ARRAY:
+            return self.generate_array_schema(schema, name)
+        elif schema.type == Property.Type.PRIMITIVE:
+            return self.generate_primitive_schema(schema, name)
+        else:
+            print(f"Unrecognized 'generate_schema' type {schema.type}")
 
     def generate_all_schemas(self):
         for name in self.schemas:
