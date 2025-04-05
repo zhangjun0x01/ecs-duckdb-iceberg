@@ -88,15 +88,18 @@ class SchemaReferenceProperty(Property):
 class ArrayProperty(Property):
     def __init__(self):
         super().__init__(Property.Type.ARRAY)
-        self.item_type = None
+        self.item_type: Optional[Property] = None
 
 
 class PrimitiveProperty(Property):
     def __init__(self):
         super().__init__(Property.Type.PRIMITIVE)
+        self.primitive_type: Optional[str] = None
         self.format = None
         # TODO: if 'enum' is present, we should verify that the value of the property is one of the accepted values
         self.enum: Optional[List[str]] = None
+        # TODO: same for this, this property *has* to have this value
+        self.const: Optional[str] = None
 
 
 """
@@ -342,9 +345,16 @@ class ResponseObjectsGenerator:
         primitive_type = spec['type']
         format = spec.get('format')
         assert primitive_type in PRIMITIVE_TYPES
+        assert result.type == Property.Type.PRIMITIVE
+        primitive_result = cast(PrimitiveProperty, result)
+        primitive_result.format = format
+        primitive_result.primitive_type = primitive_type
 
     def generate_array_property(self, spec: dict, result: Property):
-        pass
+        item_type = spec['items']
+        assert result.type == Property.Type.ARRAY
+        array_result = cast(ArrayProperty, result)
+        array_result.item_type = self.generate_property(item_type)
 
     def generate_property(self, spec: dict, reference: Optional[str] = None) -> Property:
         ref = spec.get('$ref')
