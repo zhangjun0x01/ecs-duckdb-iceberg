@@ -1,14 +1,15 @@
 from parse_openapi_spec import (
     ResponseObjectsGenerator,
-    Property, ArrayProperty,
+    Property,
+    ArrayProperty,
     PrimitiveProperty,
     SchemaReferenceProperty,
-    ObjectProperty
+    ObjectProperty,
 )
 import os
 from typing import Dict, List, Set, Optional, cast
 from enum import Enum, auto
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 OUTPUT_DIR = os.path.join(SCRIPT_PATH, '..', 'src', 'include', 'rest_catalog', 'objects')
@@ -42,6 +43,7 @@ We probably want to split off the 'generate_*' methods into a new class
 there's too much state that we need and scoping that we want to justify jamming it all into a single class
 """
 
+
 def to_snake_case(name: str):
     res = ''
     prev_was_lower = False
@@ -61,9 +63,6 @@ def safe_cpp_name(name: str) -> str:
         return '_' + name
     return name
 
-
-
-PRIMITIVE_TYPES = ['string', 'number', 'integer', 'boolean']
 
 HEADER_FORMAT = """
 #pragma once
@@ -137,56 +136,65 @@ yyjson_obj_foreach(obj, idx, max, key, val) {{
 }}
 """
 
-class Variable:
-    class Type(Enum):
-        PRIMITIVE = auto()
-        ARRAY = auto()
-        OBJECT = auto()
-        SCHEMA_REFERENCE = auto()
 
-    def __init__(self, name: str, type: "Variable.Type"):
-        self.name = name
-        self.type = type
+@dataclass
+class ParseInfo:
+    """Data taken from the parser"""
+
+    recursive_schemas: Set[str]
+
 
 @dataclass
 class OneOf:
     """An option of the OneOf construct"""
+
     name: str
     dereference_style: str
     class_name: str
+
 
 @dataclass
 class AnyOf:
     """An option of the AnyOf construct"""
+
     name: str
     dereference_style: str
     class_name: str
+
 
 @dataclass
 class AllOf:
     """An option of the AllOf construct"""
+
     name: str
     dereference_style: str
     class_name: str
 
+
 @dataclass
 class RequiredProperty:
     """A property that is required to be present in the JSON"""
+
     name: str
     body: List[str]
+
 
 @dataclass
 class OptionalProperty:
     """A property that is can or can't be present in the JSON"""
+
     name: str
     body: List[str]
+
 
 @dataclass
 class AdditionalProperty:
     """The additional (typed) properties not covered by the spec"""
+
     body: List[str]
-    exclude_list: List[str] = []
-    skip_if_excluded: List[str] = []
+    exclude_list: List[str] = field(default_factory=list)
+    skip_if_excluded: List[str] = field(default_factory=list)
+
 
 class CPPClass:
     def __init__(self, class_name):
@@ -206,77 +214,77 @@ class CPPClass:
         # (member) variables of the class
         self.variables: List[str] = []
 
-    def from_object_property(self, name: str, schema: ObjectProperty):
+    def from_object_property(self, schema: ObjectProperty, parse_info: ParseInfo):
         assert schema.type == Property.Type.OBJECT
         object_property = cast(ObjectProperty, schema)
 
         # Parse any base classes required for the schema (anyOf, allOf, oneOf)
-        self.generate_all_of(name, schema)
-        self.generate_one_of(name, schema)
-        self.generate_any_of(name, schema)
+        self.generate_all_of(schema, parse_info)
+        self.generate_one_of(schema, parse_info)
+        self.generate_any_of(schema, parse_info)
 
-        #base_class_parsing = []
-        #if all_of_parsing:
+        # base_class_parsing = []
+        # if all_of_parsing:
         #    base_class_parsing.append(all_of_parsing)
-        #if one_of_parsing:
+        # if one_of_parsing:
         #    base_class_parsing.append(one_of_parsing)
-        #if any_of_parsing:
+        # if any_of_parsing:
         #    base_class_parsing.append(any_of_parsing)
 
-        #referenced_schemas.update(base_classes)
+        # referenced_schemas.update(base_classes)
 
-        #required = object_property.required
-        #if not required:
+        # required = object_property.required
+        # if not required:
         #    required = []
-        #remaining_properties = [x for x in object_property.properties if x not in required]
+        # remaining_properties = [x for x in object_property.properties if x not in required]
 
-        #required_properties = {}
-        #optional_properties = {}
-        #for item in remaining_properties:
+        # required_properties = {}
+        # optional_properties = {}
+        # for item in remaining_properties:
         #    optional_properties[item] = object_property.properties[item]
-        #for item in required:
+        # for item in required:
         #    required_properties[item] = object_property.properties[item]
 
-        #required_property_parsing = self.generate_required_properties(name, required_properties, referenced_schemas)
-        #required_property_parsing = '\n'.join([f'\t{x}' for x in required_property_parsing.split('\n')])
+        # required_property_parsing = self.generate_required_properties(name, required_properties, referenced_schemas)
+        # required_property_parsing = '\n'.join([f'\t{x}' for x in required_property_parsing.split('\n')])
 
-        #optional_property_parsing = self.generate_optional_properties(name, optional_properties, referenced_schemas)
-        #optional_property_parsing = '\n'.join([f'\t{x}' for x in optional_property_parsing.split('\n')])
+        # optional_property_parsing = self.generate_optional_properties(name, optional_properties, referenced_schemas)
+        # optional_property_parsing = '\n'.join([f'\t{x}' for x in optional_property_parsing.split('\n')])
 
-        #additional_property_parsing = self.generate_additional_properties(
+        # additional_property_parsing = self.generate_additional_properties(
         #    object_property.properties.keys(), object_property.additional_properties, referenced_schemas
-        #)
-        #additional_property_parsing = '\n'.join([f'\t{x}' for x in additional_property_parsing.split('\n')])
+        # )
+        # additional_property_parsing = '\n'.join([f'\t{x}' for x in additional_property_parsing.split('\n')])
 
-        #if any([x.startswith('Object') for x in referenced_schemas]):
+        # if any([x.startswith('Object') for x in referenced_schemas]):
         #    print("referenced_schemas", referenced_schemas)
 
-        #base_class_variables = []
-        #for item in base_classes:
+        # base_class_variables = []
+        # for item in base_classes:
         #    base_class = self.parsed_schemas[item]
         #    variable_name = to_snake_case(item)
         #    base_class_variables.append(f'\t{item} {variable_name};')
 
-        #nested_classes = self.generate_nested_class_definitions(referenced_schemas)
+        # nested_classes = self.generate_nested_class_definitions(referenced_schemas)
 
-        #variable_definitions = []
-        #for item in sorted(list(object_property.properties.keys())):
+        # variable_definitions = []
+        # for item in sorted(list(object_property.properties.keys())):
         #    variable = object_property.properties[item]
         #    variable_type = self.generate_variable_type(variable)
         #    variable_definitions.append(f'\t{variable_type} {safe_cpp_name(item)};')
 
-        #for item in object_property.any_of:
+        # for item in object_property.any_of:
         #    item_name = to_snake_case(item.ref)
         #    variable_definitions.append(f'\tbool has_{safe_cpp_name(item_name)} = false;')
-        #for item in object_property.one_of:
+        # for item in object_property.one_of:
         #    item_name = to_snake_case(item.ref)
         #    variable_definitions.append(f'\tbool has_{safe_cpp_name(item_name)} = false;')
 
-        #if object_property.additional_properties:
+        # if object_property.additional_properties:
         #    variable_type = self.generate_variable_type(object_property.additional_properties)
         #    variable_definitions.append(f'\tcase_insensitive_map_t<{variable_type}> additional_properties;')
 
-        #class_definition = CLASS_FORMAT.format(
+        # class_definition = CLASS_FORMAT.format(
         #    CLASS_NAME=name,
         #    NESTED_CLASSES=nested_classes,
         #    BASE_CLASS_PARSING='\n'.join(base_class_parsing),
@@ -285,26 +293,26 @@ class CPPClass:
         #    ADDITIONAL_PROPERTIES=additional_property_parsing,
         #    BASE_CLASS_VARIABLES='\n'.join(base_class_variables),
         #    PROPERTY_VARIABLES='\n'.join(variable_definitions),
-        #)
+        # )
 
-    def from_array_property(self, name: str, schema: ArrayProperty):
+    def from_array_property(self, schema: ArrayProperty, parse_info: ParseInfo):
         pass
-        #assert schema.type == Property.Type.ARRAY
-        #array_property = cast(ArrayProperty, schema)
+        # assert schema.type == Property.Type.ARRAY
+        # array_property = cast(ArrayProperty, schema)
 
-        #assert not array_property.all_of
-        #assert not array_property.one_of
-        #assert not array_property.any_of
+        # assert not array_property.all_of
+        # assert not array_property.one_of
+        # assert not array_property.any_of
 
-        #body = self.generate_array_loop('obj', 'value', array_property.item_type, referenced_schemas)
+        # body = self.generate_array_loop('obj', 'value', array_property.item_type, referenced_schemas)
 
-        #nested_classes = self.generate_nested_class_definitions(referenced_schemas)
+        # nested_classes = self.generate_nested_class_definitions(referenced_schemas)
 
-        #variable_type = self.generate_variable_type(schema)
-        #variable_definition = f'\t{variable_type} value;'
+        # variable_type = self.generate_variable_type(schema)
+        # variable_definition = f'\t{variable_type} value;'
 
-        #body = '\n'.join([f'\t{x}' for x in body.split('\n')])
-        #class_definition = CLASS_FORMAT.format(
+        # body = '\n'.join([f'\t{x}' for x in body.split('\n')])
+        # class_definition = CLASS_FORMAT.format(
         #    CLASS_NAME=name,
         #    NESTED_CLASSES=nested_classes,
         #    BASE_CLASS_PARSING='',
@@ -313,22 +321,22 @@ class CPPClass:
         #    ADDITIONAL_PROPERTIES='',
         #    BASE_CLASS_VARIABLES='',
         #    PROPERTY_VARIABLES=variable_definition,
-        #)
+        # )
 
-    def from_primitive_property(self, name: str, schema: PrimitiveProperty):
+    def from_primitive_property(self, schema: PrimitiveProperty, parse_info: ParseInfo):
         pass
-        #assert not schema.all_of
-        #assert not schema.one_of
-        #assert not schema.any_of
+        # assert not schema.all_of
+        # assert not schema.one_of
+        # assert not schema.any_of
 
         ## TODO: implement this
 
-        #variable_parsing = self.generate_assignment(schema, 'value', 'obj', referenced_schemas)
+        # variable_parsing = self.generate_assignment(schema, 'value', 'obj', referenced_schemas)
 
-        #variable_type = self.generate_variable_type(schema)
-        #variable_definition = f'\t{variable_type} value;'
+        # variable_type = self.generate_variable_type(schema)
+        # variable_definition = f'\t{variable_type} value;'
 
-        #class_definition = CLASS_FORMAT.format(
+        # class_definition = CLASS_FORMAT.format(
         #    CLASS_NAME=name,
         #    NESTED_CLASSES='',
         #    BASE_CLASS_PARSING='',
@@ -337,38 +345,41 @@ class CPPClass:
         #    ADDITIONAL_PROPERTIES='',
         #    BASE_CLASS_VARIABLES='',
         #    PROPERTY_VARIABLES=variable_definition,
-        #)
+        # )
 
-    def from_property(self, name: str, schema: Property) -> None:
+    def from_property(self, schema: Property, parse_info: ParseInfo) -> None:
         if schema.type == Property.Type.OBJECT:
-            self.from_object_property(name, schema)
+            self.from_object_property(schema, parse_info)
         elif schema.type == Property.Type.ARRAY:
-            self.from_array_property(name, schema)
+            self.from_array_property(schema, parse_info)
         elif schema.type == Property.Type.PRIMITIVE:
-            self.from_primitive_property(name, schema)
+            self.from_primitive_property(schema, parse_info)
         else:
             print(f"Unrecognized 'from_property' type {schema.type}")
             exit(1)
 
-
     def write_required_property(self, required_property: RequiredProperty) -> List[str]:
         res = []
-        res.extend([
-            f'auto {required_property.name}_val = yyjson_obj_get(obj, "{required_property.name}");',
-            f'if (!{required_property.name}_val) {{',
-            f'\treturn "{self.name} required property '{required_property.name}' is missing";',
-            '} else {',
-        ])
+        res.extend(
+            [
+                f'auto {required_property.name}_val = yyjson_obj_get(obj, "{required_property.name}");',
+                f'if (!{required_property.name}_val) {{',
+                f"""\treturn "{self.name} required property '{required_property.name}' is missing";""",
+                '} else {',
+            ]
+        )
         res.extend(required_property.body)
         res.append('}')
         return res
 
     def write_optional_property(self, optional_property: OptionalProperty) -> List[str]:
         res = []
-        res.extend([
-            f'auto {optional_property.name}_val = yyjson_obj_get(obj, "{optional_property.name}");',
-            f'if ({optional_property.name}_val) {{',
-        ])
+        res.extend(
+            [
+                f'auto {optional_property.name}_val = yyjson_obj_get(obj, "{optional_property.name}");',
+                f'if ({optional_property.name}_val) {{',
+            ]
+        )
         res.extend(optional_property.body)
         res.append('}')
         return res
@@ -377,18 +388,22 @@ class CPPClass:
         res = []
 
         res.extend(additional_property.exclude_list)
-        res.extend([
-            'size_t idx, max;',
-            'yyjson_val *key, *val;',
-            'yyjson_obj_foreach(obj, idx, max, key, val) {',
-        ])
+        res.extend(
+            [
+                'size_t idx, max;',
+                'yyjson_val *key, *val;',
+                'yyjson_obj_foreach(obj, idx, max, key, val) {',
+            ]
+        )
         res.extend(additional_property.skip_if_excluded)
         res.append('\tauto key_str = yyjson_get_str(key);')
         res.extend(additional_property.body)
-        res.extend([
-            '\tadditional_properties[key_str] = tmp;',
-            '}',
-        ])
+        res.extend(
+            [
+                '\tadditional_properties[key_str] = tmp;',
+                '}',
+            ]
+        )
         return res
 
     def write_all_of(self) -> List[str]:
@@ -398,12 +413,13 @@ class CPPClass:
         for item in self.all_of:
             if item.dereference_style == '->':
                 res.append(f'{item.name} = make_uniq<{item.class_name}>();')
-            res.extend([
-                f'error = {item.name}{item.dereference_style}TryFromJSON(obj);'
-                'if (!error.empty()) {',
-                '\treturn error;',
-                '}'
-            ])
+            res.extend(
+                [
+                    f'error = {item.name}{item.dereference_style}TryFromJSON(obj);' 'if (!error.empty()) {',
+                    '\treturn error;',
+                    '}',
+                ]
+            )
         return res
 
     def write_one_of(self) -> List[str]:
@@ -414,13 +430,15 @@ class CPPClass:
         for item in self.one_of:
             if item.dereference_style == '->':
                 res.append(f'{item.name} = make_uniq<{item.class_name}>();')
-            res.extend([
-                f'\terror = {item.name}{item.dereference_style}TryFromJSON(obj);',
-                '\tif (error.empty()) {',
-                f'\t\thas_{item.name} = true;',
-                '\t\tbreak;',
-                '\t}'
-            ])
+            res.extend(
+                [
+                    f'\terror = {item.name}{item.dereference_style}TryFromJSON(obj);',
+                    '\tif (error.empty()) {',
+                    f'\t\thas_{item.name} = true;',
+                    '\t\tbreak;',
+                    '\t}',
+                ]
+            )
         res.append(f'\treturn "{self.name} failed to parse, none of the oneOf candidates matched";')
         res.append('} while (false);')
         return res
@@ -430,33 +448,34 @@ class CPPClass:
             return []
         res = []
 
-        all_options = [
-            f'!has_{item.name}' for item in self.any_of
-        ]
+        all_options = [f'!has_{item.name}' for item in self.any_of]
         sort(all_options)
         condition = ' && '.join(all_options)
 
         for item in self.any_of:
             if item.dereference_style == '->':
                 res.append(f'{item.name} = make_uniq<{item.class_name}>();')
-            res.extend([
-                f'error = {item.name}{item.dereference_style}TryFromJSON(obj);',
-                'if (error.empty()) {',
-                f'\thas_{item.name} = true;',
+            res.extend(
+                [
+                    f'error = {item.name}{item.dereference_style}TryFromJSON(obj);',
+                    'if (error.empty()) {',
+                    f'\thas_{item.name} = true;',
+                    '}',
+                ]
+            )
+        res.extend(
+            [
+                f'if ({condition}) {{'
+                f'\treturn "{self.name} failed to parse, none of the anyOf candidates matched";'
                 '}'
-            ])
-        res.extend([
-            f'if ({condition}) {{'
-            f'\treturn "{self.name} failed to parse, none of the anyOf candidates matched";'
-            '}'
-        ])
+            ]
+        )
         return res
 
-    def write_class(self) -> List[str]
+    def write_class(self) -> List[str]:
         pass
 
-
-    def generate_all_of(self, property: Property):
+    def generate_all_of(self, property: Property, parse_info: ParseInfo):
         if not property.all_of:
             return
         for item in property.all_of:
@@ -464,20 +483,12 @@ class CPPClass:
 
             class_name = item.ref
             property_name = to_snake_case(class_name)
-            dereference_style = '->' if item.ref in self.recursive_schemas else '.'
+            dereference_style = '->' if item.ref in parse_info.recursive_schemas else '.'
 
-            self.all_of.append(
-                AllOf(
-                    name=property_name,
-                    dereference_style=dereference_style,
-                    class_name=class_name
-                )
-            )
-            self.variables.append(
-                f'\t{item.ref} {property_name};'
-            )
+            self.all_of.append(AllOf(name=property_name, dereference_style=dereference_style, class_name=class_name))
+            self.variables.append(f'\t{item.ref} {property_name};')
 
-    def generate_any_of(self, property: Property):
+    def generate_any_of(self, property: Property, parse_info: ParseInfo):
         if not property.any_of:
             return
         for item in property.any_of:
@@ -485,23 +496,13 @@ class CPPClass:
 
             class_name = item.ref
             property_name = to_snake_case(class_name)
-            dereference_style = '->' if item.ref in self.recursive_schemas else '.'
+            dereference_style = '->' if item.ref in parse_info.recursive_schemas else '.'
 
-            self.any_of.append(
-                AnyOf(
-                    name=property_name,
-                    dereference_style=dereference_style,
-                    class_name=class_name
-                )
-            )
-            self.variables.append(
-                f'\t{item.ref} {property_name};'
-            )
-            self.variables.append(
-                f'\tbool has_{property_name} = false;'
-            )
+            self.any_of.append(AnyOf(name=property_name, dereference_style=dereference_style, class_name=class_name))
+            self.variables.append(f'\t{item.ref} {property_name};')
+            self.variables.append(f'\tbool has_{property_name} = false;')
 
-    def generate_one_of(self, property: Property):
+    def generate_one_of(self, property: Property, parse_info: ParseInfo):
         if not property.one_of:
             return
         for item in property.one_of:
@@ -509,28 +510,15 @@ class CPPClass:
 
             class_name = item.ref
             property_name = to_snake_case(class_name)
-            dereference_style = '->' if item.ref in self.recursive_schemas else '.'
+            dereference_style = '->' if item.ref in parse_info.recursive_schemas else '.'
 
-            self.one_of.append(
-                OneOf(
-                    name=property_name,
-                    dereference_style=dereference_style,
-                    class_name=class_name
-                )
-            )
-            self.variables.append(
-                f'\t{item.ref} {property_name};'
-            )
-            self.variables.append(
-                f'\tbool has_{property_name} = false;'
-            )
+            self.one_of.append(OneOf(name=property_name, dereference_style=dereference_style, class_name=class_name))
+            self.variables.append(f'\t{item.ref} {property_name};')
+            self.variables.append(f'\tbool has_{property_name} = false;')
 
-
-
-
-
-
-    def generate_array_loop(self, array_name, destination_name, item_type: Property, referenced_schemas: set) -> List[str]:
+    def generate_array_loop(
+        self, array_name, destination_name, item_type: Property, referenced_schemas: set
+    ) -> List[str]:
         res = []
         res.append('size_t idx, max;')
         res.append('yyjson_val *val;')
@@ -545,19 +533,11 @@ class CPPClass:
             referenced_schemas.add(schema_property.ref)
             item_definition = ''
             if schema_property.ref in self.recursive_schemas:
-                res.extend([
-                    f'\tauto tmp_p = make_uniq<{schema_property.ref}>();'
-                    '\tauto &tmp = *tmp_p;'
-                ])
+                res.extend([f'\tauto tmp_p = make_uniq<{schema_property.ref}>();' '\tauto &tmp = *tmp_p;'])
                 assignment = 'std::move(tmp_p)'
             else:
                 res.append(f'\t{schema_property.ref} tmp;')
-            res.extend([
-                '\terror = tmp.TryFromJSON(val);',
-                '\tif (!error.empty()) {',
-                '\t\treturn error;',
-                '\t}'
-            ])
+            res.extend(['\terror = tmp.TryFromJSON(val);', '\tif (!error.empty()) {', '\t\treturn error;', '\t}'])
         res.append(f'\t{destination_name}.push_back({assignment});')
         res.append('}')
         return res
@@ -614,12 +594,14 @@ class CPPClass:
             if schema_property.ref in self.recursive_schemas:
                 result.append(f'{target} = make_uniq<{schema_property.ref}>();')
                 dereference_style = '->'
-            result.extend([
-                f'error = {target}{dereference_style}TryFromJSON({source});',
-                'if (!error.empty()) {',
-                '    return error;',
-                '}'
-            ])
+            result.extend(
+                [
+                    f'error = {target}{dereference_style}TryFromJSON({source});',
+                    'if (!error.empty()) {',
+                    '    return error;',
+                    '}',
+                ]
+            )
             return result
         else:
             item_parse = self.generate_item_parse(schema, source, referenced_schemas)
@@ -634,16 +616,9 @@ class CPPClass:
             body = self.generate_assignment(
                 optional_property, variable_name, f'{variable_name}_val', referenced_schemas
             )
-            self.required_properties.append(
-                OptionalProperty(
-                    name=variable_name,
-                    body=body
-                )
-            )
+            self.required_properties.append(OptionalProperty(name=variable_name, body=body))
             variable_type = self.generate_variable_type(optional_property)
-            self.variables.append(
-                f'\t{variable_type} {variable_name};'
-            )
+            self.variables.append(f'\t{variable_type} {variable_name};')
 
     def generate_required_properties(self, name: str, properties: Dict[str, Property], referenced_schemas: set):
         if not properties:
@@ -654,18 +629,13 @@ class CPPClass:
             body = self.generate_assignment(
                 required_property, variable_name, f'{variable_name}_val', referenced_schemas
             )
-            self.required_properties.append(
-                RequiredProperty(
-                    name=variable_name,
-                    body=body
-                )
-            )
+            self.required_properties.append(RequiredProperty(name=variable_name, body=body))
             variable_type = self.generate_variable_type(required_property)
-            self.variables.append(
-                f'\t{variable_type} {variable_name};'
-            )
+            self.variables.append(f'\t{variable_type} {variable_name};')
 
-    def generate_additional_properties(self, properties: List[str], additional_properties: Property, referenced_schemas: set):
+    def generate_additional_properties(
+        self, properties: List[str], additional_properties: Property, referenced_schemas: set
+    ):
         if not additional_properties:
             return
 
@@ -674,8 +644,7 @@ class CPPClass:
         if properties:
             exclude_list = [
                 'case_insensitive_set_t handled_properties {',
-                f'\t\t{', '.join(f'"{x}"' for x in properties)}'
-                '}'
+                f"""\t\t{', '.join(f'"{x}"' for x in properties)}""" '}',
             ]
             skip_if_excluded = [
                 '\tif (handled_properties.count(key_str)) {',
@@ -694,21 +663,19 @@ class CPPClass:
                 print(f"Encountered recursive schema '{schema_property.ref}' in 'generate_additional_properties'")
                 exit(1)
             body.append(f'\t{schema_property.ref} tmp;')
-            body.extend([
-                'error = tmp.TryFromJSON(val);',
-                'if (!error.empty()) {',
-                '\treturn error;',
-                '}',
-            ])
+            body.extend(
+                [
+                    'error = tmp.TryFromJSON(val);',
+                    'if (!error.empty()) {',
+                    '\treturn error;',
+                    '}',
+                ]
+            )
         self.additional_properties = AdditionalProperty(
-            body=body,
-            exclude_list=exclude_list,
-            skip_if_excluded=skip_if_excluded
+            body=body, exclude_list=exclude_list, skip_if_excluded=skip_if_excluded
         )
         variable_type = self.generate_variable_type(additional_properties)
-        self.variables.append(
-            f'\tcase_insensitive_map_t<{variable_type}> additional_properties;'
-        )
+        self.variables.append(f'\tcase_insensitive_map_t<{variable_type}> additional_properties;')
 
     def generate_variable_type(self, schema: Property) -> str:
         if schema.type == Property.Type.OBJECT:
@@ -749,7 +716,7 @@ class CPPClass:
             print(f"Unrecognized 'generate_variable_type' type {schema.type}")
             exit(1)
 
-    #def generate_nested_class_definitions(self, referenced_schemas: set):
+    # def generate_nested_class_definitions(self, referenced_schemas: set):
     #    generated_schemas_referenced = [x for x in referenced_schemas if x not in self.schemas]
     #    nested_classes = []
     #    for item in generated_schemas_referenced:
@@ -763,7 +730,7 @@ class CPPClass:
     #    nested_classes = '\n'.join([f'\t{x}' for x in nested_classes.split('\n')])
     #    return 'public:\n' + nested_classes
 
-    #def generate_schema(self, schema: Property, name: str):
+    # def generate_schema(self, schema: Property, name: str):
     #    referenced_schemas = set()
     #    class_definition = self.generate_class(schema, name, referenced_schemas)
 
@@ -779,7 +746,7 @@ class CPPClass:
 
 
 if __name__ == '__main__':
-    ResponseObjectsGenerator openapi_parser(API_SPEC_PATH)
+    openapi_parser = ResponseObjectsGenerator(API_SPEC_PATH)
     openapi_parser.parse_all_schemas()
 
     # Create directory if it doesn't exist
@@ -792,14 +759,15 @@ if __name__ == '__main__':
             lines.append(f'#include "rest_catalog/objects/{to_snake_case(name)}.hpp"')
         f.write('\n'.join(lines))
 
+    parse_info = ParseInfo(recursive_schemas=openapi_parser.recursive_schemas)
+
     for name in openapi_parser.schemas:
         schema = openapi_parser.parsed_schemas[name]
 
+        cpp_class = CPPClass(name)
+        cpp_class.from_property(schema, parse_info)
 
-        file_content = self.generate_schema(schema, name)
-        output_path = os.path.join(OUTPUT_DIR, f'{to_snake_case(name)}.hpp')
-        with open(output_path, 'w') as f:
-            f.write(file_content)
-
-    CPPGenerator generator
-
+        # output_path = os.path.join(OUTPUT_DIR, f'{to_snake_case(name)}.hpp')
+        # with open(output_path, 'w') as f:
+        #    file_content = ''
+        #    f.write(file_content)

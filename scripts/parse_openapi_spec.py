@@ -6,6 +6,7 @@ from enum import Enum, auto
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 API_SPEC_PATH = os.path.join(SCRIPT_PATH, 'api.yaml')
 
+PRIMITIVE_TYPES = ['string', 'number', 'integer', 'boolean']
 
 ###
 ### FIXME:
@@ -257,5 +258,5 @@ if __name__ == '__main__':
     # print(content)
     # exit(1)
 
-    #generator.generate_all_schemas()
+    # generator.generate_all_schemas()
     print("finito")
