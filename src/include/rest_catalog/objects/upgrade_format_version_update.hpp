@@ -15,38 +15,13 @@ namespace rest_api_objects {
 
 class UpgradeFormatVersionUpdate {
 public:
-	UpgradeFormatVersionUpdate() {
-	}
+	UpgradeFormatVersionUpdate();
 
 public:
-	static UpgradeFormatVersionUpdate FromJSON(yyjson_val *obj) {
-		UpgradeFormatVersionUpdate res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static UpgradeFormatVersionUpdate FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		error = base_update.TryFromJSON(obj);
-		if (!error.empty()) {
-			return error;
-		}
-		auto format_version_val = yyjson_obj_get(obj, "format_version");
-		if (!format_version_val) {
-			return "UpgradeFormatVersionUpdate required property 'format_version' is missing";
-		} else {
-			format_version = yyjson_get_sint(format_version_val);
-		}
-		auto action_val = yyjson_obj_get(obj, "action");
-		if (action_val) {
-			action = yyjson_get_str(action_val);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	BaseUpdate base_update;

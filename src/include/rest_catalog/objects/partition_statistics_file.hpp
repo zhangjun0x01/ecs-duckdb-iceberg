@@ -14,42 +14,13 @@ namespace rest_api_objects {
 
 class PartitionStatisticsFile {
 public:
-	PartitionStatisticsFile() {
-	}
+	PartitionStatisticsFile();
 
 public:
-	static PartitionStatisticsFile FromJSON(yyjson_val *obj) {
-		PartitionStatisticsFile res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static PartitionStatisticsFile FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
-		if (!snapshot_id_val) {
-			return "PartitionStatisticsFile required property 'snapshot_id' is missing";
-		} else {
-			snapshot_id = yyjson_get_sint(snapshot_id_val);
-		}
-		auto statistics_path_val = yyjson_obj_get(obj, "statistics_path");
-		if (!statistics_path_val) {
-			return "PartitionStatisticsFile required property 'statistics_path' is missing";
-		} else {
-			statistics_path = yyjson_get_str(statistics_path_val);
-		}
-		auto file_size_in_bytes_val = yyjson_obj_get(obj, "file_size_in_bytes");
-		if (!file_size_in_bytes_val) {
-			return "PartitionStatisticsFile required property 'file_size_in_bytes' is missing";
-		} else {
-			file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	int64_t snapshot_id;

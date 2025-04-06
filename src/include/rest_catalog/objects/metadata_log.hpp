@@ -14,40 +14,16 @@ namespace rest_api_objects {
 
 class MetadataLog {
 public:
-	MetadataLog() {
-	}
+	MetadataLog();
 	class Object4 {
 	public:
-		Object4() {
-		}
+		Object4();
 
 	public:
-		static Object4 FromJSON(yyjson_val *obj) {
-			Object4 res;
-			auto error = res.TryFromJSON(obj);
-			if (!error.empty()) {
-				throw InvalidInputException(error);
-			}
-			return res;
-		}
+		static Object4 FromJSON(yyjson_val *obj);
 
 	public:
-		string TryFromJSON(yyjson_val *obj) {
-			string error;
-			auto metadata_file_val = yyjson_obj_get(obj, "metadata_file");
-			if (!metadata_file_val) {
-				return "Object4 required property 'metadata_file' is missing";
-			} else {
-				metadata_file = yyjson_get_str(metadata_file_val);
-			}
-			auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
-			if (!timestamp_ms_val) {
-				return "Object4 required property 'timestamp_ms' is missing";
-			} else {
-				timestamp_ms = yyjson_get_sint(timestamp_ms_val);
-			}
-			return string();
-		}
+		string TryFromJSON(yyjson_val *obj);
 
 	public:
 		string metadata_file;
@@ -55,30 +31,10 @@ public:
 	};
 
 public:
-	static MetadataLog FromJSON(yyjson_val *obj) {
-		MetadataLog res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static MetadataLog FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(obj, idx, max, val) {
-			Object4 tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
-			}
-			value.push_back(tmp);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	vector<Object4> value;

@@ -16,35 +16,13 @@ namespace rest_api_objects {
 
 class OAuthTokenRequest {
 public:
-	OAuthTokenRequest() {
-	}
+	OAuthTokenRequest();
 
 public:
-	static OAuthTokenRequest FromJSON(yyjson_val *obj) {
-		OAuthTokenRequest res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static OAuthTokenRequest FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		error = oauth_client_credentials_request.TryFromJSON(obj);
-		if (error.empty()) {
-			has_oauth_client_credentials_request = true;
-		}
-		error = oauth_token_exchange_request.TryFromJSON(obj);
-		if (error.empty()) {
-			has_oauth_token_exchange_request = true;
-		}
-		if (!has_oauth_client_credentials_request && !has_oauth_token_exchange_request) {
-			return "OAuthTokenRequest failed to parse, none of the anyOf candidates matched";
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	OAuthClientCredentialsRequest oauth_client_credentials_request;

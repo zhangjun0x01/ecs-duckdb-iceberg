@@ -15,44 +15,13 @@ namespace rest_api_objects {
 
 class AssertRefSnapshotId {
 public:
-	AssertRefSnapshotId() {
-	}
+	AssertRefSnapshotId();
 
 public:
-	static AssertRefSnapshotId FromJSON(yyjson_val *obj) {
-		AssertRefSnapshotId res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static AssertRefSnapshotId FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		error = table_requirement.TryFromJSON(obj);
-		if (!error.empty()) {
-			return error;
-		}
-		auto ref_val = yyjson_obj_get(obj, "ref");
-		if (!ref_val) {
-			return "AssertRefSnapshotId required property 'ref' is missing";
-		} else {
-			ref = yyjson_get_str(ref_val);
-		}
-		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
-		if (!snapshot_id_val) {
-			return "AssertRefSnapshotId required property 'snapshot_id' is missing";
-		} else {
-			snapshot_id = yyjson_get_sint(snapshot_id_val);
-		}
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			type = yyjson_get_str(type_val);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	TableRequirement table_requirement;

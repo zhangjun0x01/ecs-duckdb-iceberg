@@ -17,97 +17,13 @@ namespace rest_api_objects {
 
 class ViewMetadata {
 public:
-	ViewMetadata() {
-	}
+	ViewMetadata();
 
 public:
-	static ViewMetadata FromJSON(yyjson_val *obj) {
-		ViewMetadata res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static ViewMetadata FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto view_uuid_val = yyjson_obj_get(obj, "view_uuid");
-		if (!view_uuid_val) {
-			return "ViewMetadata required property 'view_uuid' is missing";
-		} else {
-			view_uuid = yyjson_get_str(view_uuid_val);
-		}
-		auto format_version_val = yyjson_obj_get(obj, "format_version");
-		if (!format_version_val) {
-			return "ViewMetadata required property 'format_version' is missing";
-		} else {
-			format_version = yyjson_get_sint(format_version_val);
-		}
-		auto location_val = yyjson_obj_get(obj, "location");
-		if (!location_val) {
-			return "ViewMetadata required property 'location' is missing";
-		} else {
-			location = yyjson_get_str(location_val);
-		}
-		auto current_version_id_val = yyjson_obj_get(obj, "current_version_id");
-		if (!current_version_id_val) {
-			return "ViewMetadata required property 'current_version_id' is missing";
-		} else {
-			current_version_id = yyjson_get_sint(current_version_id_val);
-		}
-		auto versions_val = yyjson_obj_get(obj, "versions");
-		if (!versions_val) {
-			return "ViewMetadata required property 'versions' is missing";
-		} else {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(versions_val, idx, max, val) {
-				ViewVersion tmp;
-				error = tmp.TryFromJSON(val);
-				if (!error.empty()) {
-					return error;
-				}
-				versions.push_back(tmp);
-			}
-		}
-		auto version_log_val = yyjson_obj_get(obj, "version_log");
-		if (!version_log_val) {
-			return "ViewMetadata required property 'version_log' is missing";
-		} else {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(version_log_val, idx, max, val) {
-				ViewHistoryEntry tmp;
-				error = tmp.TryFromJSON(val);
-				if (!error.empty()) {
-					return error;
-				}
-				version_log.push_back(tmp);
-			}
-		}
-		auto schemas_val = yyjson_obj_get(obj, "schemas");
-		if (!schemas_val) {
-			return "ViewMetadata required property 'schemas' is missing";
-		} else {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(schemas_val, idx, max, val) {
-				Schema tmp;
-				error = tmp.TryFromJSON(val);
-				if (!error.empty()) {
-					return error;
-				}
-				schemas.push_back(tmp);
-			}
-		}
-		auto properties_val = yyjson_obj_get(obj, "properties");
-		if (properties_val) {
-			properties = parse_object_of_strings(properties_val);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	string view_uuid;

@@ -16,65 +16,26 @@ namespace rest_api_objects {
 
 class FailedPlanningResult {
 public:
-	FailedPlanningResult() {
-	}
+	FailedPlanningResult();
 	class Object7 {
 	public:
-		Object7() {
-		}
+		Object7();
 
 	public:
-		static Object7 FromJSON(yyjson_val *obj) {
-			Object7 res;
-			auto error = res.TryFromJSON(obj);
-			if (!error.empty()) {
-				throw InvalidInputException(error);
-			}
-			return res;
-		}
+		static Object7 FromJSON(yyjson_val *obj);
 
 	public:
-		string TryFromJSON(yyjson_val *obj) {
-			string error;
-			auto status_val = yyjson_obj_get(obj, "status");
-			if (!status_val) {
-				return "Object7 required property 'status' is missing";
-			} else {
-				error = status.TryFromJSON(status_val);
-				if (!error.empty()) {
-					return error;
-				}
-			}
-			return string();
-		}
+		string TryFromJSON(yyjson_val *obj);
 
 	public:
 		PlanStatus status;
 	};
 
 public:
-	static FailedPlanningResult FromJSON(yyjson_val *obj) {
-		FailedPlanningResult res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static FailedPlanningResult FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		error = iceberg_error_response.TryFromJSON(obj);
-		if (!error.empty()) {
-			return error;
-		}
-		error = object_7.TryFromJSON(obj);
-		if (!error.empty()) {
-			return error;
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	IcebergErrorResponse iceberg_error_response;

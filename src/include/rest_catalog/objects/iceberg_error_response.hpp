@@ -15,33 +15,13 @@ namespace rest_api_objects {
 
 class IcebergErrorResponse {
 public:
-	IcebergErrorResponse() {
-	}
+	IcebergErrorResponse();
 
 public:
-	static IcebergErrorResponse FromJSON(yyjson_val *obj) {
-		IcebergErrorResponse res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static IcebergErrorResponse FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto _error_val = yyjson_obj_get(obj, "_error");
-		if (!_error_val) {
-			return "IcebergErrorResponse required property '_error' is missing";
-		} else {
-			error = _error.TryFromJSON(_error_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	ErrorModel _error;

@@ -14,37 +14,13 @@ namespace rest_api_objects {
 
 class UpdateNamespacePropertiesRequest {
 public:
-	UpdateNamespacePropertiesRequest() {
-	}
+	UpdateNamespacePropertiesRequest();
 
 public:
-	static UpdateNamespacePropertiesRequest FromJSON(yyjson_val *obj) {
-		UpdateNamespacePropertiesRequest res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static UpdateNamespacePropertiesRequest FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto removals_val = yyjson_obj_get(obj, "removals");
-		if (removals_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(removals_val, idx, max, val) {
-				auto tmp = yyjson_get_str(val);
-				removals.push_back(tmp);
-			}
-		}
-		auto updates_val = yyjson_obj_get(obj, "updates");
-		if (updates_val) {
-			updates = parse_object_of_strings(updates_val);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	vector<string> removals;

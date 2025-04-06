@@ -15,38 +15,13 @@ namespace rest_api_objects {
 
 class AssertCurrentSchemaId {
 public:
-	AssertCurrentSchemaId() {
-	}
+	AssertCurrentSchemaId();
 
 public:
-	static AssertCurrentSchemaId FromJSON(yyjson_val *obj) {
-		AssertCurrentSchemaId res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static AssertCurrentSchemaId FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		error = table_requirement.TryFromJSON(obj);
-		if (!error.empty()) {
-			return error;
-		}
-		auto current_schema_id_val = yyjson_obj_get(obj, "current_schema_id");
-		if (!current_schema_id_val) {
-			return "AssertCurrentSchemaId required property 'current_schema_id' is missing";
-		} else {
-			current_schema_id = yyjson_get_sint(current_schema_id_val);
-		}
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			type = yyjson_get_str(type_val);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	TableRequirement table_requirement;

@@ -15,32 +15,13 @@ namespace rest_api_objects {
 
 class ViewRequirement {
 public:
-	ViewRequirement() {
-	}
+	ViewRequirement();
 
 public:
-	static ViewRequirement FromJSON(yyjson_val *obj) {
-		ViewRequirement res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static ViewRequirement FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		do {
-			error = assert_view_uuid.TryFromJSON(obj);
-			if (error.empty()) {
-				has_assert_view_uuid = true;
-				break;
-			}
-			return "ViewRequirement failed to parse, none of the oneOf candidates matched";
-		} while (false);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	AssertViewUUID assert_view_uuid;

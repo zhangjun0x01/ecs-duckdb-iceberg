@@ -15,37 +15,13 @@ namespace rest_api_objects {
 
 class CreateNamespaceResponse {
 public:
-	CreateNamespaceResponse() {
-	}
+	CreateNamespaceResponse();
 
 public:
-	static CreateNamespaceResponse FromJSON(yyjson_val *obj) {
-		CreateNamespaceResponse res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static CreateNamespaceResponse FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto _namespace_val = yyjson_obj_get(obj, "_namespace");
-		if (!_namespace_val) {
-			return "CreateNamespaceResponse required property '_namespace' is missing";
-		} else {
-			error = _namespace.TryFromJSON(_namespace_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		auto properties_val = yyjson_obj_get(obj, "properties");
-		if (properties_val) {
-			properties = parse_object_of_strings(properties_val);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	Namespace _namespace;

@@ -16,44 +16,13 @@ namespace rest_api_objects {
 
 class ListTablesResponse {
 public:
-	ListTablesResponse() {
-	}
+	ListTablesResponse();
 
 public:
-	static ListTablesResponse FromJSON(yyjson_val *obj) {
-		ListTablesResponse res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static ListTablesResponse FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto next_page_token_val = yyjson_obj_get(obj, "next_page_token");
-		if (next_page_token_val) {
-			error = next_page_token.TryFromJSON(next_page_token_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		auto identifiers_val = yyjson_obj_get(obj, "identifiers");
-		if (identifiers_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(identifiers_val, idx, max, val) {
-				TableIdentifier tmp;
-				error = tmp.TryFromJSON(val);
-				if (!error.empty()) {
-					return error;
-				}
-				identifiers.push_back(tmp);
-			}
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	PageToken next_page_token;

@@ -17,42 +17,13 @@ namespace rest_api_objects {
 
 class FetchPlanningResult {
 public:
-	FetchPlanningResult() {
-	}
+	FetchPlanningResult();
 
 public:
-	static FetchPlanningResult FromJSON(yyjson_val *obj) {
-		FetchPlanningResult res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static FetchPlanningResult FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		do {
-			error = completed_planning_result.TryFromJSON(obj);
-			if (error.empty()) {
-				has_completed_planning_result = true;
-				break;
-			}
-			error = failed_planning_result.TryFromJSON(obj);
-			if (error.empty()) {
-				has_failed_planning_result = true;
-				break;
-			}
-			error = empty_planning_result.TryFromJSON(obj);
-			if (error.empty()) {
-				has_empty_planning_result = true;
-				break;
-			}
-			return "FetchPlanningResult failed to parse, none of the oneOf candidates matched";
-		} while (false);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	CompletedPlanningResult completed_planning_result;

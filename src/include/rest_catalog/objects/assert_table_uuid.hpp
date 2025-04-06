@@ -15,40 +15,13 @@ namespace rest_api_objects {
 
 class AssertTableUUID {
 public:
-	AssertTableUUID() {
-	}
+	AssertTableUUID();
 
 public:
-	static AssertTableUUID FromJSON(yyjson_val *obj) {
-		AssertTableUUID res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static AssertTableUUID FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		error = table_requirement.TryFromJSON(obj);
-		if (!error.empty()) {
-			return error;
-		}
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (!type_val) {
-			return "AssertTableUUID required property 'type' is missing";
-		} else {
-			type = yyjson_get_str(type_val);
-		}
-		auto uuid_val = yyjson_obj_get(obj, "uuid");
-		if (!uuid_val) {
-			return "AssertTableUUID required property 'uuid' is missing";
-		} else {
-			uuid = yyjson_get_str(uuid_val);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	TableRequirement table_requirement;

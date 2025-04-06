@@ -15,33 +15,13 @@ namespace rest_api_objects {
 
 class TrueExpression {
 public:
-	TrueExpression() {
-	}
+	TrueExpression();
 
 public:
-	static TrueExpression FromJSON(yyjson_val *obj) {
-		TrueExpression res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static TrueExpression FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (!type_val) {
-			return "TrueExpression required property 'type' is missing";
-		} else {
-			error = type.TryFromJSON(type_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	ExpressionType type;

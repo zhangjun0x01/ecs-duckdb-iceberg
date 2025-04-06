@@ -12,7 +12,8 @@ from enum import Enum, auto
 from dataclasses import dataclass, field
 
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
-OUTPUT_DIR = os.path.join(SCRIPT_PATH, '..', 'src', 'include', 'rest_catalog', 'objects')
+OUTPUT_HEADER_DIR = os.path.join(SCRIPT_PATH, '..', 'src', 'include', 'rest_catalog', 'objects')
+OUTPUT_SOURCE_DIR = os.path.join(SCRIPT_PATH, '..', 'src', 'rest_catalog', 'objects')
 API_SPEC_PATH = os.path.join(SCRIPT_PATH, 'api.yaml')
 
 CPP_KEYWORDS = {
@@ -79,11 +80,47 @@ using namespace duckdb_yyjson;
 namespace duckdb {{
 namespace rest_api_objects {{
 
+{FORWARD_DECLARATIONS}
+
+{CLASS_DECLARATION}
+
+}} // namespace rest_api_objects
+}} // namespace duckdb
+
+"""
+
+SOURCE_FORMAT = """
+#include "rest_catalog/objects/{HEADER_NAME}.hpp"
+
+#include "yyjson.hpp"
+#include "duckdb/common/string.hpp"
+#include "duckdb/common/vector.hpp"
+#include "duckdb/common/case_insensitive_map.hpp"
+#include "rest_catalog/response_objects.hpp"
+#include "rest_catalog/objects/list.hpp"
+
+using namespace duckdb_yyjson;
+
+namespace duckdb {{
+namespace rest_api_objects {{
+
 {CLASS_DEFINITION}
 
 }} // namespace rest_api_objects
 }} // namespace duckdb
 
+"""
+
+CMAKE_LISTS_FORMAT = """
+add_library(
+	rest_catalog_objects
+	OBJECT
+{ALL_SOURCE_FILES}
+)
+
+set(ALL_OBJECT_FILES
+    ${{ALL_OBJECT_FILES}} $<TARGET_OBJECTS:rest_catalog_objects>
+    PARENT_SCOPE)
 """
 
 
@@ -203,48 +240,12 @@ class CPPClass:
 
         res = []
         for _, item in self.required_properties.items():
-            res.extend([f'\t\t{x}' for x in self.write_required_property(item)])
+            res.extend([f'\t{x}' for x in self.write_required_property(item)])
         for _, item in self.optional_properties.items():
-            res.extend([f'\t\t{x}' for x in self.write_optional_property(item)])
-        res.extend([f'\t\t{x}' for x in self.write_additional_properties()])
+            res.extend([f'\t{x}' for x in self.write_optional_property(item)])
+        res.extend([f'\t{x}' for x in self.write_additional_properties()])
         self.try_from_json_body = res
-
         self.generate_nested_class_definitions()
-        # base_class_variables = []
-        # for item in base_classes:
-        #    base_class = self.parsed_schemas[item]
-        #    variable_name = to_snake_case(item)
-        #    base_class_variables.append(f'\t{item} {variable_name};')
-
-        # nested_classes = self.generate_nested_class_definitions(referenced_schemas)
-
-        # variable_definitions = []
-        # for item in sorted(list(object_property.properties.keys())):
-        #    variable = object_property.properties[item]
-        #    variable_type = self.generate_variable_type(variable)
-        #    variable_definitions.append(f'\t{variable_type} {safe_cpp_name(item)};')
-
-        # for item in object_property.any_of:
-        #    item_name = to_snake_case(item.ref)
-        #    variable_definitions.append(f'\tbool has_{safe_cpp_name(item_name)} = false;')
-        # for item in object_property.one_of:
-        #    item_name = to_snake_case(item.ref)
-        #    variable_definitions.append(f'\tbool has_{safe_cpp_name(item_name)} = false;')
-
-        # if object_property.additional_properties:
-        #    variable_type = self.generate_variable_type(object_property.additional_properties)
-        #    variable_definitions.append(f'\tcase_insensitive_map_t<{variable_type}> additional_properties;')
-
-        # class_definition = CLASS_FORMAT.format(
-        #    CLASS_NAME=name,
-        #    NESTED_CLASSES=nested_classes,
-        #    BASE_CLASS_PARSING='\n'.join(base_class_parsing),
-        #    REQUIRED_PROPERTIES=required_property_parsing,
-        #    OPTIONAL_PROPERTIES=optional_property_parsing,
-        #    ADDITIONAL_PROPERTIES=additional_property_parsing,
-        #    BASE_CLASS_VARIABLES='\n'.join(base_class_variables),
-        #    PROPERTY_VARIABLES='\n'.join(variable_definitions),
-        # )
 
     def from_array_property(self, schema: ArrayProperty):
         assert schema.type == Property.Type.ARRAY
@@ -321,8 +322,8 @@ class CPPClass:
                 'yyjson_obj_foreach(obj, idx, max, key, val) {',
             ]
         )
-        res.extend(self.additional_properties.skip_if_excluded)
         res.append('\tauto key_str = yyjson_get_str(key);')
+        res.extend(self.additional_properties.skip_if_excluded)
         res.extend(self.additional_properties.body)
         res.extend(
             [
@@ -358,11 +359,11 @@ class CPPClass:
                 res.append(f'{item.name} = make_uniq<{item.class_name}>();')
             res.extend(
                 [
-                    f'\terror = {item.name}{item.dereference_style}TryFromJSON(obj);',
-                    '\tif (error.empty()) {',
-                    f'\t\thas_{item.name} = true;',
-                    '\t\tbreak;',
-                    '\t}',
+                    f'error = {item.name}{item.dereference_style}TryFromJSON(obj);',
+                    'if (error.empty()) {',
+                    f'\thas_{item.name} = true;',
+                    '\tbreak;',
+                    '}',
                 ]
             )
         res.append(f'\treturn "{self.name} failed to parse, none of the oneOf candidates matched";')
@@ -397,13 +398,24 @@ class CPPClass:
         )
         return res
 
-    def write_nested_classes(self) -> List[str]:
+    def write_nested_classes_header(self) -> List[str]:
         if not self.nested_classes:
             return []
         res = []
         for item, nested_class in self.nested_classes.items():
-            res.extend(nested_class.write_class())
+            res.extend(nested_class.write_header())
         return [f'\t{x}' for x in res]
+
+    def write_nested_classes_source(self, base_class: List[str]) -> List[str]:
+        if not self.nested_classes:
+            return []
+        res = []
+        for item, nested_class in self.nested_classes.items():
+            new_base_class = []
+            new_base_class.extend(base_class)
+            new_base_class.append(self.name)
+            res.extend(nested_class.write_source(new_base_class))
+        return [f'{x}' for x in res]
 
     def write_variables(self) -> List[str]:
         res = []
@@ -412,31 +424,48 @@ class CPPClass:
             res.extend(self.variables)
         return res
 
-    def write_class(self) -> List[str]:
+    def write_source(self, base_class: List[str]) -> List[str]:
         res = []
-        res.extend([f'class {self.name} {{', 'public:', f'\t{self.name}() {{}}'])
-        res.extend(self.write_nested_classes())
+        base = ''
+        if base_class:
+            base = '::'.join(base_class) + '::'
+        res.extend([f'{base}{self.name}::{self.name}() {{}}'])
+        res.extend(self.write_nested_classes_source(base_class))
         res.extend(
             [
-                'public:',
-                f'\tstatic {self.name} FromJSON(yyjson_val *obj) {{',
-                f'\t\t{self.name} res;',
-                '\t\tauto error = res.TryFromJSON(obj);',
-                '\t\tif (!error.empty()) {',
-                '\t\t\tthrow InvalidInputException(error);',
-                '\t\t}',
-                '\t\treturn res;',
+                '',
+                f'{base}{self.name} {base}{self.name}::FromJSON(yyjson_val *obj) {{',
+                f'\t{self.name} res;',
+                '\tauto error = res.TryFromJSON(obj);',
+                '\tif (!error.empty()) {',
+                '\t\tthrow InvalidInputException(error);',
                 '\t}',
-                'public:',
-                '\tstring TryFromJSON(yyjson_val *obj) {',
-                '\t\tstring error;',
+                '\treturn res;',
+                '}',
+                '',
+                f'string {base}{self.name}::TryFromJSON(yyjson_val *obj) {{',
+                '\tstring error;',
             ]
         )
         res.extend(self.write_one_of())
         res.extend(self.write_all_of())
         res.extend(self.write_any_of())
         res.extend(self.try_from_json_body)
-        res.extend(['\t\treturn string();', '\t}'])
+        res.extend(['\treturn string();', '}'])
+        return res
+
+    def write_header(self) -> List[str]:
+        res = []
+        res.extend([f'class {self.name} {{', 'public:', f'\t{self.name}();'])
+        res.extend(self.write_nested_classes_header())
+        res.extend(
+            [
+                'public:',
+                f'\tstatic {self.name} FromJSON(yyjson_val *obj);',
+                'public:',
+                '\tstring TryFromJSON(yyjson_val *obj);',
+            ]
+        )
         res.extend(self.write_variables())
         res.append('};')
         return res
@@ -491,7 +520,7 @@ class CPPClass:
         res.append('yyjson_val *val;')
         res.append(f'yyjson_arr_foreach({array_name}, idx, max, val) {{')
 
-        assignment = 'tmp'
+        assignment = 'std::move(tmp)'
         if item_type.type != Property.Type.SCHEMA_REFERENCE:
             item_parse = self.generate_item_parse(item_type, 'val')
             res.append(f'\tauto tmp = {item_parse};')
@@ -500,12 +529,12 @@ class CPPClass:
             self.referenced_schemas.add(schema_property.ref)
             item_definition = ''
             if schema_property.ref in self.parse_info.recursive_schemas:
-                res.extend([f'\tauto tmp_p = make_uniq<{schema_property.ref}>();' '\tauto &tmp = *tmp_p;'])
+                res.extend([f'\tauto tmp_p = make_uniq<{schema_property.ref}>();', '\tauto &tmp = *tmp_p;'])
                 assignment = 'std::move(tmp_p)'
             else:
                 res.append(f'\t{schema_property.ref} tmp;')
             res.extend(['\terror = tmp.TryFromJSON(val);', '\tif (!error.empty()) {', '\t\treturn error;', '\t}'])
-        res.append(f'\t{destination_name}.push_back({assignment});')
+        res.append(f'\t{destination_name}.emplace_back({assignment});')
         res.append('}')
         return res
 
@@ -605,7 +634,7 @@ class CPPClass:
         if properties:
             exclude_list = [
                 'case_insensitive_set_t handled_properties {',
-                f"""\t\t{', '.join(f'"{x}"' for x in properties)} }}""",
+                f"""\t\t{', '.join(f'"{x}"' for x in properties)} }};""",
             ]
             skip_if_excluded = [
                 '\tif (handled_properties.count(key_str)) {',
@@ -685,34 +714,27 @@ class CPPClass:
             nested_class.from_property(parsed_schema)
             self.nested_classes[item] = nested_class
 
-    # def generate_schema(self, schema: Property, name: str):
-    #    referenced_schemas = set()
-    #    class_definition = self.generate_class(schema, name, referenced_schemas)
-
-    #    include_schemas = [x for x in referenced_schemas if x in self.schemas]
-    #    additional_headers = [
-    #        f'#include "rest_catalog/objects/{to_snake_case(x)}.hpp"' for x in sorted(list(include_schemas))
-    #    ]
-
-    #    file_contents = HEADER_FORMAT.format(
-    #        ADDITIONAL_HEADERS='\n'.join(additional_headers), CLASS_DEFINITION=class_definition
-    #    )
-    #    return file_contents
-
 
 if __name__ == '__main__':
     openapi_parser = ResponseObjectsGenerator(API_SPEC_PATH)
     openapi_parser.parse_all_schemas()
 
     # Create directory if it doesn't exist
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(OUTPUT_HEADER_DIR, exist_ok=True)
+    os.makedirs(OUTPUT_SOURCE_DIR, exist_ok=True)
 
-    with open(os.path.join(OUTPUT_DIR, 'list.hpp'), 'w') as f:
+    with open(os.path.join(OUTPUT_HEADER_DIR, 'list.hpp'), 'w') as f:
         lines = ["", "// This file is automatically generated and contains all REST API object headers", ""]
         # Add includes for all generated headers
         for name in openapi_parser.schemas:
             lines.append(f'#include "rest_catalog/objects/{to_snake_case(name)}.hpp"')
         f.write('\n'.join(lines))
+
+    with open(os.path.join(OUTPUT_SOURCE_DIR, 'CMakeLists.txt'), 'w') as f:
+        file_paths = []
+        for name in openapi_parser.schemas:
+            file_paths.append(f'\t{to_snake_case(name)}.cpp')
+        f.write(CMAKE_LISTS_FORMAT.format(ALL_SOURCE_FILES='\n'.join(file_paths)))
 
     parse_info = ParseInfo(
         recursive_schemas=openapi_parser.recursive_schemas,
@@ -726,17 +748,36 @@ if __name__ == '__main__':
         cpp_class = CPPClass(name, parse_info)
         cpp_class.from_property(schema)
 
-        content = cpp_class.write_class()
         referenced_schemas = cpp_class.get_all_referenced_schemas()
         include_schemas = [x for x in referenced_schemas if x in parse_info.schemas]
-        additional_headers = [
-            f'#include "rest_catalog/objects/{to_snake_case(x)}.hpp"' for x in sorted(list(include_schemas))
-        ]
 
-        file_content = HEADER_FORMAT.format(
-            ADDITIONAL_HEADERS='\n'.join(additional_headers), CLASS_DEFINITION='\n'.join(content)
-        )
-
-        output_path = os.path.join(OUTPUT_DIR, f'{to_snake_case(name)}.hpp')
+        output_path = os.path.join(OUTPUT_HEADER_DIR, f'{to_snake_case(name)}.hpp')
         with open(output_path, 'w') as f:
+            content = cpp_class.write_header()
+            forward_declarations = [
+                f'class {x};' for x in sorted(list(include_schemas)) if x in parse_info.recursive_schemas
+            ]
+            additional_headers = [
+                f'#include "rest_catalog/objects/{to_snake_case(x)}.hpp"'
+                for x in sorted(list(include_schemas))
+                if x not in parse_info.recursive_schemas
+            ]
+            file_content = HEADER_FORMAT.format(
+                ADDITIONAL_HEADERS='\n'.join(additional_headers),
+                FORWARD_DECLARATIONS='\n'.join(forward_declarations),
+                CLASS_DECLARATION='\n'.join(content),
+            )
+            f.write(file_content)
+
+        output_path = os.path.join(OUTPUT_SOURCE_DIR, f'{to_snake_case(name)}.cpp')
+        with open(output_path, 'w') as f:
+            content = cpp_class.write_source([])
+            additional_headers = [
+                f'#include "rest_catalog/objects/{to_snake_case(x)}.hpp"' for x in sorted(list(include_schemas))
+            ]
+            file_content = SOURCE_FORMAT.format(
+                HEADER_NAME=to_snake_case(name),
+                ADDITIONAL_HEADERS='\n'.join(additional_headers),
+                CLASS_DEFINITION='\n'.join(content),
+            )
             f.write(file_content)

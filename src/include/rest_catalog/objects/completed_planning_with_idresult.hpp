@@ -15,60 +15,26 @@ namespace rest_api_objects {
 
 class CompletedPlanningWithIDResult {
 public:
-	CompletedPlanningWithIDResult() {
-	}
+	CompletedPlanningWithIDResult();
 	class Object6 {
 	public:
-		Object6() {
-		}
+		Object6();
 
 	public:
-		static Object6 FromJSON(yyjson_val *obj) {
-			Object6 res;
-			auto error = res.TryFromJSON(obj);
-			if (!error.empty()) {
-				throw InvalidInputException(error);
-			}
-			return res;
-		}
+		static Object6 FromJSON(yyjson_val *obj);
 
 	public:
-		string TryFromJSON(yyjson_val *obj) {
-			string error;
-			auto plan_id_val = yyjson_obj_get(obj, "plan_id");
-			if (plan_id_val) {
-				plan_id = yyjson_get_str(plan_id_val);
-			}
-			return string();
-		}
+		string TryFromJSON(yyjson_val *obj);
 
 	public:
 		string plan_id;
 	};
 
 public:
-	static CompletedPlanningWithIDResult FromJSON(yyjson_val *obj) {
-		CompletedPlanningWithIDResult res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static CompletedPlanningWithIDResult FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		error = completed_planning_result.TryFromJSON(obj);
-		if (!error.empty()) {
-			return error;
-		}
-		error = object_6.TryFromJSON(obj);
-		if (!error.empty()) {
-			return error;
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	CompletedPlanningResult completed_planning_result;

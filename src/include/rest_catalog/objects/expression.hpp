@@ -21,62 +21,13 @@ namespace rest_api_objects {
 
 class Expression {
 public:
-	Expression() {
-	}
+	Expression();
 
 public:
-	static Expression FromJSON(yyjson_val *obj) {
-		Expression res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static Expression FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		do {
-			error = true_expression.TryFromJSON(obj);
-			if (error.empty()) {
-				has_true_expression = true;
-				break;
-			}
-			error = false_expression.TryFromJSON(obj);
-			if (error.empty()) {
-				has_false_expression = true;
-				break;
-			}
-			error = and_or_expression.TryFromJSON(obj);
-			if (error.empty()) {
-				has_and_or_expression = true;
-				break;
-			}
-			error = not_expression.TryFromJSON(obj);
-			if (error.empty()) {
-				has_not_expression = true;
-				break;
-			}
-			error = set_expression.TryFromJSON(obj);
-			if (error.empty()) {
-				has_set_expression = true;
-				break;
-			}
-			error = literal_expression.TryFromJSON(obj);
-			if (error.empty()) {
-				has_literal_expression = true;
-				break;
-			}
-			error = unary_expression.TryFromJSON(obj);
-			if (error.empty()) {
-				has_unary_expression = true;
-				break;
-			}
-			return "Expression failed to parse, none of the oneOf candidates matched";
-		} while (false);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	TrueExpression true_expression;

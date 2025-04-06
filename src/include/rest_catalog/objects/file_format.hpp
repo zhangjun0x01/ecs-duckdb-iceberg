@@ -14,25 +14,13 @@ namespace rest_api_objects {
 
 class FileFormat {
 public:
-	FileFormat() {
-	}
+	FileFormat();
 
 public:
-	static FileFormat FromJSON(yyjson_val *obj) {
-		FileFormat res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static FileFormat FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		value = yyjson_get_str(obj);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	string value;

@@ -15,35 +15,13 @@ namespace rest_api_objects {
 
 class Metrics {
 public:
-	Metrics() {
-	}
+	Metrics();
 
 public:
-	static Metrics FromJSON(yyjson_val *obj) {
-		Metrics res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static Metrics FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		size_t idx, max;
-		yyjson_val *key, *val;
-		yyjson_obj_foreach(obj, idx, max, key, val) {
-			auto key_str = yyjson_get_str(key);
-			MetricResult tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
-			}
-			additional_properties[key_str] = tmp;
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	case_insensitive_map_t<MetricResult> additional_properties;

@@ -14,30 +14,13 @@ namespace rest_api_objects {
 
 class TableRequirement {
 public:
-	TableRequirement() {
-	}
+	TableRequirement();
 
 public:
-	static TableRequirement FromJSON(yyjson_val *obj) {
-		TableRequirement res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static TableRequirement FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (!type_val) {
-			return "TableRequirement required property 'type' is missing";
-		} else {
-			type = yyjson_get_str(type_val);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	string type;

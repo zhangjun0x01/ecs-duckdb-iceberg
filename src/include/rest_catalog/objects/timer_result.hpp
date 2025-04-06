@@ -14,42 +14,13 @@ namespace rest_api_objects {
 
 class TimerResult {
 public:
-	TimerResult() {
-	}
+	TimerResult();
 
 public:
-	static TimerResult FromJSON(yyjson_val *obj) {
-		TimerResult res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static TimerResult FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto time_unit_val = yyjson_obj_get(obj, "time_unit");
-		if (!time_unit_val) {
-			return "TimerResult required property 'time_unit' is missing";
-		} else {
-			time_unit = yyjson_get_str(time_unit_val);
-		}
-		auto count_val = yyjson_obj_get(obj, "count");
-		if (!count_val) {
-			return "TimerResult required property 'count' is missing";
-		} else {
-			count = yyjson_get_sint(count_val);
-		}
-		auto total_duration_val = yyjson_obj_get(obj, "total_duration");
-		if (!total_duration_val) {
-			return "TimerResult required property 'total_duration' is missing";
-		} else {
-			total_duration = yyjson_get_sint(total_duration_val);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	string time_unit;

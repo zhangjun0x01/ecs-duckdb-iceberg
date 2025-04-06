@@ -14,25 +14,13 @@ namespace rest_api_objects {
 
 class TimeTypeValue {
 public:
-	TimeTypeValue() {
-	}
+	TimeTypeValue();
 
 public:
-	static TimeTypeValue FromJSON(yyjson_val *obj) {
-		TimeTypeValue res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static TimeTypeValue FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		value = yyjson_get_str(obj);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	string value;

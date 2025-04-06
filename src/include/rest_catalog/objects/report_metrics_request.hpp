@@ -16,41 +16,13 @@ namespace rest_api_objects {
 
 class ReportMetricsRequest {
 public:
-	ReportMetricsRequest() {
-	}
+	ReportMetricsRequest();
 
 public:
-	static ReportMetricsRequest FromJSON(yyjson_val *obj) {
-		ReportMetricsRequest res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static ReportMetricsRequest FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		error = scan_report.TryFromJSON(obj);
-		if (error.empty()) {
-			has_scan_report = true;
-		}
-		error = commit_report.TryFromJSON(obj);
-		if (error.empty()) {
-			has_commit_report = true;
-		}
-		if (!has_commit_report && !has_scan_report) {
-			return "ReportMetricsRequest failed to parse, none of the anyOf candidates matched";
-		}
-		auto report_type_val = yyjson_obj_get(obj, "report_type");
-		if (!report_type_val) {
-			return "ReportMetricsRequest required property 'report_type' is missing";
-		} else {
-			report_type = yyjson_get_str(report_type_val);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	ScanReport scan_report;

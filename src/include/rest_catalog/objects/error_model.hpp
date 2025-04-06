@@ -14,51 +14,13 @@ namespace rest_api_objects {
 
 class ErrorModel {
 public:
-	ErrorModel() {
-	}
+	ErrorModel();
 
 public:
-	static ErrorModel FromJSON(yyjson_val *obj) {
-		ErrorModel res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static ErrorModel FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto message_val = yyjson_obj_get(obj, "message");
-		if (!message_val) {
-			return "ErrorModel required property 'message' is missing";
-		} else {
-			message = yyjson_get_str(message_val);
-		}
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (!type_val) {
-			return "ErrorModel required property 'type' is missing";
-		} else {
-			type = yyjson_get_str(type_val);
-		}
-		auto code_val = yyjson_obj_get(obj, "code");
-		if (!code_val) {
-			return "ErrorModel required property 'code' is missing";
-		} else {
-			code = yyjson_get_sint(code_val);
-		}
-		auto stack_val = yyjson_obj_get(obj, "stack");
-		if (stack_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(stack_val, idx, max, val) {
-				auto tmp = yyjson_get_str(val);
-				stack.push_back(tmp);
-			}
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	string message;

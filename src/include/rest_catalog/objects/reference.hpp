@@ -14,25 +14,13 @@ namespace rest_api_objects {
 
 class Reference {
 public:
-	Reference() {
-	}
+	Reference();
 
 public:
-	static Reference FromJSON(yyjson_val *obj) {
-		Reference res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static Reference FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		value = yyjson_get_str(obj);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	string value;

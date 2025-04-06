@@ -16,35 +16,13 @@ namespace rest_api_objects {
 
 class MetricResult {
 public:
-	MetricResult() {
-	}
+	MetricResult();
 
 public:
-	static MetricResult FromJSON(yyjson_val *obj) {
-		MetricResult res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static MetricResult FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		error = counter_result.TryFromJSON(obj);
-		if (error.empty()) {
-			has_counter_result = true;
-		}
-		error = timer_result.TryFromJSON(obj);
-		if (error.empty()) {
-			has_timer_result = true;
-		}
-		if (!has_counter_result && !has_timer_result) {
-			return "MetricResult failed to parse, none of the anyOf candidates matched";
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	CounterResult counter_result;

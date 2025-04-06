@@ -16,50 +16,13 @@ namespace rest_api_objects {
 
 class ValueMap {
 public:
-	ValueMap() {
-	}
+	ValueMap();
 
 public:
-	static ValueMap FromJSON(yyjson_val *obj) {
-		ValueMap res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static ValueMap FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto keys_val = yyjson_obj_get(obj, "keys");
-		if (keys_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(keys_val, idx, max, val) {
-				IntegerTypeValue tmp;
-				error = tmp.TryFromJSON(val);
-				if (!error.empty()) {
-					return error;
-				}
-				keys.push_back(tmp);
-			}
-		}
-		auto values_val = yyjson_obj_get(obj, "values");
-		if (values_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(values_val, idx, max, val) {
-				PrimitiveTypeValue tmp;
-				error = tmp.TryFromJSON(val);
-				if (!error.empty()) {
-					return error;
-				}
-				values.push_back(tmp);
-			}
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	vector<IntegerTypeValue> keys;

@@ -16,48 +16,13 @@ namespace rest_api_objects {
 
 class LiteralExpression {
 public:
-	LiteralExpression() {
-	}
+	LiteralExpression();
 
 public:
-	static LiteralExpression FromJSON(yyjson_val *obj) {
-		LiteralExpression res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static LiteralExpression FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (!type_val) {
-			return "LiteralExpression required property 'type' is missing";
-		} else {
-			error = type.TryFromJSON(type_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		auto term_val = yyjson_obj_get(obj, "term");
-		if (!term_val) {
-			return "LiteralExpression required property 'term' is missing";
-		} else {
-			error = term.TryFromJSON(term_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		auto value_val = yyjson_obj_get(obj, "value");
-		if (!value_val) {
-			return "LiteralExpression required property 'value' is missing";
-		} else {
-			value = value_val;
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	ExpressionType type;

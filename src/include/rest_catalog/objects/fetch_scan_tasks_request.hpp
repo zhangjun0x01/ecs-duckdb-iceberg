@@ -15,33 +15,13 @@ namespace rest_api_objects {
 
 class FetchScanTasksRequest {
 public:
-	FetchScanTasksRequest() {
-	}
+	FetchScanTasksRequest();
 
 public:
-	static FetchScanTasksRequest FromJSON(yyjson_val *obj) {
-		FetchScanTasksRequest res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static FetchScanTasksRequest FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto plan_task_val = yyjson_obj_get(obj, "plan_task");
-		if (!plan_task_val) {
-			return "FetchScanTasksRequest required property 'plan_task' is missing";
-		} else {
-			error = plan_task.TryFromJSON(plan_task_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	PlanTask plan_task;

@@ -15,67 +15,13 @@ namespace rest_api_objects {
 
 class OAuthTokenExchangeRequest {
 public:
-	OAuthTokenExchangeRequest() {
-	}
+	OAuthTokenExchangeRequest();
 
 public:
-	static OAuthTokenExchangeRequest FromJSON(yyjson_val *obj) {
-		OAuthTokenExchangeRequest res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static OAuthTokenExchangeRequest FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto grant_type_val = yyjson_obj_get(obj, "grant_type");
-		if (!grant_type_val) {
-			return "OAuthTokenExchangeRequest required property 'grant_type' is missing";
-		} else {
-			grant_type = yyjson_get_str(grant_type_val);
-		}
-		auto subject_token_val = yyjson_obj_get(obj, "subject_token");
-		if (!subject_token_val) {
-			return "OAuthTokenExchangeRequest required property 'subject_token' is missing";
-		} else {
-			subject_token = yyjson_get_str(subject_token_val);
-		}
-		auto subject_token_type_val = yyjson_obj_get(obj, "subject_token_type");
-		if (!subject_token_type_val) {
-			return "OAuthTokenExchangeRequest required property 'subject_token_type' is missing";
-		} else {
-			error = subject_token_type.TryFromJSON(subject_token_type_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		auto scope_val = yyjson_obj_get(obj, "scope");
-		if (scope_val) {
-			scope = yyjson_get_str(scope_val);
-		}
-		auto requested_token_type_val = yyjson_obj_get(obj, "requested_token_type");
-		if (requested_token_type_val) {
-			error = requested_token_type.TryFromJSON(requested_token_type_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		auto actor_token_val = yyjson_obj_get(obj, "actor_token");
-		if (actor_token_val) {
-			actor_token = yyjson_get_str(actor_token_val);
-		}
-		auto actor_token_type_val = yyjson_obj_get(obj, "actor_token_type");
-		if (actor_token_type_val) {
-			error = actor_token_type.TryFromJSON(actor_token_type_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	string grant_type;

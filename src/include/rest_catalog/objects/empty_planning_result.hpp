@@ -15,33 +15,13 @@ namespace rest_api_objects {
 
 class EmptyPlanningResult {
 public:
-	EmptyPlanningResult() {
-	}
+	EmptyPlanningResult();
 
 public:
-	static EmptyPlanningResult FromJSON(yyjson_val *obj) {
-		EmptyPlanningResult res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static EmptyPlanningResult FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto status_val = yyjson_obj_get(obj, "status");
-		if (!status_val) {
-			return "EmptyPlanningResult required property 'status' is missing";
-		} else {
-			error = status.TryFromJSON(status_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	PlanStatus status;

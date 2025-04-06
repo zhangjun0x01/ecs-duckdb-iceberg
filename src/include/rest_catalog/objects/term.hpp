@@ -16,37 +16,13 @@ namespace rest_api_objects {
 
 class Term {
 public:
-	Term() {
-	}
+	Term();
 
 public:
-	static Term FromJSON(yyjson_val *obj) {
-		Term res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static Term FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		do {
-			error = reference.TryFromJSON(obj);
-			if (error.empty()) {
-				has_reference = true;
-				break;
-			}
-			error = transform_term.TryFromJSON(obj);
-			if (error.empty()) {
-				has_transform_term = true;
-				break;
-			}
-			return "Term failed to parse, none of the oneOf candidates matched";
-		} while (false);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	Reference reference;

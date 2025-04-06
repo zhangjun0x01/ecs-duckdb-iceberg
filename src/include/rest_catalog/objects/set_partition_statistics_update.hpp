@@ -16,41 +16,13 @@ namespace rest_api_objects {
 
 class SetPartitionStatisticsUpdate {
 public:
-	SetPartitionStatisticsUpdate() {
-	}
+	SetPartitionStatisticsUpdate();
 
 public:
-	static SetPartitionStatisticsUpdate FromJSON(yyjson_val *obj) {
-		SetPartitionStatisticsUpdate res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static SetPartitionStatisticsUpdate FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		error = base_update.TryFromJSON(obj);
-		if (!error.empty()) {
-			return error;
-		}
-		auto partition_statistics_val = yyjson_obj_get(obj, "partition_statistics");
-		if (!partition_statistics_val) {
-			return "SetPartitionStatisticsUpdate required property 'partition_statistics' is missing";
-		} else {
-			error = partition_statistics.TryFromJSON(partition_statistics_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		auto action_val = yyjson_obj_get(obj, "action");
-		if (action_val) {
-			action = yyjson_get_str(action_val);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	BaseUpdate base_update;

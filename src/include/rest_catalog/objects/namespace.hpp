@@ -14,30 +14,13 @@ namespace rest_api_objects {
 
 class Namespace {
 public:
-	Namespace() {
-	}
+	Namespace();
 
 public:
-	static Namespace FromJSON(yyjson_val *obj) {
-		Namespace res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static Namespace FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(obj, idx, max, val) {
-			auto tmp = yyjson_get_str(val);
-			value.push_back(tmp);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	vector<string> value;

@@ -15,43 +15,13 @@ namespace rest_api_objects {
 
 class EqualityDeleteFile {
 public:
-	EqualityDeleteFile() {
-	}
+	EqualityDeleteFile();
 
 public:
-	static EqualityDeleteFile FromJSON(yyjson_val *obj) {
-		EqualityDeleteFile res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static EqualityDeleteFile FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		error = content_file.TryFromJSON(obj);
-		if (!error.empty()) {
-			return error;
-		}
-		auto content_val = yyjson_obj_get(obj, "content");
-		if (!content_val) {
-			return "EqualityDeleteFile required property 'content' is missing";
-		} else {
-			content = yyjson_get_str(content_val);
-		}
-		auto equality_ids_val = yyjson_obj_get(obj, "equality_ids");
-		if (equality_ids_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(equality_ids_val, idx, max, val) {
-				auto tmp = yyjson_get_sint(val);
-				equality_ids.push_back(tmp);
-			}
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	ContentFile content_file;

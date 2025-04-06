@@ -18,47 +18,13 @@ namespace rest_api_objects {
 
 class Type {
 public:
-	Type() {
-	}
+	Type();
 
 public:
-	static Type FromJSON(yyjson_val *obj) {
-		Type res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static Type FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		do {
-			error = primitive_type.TryFromJSON(obj);
-			if (error.empty()) {
-				has_primitive_type = true;
-				break;
-			}
-			error = struct_type.TryFromJSON(obj);
-			if (error.empty()) {
-				has_struct_type = true;
-				break;
-			}
-			error = list_type.TryFromJSON(obj);
-			if (error.empty()) {
-				has_list_type = true;
-				break;
-			}
-			error = map_type.TryFromJSON(obj);
-			if (error.empty()) {
-				has_map_type = true;
-				break;
-			}
-			return "Type failed to parse, none of the oneOf candidates matched";
-		} while (false);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	PrimitiveType primitive_type;

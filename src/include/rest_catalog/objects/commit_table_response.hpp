@@ -15,39 +15,13 @@ namespace rest_api_objects {
 
 class CommitTableResponse {
 public:
-	CommitTableResponse() {
-	}
+	CommitTableResponse();
 
 public:
-	static CommitTableResponse FromJSON(yyjson_val *obj) {
-		CommitTableResponse res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static CommitTableResponse FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto metadata_location_val = yyjson_obj_get(obj, "metadata_location");
-		if (!metadata_location_val) {
-			return "CommitTableResponse required property 'metadata_location' is missing";
-		} else {
-			metadata_location = yyjson_get_str(metadata_location_val);
-		}
-		auto metadata_val = yyjson_obj_get(obj, "metadata");
-		if (!metadata_val) {
-			return "CommitTableResponse required property 'metadata' is missing";
-		} else {
-			error = metadata.TryFromJSON(metadata_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	string metadata_location;

@@ -15,38 +15,13 @@ namespace rest_api_objects {
 
 class SetCurrentViewVersionUpdate {
 public:
-	SetCurrentViewVersionUpdate() {
-	}
+	SetCurrentViewVersionUpdate();
 
 public:
-	static SetCurrentViewVersionUpdate FromJSON(yyjson_val *obj) {
-		SetCurrentViewVersionUpdate res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static SetCurrentViewVersionUpdate FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		error = base_update.TryFromJSON(obj);
-		if (!error.empty()) {
-			return error;
-		}
-		auto view_version_id_val = yyjson_obj_get(obj, "view_version_id");
-		if (!view_version_id_val) {
-			return "SetCurrentViewVersionUpdate required property 'view_version_id' is missing";
-		} else {
-			view_version_id = yyjson_get_sint(view_version_id_val);
-		}
-		auto action_val = yyjson_obj_get(obj, "action");
-		if (action_val) {
-			action = yyjson_get_str(action_val);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	BaseUpdate base_update;

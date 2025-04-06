@@ -15,28 +15,13 @@ namespace rest_api_objects {
 
 class FetchScanTasksResult {
 public:
-	FetchScanTasksResult() {
-	}
+	FetchScanTasksResult();
 
 public:
-	static FetchScanTasksResult FromJSON(yyjson_val *obj) {
-		FetchScanTasksResult res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static FetchScanTasksResult FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		error = scan_tasks.TryFromJSON(obj);
-		if (!error.empty()) {
-			return error;
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	ScanTasks scan_tasks;

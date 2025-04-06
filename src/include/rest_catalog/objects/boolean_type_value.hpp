@@ -14,25 +14,13 @@ namespace rest_api_objects {
 
 class BooleanTypeValue {
 public:
-	BooleanTypeValue() {
-	}
+	BooleanTypeValue();
 
 public:
-	static BooleanTypeValue FromJSON(yyjson_val *obj) {
-		BooleanTypeValue res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static BooleanTypeValue FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		value = yyjson_get_bool(obj);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	bool value;

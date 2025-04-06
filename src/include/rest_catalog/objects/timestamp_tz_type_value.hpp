@@ -14,25 +14,13 @@ namespace rest_api_objects {
 
 class TimestampTzTypeValue {
 public:
-	TimestampTzTypeValue() {
-	}
+	TimestampTzTypeValue();
 
 public:
-	static TimestampTzTypeValue FromJSON(yyjson_val *obj) {
-		TimestampTzTypeValue res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static TimestampTzTypeValue FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		value = yyjson_get_str(obj);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	string value;

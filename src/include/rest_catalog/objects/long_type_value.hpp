@@ -14,25 +14,13 @@ namespace rest_api_objects {
 
 class LongTypeValue {
 public:
-	LongTypeValue() {
-	}
+	LongTypeValue();
 
 public:
-	static LongTypeValue FromJSON(yyjson_val *obj) {
-		LongTypeValue res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static LongTypeValue FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		value = yyjson_get_sint(obj);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	int64_t value;

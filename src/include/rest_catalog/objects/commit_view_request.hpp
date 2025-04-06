@@ -17,59 +17,13 @@ namespace rest_api_objects {
 
 class CommitViewRequest {
 public:
-	CommitViewRequest() {
-	}
+	CommitViewRequest();
 
 public:
-	static CommitViewRequest FromJSON(yyjson_val *obj) {
-		CommitViewRequest res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static CommitViewRequest FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto updates_val = yyjson_obj_get(obj, "updates");
-		if (!updates_val) {
-			return "CommitViewRequest required property 'updates' is missing";
-		} else {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(updates_val, idx, max, val) {
-				ViewUpdate tmp;
-				error = tmp.TryFromJSON(val);
-				if (!error.empty()) {
-					return error;
-				}
-				updates.push_back(tmp);
-			}
-		}
-		auto identifier_val = yyjson_obj_get(obj, "identifier");
-		if (identifier_val) {
-			error = identifier.TryFromJSON(identifier_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		auto requirements_val = yyjson_obj_get(obj, "requirements");
-		if (requirements_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(requirements_val, idx, max, val) {
-				ViewRequirement tmp;
-				error = tmp.TryFromJSON(val);
-				if (!error.empty()) {
-					return error;
-				}
-				requirements.push_back(tmp);
-			}
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	vector<ViewUpdate> updates;

@@ -18,47 +18,13 @@ namespace rest_api_objects {
 
 class PlanTableScanResult {
 public:
-	PlanTableScanResult() {
-	}
+	PlanTableScanResult();
 
 public:
-	static PlanTableScanResult FromJSON(yyjson_val *obj) {
-		PlanTableScanResult res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static PlanTableScanResult FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		do {
-			error = completed_planning_with_idresult.TryFromJSON(obj);
-			if (error.empty()) {
-				has_completed_planning_with_idresult = true;
-				break;
-			}
-			error = failed_planning_result.TryFromJSON(obj);
-			if (error.empty()) {
-				has_failed_planning_result = true;
-				break;
-			}
-			error = async_planning_result.TryFromJSON(obj);
-			if (error.empty()) {
-				has_async_planning_result = true;
-				break;
-			}
-			error = empty_planning_result.TryFromJSON(obj);
-			if (error.empty()) {
-				has_empty_planning_result = true;
-				break;
-			}
-			return "PlanTableScanResult failed to parse, none of the oneOf candidates matched";
-		} while (false);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	CompletedPlanningWithIDResult completed_planning_with_idresult;

@@ -16,65 +16,26 @@ namespace rest_api_objects {
 
 class CompletedPlanningResult {
 public:
-	CompletedPlanningResult() {
-	}
+	CompletedPlanningResult();
 	class Object5 {
 	public:
-		Object5() {
-		}
+		Object5();
 
 	public:
-		static Object5 FromJSON(yyjson_val *obj) {
-			Object5 res;
-			auto error = res.TryFromJSON(obj);
-			if (!error.empty()) {
-				throw InvalidInputException(error);
-			}
-			return res;
-		}
+		static Object5 FromJSON(yyjson_val *obj);
 
 	public:
-		string TryFromJSON(yyjson_val *obj) {
-			string error;
-			auto status_val = yyjson_obj_get(obj, "status");
-			if (!status_val) {
-				return "Object5 required property 'status' is missing";
-			} else {
-				error = status.TryFromJSON(status_val);
-				if (!error.empty()) {
-					return error;
-				}
-			}
-			return string();
-		}
+		string TryFromJSON(yyjson_val *obj);
 
 	public:
 		PlanStatus status;
 	};
 
 public:
-	static CompletedPlanningResult FromJSON(yyjson_val *obj) {
-		CompletedPlanningResult res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static CompletedPlanningResult FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		error = scan_tasks.TryFromJSON(obj);
-		if (!error.empty()) {
-			return error;
-		}
-		error = object_5.TryFromJSON(obj);
-		if (!error.empty()) {
-			return error;
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	ScanTasks scan_tasks;

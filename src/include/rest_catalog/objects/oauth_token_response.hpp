@@ -15,55 +15,13 @@ namespace rest_api_objects {
 
 class OAuthTokenResponse {
 public:
-	OAuthTokenResponse() {
-	}
+	OAuthTokenResponse();
 
 public:
-	static OAuthTokenResponse FromJSON(yyjson_val *obj) {
-		OAuthTokenResponse res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static OAuthTokenResponse FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto access_token_val = yyjson_obj_get(obj, "access_token");
-		if (!access_token_val) {
-			return "OAuthTokenResponse required property 'access_token' is missing";
-		} else {
-			access_token = yyjson_get_str(access_token_val);
-		}
-		auto token_type_val = yyjson_obj_get(obj, "token_type");
-		if (!token_type_val) {
-			return "OAuthTokenResponse required property 'token_type' is missing";
-		} else {
-			token_type = yyjson_get_str(token_type_val);
-		}
-		auto expires_in_val = yyjson_obj_get(obj, "expires_in");
-		if (expires_in_val) {
-			expires_in = yyjson_get_sint(expires_in_val);
-		}
-		auto issued_token_type_val = yyjson_obj_get(obj, "issued_token_type");
-		if (issued_token_type_val) {
-			error = issued_token_type.TryFromJSON(issued_token_type_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		auto refresh_token_val = yyjson_obj_get(obj, "refresh_token");
-		if (refresh_token_val) {
-			refresh_token = yyjson_get_str(refresh_token_val);
-		}
-		auto scope_val = yyjson_obj_get(obj, "scope");
-		if (scope_val) {
-			scope = yyjson_get_str(scope_val);
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	string access_token;

@@ -15,32 +15,13 @@ namespace rest_api_objects {
 
 class ViewRepresentation {
 public:
-	ViewRepresentation() {
-	}
+	ViewRepresentation();
 
 public:
-	static ViewRepresentation FromJSON(yyjson_val *obj) {
-		ViewRepresentation res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static ViewRepresentation FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		do {
-			error = sqlview_representation.TryFromJSON(obj);
-			if (error.empty()) {
-				has_sqlview_representation = true;
-				break;
-			}
-			return "ViewRepresentation failed to parse, none of the oneOf candidates matched";
-		} while (false);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	SQLViewRepresentation sqlview_representation;

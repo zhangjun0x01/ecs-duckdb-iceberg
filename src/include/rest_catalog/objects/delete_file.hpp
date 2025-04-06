@@ -16,37 +16,13 @@ namespace rest_api_objects {
 
 class DeleteFile {
 public:
-	DeleteFile() {
-	}
+	DeleteFile();
 
 public:
-	static DeleteFile FromJSON(yyjson_val *obj) {
-		DeleteFile res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static DeleteFile FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		do {
-			error = position_delete_file.TryFromJSON(obj);
-			if (error.empty()) {
-				has_position_delete_file = true;
-				break;
-			}
-			error = equality_delete_file.TryFromJSON(obj);
-			if (error.empty()) {
-				has_equality_delete_file = true;
-				break;
-			}
-			return "DeleteFile failed to parse, none of the oneOf candidates matched";
-		} while (false);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	PositionDeleteFile position_delete_file;

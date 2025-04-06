@@ -14,25 +14,13 @@ namespace rest_api_objects {
 
 class BinaryTypeValue {
 public:
-	BinaryTypeValue() {
-	}
+	BinaryTypeValue();
 
 public:
-	static BinaryTypeValue FromJSON(yyjson_val *obj) {
-		BinaryTypeValue res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static BinaryTypeValue FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		value = yyjson_get_str(obj);
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	string value;

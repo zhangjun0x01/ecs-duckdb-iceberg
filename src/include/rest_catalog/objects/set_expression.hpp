@@ -16,53 +16,13 @@ namespace rest_api_objects {
 
 class SetExpression {
 public:
-	SetExpression() {
-	}
+	SetExpression();
 
 public:
-	static SetExpression FromJSON(yyjson_val *obj) {
-		SetExpression res;
-		auto error = res.TryFromJSON(obj);
-		if (!error.empty()) {
-			throw InvalidInputException(error);
-		}
-		return res;
-	}
+	static SetExpression FromJSON(yyjson_val *obj);
 
 public:
-	string TryFromJSON(yyjson_val *obj) {
-		string error;
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (!type_val) {
-			return "SetExpression required property 'type' is missing";
-		} else {
-			error = type.TryFromJSON(type_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		auto term_val = yyjson_obj_get(obj, "term");
-		if (!term_val) {
-			return "SetExpression required property 'term' is missing";
-		} else {
-			error = term.TryFromJSON(term_val);
-			if (!error.empty()) {
-				return error;
-			}
-		}
-		auto values_val = yyjson_obj_get(obj, "values");
-		if (!values_val) {
-			return "SetExpression required property 'values' is missing";
-		} else {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(values_val, idx, max, val) {
-				auto tmp = val;
-				values.push_back(tmp);
-			}
-		}
-		return string();
-	}
+	string TryFromJSON(yyjson_val *obj);
 
 public:
 	ExpressionType type;
