@@ -47,7 +47,7 @@ public:
 
 public:
 public:
-	yyjson_val *config;
+	case_insensitive_map_t<string> config;
 	string prefix;
 };
 

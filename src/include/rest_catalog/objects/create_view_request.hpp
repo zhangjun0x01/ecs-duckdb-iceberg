@@ -73,7 +73,7 @@ public:
 public:
 	string location;
 	string name;
-	yyjson_val *properties;
+	case_insensitive_map_t<string> properties;
 	Schema schema;
 	ViewVersion view_version;
 };

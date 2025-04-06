@@ -56,8 +56,8 @@ public:
 	}
 
 public:
-	CommitReport commit_report;
 	ScanReport scan_report;
+	CommitReport commit_report;
 
 public:
 	string report_type;

@@ -50,7 +50,7 @@ public:
 public:
 public:
 	Namespace _namespace;
-	yyjson_val *properties;
+	case_insensitive_map_t<string> properties;
 };
 
 } // namespace rest_api_objects

@@ -73,7 +73,7 @@ public:
 
 public:
 public:
-	yyjson_val *metadata;
+	case_insensitive_map_t<string> metadata;
 	Metrics metrics;
 	string operation;
 	int64_t sequence_number;

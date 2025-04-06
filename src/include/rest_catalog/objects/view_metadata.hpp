@@ -117,7 +117,7 @@ public:
 	int64_t current_version_id;
 	int64_t format_version;
 	string location;
-	yyjson_val *properties;
+	case_insensitive_map_t<string> properties;
 	vector<Schema> schemas;
 	vector<ViewHistoryEntry> version_log;
 	vector<ViewVersion> versions;

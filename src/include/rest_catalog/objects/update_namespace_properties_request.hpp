@@ -51,7 +51,7 @@ public:
 public:
 public:
 	vector<string> removals;
-	yyjson_val *updates;
+	case_insensitive_map_t<string> updates;
 };
 
 } // namespace rest_api_objects

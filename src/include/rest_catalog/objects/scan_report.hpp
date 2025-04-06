@@ -102,7 +102,7 @@ public:
 public:
 public:
 	Expression filter;
-	yyjson_val *metadata;
+	case_insensitive_map_t<string> metadata;
 	Metrics metrics;
 	vector<int64_t> projected_field_ids;
 	vector<string> projected_field_names;

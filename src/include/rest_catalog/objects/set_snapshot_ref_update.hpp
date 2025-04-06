@@ -56,8 +56,8 @@ public:
 	}
 
 public:
-	SnapshotReference snapshot_reference;
 	BaseUpdate base_update;
+	SnapshotReference snapshot_reference;
 
 public:
 	string action;

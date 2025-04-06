@@ -57,9 +57,9 @@ public:
 
 public:
 public:
-	yyjson_val *defaults;
+	case_insensitive_map_t<string> defaults;
 	vector<string> endpoints;
-	yyjson_val *overrides;
+	case_insensitive_map_t<string> overrides;
 };
 
 } // namespace rest_api_objects

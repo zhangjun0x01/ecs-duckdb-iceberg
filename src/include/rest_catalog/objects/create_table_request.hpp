@@ -86,7 +86,7 @@ public:
 	string location;
 	string name;
 	PartitionSpec partition_spec;
-	yyjson_val *properties;
+	case_insensitive_map_t<string> properties;
 	Schema schema;
 	bool stage_create;
 	SortOrder write_order;

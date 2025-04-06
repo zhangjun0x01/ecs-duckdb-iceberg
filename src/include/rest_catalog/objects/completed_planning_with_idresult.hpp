@@ -76,8 +76,8 @@ public:
 	}
 
 public:
-	Object6 object_6;
 	CompletedPlanningResult completed_planning_result;
+	Object6 object_6;
 
 public:
 };

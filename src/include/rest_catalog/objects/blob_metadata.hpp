@@ -70,7 +70,7 @@ public:
 public:
 public:
 	vector<int64_t> fields;
-	yyjson_val *properties;
+	case_insensitive_map_t<string> properties;
 	int64_t sequence_number;
 	int64_t snapshot_id;
 	string type;

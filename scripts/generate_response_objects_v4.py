@@ -126,6 +126,12 @@ class Property:
         self.any_of: List[Property] = []
         self.one_of: List[Property] = []
 
+    def is_string(self):
+        if self.type != Property.Type.PRIMITIVE:
+            return False
+        primitive_property = cast(PrimitiveProperty, self)
+        return primitive_property.primitive_type == 'string'
+
 
 class SchemaReferenceProperty(Property):
     def __init__(self, name):
@@ -532,6 +538,8 @@ if (!{variable_name}_val) {{
         if schema.type == Property.Type.OBJECT:
             object_property = cast(ObjectProperty, schema)
             assert not object_property.properties
+            if object_property.additional_properties and object_property.additional_properties.is_string():
+                return 'case_insensitive_map_t<string>'
             return 'yyjson_val *'
         elif schema.type == Property.Type.ARRAY:
             array_property = cast(ArrayProperty, schema)

@@ -80,12 +80,12 @@ public:
 
 public:
 	UnaryExpression unary_expression;
-	NotExpression not_expression;
-	LiteralExpression literal_expression;
 	FalseExpression false_expression;
-	TrueExpression true_expression;
-	SetExpression set_expression;
 	AndOrExpression and_or_expression;
+	SetExpression set_expression;
+	LiteralExpression literal_expression;
+	NotExpression not_expression;
+	TrueExpression true_expression;
 
 public:
 	bool has_true_expression = false;

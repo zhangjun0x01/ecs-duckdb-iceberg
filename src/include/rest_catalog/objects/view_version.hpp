@@ -94,7 +94,7 @@ public:
 	Namespace default_namespace;
 	vector<ViewRepresentation> representations;
 	int64_t schema_id;
-	yyjson_val *summary;
+	case_insensitive_map_t<string> summary;
 	int64_t timestamp_ms;
 	int64_t version_id;
 };

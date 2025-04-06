@@ -232,7 +232,7 @@ public:
 	MetadataLog metadata_log;
 	vector<PartitionSpec> partition_specs;
 	vector<PartitionStatisticsFile> partition_statistics;
-	yyjson_val *properties;
+	case_insensitive_map_t<string> properties;
 	SnapshotReferences refs;
 	vector<Schema> schemas;
 	SnapshotLog snapshot_log;
