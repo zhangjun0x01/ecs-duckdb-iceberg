@@ -50,8 +50,8 @@ public:
 	}
 
 public:
-	TimerResult timer_result;
 	CounterResult counter_result;
+	TimerResult timer_result;
 
 public:
 	bool has_counter_result = false;

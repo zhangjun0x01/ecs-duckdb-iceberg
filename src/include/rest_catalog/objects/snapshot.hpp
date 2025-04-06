@@ -42,12 +42,27 @@ public:
 			}
 			operation = yyjson_get_str(operation_val);
 
+			case_insensitive_set_t handled_properties {"operation"};
+
+			size_t idx, max;
+			yyjson_val *key, *val;
+			yyjson_obj_foreach(obj, idx, max, key, val) {
+				auto key_str = yyjson_get_str(key);
+				if (handled_properties.count(key_str)) {
+					continue;
+				}
+				auto tmp = yyjson_get_str(val);
+
+				additional_properties[key_str] = tmp;
+			}
+
 			return string();
 		}
 
 	public:
 	public:
 		string operation;
+		case_insensitive_map_t<string> additional_properties;
 	};
 
 public:
@@ -104,6 +119,7 @@ public:
 		if (schema_id_val) {
 			schema_id = yyjson_get_sint(schema_id_val);
 		}
+
 		return string();
 	}
 

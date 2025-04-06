@@ -103,6 +103,7 @@ public:
 {BASE_CLASS_PARSING}
 {REQUIRED_PROPERTIES}
 {OPTIONAL_PROPERTIES}
+{ADDITIONAL_PROPERTIES}
         return string();
     }}
 public:
@@ -110,6 +111,26 @@ public:
 public:
 {PROPERTY_VARIABLES}
 }};
+"""
+
+"""
+    SnapshotReference tmp;
+    error = tmp.TryFromJSON(val);
+    if (!error.empty()) {
+        return error;
+    }
+"""
+
+ADDITIONAL_PROPERTIES_FORMAT = """
+{HANDLED_PROPERTIES}
+size_t idx, max;
+yyjson_val *key, *val;
+yyjson_obj_foreach(obj, idx, max, key, val) {{
+    auto key_str = yyjson_get_str(key);
+    {SKIP_HANDLED_PROPERTIES}
+    {PARSE_PROPERTY}
+    additional_properties[key_str] = tmp;
+}}
 """
 
 
@@ -534,12 +555,49 @@ if (!{variable_name}_val) {{
             )
         return '\n'.join(res)
 
+    def generate_additional_properties(
+        self, properties: List[str], additional_properties: Property, referenced_schemas: set
+    ) -> str:
+        if not additional_properties:
+            return ''
+
+        if properties:
+            handled_properties = f"""case_insensitive_set_t handled_properties {{
+    {', '.join(f'"{x}"' for x in properties)}
+}};
+"""
+            skip_handled_properties = """if (handled_properties.count(key_str)) {
+    continue;
+}"""
+        else:
+            handled_properties = ''
+            skip_handled_properties = ''
+
+        if additional_properties.type != Property.Type.SCHEMA_REFERENCE:
+            item_definition = self.generate_item_parse(additional_properties, 'val', referenced_schemas)
+            item_definition = f'\tauto tmp = {item_definition};\n'
+        else:
+            schema_property = cast(SchemaReferenceProperty, additional_properties)
+            referenced_schemas.add(schema_property.ref)
+            item_definition = f'\t{schema_property.ref} tmp;\n'
+            item_definition += """error = tmp.TryFromJSON(val);
+if (!error.empty()) {
+    return error;
+}"""
+
+        return ADDITIONAL_PROPERTIES_FORMAT.format(
+            HANDLED_PROPERTIES=handled_properties,
+            SKIP_HANDLED_PROPERTIES=skip_handled_properties,
+            PARSE_PROPERTY=item_definition,
+        )
+
     def generate_variable_type(self, schema: Property) -> str:
         if schema.type == Property.Type.OBJECT:
             object_property = cast(ObjectProperty, schema)
             assert not object_property.properties
-            if object_property.additional_properties and object_property.additional_properties.is_string():
-                return 'case_insensitive_map_t<string>'
+            if object_property.additional_properties:
+                variable_type = self.generate_variable_type(object_property.additional_properties)
+                return f'case_insensitive_map_t<{variable_type}>'
             return 'yyjson_val *'
         elif schema.type == Property.Type.ARRAY:
             array_property = cast(ArrayProperty, schema)
@@ -592,6 +650,7 @@ if (!{variable_name}_val) {{
             BASE_CLASS_PARSING='',
             REQUIRED_PROPERTIES=body,
             OPTIONAL_PROPERTIES='',
+            ADDITIONAL_PROPERTIES='',
             BASE_CLASS_VARIABLES='',
             PROPERTY_VARIABLES=variable_definition,
         )
@@ -615,6 +674,7 @@ if (!{variable_name}_val) {{
             BASE_CLASS_PARSING='',
             REQUIRED_PROPERTIES=variable_parsing,
             OPTIONAL_PROPERTIES='',
+            ADDITIONAL_PROPERTIES='',
             BASE_CLASS_VARIABLES='',
             PROPERTY_VARIABLES=variable_definition,
         )
@@ -672,6 +732,11 @@ if (!{variable_name}_val) {{
         optional_property_parsing = self.generate_optional_properties(name, optional_properties, referenced_schemas)
         optional_property_parsing = '\n'.join([f'\t{x}' for x in optional_property_parsing.split('\n')])
 
+        additional_property_parsing = self.generate_additional_properties(
+            object_property.properties.keys(), object_property.additional_properties, referenced_schemas
+        )
+        additional_property_parsing = '\n'.join([f'\t{x}' for x in additional_property_parsing.split('\n')])
+
         if any([x.startswith('Object') for x in referenced_schemas]):
             print("referenced_schemas", referenced_schemas)
 
@@ -696,12 +761,17 @@ if (!{variable_name}_val) {{
             item_name = to_snake_case(item.ref)
             variable_definitions.append(f'\tbool has_{safe_cpp_name(item_name)} = false;')
 
+        if object_property.additional_properties:
+            variable_type = self.generate_variable_type(object_property.additional_properties)
+            variable_definitions.append(f'\tcase_insensitive_map_t<{variable_type}> additional_properties;')
+
         class_definition = CLASS_FORMAT.format(
             CLASS_NAME=name,
             NESTED_CLASSES=nested_classes,
             BASE_CLASS_PARSING='\n'.join(base_class_parsing),
             REQUIRED_PROPERTIES=required_property_parsing,
             OPTIONAL_PROPERTIES=optional_property_parsing,
+            ADDITIONAL_PROPERTIES=additional_property_parsing,
             BASE_CLASS_VARIABLES='\n'.join(base_class_variables),
             PROPERTY_VARIABLES='\n'.join(variable_definitions),
         )

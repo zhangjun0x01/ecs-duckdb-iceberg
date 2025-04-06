@@ -55,6 +55,7 @@ public:
 		if (last_column_id_val) {
 			last_column_id = yyjson_get_sint(last_column_id_val);
 		}
+
 		return string();
 	}
 

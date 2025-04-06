@@ -51,6 +51,7 @@ public:
 		if (spec_id_val) {
 			spec_id = yyjson_get_sint(spec_id_val);
 		}
+
 		return string();
 	}
 

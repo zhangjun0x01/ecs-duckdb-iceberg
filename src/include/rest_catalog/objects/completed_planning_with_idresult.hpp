@@ -41,6 +41,7 @@ public:
 			if (plan_id_val) {
 				plan_id = yyjson_get_str(plan_id_val);
 			}
+
 			return string();
 		}
 

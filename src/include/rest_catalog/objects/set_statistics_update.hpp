@@ -55,6 +55,7 @@ public:
 		if (snapshot_id_val) {
 			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		}
+
 		return string();
 	}
 

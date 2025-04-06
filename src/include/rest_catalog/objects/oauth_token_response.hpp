@@ -65,6 +65,7 @@ public:
 		if (scope_val) {
 			scope = yyjson_get_str(scope_val);
 		}
+
 		return string();
 	}
 

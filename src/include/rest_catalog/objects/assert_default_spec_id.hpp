@@ -46,6 +46,7 @@ public:
 		if (type_val) {
 			type = yyjson_get_str(type_val);
 		}
+
 		return string();
 	}
 

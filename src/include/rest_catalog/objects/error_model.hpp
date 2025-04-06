@@ -58,6 +58,7 @@ public:
 				stack.push_back(tmp);
 			}
 		}
+
 		return string();
 	}
 

@@ -52,6 +52,7 @@ public:
 				endpoints.push_back(tmp);
 			}
 		}
+
 		return string();
 	}
 

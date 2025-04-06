@@ -94,6 +94,7 @@ public:
 				stats_fields.push_back(tmp);
 			}
 		}
+
 		return string();
 	}
 

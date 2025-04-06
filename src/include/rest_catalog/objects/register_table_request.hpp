@@ -46,6 +46,7 @@ public:
 		if (overwrite_val) {
 			overwrite = yyjson_get_bool(overwrite_val);
 		}
+
 		return string();
 	}
 

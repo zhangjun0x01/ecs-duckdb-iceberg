@@ -82,8 +82,8 @@ public:
 	}
 
 public:
-	Object7 object_7;
 	IcebergErrorResponse iceberg_error_response;
+	Object7 object_7;
 
 public:
 };

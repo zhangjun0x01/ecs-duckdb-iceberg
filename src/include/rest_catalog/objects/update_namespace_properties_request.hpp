@@ -45,6 +45,7 @@ public:
 		if (updates_val) {
 			updates = parse_object_of_strings(updates_val);
 		}
+
 		return string();
 	}
 

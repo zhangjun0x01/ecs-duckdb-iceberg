@@ -88,14 +88,14 @@ public:
 	}
 
 public:
-	SetLocationUpdate set_location_update;
+	SetPropertiesUpdate set_properties_update;
 	AssignUUIDUpdate assign_uuidupdate;
 	AddViewVersionUpdate add_view_version_update;
-	SetPropertiesUpdate set_properties_update;
-	UpgradeFormatVersionUpdate upgrade_format_version_update;
 	AddSchemaUpdate add_schema_update;
 	SetCurrentViewVersionUpdate set_current_view_version_update;
 	RemovePropertiesUpdate remove_properties_update;
+	SetLocationUpdate set_location_update;
+	UpgradeFormatVersionUpdate upgrade_format_version_update;
 
 public:
 	bool has_assign_uuidupdate = false;

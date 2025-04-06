@@ -54,6 +54,7 @@ public:
 				namespaces.push_back(tmp);
 			}
 		}
+
 		return string();
 	}
 

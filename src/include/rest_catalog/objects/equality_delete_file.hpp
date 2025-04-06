@@ -52,6 +52,7 @@ public:
 				equality_ids.push_back(tmp);
 			}
 		}
+
 		return string();
 	}
 

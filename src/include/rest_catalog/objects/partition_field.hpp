@@ -56,6 +56,7 @@ public:
 		if (field_id_val) {
 			field_id = yyjson_get_sint(field_id_val);
 		}
+
 		return string();
 	}
 

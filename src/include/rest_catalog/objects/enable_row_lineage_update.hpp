@@ -40,6 +40,7 @@ public:
 		if (action_val) {
 			action = yyjson_get_str(action_val);
 		}
+
 		return string();
 	}
 

@@ -68,6 +68,7 @@ public:
 		if (metadata_val) {
 			metadata = parse_object_of_strings(metadata_val);
 		}
+
 		return string();
 	}
 

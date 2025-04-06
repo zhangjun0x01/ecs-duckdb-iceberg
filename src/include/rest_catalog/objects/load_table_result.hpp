@@ -65,6 +65,7 @@ public:
 				storage_credentials.push_back(tmp);
 			}
 		}
+
 		return string();
 	}
 

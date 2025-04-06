@@ -52,6 +52,7 @@ public:
 					identifier_field_ids.push_back(tmp);
 				}
 			}
+
 			return string();
 		}
 

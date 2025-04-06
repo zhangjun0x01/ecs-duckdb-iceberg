@@ -85,6 +85,7 @@ public:
 		if (default_catalog_val) {
 			default_catalog = yyjson_get_str(default_catalog_val);
 		}
+
 		return string();
 	}
 

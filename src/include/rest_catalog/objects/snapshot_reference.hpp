@@ -56,6 +56,7 @@ public:
 		if (min_snapshots_to_keep_val) {
 			min_snapshots_to_keep = yyjson_get_sint(min_snapshots_to_keep_val);
 		}
+
 		return string();
 	}
 

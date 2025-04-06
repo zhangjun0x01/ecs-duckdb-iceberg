@@ -45,6 +45,7 @@ public:
 		if (error_uri_val) {
 			error_uri = yyjson_get_str(error_uri_val);
 		}
+
 		return string();
 	}
 

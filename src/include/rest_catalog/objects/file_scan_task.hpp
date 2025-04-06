@@ -55,6 +55,7 @@ public:
 		if (residual_filter_val) {
 			residual_filter = residual_filter_val;
 		}
+
 		return string();
 	}
 

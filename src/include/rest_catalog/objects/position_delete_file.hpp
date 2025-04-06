@@ -51,6 +51,7 @@ public:
 		if (content_size_in_bytes_val) {
 			content_size_in_bytes = yyjson_get_sint(content_size_in_bytes_val);
 		}
+
 		return string();
 	}
 

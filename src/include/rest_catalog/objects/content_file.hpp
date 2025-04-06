@@ -107,6 +107,7 @@ public:
 		if (sort_order_id_val) {
 			sort_order_id = yyjson_get_sint(sort_order_id_val);
 		}
+
 		return string();
 	}
 

@@ -54,6 +54,7 @@ public:
 				identifiers.push_back(tmp);
 			}
 		}
+
 		return string();
 	}
 

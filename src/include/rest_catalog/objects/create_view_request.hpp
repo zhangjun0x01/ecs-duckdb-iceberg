@@ -66,6 +66,7 @@ public:
 		if (location_val) {
 			location = yyjson_get_str(location_val);
 		}
+
 		return string();
 	}
 

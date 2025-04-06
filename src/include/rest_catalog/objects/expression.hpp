@@ -79,12 +79,12 @@ public:
 	}
 
 public:
+	NotExpression not_expression;
+	LiteralExpression literal_expression;
+	AndOrExpression and_or_expression;
 	UnaryExpression unary_expression;
 	FalseExpression false_expression;
-	AndOrExpression and_or_expression;
 	SetExpression set_expression;
-	LiteralExpression literal_expression;
-	NotExpression not_expression;
 	TrueExpression true_expression;
 
 public:

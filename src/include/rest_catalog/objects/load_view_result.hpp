@@ -50,6 +50,7 @@ public:
 		if (config_val) {
 			config = parse_object_of_strings(config_val);
 		}
+
 		return string();
 	}
 
