@@ -32,12 +32,10 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		error = scan_report.TryFromJSON(obj);
 		if (error.empty()) {
 			has_scan_report = true;
 		}
-
 		error = commit_report.TryFromJSON(obj);
 		if (error.empty()) {
 			has_commit_report = true;

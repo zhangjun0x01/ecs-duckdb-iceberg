@@ -55,7 +55,8 @@ public:
 
 		auto filter_val = yyjson_obj_get(obj, "filter");
 		if (filter_val) {
-			error = filter.TryFromJSON(filter_val);
+			filter = make_uniq<Expression>();
+			error = filter->TryFromJSON(filter_val);
 			if (!error.empty()) {
 				return error;
 			}
@@ -103,7 +104,7 @@ public:
 public:
 	bool case_sensitive;
 	int64_t end_snapshot_id;
-	Expression filter;
+	unique_ptr<Expression> filter;
 	vector<FieldName> select;
 	int64_t snapshot_id;
 	int64_t start_snapshot_id;

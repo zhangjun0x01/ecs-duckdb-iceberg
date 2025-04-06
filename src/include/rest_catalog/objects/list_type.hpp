@@ -50,7 +50,8 @@ public:
 		if (!element_val) {
 			return "ListType required property 'element' is missing";
 		} else {
-			error = element.TryFromJSON(element_val);
+			element = make_uniq<Type>();
+			error = element->TryFromJSON(element_val);
 			if (!error.empty()) {
 				return error;
 			}
@@ -68,7 +69,7 @@ public:
 
 public:
 public:
-	Type element;
+	unique_ptr<Type> element;
 	int64_t element_id;
 	bool element_required;
 	string type;

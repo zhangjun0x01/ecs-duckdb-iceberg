@@ -70,12 +70,10 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		error = scan_tasks.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;
 		}
-
 		error = object_5.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;

@@ -32,12 +32,10 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		error = oauth_client_credentials_request.TryFromJSON(obj);
 		if (error.empty()) {
 			has_oauth_client_credentials_request = true;
 		}
-
 		error = oauth_token_exchange_request.TryFromJSON(obj);
 		if (error.empty()) {
 			has_oauth_token_exchange_request = true;
@@ -51,8 +49,8 @@ public:
 	}
 
 public:
-	OAuthTokenExchangeRequest oauth_token_exchange_request;
 	OAuthClientCredentialsRequest oauth_client_credentials_request;
+	OAuthTokenExchangeRequest oauth_token_exchange_request;
 
 public:
 	bool has_oauth_client_credentials_request = false;

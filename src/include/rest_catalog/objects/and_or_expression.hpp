@@ -47,7 +47,8 @@ public:
 		if (!left_val) {
 			return "AndOrExpression required property 'left' is missing";
 		} else {
-			error = left.TryFromJSON(left_val);
+			left = make_uniq<Expression>();
+			error = left->TryFromJSON(left_val);
 			if (!error.empty()) {
 				return error;
 			}
@@ -57,7 +58,8 @@ public:
 		if (!right_val) {
 			return "AndOrExpression required property 'right' is missing";
 		} else {
-			error = right.TryFromJSON(right_val);
+			right = make_uniq<Expression>();
+			error = right->TryFromJSON(right_val);
 			if (!error.empty()) {
 				return error;
 			}
@@ -68,8 +70,8 @@ public:
 
 public:
 public:
-	Expression left;
-	Expression right;
+	unique_ptr<Expression> left;
+	unique_ptr<Expression> right;
 	ExpressionType type;
 };
 

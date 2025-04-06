@@ -51,7 +51,8 @@ public:
 		if (!type_val) {
 			return "StructField required property 'type' is missing";
 		} else {
-			error = type.TryFromJSON(type_val);
+			type = make_uniq<Type>();
+			error = type->TryFromJSON(type_val);
 			if (!error.empty()) {
 				return error;
 			}
@@ -95,7 +96,7 @@ public:
 	PrimitiveTypeValue initial_default;
 	string name;
 	bool required;
-	Type type;
+	unique_ptr<Type> type;
 	PrimitiveTypeValue write_default;
 };
 

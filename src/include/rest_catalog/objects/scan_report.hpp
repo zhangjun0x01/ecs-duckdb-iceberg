@@ -51,7 +51,8 @@ public:
 		if (!filter_val) {
 			return "ScanReport required property 'filter' is missing";
 		} else {
-			error = filter.TryFromJSON(filter_val);
+			filter = make_uniq<Expression>();
+			error = filter->TryFromJSON(filter_val);
 			if (!error.empty()) {
 				return error;
 			}
@@ -110,7 +111,7 @@ public:
 
 public:
 public:
-	Expression filter;
+	unique_ptr<Expression> filter;
 	case_insensitive_map_t<string> metadata;
 	Metrics metrics;
 	vector<int64_t> projected_field_ids;

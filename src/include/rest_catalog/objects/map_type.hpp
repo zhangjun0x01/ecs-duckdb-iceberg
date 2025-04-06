@@ -50,7 +50,8 @@ public:
 		if (!key_val) {
 			return "MapType required property 'key' is missing";
 		} else {
-			error = key.TryFromJSON(key_val);
+			key = make_uniq<Type>();
+			error = key->TryFromJSON(key_val);
 			if (!error.empty()) {
 				return error;
 			}
@@ -67,7 +68,8 @@ public:
 		if (!value_val) {
 			return "MapType required property 'value' is missing";
 		} else {
-			error = value.TryFromJSON(value_val);
+			value = make_uniq<Type>();
+			error = value->TryFromJSON(value_val);
 			if (!error.empty()) {
 				return error;
 			}
@@ -85,10 +87,10 @@ public:
 
 public:
 public:
-	Type key;
+	unique_ptr<Type> key;
 	int64_t key_id;
 	string type;
-	Type value;
+	unique_ptr<Type> value;
 	int64_t value_id;
 	bool value_required;
 };

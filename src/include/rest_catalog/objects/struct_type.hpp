@@ -47,12 +47,13 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(fields_val, idx, max, val) {
 
-				StructField tmp;
+				auto tmp_p = make_uniq<StructField>();
+				auto &tmp = *tmp_p;
 				error = tmp.TryFromJSON(val);
 				if (!error.empty()) {
 					return error;
 				}
-				fields.push_back(tmp);
+				fields.push_back(std::move(tmp_p));
 			}
 		}
 
@@ -61,7 +62,7 @@ public:
 
 public:
 public:
-	vector<StructField> fields;
+	vector<unique_ptr<StructField>> fields;
 	string type;
 };
 

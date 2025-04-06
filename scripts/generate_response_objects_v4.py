@@ -371,13 +371,16 @@ class ResponseObjectsGenerator:
             class_name = item.ref
             base_classes.add(class_name)
             property_name = to_snake_case(class_name)
-            res.append(
-                f"""
-error = {property_name}.TryFromJSON(obj);
-if (!error.empty()) {{
-    return error;
-}}"""
-            )
+            result = ''
+            dereference_style = '.'
+            if item.ref in self.recursive_schemas:
+                result = f'{property_name} = make_uniq<{item.ref}>();\n'
+                dereference_style = '->'
+            result += f"""\terror = {property_name}{dereference_style}TryFromJSON(obj);
+\tif (!error.empty()) {{
+\t\treturn error;
+\t}}"""
+            res.append(result)
         return '\n'.join(res)
 
     def generate_any_of(self, name: str, property: Property, base_classes: set):
@@ -391,13 +394,16 @@ if (!error.empty()) {{
             base_classes.add(class_name)
             property_name = to_snake_case(class_name)
             all_base_classes.add(property_name)
-            res.append(
-                f"""
-error = {property_name}.TryFromJSON(obj);
-if (error.empty()) {{
-    has_{property_name} = true;
-}}"""
-            )
+            result = ''
+            dereference_style = '.'
+            if item.ref in self.recursive_schemas:
+                result = f'{property_name} = make_uniq<{item.ref}>();\n'
+                dereference_style = '->'
+            result += f"""\terror = {property_name}{dereference_style}TryFromJSON(obj);
+\tif (error.empty()) {{
+\t\thas_{property_name} = true;
+\t}}"""
+            res.append(result)
         condition = ' && '.join(f'!has_{x}' for x in sorted(list(all_base_classes)))
         res.append(
             f"""
@@ -418,13 +424,17 @@ if ({condition}) {{
             class_name = item.ref
             base_classes.add(class_name)
             property_name = to_snake_case(class_name)
-            res.append(
-                f"""\terror = {property_name}.TryFromJSON(obj);
+            result = ''
+            dereference_style = '.'
+            if item.ref in self.recursive_schemas:
+                result = f'{property_name} = make_uniq<{item.ref}>();\n'
+                dereference_style = '->'
+            result += f"""\terror = {property_name}{dereference_style}TryFromJSON(obj);
 \tif (error.empty()) {{
 \t\thas_{property_name} = true;
 \t\tbreak;
 \t}}"""
-            )
+            res.append(result)
         res.append(f'\treturn "{name} failed to parse, none of the oneOf candidates matched";')
         res.append('} while (false);')
         return '\n'.join(res)
@@ -437,25 +447,31 @@ if ({condition}) {{
         # Then do the array iteration
         res.append(f'yyjson_arr_foreach({array_name}, idx, max, val) {{')
 
+        assignment = 'tmp'
         if item_type.type != Property.Type.SCHEMA_REFERENCE:
             item_definition = self.generate_item_parse(item_type, 'val', referenced_schemas)
             item_definition = f'\tauto tmp = {item_definition};\n'
         else:
             schema_property = cast(SchemaReferenceProperty, item_type)
             referenced_schemas.add(schema_property.ref)
-            item_definition = f'\t{schema_property.ref} tmp;\n'
+            item_definition = ''
+            if schema_property.ref in self.recursive_schemas:
+                item_definition = f'\tauto tmp_p = make_uniq<{schema_property.ref}>();\n'
+                item_definition += f'\tauto &tmp = *tmp_p;'
+                assignment = 'std::move(tmp_p)'
+            else:
+                item_definition = f'\t{schema_property.ref} tmp;\n'
             item_definition += """error = tmp.TryFromJSON(val);
 if (!error.empty()) {
     return error;
 }"""
 
         ARRAY_PUSHBACK_FORMAT = """
-{ITEM_DEFINITION}\t{ARRAY_VARIABLE}.push_back(tmp);"""
+{ITEM_DEFINITION}\t{ARRAY_VARIABLE}.push_back({ASSIGNMENT});"""
 
         body = ''
         body += ARRAY_PUSHBACK_FORMAT.format(
-            ITEM_DEFINITION=item_definition,
-            ARRAY_VARIABLE=destination_name,
+            ITEM_DEFINITION=item_definition, ARRAY_VARIABLE=destination_name, ASSIGNMENT=assignment
         )
         res.append(body)
         res.append('}')
@@ -508,7 +524,12 @@ if (!error.empty()) {
         elif property.type == Property.Type.SCHEMA_REFERENCE:
             schema_property = cast(SchemaReferenceProperty, property)
             referenced_schemas.add(schema_property.ref)
-            result = f"""error = {target}.TryFromJSON({source});
+            result = ''
+            dereference_style = '.'
+            if schema_property.ref in self.recursive_schemas:
+                result = f'{target} = make_uniq<{schema_property.ref}>();\n'
+                dereference_style = '->'
+            result += f"""error = {target}{dereference_style}TryFromJSON({source});
 if (!error.empty()) {{
     return error;
 }}"""
@@ -581,6 +602,9 @@ if (!{variable_name}_val) {{
         else:
             schema_property = cast(SchemaReferenceProperty, additional_properties)
             referenced_schemas.add(schema_property.ref)
+            if schema_property.ref in self.recursive_schemas:
+                print(f"Encountered recursive schema '{schema_property.ref}' in 'generate_additional_properties'")
+                exit(1)
             item_definition = f'\t{schema_property.ref} tmp;\n'
             item_definition += """error = tmp.TryFromJSON(val);
 if (!error.empty()) {
@@ -625,6 +649,8 @@ if (!error.empty()) {
                 exit(1)
         elif schema.type == Property.Type.SCHEMA_REFERENCE:
             schema_property = cast(SchemaReferenceProperty, schema)
+            if schema_property.ref in self.recursive_schemas:
+                return f'unique_ptr<{schema_property.ref}>'
             return schema_property.ref
         else:
             print(f"Unrecognized 'generate_variable_type' type {schema.type}")
@@ -833,8 +859,9 @@ if __name__ == '__main__':
     generator = ResponseObjectsGenerator(API_SPEC_PATH)
     generator.parse_all_schemas()
 
-    # schema = generator.parsed_schemas['AddPartitionSpecUpdate']
-    # generator.generate_schema(schema, 'AddPartitionSpecUpdate')
+    # schema = generator.parsed_schemas['AndOrExpression']
+    # content = generator.generate_schema(schema, 'AndOrExpression')
+    # print(content)
     # exit(1)
 
     generator.generate_all_schemas()

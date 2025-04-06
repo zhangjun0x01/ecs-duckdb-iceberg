@@ -38,42 +38,34 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		error = assign_uuidupdate.TryFromJSON(obj);
 		if (error.empty()) {
 			has_assign_uuidupdate = true;
 		}
-
 		error = upgrade_format_version_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_upgrade_format_version_update = true;
 		}
-
 		error = add_schema_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_add_schema_update = true;
 		}
-
 		error = set_location_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_set_location_update = true;
 		}
-
 		error = set_properties_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_set_properties_update = true;
 		}
-
 		error = remove_properties_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_remove_properties_update = true;
 		}
-
 		error = add_view_version_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_add_view_version_update = true;
 		}
-
 		error = set_current_view_version_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_set_current_view_version_update = true;
@@ -89,14 +81,14 @@ public:
 	}
 
 public:
-	AddViewVersionUpdate add_view_version_update;
-	RemovePropertiesUpdate remove_properties_update;
-	SetPropertiesUpdate set_properties_update;
-	SetLocationUpdate set_location_update;
-	SetCurrentViewVersionUpdate set_current_view_version_update;
-	UpgradeFormatVersionUpdate upgrade_format_version_update;
 	AssignUUIDUpdate assign_uuidupdate;
+	AddViewVersionUpdate add_view_version_update;
 	AddSchemaUpdate add_schema_update;
+	SetCurrentViewVersionUpdate set_current_view_version_update;
+	SetPropertiesUpdate set_properties_update;
+	RemovePropertiesUpdate remove_properties_update;
+	SetLocationUpdate set_location_update;
+	UpgradeFormatVersionUpdate upgrade_format_version_update;
 
 public:
 	bool has_assign_uuidupdate = false;

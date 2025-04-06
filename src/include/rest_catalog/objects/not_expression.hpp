@@ -47,7 +47,8 @@ public:
 		if (!child_val) {
 			return "NotExpression required property 'child' is missing";
 		} else {
-			error = child.TryFromJSON(child_val);
+			child = make_uniq<Expression>();
+			error = child->TryFromJSON(child_val);
 			if (!error.empty()) {
 				return error;
 			}
@@ -58,7 +59,7 @@ public:
 
 public:
 public:
-	Expression child;
+	unique_ptr<Expression> child;
 	ExpressionType type;
 };
 

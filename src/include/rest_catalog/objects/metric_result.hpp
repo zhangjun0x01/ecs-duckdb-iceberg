@@ -32,12 +32,10 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		error = counter_result.TryFromJSON(obj);
 		if (error.empty()) {
 			has_counter_result = true;
 		}
-
 		error = timer_result.TryFromJSON(obj);
 		if (error.empty()) {
 			has_timer_result = true;

@@ -50,102 +50,82 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		error = assign_uuidupdate.TryFromJSON(obj);
 		if (error.empty()) {
 			has_assign_uuidupdate = true;
 		}
-
 		error = upgrade_format_version_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_upgrade_format_version_update = true;
 		}
-
 		error = add_schema_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_add_schema_update = true;
 		}
-
 		error = set_current_schema_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_set_current_schema_update = true;
 		}
-
 		error = add_partition_spec_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_add_partition_spec_update = true;
 		}
-
 		error = set_default_spec_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_set_default_spec_update = true;
 		}
-
 		error = add_sort_order_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_add_sort_order_update = true;
 		}
-
 		error = set_default_sort_order_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_set_default_sort_order_update = true;
 		}
-
 		error = add_snapshot_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_add_snapshot_update = true;
 		}
-
 		error = set_snapshot_ref_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_set_snapshot_ref_update = true;
 		}
-
 		error = remove_snapshots_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_remove_snapshots_update = true;
 		}
-
 		error = remove_snapshot_ref_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_remove_snapshot_ref_update = true;
 		}
-
 		error = set_location_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_set_location_update = true;
 		}
-
 		error = set_properties_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_set_properties_update = true;
 		}
-
 		error = remove_properties_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_remove_properties_update = true;
 		}
-
 		error = set_statistics_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_set_statistics_update = true;
 		}
-
 		error = remove_statistics_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_remove_statistics_update = true;
 		}
-
 		error = remove_partition_specs_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_remove_partition_specs_update = true;
 		}
-
 		error = remove_schemas_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_remove_schemas_update = true;
 		}
-
 		error = enable_row_lineage_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_enable_row_lineage_update = true;
@@ -165,26 +145,26 @@ public:
 	}
 
 public:
-	SetStatisticsUpdate set_statistics_update;
-	SetSnapshotRefUpdate set_snapshot_ref_update;
-	AddPartitionSpecUpdate add_partition_spec_update;
-	SetDefaultSortOrderUpdate set_default_sort_order_update;
-	RemovePartitionSpecsUpdate remove_partition_specs_update;
-	RemoveStatisticsUpdate remove_statistics_update;
-	RemoveSnapshotRefUpdate remove_snapshot_ref_update;
-	SetDefaultSpecUpdate set_default_spec_update;
-	SetCurrentSchemaUpdate set_current_schema_update;
-	RemovePropertiesUpdate remove_properties_update;
-	SetPropertiesUpdate set_properties_update;
-	SetLocationUpdate set_location_update;
+	EnableRowLineageUpdate enable_row_lineage_update;
+	AssignUUIDUpdate assign_uuidupdate;
 	AddSchemaUpdate add_schema_update;
 	AddSnapshotUpdate add_snapshot_update;
-	RemoveSnapshotsUpdate remove_snapshots_update;
-	AddSortOrderUpdate add_sort_order_update;
-	EnableRowLineageUpdate enable_row_lineage_update;
+	SetPropertiesUpdate set_properties_update;
+	SetSnapshotRefUpdate set_snapshot_ref_update;
 	UpgradeFormatVersionUpdate upgrade_format_version_update;
-	AssignUUIDUpdate assign_uuidupdate;
+	RemoveStatisticsUpdate remove_statistics_update;
+	RemoveSnapshotRefUpdate remove_snapshot_ref_update;
+	AddSortOrderUpdate add_sort_order_update;
+	SetStatisticsUpdate set_statistics_update;
 	RemoveSchemasUpdate remove_schemas_update;
+	RemoveSnapshotsUpdate remove_snapshots_update;
+	SetDefaultSortOrderUpdate set_default_sort_order_update;
+	SetCurrentSchemaUpdate set_current_schema_update;
+	AddPartitionSpecUpdate add_partition_spec_update;
+	RemovePartitionSpecsUpdate remove_partition_specs_update;
+	RemovePropertiesUpdate remove_properties_update;
+	SetLocationUpdate set_location_update;
+	SetDefaultSpecUpdate set_default_spec_update;
 
 public:
 	bool has_assign_uuidupdate = false;

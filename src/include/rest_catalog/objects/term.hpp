@@ -50,8 +50,8 @@ public:
 	}
 
 public:
-	TransformTerm transform_term;
 	Reference reference;
+	TransformTerm transform_term;
 
 public:
 	bool has_reference = false;
