@@ -41,7 +41,7 @@ public:
 		if (!partition_statistics_val) {
 		return "SetPartitionStatisticsUpdate required property 'partition_statistics' is missing");
 		}
-		error = partition_statistics_file.TryFromJSON(partition_statistics_val);
+		error = partition_statistics.TryFromJSON(partition_statistics_val);
 		if (!error.empty()) {
 			return error;
 		}

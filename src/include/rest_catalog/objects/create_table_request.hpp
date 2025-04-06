@@ -63,7 +63,7 @@ public:
 
 		auto write_order_val = yyjson_obj_get(obj, "write_order");
 		if (write_order_val) {
-			error = sort_order.TryFromJSON(write_order_val);
+			error = write_order.TryFromJSON(write_order_val);
 			if (!error.empty()) {
 				return error;
 			}

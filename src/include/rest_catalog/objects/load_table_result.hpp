@@ -36,7 +36,7 @@ public:
 		if (!metadata_val) {
 		return "LoadTableResult required property 'metadata' is missing");
 		}
-		error = table_metadata.TryFromJSON(metadata_val);
+		error = metadata.TryFromJSON(metadata_val);
 		if (!error.empty()) {
 			return error;
 		}

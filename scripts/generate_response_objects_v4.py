@@ -22,6 +22,7 @@ CPP_KEYWORDS = {
     'delete',
     'final',
     'override',
+    'error',  # add 'error' to avoid conflicts with the 'error' variable in TryFromJSON
 }
 
 ###
@@ -479,8 +480,7 @@ if (!error.empty()) {
         elif property.type == Property.Type.SCHEMA_REFERENCE:
             schema_property = cast(SchemaReferenceProperty, property)
             referenced_schemas.add(schema_property.ref)
-            variable_name = to_snake_case(schema_property.ref)
-            result = f"""error = {variable_name}.TryFromJSON({source});
+            result = f"""error = {target}.TryFromJSON({source});
 if (!error.empty()) {{
     return error;
 }}"""

@@ -55,9 +55,9 @@ public:
 	}
 
 public:
+	CompletedPlanningResult completed_planning_result;
 	EmptyPlanningResult empty_planning_result;
 	FailedPlanningResult failed_planning_result;
-	CompletedPlanningResult completed_planning_result;
 
 public:
 	bool has_completed_planning_result = false;

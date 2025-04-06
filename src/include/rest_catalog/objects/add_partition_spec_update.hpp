@@ -41,7 +41,7 @@ public:
 		if (!spec_val) {
 		return "AddPartitionSpecUpdate required property 'spec' is missing");
 		}
-		error = partition_spec.TryFromJSON(spec_val);
+		error = spec.TryFromJSON(spec_val);
 		if (!error.empty()) {
 			return error;
 		}

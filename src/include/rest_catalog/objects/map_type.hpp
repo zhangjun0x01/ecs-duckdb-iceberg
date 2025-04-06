@@ -47,7 +47,7 @@ public:
 		if (!key_val) {
 		return "MapType required property 'key' is missing");
 		}
-		error = type.TryFromJSON(key_val);
+		error = key.TryFromJSON(key_val);
 		if (!error.empty()) {
 			return error;
 		}
@@ -62,7 +62,7 @@ public:
 		if (!value_val) {
 		return "MapType required property 'value' is missing");
 		}
-		error = type.TryFromJSON(value_val);
+		error = value.TryFromJSON(value_val);
 		if (!error.empty()) {
 			return error;
 		}

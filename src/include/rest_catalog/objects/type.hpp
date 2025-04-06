@@ -61,10 +61,10 @@ public:
 	}
 
 public:
-	StructType struct_type;
-	PrimitiveType primitive_type;
-	ListType list_type;
 	MapType map_type;
+	ListType list_type;
+	PrimitiveType primitive_type;
+	StructType struct_type;
 
 public:
 	bool has_primitive_type = false;

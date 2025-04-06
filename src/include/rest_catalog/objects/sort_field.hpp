@@ -52,7 +52,7 @@ public:
 		if (!direction_val) {
 		return "SortField required property 'direction' is missing");
 		}
-		error = sort_direction.TryFromJSON(direction_val);
+		error = direction.TryFromJSON(direction_val);
 		if (!error.empty()) {
 			return error;
 		}

@@ -51,7 +51,7 @@ public:
 
 		auto identifier_val = yyjson_obj_get(obj, "identifier");
 		if (identifier_val) {
-			error = table_identifier.TryFromJSON(identifier_val);
+			error = identifier.TryFromJSON(identifier_val);
 			if (!error.empty()) {
 				return error;
 			}

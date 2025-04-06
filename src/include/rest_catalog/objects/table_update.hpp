@@ -164,26 +164,26 @@ public:
 	}
 
 public:
+	SetDefaultSortOrderUpdate set_default_sort_order_update;
 	RemovePropertiesUpdate remove_properties_update;
-	SetDefaultSpecUpdate set_default_spec_update;
-	AddPartitionSpecUpdate add_partition_spec_update;
-	AssignUUIDUpdate assign_uuidupdate;
 	EnableRowLineageUpdate enable_row_lineage_update;
 	SetPropertiesUpdate set_properties_update;
-	RemoveSchemasUpdate remove_schemas_update;
+	AssignUUIDUpdate assign_uuidupdate;
+	RemoveSnapshotRefUpdate remove_snapshot_ref_update;
+	SetCurrentSchemaUpdate set_current_schema_update;
+	SetDefaultSpecUpdate set_default_spec_update;
+	SetSnapshotRefUpdate set_snapshot_ref_update;
+	RemoveSnapshotsUpdate remove_snapshots_update;
 	RemovePartitionSpecsUpdate remove_partition_specs_update;
+	AddPartitionSpecUpdate add_partition_spec_update;
+	UpgradeFormatVersionUpdate upgrade_format_version_update;
+	SetLocationUpdate set_location_update;
+	RemoveSchemasUpdate remove_schemas_update;
+	AddSchemaUpdate add_schema_update;
+	AddSortOrderUpdate add_sort_order_update;
 	RemoveStatisticsUpdate remove_statistics_update;
 	SetStatisticsUpdate set_statistics_update;
-	AddSortOrderUpdate add_sort_order_update;
-	RemoveSnapshotsUpdate remove_snapshots_update;
-	SetLocationUpdate set_location_update;
-	AddSchemaUpdate add_schema_update;
-	SetCurrentSchemaUpdate set_current_schema_update;
-	UpgradeFormatVersionUpdate upgrade_format_version_update;
 	AddSnapshotUpdate add_snapshot_update;
-	RemoveSnapshotRefUpdate remove_snapshot_ref_update;
-	SetDefaultSortOrderUpdate set_default_sort_order_update;
-	SetSnapshotRefUpdate set_snapshot_ref_update;
 
 public:
 	bool has_assign_uuidupdate = false;

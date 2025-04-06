@@ -36,7 +36,7 @@ public:
 		if (!type_val) {
 		return "AndOrExpression required property 'type' is missing");
 		}
-		error = expression_type.TryFromJSON(type_val);
+		error = type.TryFromJSON(type_val);
 		if (!error.empty()) {
 			return error;
 		}
@@ -45,7 +45,7 @@ public:
 		if (!left_val) {
 		return "AndOrExpression required property 'left' is missing");
 		}
-		error = expression.TryFromJSON(left_val);
+		error = left.TryFromJSON(left_val);
 		if (!error.empty()) {
 			return error;
 		}
@@ -54,7 +54,7 @@ public:
 		if (!right_val) {
 		return "AndOrExpression required property 'right' is missing");
 		}
-		error = expression.TryFromJSON(right_val);
+		error = right.TryFromJSON(right_val);
 		if (!error.empty()) {
 			return error;
 		}

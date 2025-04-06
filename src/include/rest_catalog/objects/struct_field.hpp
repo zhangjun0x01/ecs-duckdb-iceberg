@@ -66,7 +66,7 @@ public:
 
 		auto initial_default_val = yyjson_obj_get(obj, "initial_default");
 		if (initial_default_val) {
-			error = primitive_type_value.TryFromJSON(initial_default_val);
+			error = initial_default.TryFromJSON(initial_default_val);
 			if (!error.empty()) {
 				return error;
 			}
@@ -74,7 +74,7 @@ public:
 
 		auto write_default_val = yyjson_obj_get(obj, "write_default");
 		if (write_default_val) {
-			error = primitive_type_value.TryFromJSON(write_default_val);
+			error = write_default.TryFromJSON(write_default_val);
 			if (!error.empty()) {
 				return error;
 			}

@@ -35,7 +35,7 @@ public:
 		if (!_namespace_val) {
 		return "GetNamespaceResponse required property '_namespace' is missing");
 		}
-		error = namespace.TryFromJSON(_namespace_val);
+		error = _namespace.TryFromJSON(_namespace_val);
 		if (!error.empty()) {
 			return error;
 		}

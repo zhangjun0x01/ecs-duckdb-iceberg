@@ -35,7 +35,7 @@ public:
 		if (!type_val) {
 		return "TrueExpression required property 'type' is missing");
 		}
-		error = expression_type.TryFromJSON(type_val);
+		error = type.TryFromJSON(type_val);
 		if (!error.empty()) {
 			return error;
 		}

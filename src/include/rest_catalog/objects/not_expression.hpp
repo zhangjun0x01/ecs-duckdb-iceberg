@@ -36,7 +36,7 @@ public:
 		if (!type_val) {
 		return "NotExpression required property 'type' is missing");
 		}
-		error = expression_type.TryFromJSON(type_val);
+		error = type.TryFromJSON(type_val);
 		if (!error.empty()) {
 			return error;
 		}
@@ -45,7 +45,7 @@ public:
 		if (!child_val) {
 		return "NotExpression required property 'child' is missing");
 		}
-		error = expression.TryFromJSON(child_val);
+		error = child.TryFromJSON(child_val);
 		if (!error.empty()) {
 			return error;
 		}

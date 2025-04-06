@@ -54,7 +54,7 @@ public:
 
 		auto filter_val = yyjson_obj_get(obj, "filter");
 		if (filter_val) {
-			error = expression.TryFromJSON(filter_val);
+			error = filter.TryFromJSON(filter_val);
 			if (!error.empty()) {
 				return error;
 			}

@@ -47,7 +47,7 @@ public:
 		if (!subject_token_type_val) {
 		return "OAuthTokenExchangeRequest required property 'subject_token_type' is missing");
 		}
-		error = token_type.TryFromJSON(subject_token_type_val);
+		error = subject_token_type.TryFromJSON(subject_token_type_val);
 		if (!error.empty()) {
 			return error;
 		}
@@ -59,7 +59,7 @@ public:
 
 		auto requested_token_type_val = yyjson_obj_get(obj, "requested_token_type");
 		if (requested_token_type_val) {
-			error = token_type.TryFromJSON(requested_token_type_val);
+			error = requested_token_type.TryFromJSON(requested_token_type_val);
 			if (!error.empty()) {
 				return error;
 			}
@@ -72,7 +72,7 @@ public:
 
 		auto actor_token_type_val = yyjson_obj_get(obj, "actor_token_type");
 		if (actor_token_type_val) {
-			error = token_type.TryFromJSON(actor_token_type_val);
+			error = actor_token_type.TryFromJSON(actor_token_type_val);
 			if (!error.empty()) {
 				return error;
 			}

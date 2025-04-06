@@ -51,7 +51,7 @@ public:
 		if (!term_val) {
 		return "TransformTerm required property 'term' is missing");
 		}
-		error = reference.TryFromJSON(term_val);
+		error = term.TryFromJSON(term_val);
 		if (!error.empty()) {
 			return error;
 		}

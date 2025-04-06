@@ -35,7 +35,7 @@ public:
 		if (!status_val) {
 		return "EmptyPlanningResult required property 'status' is missing");
 		}
-		error = plan_status.TryFromJSON(status_val);
+		error = status.TryFromJSON(status_val);
 		if (!error.empty()) {
 			return error;
 		}

@@ -41,7 +41,7 @@ public:
 		if (!statistics_val) {
 		return "SetStatisticsUpdate required property 'statistics' is missing");
 		}
-		error = statistics_file.TryFromJSON(statistics_val);
+		error = statistics.TryFromJSON(statistics_val);
 		if (!error.empty()) {
 			return error;
 		}

@@ -61,9 +61,9 @@ public:
 	}
 
 public:
-	EmptyPlanningResult empty_planning_result;
 	CompletedPlanningWithIDResult completed_planning_with_idresult;
 	AsyncPlanningResult async_planning_result;
+	EmptyPlanningResult empty_planning_result;
 	FailedPlanningResult failed_planning_result;
 
 public:

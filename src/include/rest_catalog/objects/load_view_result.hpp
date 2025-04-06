@@ -41,7 +41,7 @@ public:
 		if (!metadata_val) {
 		return "LoadViewResult required property 'metadata' is missing");
 		}
-		error = view_metadata.TryFromJSON(metadata_val);
+		error = metadata.TryFromJSON(metadata_val);
 		if (!error.empty()) {
 			return error;
 		}

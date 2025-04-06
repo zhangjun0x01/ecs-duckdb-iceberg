@@ -41,7 +41,7 @@ public:
 		if (!metadata_val) {
 		return "CommitTableResponse required property 'metadata' is missing");
 		}
-		error = table_metadata.TryFromJSON(metadata_val);
+		error = metadata.TryFromJSON(metadata_val);
 		if (!error.empty()) {
 			return error;
 		}

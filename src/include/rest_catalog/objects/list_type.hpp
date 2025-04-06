@@ -47,7 +47,7 @@ public:
 		if (!element_val) {
 		return "ListType required property 'element' is missing");
 		}
-		error = type.TryFromJSON(element_val);
+		error = element.TryFromJSON(element_val);
 		if (!error.empty()) {
 			return error;
 		}

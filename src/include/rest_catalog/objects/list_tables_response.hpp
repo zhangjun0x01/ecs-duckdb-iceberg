@@ -34,7 +34,7 @@ public:
 
 		auto next_page_token_val = yyjson_obj_get(obj, "next_page_token");
 		if (next_page_token_val) {
-			error = page_token.TryFromJSON(next_page_token_val);
+			error = next_page_token.TryFromJSON(next_page_token_val);
 			if (!error.empty()) {
 				return error;
 			}

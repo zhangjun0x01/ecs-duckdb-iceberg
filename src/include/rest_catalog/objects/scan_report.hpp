@@ -48,7 +48,7 @@ public:
 		if (!filter_val) {
 		return "ScanReport required property 'filter' is missing");
 		}
-		error = expression.TryFromJSON(filter_val);
+		error = filter.TryFromJSON(filter_val);
 		if (!error.empty()) {
 			return error;
 		}

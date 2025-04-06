@@ -85,7 +85,7 @@ public:
 		if (!summary_val) {
 		return "Snapshot required property 'summary' is missing");
 		}
-		error = object_2.TryFromJSON(summary_val);
+		error = summary.TryFromJSON(summary_val);
 		if (!error.empty()) {
 			return error;
 		}

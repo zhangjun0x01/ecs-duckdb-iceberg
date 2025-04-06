@@ -31,11 +31,11 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		auto error_val = yyjson_obj_get(obj, "error");
-		if (!error_val) {
-		return "IcebergErrorResponse required property 'error' is missing");
+		auto _error_val = yyjson_obj_get(obj, "_error");
+		if (!_error_val) {
+		return "IcebergErrorResponse required property '_error' is missing");
 		}
-		error = error_model.TryFromJSON(error_val);
+		error = _error.TryFromJSON(_error_val);
 		if (!error.empty()) {
 			return error;
 		}
@@ -45,7 +45,7 @@ public:
 
 public:
 public:
-	ErrorModel error;
+	ErrorModel _error;
 };
 
 } // namespace rest_api_objects

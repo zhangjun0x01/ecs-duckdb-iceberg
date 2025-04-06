@@ -153,7 +153,7 @@ public:
 
 		auto refs_val = yyjson_obj_get(obj, "refs");
 		if (refs_val) {
-			error = snapshot_references.TryFromJSON(refs_val);
+			error = refs.TryFromJSON(refs_val);
 			if (!error.empty()) {
 				return error;
 			}

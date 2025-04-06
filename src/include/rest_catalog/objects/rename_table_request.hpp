@@ -35,7 +35,7 @@ public:
 		if (!source_val) {
 		return "RenameTableRequest required property 'source' is missing");
 		}
-		error = table_identifier.TryFromJSON(source_val);
+		error = source.TryFromJSON(source_val);
 		if (!error.empty()) {
 			return error;
 		}
@@ -44,7 +44,7 @@ public:
 		if (!destination_val) {
 		return "RenameTableRequest required property 'destination' is missing");
 		}
-		error = table_identifier.TryFromJSON(destination_val);
+		error = destination.TryFromJSON(destination_val);
 		if (!error.empty()) {
 			return error;
 		}

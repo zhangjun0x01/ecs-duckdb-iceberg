@@ -76,7 +76,7 @@ public:
 		if (!default_namespace_val) {
 		return "ViewVersion required property 'default_namespace' is missing");
 		}
-		error = namespace.TryFromJSON(default_namespace_val);
+		error = default_namespace.TryFromJSON(default_namespace_val);
 		if (!error.empty()) {
 			return error;
 		}

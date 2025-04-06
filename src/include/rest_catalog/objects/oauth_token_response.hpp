@@ -50,7 +50,7 @@ public:
 
 		auto issued_token_type_val = yyjson_obj_get(obj, "issued_token_type");
 		if (issued_token_type_val) {
-			error = token_type.TryFromJSON(issued_token_type_val);
+			error = issued_token_type.TryFromJSON(issued_token_type_val);
 			if (!error.empty()) {
 				return error;
 			}

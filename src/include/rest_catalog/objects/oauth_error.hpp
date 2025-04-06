@@ -30,11 +30,11 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		auto error_val = yyjson_obj_get(obj, "error");
-		if (!error_val) {
-		return "OAuthError required property 'error' is missing");
+		auto _error_val = yyjson_obj_get(obj, "_error");
+		if (!_error_val) {
+		return "OAuthError required property '_error' is missing");
 		}
-		error = yyjson_get_str(error_val);
+		_error = yyjson_get_str(_error_val);
 
 		auto error_description_val = yyjson_obj_get(obj, "error_description");
 		if (error_description_val) {
@@ -50,7 +50,7 @@ public:
 
 public:
 public:
-	string error;
+	string _error;
 	string error_description;
 	string error_uri;
 };
