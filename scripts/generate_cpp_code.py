@@ -288,6 +288,7 @@ class CPPClass:
         #)
 
     def from_array_property(self, name: str, schema: ArrayProperty):
+        pass
         #assert schema.type == Property.Type.ARRAY
         #array_property = cast(ArrayProperty, schema)
 
@@ -315,6 +316,7 @@ class CPPClass:
         #)
 
     def from_primitive_property(self, name: str, schema: PrimitiveProperty):
+        pass
         #assert not schema.all_of
         #assert not schema.one_of
         #assert not schema.any_of
@@ -354,7 +356,7 @@ class CPPClass:
         res.extend([
             f'auto {required_property.name}_val = yyjson_obj_get(obj, "{required_property.name}");',
             f'if (!{required_property.name}_val) {{',
-            f'    return "{self.name} required property '{required_property.name}' is missing";',
+            f'\treturn "{self.name} required property '{required_property.name}' is missing";',
             '} else {',
         ])
         res.extend(required_property.body)
