@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class BaseUpdate {
 public:
-	BaseUpdate::BaseUpdate() {
+	BaseUpdate() {
 	}
 
 public:
 	static BaseUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		BaseUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -32,9 +33,10 @@ public:
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (!action_val) {
-		return "BaseUpdate required property 'action' is missing");
+			return "BaseUpdate required property 'action' is missing";
+		} else {
+			action = yyjson_get_str(action_val);
 		}
-		action = yyjson_get_str(action_val);
 
 		return string();
 	}

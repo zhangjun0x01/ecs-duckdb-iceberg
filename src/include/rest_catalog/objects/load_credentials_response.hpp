@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class LoadCredentialsResponse {
 public:
-	LoadCredentialsResponse::LoadCredentialsResponse() {
+	LoadCredentialsResponse() {
 	}
 
 public:
 	static LoadCredentialsResponse FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		LoadCredentialsResponse res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -33,18 +34,19 @@ public:
 
 		auto storage_credentials_val = yyjson_obj_get(obj, "storage_credentials");
 		if (!storage_credentials_val) {
-		return "LoadCredentialsResponse required property 'storage_credentials' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(storage_credentials_val, idx, max, val) {
+			return "LoadCredentialsResponse required property 'storage_credentials' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(storage_credentials_val, idx, max, val) {
 
-			StorageCredential tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+				StorageCredential tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				storage_credentials.push_back(tmp);
 			}
-			storage_credentials.push_back(tmp);
 		}
 
 		return string();

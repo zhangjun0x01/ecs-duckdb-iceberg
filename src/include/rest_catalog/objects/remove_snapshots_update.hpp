@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class RemoveSnapshotsUpdate {
 public:
-	RemoveSnapshotsUpdate::RemoveSnapshotsUpdate() {
+	RemoveSnapshotsUpdate() {
 	}
 
 public:
 	static RemoveSnapshotsUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		RemoveSnapshotsUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,14 +39,15 @@ public:
 
 		auto snapshot_ids_val = yyjson_obj_get(obj, "snapshot_ids");
 		if (!snapshot_ids_val) {
-		return "RemoveSnapshotsUpdate required property 'snapshot_ids' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(snapshot_ids_val, idx, max, val) {
+			return "RemoveSnapshotsUpdate required property 'snapshot_ids' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(snapshot_ids_val, idx, max, val) {
 
-			auto tmp = yyjson_get_sint(val);
-			snapshot_ids.push_back(tmp);
+				auto tmp = yyjson_get_sint(val);
+				snapshot_ids.push_back(tmp);
+			}
 		}
 
 		auto action_val = yyjson_obj_get(obj, "action");

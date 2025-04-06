@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class AddPartitionSpecUpdate {
 public:
-	AddPartitionSpecUpdate::AddPartitionSpecUpdate() {
+	AddPartitionSpecUpdate() {
 	}
 
 public:
 	static AddPartitionSpecUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		AddPartitionSpecUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -39,11 +40,12 @@ public:
 
 		auto spec_val = yyjson_obj_get(obj, "spec");
 		if (!spec_val) {
-		return "AddPartitionSpecUpdate required property 'spec' is missing");
-		}
-		error = spec.TryFromJSON(spec_val);
-		if (!error.empty()) {
-			return error;
+			return "AddPartitionSpecUpdate required property 'spec' is missing";
+		} else {
+			error = spec.TryFromJSON(spec_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto action_val = yyjson_obj_get(obj, "action");

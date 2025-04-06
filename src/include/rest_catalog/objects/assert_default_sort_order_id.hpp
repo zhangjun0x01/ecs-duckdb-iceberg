@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class AssertDefaultSortOrderId {
 public:
-	AssertDefaultSortOrderId::AssertDefaultSortOrderId() {
+	AssertDefaultSortOrderId() {
 	}
 
 public:
 	static AssertDefaultSortOrderId FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		AssertDefaultSortOrderId res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,9 +39,10 @@ public:
 
 		auto default_sort_order_id_val = yyjson_obj_get(obj, "default_sort_order_id");
 		if (!default_sort_order_id_val) {
-		return "AssertDefaultSortOrderId required property 'default_sort_order_id' is missing");
+			return "AssertDefaultSortOrderId required property 'default_sort_order_id' is missing";
+		} else {
+			default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
 		}
-		default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {

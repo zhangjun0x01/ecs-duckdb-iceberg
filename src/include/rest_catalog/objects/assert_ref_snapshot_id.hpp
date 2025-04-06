@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class AssertRefSnapshotId {
 public:
-	AssertRefSnapshotId::AssertRefSnapshotId() {
+	AssertRefSnapshotId() {
 	}
 
 public:
 	static AssertRefSnapshotId FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		AssertRefSnapshotId res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,15 +39,17 @@ public:
 
 		auto ref_val = yyjson_obj_get(obj, "ref");
 		if (!ref_val) {
-		return "AssertRefSnapshotId required property 'ref' is missing");
+			return "AssertRefSnapshotId required property 'ref' is missing";
+		} else {
+			ref = yyjson_get_str(ref_val);
 		}
-		ref = yyjson_get_str(ref_val);
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
 		if (!snapshot_id_val) {
-		return "AssertRefSnapshotId required property 'snapshot_id' is missing");
+			return "AssertRefSnapshotId required property 'snapshot_id' is missing";
+		} else {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		}
-		snapshot_id = yyjson_get_sint(snapshot_id_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {

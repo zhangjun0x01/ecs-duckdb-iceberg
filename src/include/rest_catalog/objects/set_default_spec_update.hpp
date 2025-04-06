@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class SetDefaultSpecUpdate {
 public:
-	SetDefaultSpecUpdate::SetDefaultSpecUpdate() {
+	SetDefaultSpecUpdate() {
 	}
 
 public:
 	static SetDefaultSpecUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		SetDefaultSpecUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,9 +39,10 @@ public:
 
 		auto spec_id_val = yyjson_obj_get(obj, "spec_id");
 		if (!spec_id_val) {
-		return "SetDefaultSpecUpdate required property 'spec_id' is missing");
+			return "SetDefaultSpecUpdate required property 'spec_id' is missing";
+		} else {
+			spec_id = yyjson_get_sint(spec_id_val);
 		}
-		spec_id = yyjson_get_sint(spec_id_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {

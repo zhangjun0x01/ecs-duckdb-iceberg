@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class PartitionStatisticsFile {
 public:
-	PartitionStatisticsFile::PartitionStatisticsFile() {
+	PartitionStatisticsFile() {
 	}
 
 public:
 	static PartitionStatisticsFile FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		PartitionStatisticsFile res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -32,21 +33,24 @@ public:
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
 		if (!snapshot_id_val) {
-		return "PartitionStatisticsFile required property 'snapshot_id' is missing");
+			return "PartitionStatisticsFile required property 'snapshot_id' is missing";
+		} else {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		}
-		snapshot_id = yyjson_get_sint(snapshot_id_val);
 
 		auto statistics_path_val = yyjson_obj_get(obj, "statistics_path");
 		if (!statistics_path_val) {
-		return "PartitionStatisticsFile required property 'statistics_path' is missing");
+			return "PartitionStatisticsFile required property 'statistics_path' is missing";
+		} else {
+			statistics_path = yyjson_get_str(statistics_path_val);
 		}
-		statistics_path = yyjson_get_str(statistics_path_val);
 
 		auto file_size_in_bytes_val = yyjson_obj_get(obj, "file_size_in_bytes");
 		if (!file_size_in_bytes_val) {
-		return "PartitionStatisticsFile required property 'file_size_in_bytes' is missing");
+			return "PartitionStatisticsFile required property 'file_size_in_bytes' is missing";
+		} else {
+			file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
 		}
-		file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
 
 		return string();
 	}

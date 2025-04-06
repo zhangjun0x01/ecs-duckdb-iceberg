@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class Transform {
 public:
-	Transform::Transform() {
+	Transform() {
 	}
 
 public:
 	static Transform FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		Transform res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

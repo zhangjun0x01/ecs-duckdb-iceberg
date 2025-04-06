@@ -21,16 +21,17 @@ namespace rest_api_objects {
 
 class Expression {
 public:
-	Expression::Expression() {
+	Expression() {
 	}
 
 public:
 	static Expression FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		Expression res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -80,12 +81,12 @@ public:
 
 public:
 	NotExpression not_expression;
-	LiteralExpression literal_expression;
-	AndOrExpression and_or_expression;
-	UnaryExpression unary_expression;
+	TrueExpression true_expression;
 	FalseExpression false_expression;
 	SetExpression set_expression;
-	TrueExpression true_expression;
+	UnaryExpression unary_expression;
+	AndOrExpression and_or_expression;
+	LiteralExpression literal_expression;
 
 public:
 	bool has_true_expression = false;

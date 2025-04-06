@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class CountMap {
 public:
-	CountMap::CountMap() {
+	CountMap() {
 	}
 
 public:
 	static CountMap FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		CountMap res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class FileScanTask {
 public:
-	FileScanTask::FileScanTask() {
+	FileScanTask() {
 	}
 
 public:
 	static FileScanTask FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		FileScanTask res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -33,11 +34,12 @@ public:
 
 		auto data_file_val = yyjson_obj_get(obj, "data_file");
 		if (!data_file_val) {
-		return "FileScanTask required property 'data_file' is missing");
-		}
-		error = data_file.TryFromJSON(data_file_val);
-		if (!error.empty()) {
-			return error;
+			return "FileScanTask required property 'data_file' is missing";
+		} else {
+			error = data_file.TryFromJSON(data_file_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto delete_file_references_val = yyjson_obj_get(obj, "delete_file_references");

@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class LoadViewResult {
 public:
-	LoadViewResult::LoadViewResult() {
+	LoadViewResult() {
 	}
 
 public:
 	static LoadViewResult FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		LoadViewResult res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -33,17 +34,19 @@ public:
 
 		auto metadata_location_val = yyjson_obj_get(obj, "metadata_location");
 		if (!metadata_location_val) {
-		return "LoadViewResult required property 'metadata_location' is missing");
+			return "LoadViewResult required property 'metadata_location' is missing";
+		} else {
+			metadata_location = yyjson_get_str(metadata_location_val);
 		}
-		metadata_location = yyjson_get_str(metadata_location_val);
 
 		auto metadata_val = yyjson_obj_get(obj, "metadata");
 		if (!metadata_val) {
-		return "LoadViewResult required property 'metadata' is missing");
-		}
-		error = metadata.TryFromJSON(metadata_val);
-		if (!error.empty()) {
-			return error;
+			return "LoadViewResult required property 'metadata' is missing";
+		} else {
+			error = metadata.TryFromJSON(metadata_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto config_val = yyjson_obj_get(obj, "config");

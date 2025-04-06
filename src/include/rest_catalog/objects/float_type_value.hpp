@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class FloatTypeValue {
 public:
-	FloatTypeValue::FloatTypeValue() {
+	FloatTypeValue() {
 	}
 
 public:
 	static FloatTypeValue FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		FloatTypeValue res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

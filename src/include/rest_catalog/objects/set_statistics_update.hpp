@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class SetStatisticsUpdate {
 public:
-	SetStatisticsUpdate::SetStatisticsUpdate() {
+	SetStatisticsUpdate() {
 	}
 
 public:
 	static SetStatisticsUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		SetStatisticsUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -39,11 +40,12 @@ public:
 
 		auto statistics_val = yyjson_obj_get(obj, "statistics");
 		if (!statistics_val) {
-		return "SetStatisticsUpdate required property 'statistics' is missing");
-		}
-		error = statistics.TryFromJSON(statistics_val);
-		if (!error.empty()) {
-			return error;
+			return "SetStatisticsUpdate required property 'statistics' is missing";
+		} else {
+			error = statistics.TryFromJSON(statistics_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto action_val = yyjson_obj_get(obj, "action");

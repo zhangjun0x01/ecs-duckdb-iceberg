@@ -18,16 +18,17 @@ namespace rest_api_objects {
 
 class PlanTableScanResult {
 public:
-	PlanTableScanResult::PlanTableScanResult() {
+	PlanTableScanResult() {
 	}
 
 public:
 	static PlanTableScanResult FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		PlanTableScanResult res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -62,8 +63,8 @@ public:
 
 public:
 	AsyncPlanningResult async_planning_result;
-	EmptyPlanningResult empty_planning_result;
 	CompletedPlanningWithIDResult completed_planning_with_idresult;
+	EmptyPlanningResult empty_planning_result;
 	FailedPlanningResult failed_planning_result;
 
 public:

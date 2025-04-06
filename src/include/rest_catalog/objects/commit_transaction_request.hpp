@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class CommitTransactionRequest {
 public:
-	CommitTransactionRequest::CommitTransactionRequest() {
+	CommitTransactionRequest() {
 	}
 
 public:
 	static CommitTransactionRequest FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		CommitTransactionRequest res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -33,18 +34,19 @@ public:
 
 		auto table_changes_val = yyjson_obj_get(obj, "table_changes");
 		if (!table_changes_val) {
-		return "CommitTransactionRequest required property 'table_changes' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(table_changes_val, idx, max, val) {
+			return "CommitTransactionRequest required property 'table_changes' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(table_changes_val, idx, max, val) {
 
-			CommitTableRequest tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+				CommitTableRequest tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				table_changes.push_back(tmp);
 			}
-			table_changes.push_back(tmp);
 		}
 
 		return string();

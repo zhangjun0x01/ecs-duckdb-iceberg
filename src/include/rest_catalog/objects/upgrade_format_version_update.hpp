@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class UpgradeFormatVersionUpdate {
 public:
-	UpgradeFormatVersionUpdate::UpgradeFormatVersionUpdate() {
+	UpgradeFormatVersionUpdate() {
 	}
 
 public:
 	static UpgradeFormatVersionUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		UpgradeFormatVersionUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,9 +39,10 @@ public:
 
 		auto format_version_val = yyjson_obj_get(obj, "format_version");
 		if (!format_version_val) {
-		return "UpgradeFormatVersionUpdate required property 'format_version' is missing");
+			return "UpgradeFormatVersionUpdate required property 'format_version' is missing";
+		} else {
+			format_version = yyjson_get_sint(format_version_val);
 		}
-		format_version = yyjson_get_sint(format_version_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {

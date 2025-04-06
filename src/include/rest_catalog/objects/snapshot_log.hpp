@@ -14,22 +14,23 @@ namespace rest_api_objects {
 
 class SnapshotLog {
 public:
-	SnapshotLog::SnapshotLog() {
+	SnapshotLog() {
 	}
 
 public:
 	class Object3 {
 	public:
-		Object3::Object3() {
+		Object3() {
 		}
 
 	public:
 		static Object3 FromJSON(yyjson_val *obj) {
-			auto error = TryFromJSON(obj);
+			Object3 res;
+			auto error = res.TryFromJSON(obj);
 			if (!error.empty()) {
 				throw InvalidInputException(error);
 			}
-			return *this;
+			return res;
 		}
 
 	public:
@@ -38,15 +39,17 @@ public:
 
 			auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
 			if (!snapshot_id_val) {
-			return "Object3 required property 'snapshot_id' is missing");
+				return "Object3 required property 'snapshot_id' is missing";
+			} else {
+				snapshot_id = yyjson_get_sint(snapshot_id_val);
 			}
-			snapshot_id = yyjson_get_sint(snapshot_id_val);
 
 			auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
 			if (!timestamp_ms_val) {
-			return "Object3 required property 'timestamp_ms' is missing");
+				return "Object3 required property 'timestamp_ms' is missing";
+			} else {
+				timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 			}
-			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 
 			return string();
 		}
@@ -59,11 +62,12 @@ public:
 
 public:
 	static SnapshotLog FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		SnapshotLog res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

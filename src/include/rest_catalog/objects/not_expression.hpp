@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class NotExpression {
 public:
-	NotExpression::NotExpression() {
+	NotExpression() {
 	}
 
 public:
 	static NotExpression FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		NotExpression res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -34,20 +35,22 @@ public:
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
-		return "NotExpression required property 'type' is missing");
-		}
-		error = type.TryFromJSON(type_val);
-		if (!error.empty()) {
-			return error;
+			return "NotExpression required property 'type' is missing";
+		} else {
+			error = type.TryFromJSON(type_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto child_val = yyjson_obj_get(obj, "child");
 		if (!child_val) {
-		return "NotExpression required property 'child' is missing");
-		}
-		error = child.TryFromJSON(child_val);
-		if (!error.empty()) {
-			return error;
+			return "NotExpression required property 'child' is missing";
+		} else {
+			error = child.TryFromJSON(child_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		return string();

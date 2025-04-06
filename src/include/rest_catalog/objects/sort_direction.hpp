@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class SortDirection {
 public:
-	SortDirection::SortDirection() {
+	SortDirection() {
 	}
 
 public:
 	static SortDirection FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		SortDirection res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

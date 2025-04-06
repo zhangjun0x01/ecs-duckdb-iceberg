@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class UUIDTypeValue {
 public:
-	UUIDTypeValue::UUIDTypeValue() {
+	UUIDTypeValue() {
 	}
 
 public:
 	static UUIDTypeValue FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		UUIDTypeValue res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

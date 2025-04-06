@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class PartitionField {
 public:
-	PartitionField::PartitionField() {
+	PartitionField() {
 	}
 
 public:
 	static PartitionField FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		PartitionField res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -33,24 +34,27 @@ public:
 
 		auto source_id_val = yyjson_obj_get(obj, "source_id");
 		if (!source_id_val) {
-		return "PartitionField required property 'source_id' is missing");
+			return "PartitionField required property 'source_id' is missing";
+		} else {
+			source_id = yyjson_get_sint(source_id_val);
 		}
-		source_id = yyjson_get_sint(source_id_val);
 
 		auto transform_val = yyjson_obj_get(obj, "transform");
 		if (!transform_val) {
-		return "PartitionField required property 'transform' is missing");
-		}
-		error = transform.TryFromJSON(transform_val);
-		if (!error.empty()) {
-			return error;
+			return "PartitionField required property 'transform' is missing";
+		} else {
+			error = transform.TryFromJSON(transform_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (!name_val) {
-		return "PartitionField required property 'name' is missing");
+			return "PartitionField required property 'name' is missing";
+		} else {
+			name = yyjson_get_str(name_val);
 		}
-		name = yyjson_get_str(name_val);
 
 		auto field_id_val = yyjson_obj_get(obj, "field_id");
 		if (field_id_val) {

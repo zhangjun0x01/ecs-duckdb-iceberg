@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class AndOrExpression {
 public:
-	AndOrExpression::AndOrExpression() {
+	AndOrExpression() {
 	}
 
 public:
 	static AndOrExpression FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		AndOrExpression res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -34,29 +35,32 @@ public:
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
-		return "AndOrExpression required property 'type' is missing");
-		}
-		error = type.TryFromJSON(type_val);
-		if (!error.empty()) {
-			return error;
+			return "AndOrExpression required property 'type' is missing";
+		} else {
+			error = type.TryFromJSON(type_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto left_val = yyjson_obj_get(obj, "left");
 		if (!left_val) {
-		return "AndOrExpression required property 'left' is missing");
-		}
-		error = left.TryFromJSON(left_val);
-		if (!error.empty()) {
-			return error;
+			return "AndOrExpression required property 'left' is missing";
+		} else {
+			error = left.TryFromJSON(left_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto right_val = yyjson_obj_get(obj, "right");
 		if (!right_val) {
-		return "AndOrExpression required property 'right' is missing");
-		}
-		error = right.TryFromJSON(right_val);
-		if (!error.empty()) {
-			return error;
+			return "AndOrExpression required property 'right' is missing";
+		} else {
+			error = right.TryFromJSON(right_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		return string();

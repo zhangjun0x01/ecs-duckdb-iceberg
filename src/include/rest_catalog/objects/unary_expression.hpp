@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class UnaryExpression {
 public:
-	UnaryExpression::UnaryExpression() {
+	UnaryExpression() {
 	}
 
 public:
 	static UnaryExpression FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		UnaryExpression res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -34,27 +35,30 @@ public:
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
-		return "UnaryExpression required property 'type' is missing");
-		}
-		error = type.TryFromJSON(type_val);
-		if (!error.empty()) {
-			return error;
+			return "UnaryExpression required property 'type' is missing";
+		} else {
+			error = type.TryFromJSON(type_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto term_val = yyjson_obj_get(obj, "term");
 		if (!term_val) {
-		return "UnaryExpression required property 'term' is missing");
-		}
-		error = term.TryFromJSON(term_val);
-		if (!error.empty()) {
-			return error;
+			return "UnaryExpression required property 'term' is missing";
+		} else {
+			error = term.TryFromJSON(term_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto value_val = yyjson_obj_get(obj, "value");
 		if (!value_val) {
-		return "UnaryExpression required property 'value' is missing");
+			return "UnaryExpression required property 'value' is missing";
+		} else {
+			value = value_val;
 		}
-		value = value_val;
 
 		return string();
 	}

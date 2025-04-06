@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class ViewRepresentation {
 public:
-	ViewRepresentation::ViewRepresentation() {
+	ViewRepresentation() {
 	}
 
 public:
 	static ViewRepresentation FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		ViewRepresentation res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

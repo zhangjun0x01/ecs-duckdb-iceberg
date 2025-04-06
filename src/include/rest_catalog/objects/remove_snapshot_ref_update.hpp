@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class RemoveSnapshotRefUpdate {
 public:
-	RemoveSnapshotRefUpdate::RemoveSnapshotRefUpdate() {
+	RemoveSnapshotRefUpdate() {
 	}
 
 public:
 	static RemoveSnapshotRefUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		RemoveSnapshotRefUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,9 +39,10 @@ public:
 
 		auto ref_name_val = yyjson_obj_get(obj, "ref_name");
 		if (!ref_name_val) {
-		return "RemoveSnapshotRefUpdate required property 'ref_name' is missing");
+			return "RemoveSnapshotRefUpdate required property 'ref_name' is missing";
+		} else {
+			ref_name = yyjson_get_str(ref_name_val);
 		}
-		ref_name = yyjson_get_str(ref_name_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {

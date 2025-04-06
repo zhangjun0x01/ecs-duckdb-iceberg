@@ -17,16 +17,17 @@ namespace rest_api_objects {
 
 class CommitTableRequest {
 public:
-	CommitTableRequest::CommitTableRequest() {
+	CommitTableRequest() {
 	}
 
 public:
 	static CommitTableRequest FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		CommitTableRequest res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -35,34 +36,36 @@ public:
 
 		auto requirements_val = yyjson_obj_get(obj, "requirements");
 		if (!requirements_val) {
-		return "CommitTableRequest required property 'requirements' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(requirements_val, idx, max, val) {
+			return "CommitTableRequest required property 'requirements' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(requirements_val, idx, max, val) {
 
-			TableRequirement tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+				TableRequirement tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				requirements.push_back(tmp);
 			}
-			requirements.push_back(tmp);
 		}
 
 		auto updates_val = yyjson_obj_get(obj, "updates");
 		if (!updates_val) {
-		return "CommitTableRequest required property 'updates' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(updates_val, idx, max, val) {
+			return "CommitTableRequest required property 'updates' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(updates_val, idx, max, val) {
 
-			TableUpdate tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+				TableUpdate tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				updates.push_back(tmp);
 			}
-			updates.push_back(tmp);
 		}
 
 		auto identifier_val = yyjson_obj_get(obj, "identifier");

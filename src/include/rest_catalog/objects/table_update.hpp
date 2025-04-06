@@ -34,16 +34,17 @@ namespace rest_api_objects {
 
 class TableUpdate {
 public:
-	TableUpdate::TableUpdate() {
+	TableUpdate() {
 	}
 
 public:
 	static TableUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		TableUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -164,26 +165,26 @@ public:
 	}
 
 public:
-	AssignUUIDUpdate assign_uuidupdate;
-	SetPropertiesUpdate set_properties_update;
-	SetDefaultSortOrderUpdate set_default_sort_order_update;
-	SetSnapshotRefUpdate set_snapshot_ref_update;
-	SetCurrentSchemaUpdate set_current_schema_update;
-	AddSchemaUpdate add_schema_update;
 	SetStatisticsUpdate set_statistics_update;
-	AddSortOrderUpdate add_sort_order_update;
-	RemoveStatisticsUpdate remove_statistics_update;
+	SetSnapshotRefUpdate set_snapshot_ref_update;
 	AddPartitionSpecUpdate add_partition_spec_update;
-	AddSnapshotUpdate add_snapshot_update;
-	UpgradeFormatVersionUpdate upgrade_format_version_update;
-	RemoveSnapshotsUpdate remove_snapshots_update;
-	RemoveSchemasUpdate remove_schemas_update;
-	RemoveSnapshotRefUpdate remove_snapshot_ref_update;
-	RemovePropertiesUpdate remove_properties_update;
+	SetDefaultSortOrderUpdate set_default_sort_order_update;
 	RemovePartitionSpecsUpdate remove_partition_specs_update;
+	RemoveStatisticsUpdate remove_statistics_update;
+	RemoveSnapshotRefUpdate remove_snapshot_ref_update;
 	SetDefaultSpecUpdate set_default_spec_update;
+	SetCurrentSchemaUpdate set_current_schema_update;
+	RemovePropertiesUpdate remove_properties_update;
+	SetPropertiesUpdate set_properties_update;
 	SetLocationUpdate set_location_update;
+	AddSchemaUpdate add_schema_update;
+	AddSnapshotUpdate add_snapshot_update;
+	RemoveSnapshotsUpdate remove_snapshots_update;
+	AddSortOrderUpdate add_sort_order_update;
 	EnableRowLineageUpdate enable_row_lineage_update;
+	UpgradeFormatVersionUpdate upgrade_format_version_update;
+	AssignUUIDUpdate assign_uuidupdate;
+	RemoveSchemasUpdate remove_schemas_update;
 
 public:
 	bool has_assign_uuidupdate = false;

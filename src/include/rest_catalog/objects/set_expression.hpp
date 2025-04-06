@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class SetExpression {
 public:
-	SetExpression::SetExpression() {
+	SetExpression() {
 	}
 
 public:
 	static SetExpression FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		SetExpression res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -34,32 +35,35 @@ public:
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
-		return "SetExpression required property 'type' is missing");
-		}
-		error = type.TryFromJSON(type_val);
-		if (!error.empty()) {
-			return error;
+			return "SetExpression required property 'type' is missing";
+		} else {
+			error = type.TryFromJSON(type_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto term_val = yyjson_obj_get(obj, "term");
 		if (!term_val) {
-		return "SetExpression required property 'term' is missing");
-		}
-		error = term.TryFromJSON(term_val);
-		if (!error.empty()) {
-			return error;
+			return "SetExpression required property 'term' is missing";
+		} else {
+			error = term.TryFromJSON(term_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto values_val = yyjson_obj_get(obj, "values");
 		if (!values_val) {
-		return "SetExpression required property 'values' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(values_val, idx, max, val) {
+			return "SetExpression required property 'values' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(values_val, idx, max, val) {
 
-			auto tmp = val;
-			values.push_back(tmp);
+				auto tmp = val;
+				values.push_back(tmp);
+			}
 		}
 
 		return string();

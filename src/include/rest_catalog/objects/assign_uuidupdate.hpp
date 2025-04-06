@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class AssignUUIDUpdate {
 public:
-	AssignUUIDUpdate::AssignUUIDUpdate() {
+	AssignUUIDUpdate() {
 	}
 
 public:
 	static AssignUUIDUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		AssignUUIDUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,9 +39,10 @@ public:
 
 		auto uuid_val = yyjson_obj_get(obj, "uuid");
 		if (!uuid_val) {
-		return "AssignUUIDUpdate required property 'uuid' is missing");
+			return "AssignUUIDUpdate required property 'uuid' is missing";
+		} else {
+			uuid = yyjson_get_str(uuid_val);
 		}
-		uuid = yyjson_get_str(uuid_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {

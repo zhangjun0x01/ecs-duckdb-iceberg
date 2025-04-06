@@ -16,22 +16,23 @@ namespace rest_api_objects {
 
 class CompletedPlanningResult {
 public:
-	CompletedPlanningResult::CompletedPlanningResult() {
+	CompletedPlanningResult() {
 	}
 
 public:
 	class Object5 {
 	public:
-		Object5::Object5() {
+		Object5() {
 		}
 
 	public:
 		static Object5 FromJSON(yyjson_val *obj) {
-			auto error = TryFromJSON(obj);
+			Object5 res;
+			auto error = res.TryFromJSON(obj);
 			if (!error.empty()) {
 				throw InvalidInputException(error);
 			}
-			return *this;
+			return res;
 		}
 
 	public:
@@ -40,11 +41,12 @@ public:
 
 			auto status_val = yyjson_obj_get(obj, "status");
 			if (!status_val) {
-			return "Object5 required property 'status' is missing");
-			}
-			error = status.TryFromJSON(status_val);
-			if (!error.empty()) {
-				return error;
+				return "Object5 required property 'status' is missing";
+			} else {
+				error = status.TryFromJSON(status_val);
+				if (!error.empty()) {
+					return error;
+				}
 			}
 
 			return string();
@@ -57,11 +59,12 @@ public:
 
 public:
 	static CompletedPlanningResult FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		CompletedPlanningResult res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

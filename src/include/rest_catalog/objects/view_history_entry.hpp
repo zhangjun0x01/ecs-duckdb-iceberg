@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class ViewHistoryEntry {
 public:
-	ViewHistoryEntry::ViewHistoryEntry() {
+	ViewHistoryEntry() {
 	}
 
 public:
 	static ViewHistoryEntry FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		ViewHistoryEntry res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -32,15 +33,17 @@ public:
 
 		auto version_id_val = yyjson_obj_get(obj, "version_id");
 		if (!version_id_val) {
-		return "ViewHistoryEntry required property 'version_id' is missing");
+			return "ViewHistoryEntry required property 'version_id' is missing";
+		} else {
+			version_id = yyjson_get_sint(version_id_val);
 		}
-		version_id = yyjson_get_sint(version_id_val);
 
 		auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
 		if (!timestamp_ms_val) {
-		return "ViewHistoryEntry required property 'timestamp_ms' is missing");
+			return "ViewHistoryEntry required property 'timestamp_ms' is missing";
+		} else {
+			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 		}
-		timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 
 		return string();
 	}

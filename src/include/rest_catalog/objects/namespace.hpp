@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class Namespace {
 public:
-	Namespace::Namespace() {
+	Namespace() {
 	}
 
 public:
 	static Namespace FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		Namespace res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

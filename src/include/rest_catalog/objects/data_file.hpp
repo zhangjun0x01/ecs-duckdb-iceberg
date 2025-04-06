@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class DataFile {
 public:
-	DataFile::DataFile() {
+	DataFile() {
 	}
 
 public:
 	static DataFile FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		DataFile res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,9 +39,10 @@ public:
 
 		auto content_val = yyjson_obj_get(obj, "content");
 		if (!content_val) {
-		return "DataFile required property 'content' is missing");
+			return "DataFile required property 'content' is missing";
+		} else {
+			content = yyjson_get_str(content_val);
 		}
-		content = yyjson_get_str(content_val);
 
 		auto column_sizes_val = yyjson_obj_get(obj, "column_sizes");
 		if (column_sizes_val) {

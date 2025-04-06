@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class CounterResult {
 public:
-	CounterResult::CounterResult() {
+	CounterResult() {
 	}
 
 public:
 	static CounterResult FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		CounterResult res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -32,15 +33,17 @@ public:
 
 		auto unit_val = yyjson_obj_get(obj, "unit");
 		if (!unit_val) {
-		return "CounterResult required property 'unit' is missing");
+			return "CounterResult required property 'unit' is missing";
+		} else {
+			unit = yyjson_get_str(unit_val);
 		}
-		unit = yyjson_get_str(unit_val);
 
 		auto value_val = yyjson_obj_get(obj, "value");
 		if (!value_val) {
-		return "CounterResult required property 'value' is missing");
+			return "CounterResult required property 'value' is missing";
+		} else {
+			value = yyjson_get_sint(value_val);
 		}
-		value = yyjson_get_sint(value_val);
 
 		return string();
 	}

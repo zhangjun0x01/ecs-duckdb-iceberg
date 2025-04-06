@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class PageToken {
 public:
-	PageToken::PageToken() {
+	PageToken() {
 	}
 
 public:
 	static PageToken FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		PageToken res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

@@ -16,22 +16,23 @@ namespace rest_api_objects {
 
 class FailedPlanningResult {
 public:
-	FailedPlanningResult::FailedPlanningResult() {
+	FailedPlanningResult() {
 	}
 
 public:
 	class Object7 {
 	public:
-		Object7::Object7() {
+		Object7() {
 		}
 
 	public:
 		static Object7 FromJSON(yyjson_val *obj) {
-			auto error = TryFromJSON(obj);
+			Object7 res;
+			auto error = res.TryFromJSON(obj);
 			if (!error.empty()) {
 				throw InvalidInputException(error);
 			}
-			return *this;
+			return res;
 		}
 
 	public:
@@ -40,11 +41,12 @@ public:
 
 			auto status_val = yyjson_obj_get(obj, "status");
 			if (!status_val) {
-			return "Object7 required property 'status' is missing");
-			}
-			error = status.TryFromJSON(status_val);
-			if (!error.empty()) {
-				return error;
+				return "Object7 required property 'status' is missing";
+			} else {
+				error = status.TryFromJSON(status_val);
+				if (!error.empty()) {
+					return error;
+				}
 			}
 
 			return string();
@@ -57,11 +59,12 @@ public:
 
 public:
 	static FailedPlanningResult FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		FailedPlanningResult res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -82,8 +85,8 @@ public:
 	}
 
 public:
-	IcebergErrorResponse iceberg_error_response;
 	Object7 object_7;
+	IcebergErrorResponse iceberg_error_response;
 
 public:
 };

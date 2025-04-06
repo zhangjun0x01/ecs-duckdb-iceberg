@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class SQLViewRepresentation {
 public:
-	SQLViewRepresentation::SQLViewRepresentation() {
+	SQLViewRepresentation() {
 	}
 
 public:
 	static SQLViewRepresentation FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		SQLViewRepresentation res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -32,21 +33,24 @@ public:
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
-		return "SQLViewRepresentation required property 'type' is missing");
+			return "SQLViewRepresentation required property 'type' is missing";
+		} else {
+			type = yyjson_get_str(type_val);
 		}
-		type = yyjson_get_str(type_val);
 
 		auto sql_val = yyjson_obj_get(obj, "sql");
 		if (!sql_val) {
-		return "SQLViewRepresentation required property 'sql' is missing");
+			return "SQLViewRepresentation required property 'sql' is missing";
+		} else {
+			sql = yyjson_get_str(sql_val);
 		}
-		sql = yyjson_get_str(sql_val);
 
 		auto dialect_val = yyjson_obj_get(obj, "dialect");
 		if (!dialect_val) {
-		return "SQLViewRepresentation required property 'dialect' is missing");
+			return "SQLViewRepresentation required property 'dialect' is missing";
+		} else {
+			dialect = yyjson_get_str(dialect_val);
 		}
-		dialect = yyjson_get_str(dialect_val);
 
 		return string();
 	}

@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class IntegerTypeValue {
 public:
-	IntegerTypeValue::IntegerTypeValue() {
+	IntegerTypeValue() {
 	}
 
 public:
 	static IntegerTypeValue FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		IntegerTypeValue res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

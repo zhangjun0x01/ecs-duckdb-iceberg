@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class AssertLastAssignedPartitionId {
 public:
-	AssertLastAssignedPartitionId::AssertLastAssignedPartitionId() {
+	AssertLastAssignedPartitionId() {
 	}
 
 public:
 	static AssertLastAssignedPartitionId FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		AssertLastAssignedPartitionId res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,9 +39,10 @@ public:
 
 		auto last_assigned_partition_id_val = yyjson_obj_get(obj, "last_assigned_partition_id");
 		if (!last_assigned_partition_id_val) {
-		return "AssertLastAssignedPartitionId required property 'last_assigned_partition_id' is missing");
+			return "AssertLastAssignedPartitionId required property 'last_assigned_partition_id' is missing";
+		} else {
+			last_assigned_partition_id = yyjson_get_sint(last_assigned_partition_id_val);
 		}
-		last_assigned_partition_id = yyjson_get_sint(last_assigned_partition_id_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {

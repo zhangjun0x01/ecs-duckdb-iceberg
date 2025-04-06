@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class RemoveSchemasUpdate {
 public:
-	RemoveSchemasUpdate::RemoveSchemasUpdate() {
+	RemoveSchemasUpdate() {
 	}
 
 public:
 	static RemoveSchemasUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		RemoveSchemasUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,14 +39,15 @@ public:
 
 		auto schema_ids_val = yyjson_obj_get(obj, "schema_ids");
 		if (!schema_ids_val) {
-		return "RemoveSchemasUpdate required property 'schema_ids' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(schema_ids_val, idx, max, val) {
+			return "RemoveSchemasUpdate required property 'schema_ids' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(schema_ids_val, idx, max, val) {
 
-			auto tmp = yyjson_get_sint(val);
-			schema_ids.push_back(tmp);
+				auto tmp = yyjson_get_sint(val);
+				schema_ids.push_back(tmp);
+			}
 		}
 
 		auto action_val = yyjson_obj_get(obj, "action");

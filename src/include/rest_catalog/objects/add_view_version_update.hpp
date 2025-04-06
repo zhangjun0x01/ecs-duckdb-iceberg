@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class AddViewVersionUpdate {
 public:
-	AddViewVersionUpdate::AddViewVersionUpdate() {
+	AddViewVersionUpdate() {
 	}
 
 public:
 	static AddViewVersionUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		AddViewVersionUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -39,11 +40,12 @@ public:
 
 		auto view_version_val = yyjson_obj_get(obj, "view_version");
 		if (!view_version_val) {
-		return "AddViewVersionUpdate required property 'view_version' is missing");
-		}
-		error = view_version.TryFromJSON(view_version_val);
-		if (!error.empty()) {
-			return error;
+			return "AddViewVersionUpdate required property 'view_version' is missing";
+		} else {
+			error = view_version.TryFromJSON(view_version_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto action_val = yyjson_obj_get(obj, "action");

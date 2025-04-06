@@ -17,16 +17,17 @@ namespace rest_api_objects {
 
 class CommitViewRequest {
 public:
-	CommitViewRequest::CommitViewRequest() {
+	CommitViewRequest() {
 	}
 
 public:
 	static CommitViewRequest FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		CommitViewRequest res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -35,18 +36,19 @@ public:
 
 		auto updates_val = yyjson_obj_get(obj, "updates");
 		if (!updates_val) {
-		return "CommitViewRequest required property 'updates' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(updates_val, idx, max, val) {
+			return "CommitViewRequest required property 'updates' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(updates_val, idx, max, val) {
 
-			ViewUpdate tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+				ViewUpdate tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				updates.push_back(tmp);
 			}
-			updates.push_back(tmp);
 		}
 
 		auto identifier_val = yyjson_obj_get(obj, "identifier");

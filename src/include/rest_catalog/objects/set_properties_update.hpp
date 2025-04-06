@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class SetPropertiesUpdate {
 public:
-	SetPropertiesUpdate::SetPropertiesUpdate() {
+	SetPropertiesUpdate() {
 	}
 
 public:
 	static SetPropertiesUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		SetPropertiesUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,9 +39,10 @@ public:
 
 		auto updates_val = yyjson_obj_get(obj, "updates");
 		if (!updates_val) {
-		return "SetPropertiesUpdate required property 'updates' is missing");
+			return "SetPropertiesUpdate required property 'updates' is missing";
+		} else {
+			updates = parse_object_of_strings(updates_val);
 		}
-		updates = parse_object_of_strings(updates_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {

@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class AsyncPlanningResult {
 public:
-	AsyncPlanningResult::AsyncPlanningResult() {
+	AsyncPlanningResult() {
 	}
 
 public:
 	static AsyncPlanningResult FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		AsyncPlanningResult res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -33,11 +34,12 @@ public:
 
 		auto status_val = yyjson_obj_get(obj, "status");
 		if (!status_val) {
-		return "AsyncPlanningResult required property 'status' is missing");
-		}
-		error = status.TryFromJSON(status_val);
-		if (!error.empty()) {
-			return error;
+			return "AsyncPlanningResult required property 'status' is missing";
+		} else {
+			error = status.TryFromJSON(status_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto plan_id_val = yyjson_obj_get(obj, "plan_id");

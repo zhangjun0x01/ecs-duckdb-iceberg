@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class ValueMap {
 public:
-	ValueMap::ValueMap() {
+	ValueMap() {
 	}
 
 public:
 	static ValueMap FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		ValueMap res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

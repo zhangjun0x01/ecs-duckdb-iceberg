@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class OAuthClientCredentialsRequest {
 public:
-	OAuthClientCredentialsRequest::OAuthClientCredentialsRequest() {
+	OAuthClientCredentialsRequest() {
 	}
 
 public:
 	static OAuthClientCredentialsRequest FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		OAuthClientCredentialsRequest res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -32,21 +33,24 @@ public:
 
 		auto grant_type_val = yyjson_obj_get(obj, "grant_type");
 		if (!grant_type_val) {
-		return "OAuthClientCredentialsRequest required property 'grant_type' is missing");
+			return "OAuthClientCredentialsRequest required property 'grant_type' is missing";
+		} else {
+			grant_type = yyjson_get_str(grant_type_val);
 		}
-		grant_type = yyjson_get_str(grant_type_val);
 
 		auto client_id_val = yyjson_obj_get(obj, "client_id");
 		if (!client_id_val) {
-		return "OAuthClientCredentialsRequest required property 'client_id' is missing");
+			return "OAuthClientCredentialsRequest required property 'client_id' is missing";
+		} else {
+			client_id = yyjson_get_str(client_id_val);
 		}
-		client_id = yyjson_get_str(client_id_val);
 
 		auto client_secret_val = yyjson_obj_get(obj, "client_secret");
 		if (!client_secret_val) {
-		return "OAuthClientCredentialsRequest required property 'client_secret' is missing");
+			return "OAuthClientCredentialsRequest required property 'client_secret' is missing";
+		} else {
+			client_secret = yyjson_get_str(client_secret_val);
 		}
-		client_secret = yyjson_get_str(client_secret_val);
 
 		auto scope_val = yyjson_obj_get(obj, "scope");
 		if (scope_val) {

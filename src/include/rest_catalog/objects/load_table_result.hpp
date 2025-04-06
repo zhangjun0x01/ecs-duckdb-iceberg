@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class LoadTableResult {
 public:
-	LoadTableResult::LoadTableResult() {
+	LoadTableResult() {
 	}
 
 public:
 	static LoadTableResult FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		LoadTableResult res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -34,11 +35,12 @@ public:
 
 		auto metadata_val = yyjson_obj_get(obj, "metadata");
 		if (!metadata_val) {
-		return "LoadTableResult required property 'metadata' is missing");
-		}
-		error = metadata.TryFromJSON(metadata_val);
-		if (!error.empty()) {
-			return error;
+			return "LoadTableResult required property 'metadata' is missing";
+		} else {
+			error = metadata.TryFromJSON(metadata_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto metadata_location_val = yyjson_obj_get(obj, "metadata_location");

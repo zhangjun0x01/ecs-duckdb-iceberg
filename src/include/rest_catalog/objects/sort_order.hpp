@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class SortOrder {
 public:
-	SortOrder::SortOrder() {
+	SortOrder() {
 	}
 
 public:
 	static SortOrder FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		SortOrder res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -33,24 +34,26 @@ public:
 
 		auto order_id_val = yyjson_obj_get(obj, "order_id");
 		if (!order_id_val) {
-		return "SortOrder required property 'order_id' is missing");
+			return "SortOrder required property 'order_id' is missing";
+		} else {
+			order_id = yyjson_get_sint(order_id_val);
 		}
-		order_id = yyjson_get_sint(order_id_val);
 
 		auto fields_val = yyjson_obj_get(obj, "fields");
 		if (!fields_val) {
-		return "SortOrder required property 'fields' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(fields_val, idx, max, val) {
+			return "SortOrder required property 'fields' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(fields_val, idx, max, val) {
 
-			SortField tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+				SortField tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				fields.push_back(tmp);
 			}
-			fields.push_back(tmp);
 		}
 
 		return string();

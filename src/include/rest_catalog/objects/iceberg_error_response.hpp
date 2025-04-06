@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class IcebergErrorResponse {
 public:
-	IcebergErrorResponse::IcebergErrorResponse() {
+	IcebergErrorResponse() {
 	}
 
 public:
 	static IcebergErrorResponse FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		IcebergErrorResponse res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -33,11 +34,12 @@ public:
 
 		auto _error_val = yyjson_obj_get(obj, "_error");
 		if (!_error_val) {
-		return "IcebergErrorResponse required property '_error' is missing");
-		}
-		error = _error.TryFromJSON(_error_val);
-		if (!error.empty()) {
-			return error;
+			return "IcebergErrorResponse required property '_error' is missing";
+		} else {
+			error = _error.TryFromJSON(_error_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		return string();

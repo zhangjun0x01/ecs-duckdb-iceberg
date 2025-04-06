@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class UpdateNamespacePropertiesResponse {
 public:
-	UpdateNamespacePropertiesResponse::UpdateNamespacePropertiesResponse() {
+	UpdateNamespacePropertiesResponse() {
 	}
 
 public:
 	static UpdateNamespacePropertiesResponse FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		UpdateNamespacePropertiesResponse res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -32,26 +33,28 @@ public:
 
 		auto updated_val = yyjson_obj_get(obj, "updated");
 		if (!updated_val) {
-		return "UpdateNamespacePropertiesResponse required property 'updated' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(updated_val, idx, max, val) {
+			return "UpdateNamespacePropertiesResponse required property 'updated' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(updated_val, idx, max, val) {
 
-			auto tmp = yyjson_get_str(val);
-			updated.push_back(tmp);
+				auto tmp = yyjson_get_str(val);
+				updated.push_back(tmp);
+			}
 		}
 
 		auto removed_val = yyjson_obj_get(obj, "removed");
 		if (!removed_val) {
-		return "UpdateNamespacePropertiesResponse required property 'removed' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(removed_val, idx, max, val) {
+			return "UpdateNamespacePropertiesResponse required property 'removed' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(removed_val, idx, max, val) {
 
-			auto tmp = yyjson_get_str(val);
-			removed.push_back(tmp);
+				auto tmp = yyjson_get_str(val);
+				removed.push_back(tmp);
+			}
 		}
 
 		auto missing_val = yyjson_obj_get(obj, "missing");

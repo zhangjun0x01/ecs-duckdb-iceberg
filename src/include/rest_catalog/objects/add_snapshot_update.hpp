@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class AddSnapshotUpdate {
 public:
-	AddSnapshotUpdate::AddSnapshotUpdate() {
+	AddSnapshotUpdate() {
 	}
 
 public:
 	static AddSnapshotUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		AddSnapshotUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -39,11 +40,12 @@ public:
 
 		auto snapshot_val = yyjson_obj_get(obj, "snapshot");
 		if (!snapshot_val) {
-		return "AddSnapshotUpdate required property 'snapshot' is missing");
-		}
-		error = snapshot.TryFromJSON(snapshot_val);
-		if (!error.empty()) {
-			return error;
+			return "AddSnapshotUpdate required property 'snapshot' is missing";
+		} else {
+			error = snapshot.TryFromJSON(snapshot_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto action_val = yyjson_obj_get(obj, "action");

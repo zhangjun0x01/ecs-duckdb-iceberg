@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class ListType {
 public:
-	ListType::ListType() {
+	ListType() {
 	}
 
 public:
 	static ListType FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		ListType res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -33,30 +34,34 @@ public:
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
-		return "ListType required property 'type' is missing");
+			return "ListType required property 'type' is missing";
+		} else {
+			type = yyjson_get_str(type_val);
 		}
-		type = yyjson_get_str(type_val);
 
 		auto element_id_val = yyjson_obj_get(obj, "element_id");
 		if (!element_id_val) {
-		return "ListType required property 'element_id' is missing");
+			return "ListType required property 'element_id' is missing";
+		} else {
+			element_id = yyjson_get_sint(element_id_val);
 		}
-		element_id = yyjson_get_sint(element_id_val);
 
 		auto element_val = yyjson_obj_get(obj, "element");
 		if (!element_val) {
-		return "ListType required property 'element' is missing");
-		}
-		error = element.TryFromJSON(element_val);
-		if (!error.empty()) {
-			return error;
+			return "ListType required property 'element' is missing";
+		} else {
+			error = element.TryFromJSON(element_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto element_required_val = yyjson_obj_get(obj, "element_required");
 		if (!element_required_val) {
-		return "ListType required property 'element_required' is missing");
+			return "ListType required property 'element_required' is missing";
+		} else {
+			element_required = yyjson_get_bool(element_required_val);
 		}
-		element_required = yyjson_get_bool(element_required_val);
 
 		return string();
 	}

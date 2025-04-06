@@ -17,16 +17,17 @@ namespace rest_api_objects {
 
 class CreateTableRequest {
 public:
-	CreateTableRequest::CreateTableRequest() {
+	CreateTableRequest() {
 	}
 
 public:
 	static CreateTableRequest FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		CreateTableRequest res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -35,17 +36,19 @@ public:
 
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (!name_val) {
-		return "CreateTableRequest required property 'name' is missing");
+			return "CreateTableRequest required property 'name' is missing";
+		} else {
+			name = yyjson_get_str(name_val);
 		}
-		name = yyjson_get_str(name_val);
 
 		auto schema_val = yyjson_obj_get(obj, "schema");
 		if (!schema_val) {
-		return "CreateTableRequest required property 'schema' is missing");
-		}
-		error = schema.TryFromJSON(schema_val);
-		if (!error.empty()) {
-			return error;
+			return "CreateTableRequest required property 'schema' is missing";
+		} else {
+			error = schema.TryFromJSON(schema_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto location_val = yyjson_obj_get(obj, "location");

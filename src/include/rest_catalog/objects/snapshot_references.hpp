@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class SnapshotReferences {
 public:
-	SnapshotReferences::SnapshotReferences() {
+	SnapshotReferences() {
 	}
 
 public:
 	static SnapshotReferences FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		SnapshotReferences res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

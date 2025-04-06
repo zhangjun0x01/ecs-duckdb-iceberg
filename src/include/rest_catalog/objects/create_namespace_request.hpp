@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class CreateNamespaceRequest {
 public:
-	CreateNamespaceRequest::CreateNamespaceRequest() {
+	CreateNamespaceRequest() {
 	}
 
 public:
 	static CreateNamespaceRequest FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		CreateNamespaceRequest res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -33,11 +34,12 @@ public:
 
 		auto _namespace_val = yyjson_obj_get(obj, "_namespace");
 		if (!_namespace_val) {
-		return "CreateNamespaceRequest required property '_namespace' is missing");
-		}
-		error = _namespace.TryFromJSON(_namespace_val);
-		if (!error.empty()) {
-			return error;
+			return "CreateNamespaceRequest required property '_namespace' is missing";
+		} else {
+			error = _namespace.TryFromJSON(_namespace_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto properties_val = yyjson_obj_get(obj, "properties");

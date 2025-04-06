@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class FixedTypeValue {
 public:
-	FixedTypeValue::FixedTypeValue() {
+	FixedTypeValue() {
 	}
 
 public:
 	static FixedTypeValue FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		FixedTypeValue res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

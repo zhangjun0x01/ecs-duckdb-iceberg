@@ -87,15 +87,16 @@ namespace rest_api_objects {{
 CLASS_FORMAT = """
 class {CLASS_NAME} {{
 public:
-    {CLASS_NAME}::{CLASS_NAME}() {{}}
+    {CLASS_NAME}() {{}}
 {NESTED_CLASSES}
 public:
     static {CLASS_NAME} FromJSON(yyjson_val *obj) {{
-        auto error = TryFromJSON(obj);
+        {CLASS_NAME} res;
+        auto error = res.TryFromJSON(obj);
         if (!error.empty()) {{
             throw InvalidInputException(error);
         }}
-        return *this;
+        return res;
     }}
 public:
     string TryFromJSON(yyjson_val *obj) {{
@@ -549,9 +550,10 @@ if ({variable_name}_val) {{
                 f"""
 auto {variable_name}_val = yyjson_obj_get(obj, "{variable_name}");
 if (!{variable_name}_val) {{
-    return "{name} required property '{variable_name}' is missing");
-}}
-{variable_assignment}"""
+    return "{name} required property '{variable_name}' is missing";
+}} else {{
+{variable_assignment}
+}}"""
             )
         return '\n'.join(res)
 

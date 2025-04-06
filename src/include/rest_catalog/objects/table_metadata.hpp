@@ -23,16 +23,17 @@ namespace rest_api_objects {
 
 class TableMetadata {
 public:
-	TableMetadata::TableMetadata() {
+	TableMetadata() {
 	}
 
 public:
 	static TableMetadata FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		TableMetadata res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -41,15 +42,17 @@ public:
 
 		auto format_version_val = yyjson_obj_get(obj, "format_version");
 		if (!format_version_val) {
-		return "TableMetadata required property 'format_version' is missing");
+			return "TableMetadata required property 'format_version' is missing";
+		} else {
+			format_version = yyjson_get_sint(format_version_val);
 		}
-		format_version = yyjson_get_sint(format_version_val);
 
 		auto table_uuid_val = yyjson_obj_get(obj, "table_uuid");
 		if (!table_uuid_val) {
-		return "TableMetadata required property 'table_uuid' is missing");
+			return "TableMetadata required property 'table_uuid' is missing";
+		} else {
+			table_uuid = yyjson_get_str(table_uuid_val);
 		}
-		table_uuid = yyjson_get_str(table_uuid_val);
 
 		auto location_val = yyjson_obj_get(obj, "location");
 		if (location_val) {

@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class RemoveStatisticsUpdate {
 public:
-	RemoveStatisticsUpdate::RemoveStatisticsUpdate() {
+	RemoveStatisticsUpdate() {
 	}
 
 public:
 	static RemoveStatisticsUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		RemoveStatisticsUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,9 +39,10 @@ public:
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
 		if (!snapshot_id_val) {
-		return "RemoveStatisticsUpdate required property 'snapshot_id' is missing");
+			return "RemoveStatisticsUpdate required property 'snapshot_id' is missing";
+		} else {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		}
-		snapshot_id = yyjson_get_sint(snapshot_id_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {

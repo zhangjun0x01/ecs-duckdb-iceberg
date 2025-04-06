@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class AssertCreate {
 public:
-	AssertCreate::AssertCreate() {
+	AssertCreate() {
 	}
 
 public:
 	static AssertCreate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		AssertCreate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,9 +39,10 @@ public:
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
-		return "AssertCreate required property 'type' is missing");
+			return "AssertCreate required property 'type' is missing";
+		} else {
+			type = yyjson_get_str(type_val);
 		}
-		type = yyjson_get_str(type_val);
 
 		return string();
 	}

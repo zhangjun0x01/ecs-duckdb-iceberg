@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class StructField {
 public:
-	StructField::StructField() {
+	StructField() {
 	}
 
 public:
 	static StructField FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		StructField res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -34,30 +35,34 @@ public:
 
 		auto id_val = yyjson_obj_get(obj, "id");
 		if (!id_val) {
-		return "StructField required property 'id' is missing");
+			return "StructField required property 'id' is missing";
+		} else {
+			id = yyjson_get_sint(id_val);
 		}
-		id = yyjson_get_sint(id_val);
 
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (!name_val) {
-		return "StructField required property 'name' is missing");
+			return "StructField required property 'name' is missing";
+		} else {
+			name = yyjson_get_str(name_val);
 		}
-		name = yyjson_get_str(name_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
-		return "StructField required property 'type' is missing");
-		}
-		error = type.TryFromJSON(type_val);
-		if (!error.empty()) {
-			return error;
+			return "StructField required property 'type' is missing";
+		} else {
+			error = type.TryFromJSON(type_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto required_val = yyjson_obj_get(obj, "required");
 		if (!required_val) {
-		return "StructField required property 'required' is missing");
+			return "StructField required property 'required' is missing";
+		} else {
+			required = yyjson_get_bool(required_val);
 		}
-		required = yyjson_get_bool(required_val);
 
 		auto doc_val = yyjson_obj_get(obj, "doc");
 		if (doc_val) {

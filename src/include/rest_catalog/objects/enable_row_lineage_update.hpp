@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class EnableRowLineageUpdate {
 public:
-	EnableRowLineageUpdate::EnableRowLineageUpdate() {
+	EnableRowLineageUpdate() {
 	}
 
 public:
 	static EnableRowLineageUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		EnableRowLineageUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

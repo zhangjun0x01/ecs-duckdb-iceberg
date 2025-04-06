@@ -15,22 +15,23 @@ namespace rest_api_objects {
 
 class CompletedPlanningWithIDResult {
 public:
-	CompletedPlanningWithIDResult::CompletedPlanningWithIDResult() {
+	CompletedPlanningWithIDResult() {
 	}
 
 public:
 	class Object6 {
 	public:
-		Object6::Object6() {
+		Object6() {
 		}
 
 	public:
 		static Object6 FromJSON(yyjson_val *obj) {
-			auto error = TryFromJSON(obj);
+			Object6 res;
+			auto error = res.TryFromJSON(obj);
 			if (!error.empty()) {
 				throw InvalidInputException(error);
 			}
-			return *this;
+			return res;
 		}
 
 	public:
@@ -52,11 +53,12 @@ public:
 
 public:
 	static CompletedPlanningWithIDResult FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		CompletedPlanningWithIDResult res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -77,8 +79,8 @@ public:
 	}
 
 public:
-	CompletedPlanningResult completed_planning_result;
 	Object6 object_6;
+	CompletedPlanningResult completed_planning_result;
 
 public:
 };

@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class OAuthTokenRequest {
 public:
-	OAuthTokenRequest::OAuthTokenRequest() {
+	OAuthTokenRequest() {
 	}
 
 public:
 	static OAuthTokenRequest FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		OAuthTokenRequest res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -50,8 +51,8 @@ public:
 	}
 
 public:
-	OAuthClientCredentialsRequest oauth_client_credentials_request;
 	OAuthTokenExchangeRequest oauth_token_exchange_request;
+	OAuthClientCredentialsRequest oauth_client_credentials_request;
 
 public:
 	bool has_oauth_client_credentials_request = false;

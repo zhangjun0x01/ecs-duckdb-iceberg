@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class AddSchemaUpdate {
 public:
-	AddSchemaUpdate::AddSchemaUpdate() {
+	AddSchemaUpdate() {
 	}
 
 public:
 	static AddSchemaUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		AddSchemaUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -39,11 +40,12 @@ public:
 
 		auto schema_val = yyjson_obj_get(obj, "schema");
 		if (!schema_val) {
-		return "AddSchemaUpdate required property 'schema' is missing");
-		}
-		error = schema.TryFromJSON(schema_val);
-		if (!error.empty()) {
-			return error;
+			return "AddSchemaUpdate required property 'schema' is missing";
+		} else {
+			error = schema.TryFromJSON(schema_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto action_val = yyjson_obj_get(obj, "action");

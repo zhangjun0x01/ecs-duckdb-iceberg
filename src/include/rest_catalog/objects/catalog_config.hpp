@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class CatalogConfig {
 public:
-	CatalogConfig::CatalogConfig() {
+	CatalogConfig() {
 	}
 
 public:
 	static CatalogConfig FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		CatalogConfig res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -32,15 +33,17 @@ public:
 
 		auto defaults_val = yyjson_obj_get(obj, "defaults");
 		if (!defaults_val) {
-		return "CatalogConfig required property 'defaults' is missing");
+			return "CatalogConfig required property 'defaults' is missing";
+		} else {
+			defaults = parse_object_of_strings(defaults_val);
 		}
-		defaults = parse_object_of_strings(defaults_val);
 
 		auto overrides_val = yyjson_obj_get(obj, "overrides");
 		if (!overrides_val) {
-		return "CatalogConfig required property 'overrides' is missing");
+			return "CatalogConfig required property 'overrides' is missing";
+		} else {
+			overrides = parse_object_of_strings(overrides_val);
 		}
-		overrides = parse_object_of_strings(overrides_val);
 
 		auto endpoints_val = yyjson_obj_get(obj, "endpoints");
 		if (endpoints_val) {

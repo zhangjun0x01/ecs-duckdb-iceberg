@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class NullOrder {
 public:
-	NullOrder::NullOrder() {
+	NullOrder() {
 	}
 
 public:
 	static NullOrder FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		NullOrder res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

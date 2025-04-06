@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class RenameTableRequest {
 public:
-	RenameTableRequest::RenameTableRequest() {
+	RenameTableRequest() {
 	}
 
 public:
 	static RenameTableRequest FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		RenameTableRequest res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -33,20 +34,22 @@ public:
 
 		auto source_val = yyjson_obj_get(obj, "source");
 		if (!source_val) {
-		return "RenameTableRequest required property 'source' is missing");
-		}
-		error = source.TryFromJSON(source_val);
-		if (!error.empty()) {
-			return error;
+			return "RenameTableRequest required property 'source' is missing";
+		} else {
+			error = source.TryFromJSON(source_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto destination_val = yyjson_obj_get(obj, "destination");
 		if (!destination_val) {
-		return "RenameTableRequest required property 'destination' is missing");
-		}
-		error = destination.TryFromJSON(destination_val);
-		if (!error.empty()) {
-			return error;
+			return "RenameTableRequest required property 'destination' is missing";
+		} else {
+			error = destination.TryFromJSON(destination_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		return string();

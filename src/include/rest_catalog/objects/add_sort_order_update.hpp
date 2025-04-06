@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class AddSortOrderUpdate {
 public:
-	AddSortOrderUpdate::AddSortOrderUpdate() {
+	AddSortOrderUpdate() {
 	}
 
 public:
 	static AddSortOrderUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		AddSortOrderUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -39,11 +40,12 @@ public:
 
 		auto sort_order_val = yyjson_obj_get(obj, "sort_order");
 		if (!sort_order_val) {
-		return "AddSortOrderUpdate required property 'sort_order' is missing");
-		}
-		error = sort_order.TryFromJSON(sort_order_val);
-		if (!error.empty()) {
-			return error;
+			return "AddSortOrderUpdate required property 'sort_order' is missing";
+		} else {
+			error = sort_order.TryFromJSON(sort_order_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto action_val = yyjson_obj_get(obj, "action");

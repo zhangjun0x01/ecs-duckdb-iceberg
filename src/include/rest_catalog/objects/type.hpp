@@ -18,16 +18,17 @@ namespace rest_api_objects {
 
 class Type {
 public:
-	Type::Type() {
+	Type() {
 	}
 
 public:
 	static Type FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		Type res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -61,10 +62,10 @@ public:
 	}
 
 public:
+	MapType map_type;
 	PrimitiveType primitive_type;
 	StructType struct_type;
 	ListType list_type;
-	MapType map_type;
 
 public:
 	bool has_primitive_type = false;

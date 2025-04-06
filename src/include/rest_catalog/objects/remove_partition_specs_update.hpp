@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class RemovePartitionSpecsUpdate {
 public:
-	RemovePartitionSpecsUpdate::RemovePartitionSpecsUpdate() {
+	RemovePartitionSpecsUpdate() {
 	}
 
 public:
 	static RemovePartitionSpecsUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		RemovePartitionSpecsUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,14 +39,15 @@ public:
 
 		auto spec_ids_val = yyjson_obj_get(obj, "spec_ids");
 		if (!spec_ids_val) {
-		return "RemovePartitionSpecsUpdate required property 'spec_ids' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(spec_ids_val, idx, max, val) {
+			return "RemovePartitionSpecsUpdate required property 'spec_ids' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(spec_ids_val, idx, max, val) {
 
-			auto tmp = yyjson_get_sint(val);
-			spec_ids.push_back(tmp);
+				auto tmp = yyjson_get_sint(val);
+				spec_ids.push_back(tmp);
+			}
 		}
 
 		auto action_val = yyjson_obj_get(obj, "action");

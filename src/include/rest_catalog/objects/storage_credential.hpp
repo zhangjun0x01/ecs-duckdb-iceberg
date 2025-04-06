@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class StorageCredential {
 public:
-	StorageCredential::StorageCredential() {
+	StorageCredential() {
 	}
 
 public:
 	static StorageCredential FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		StorageCredential res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -32,15 +33,17 @@ public:
 
 		auto prefix_val = yyjson_obj_get(obj, "prefix");
 		if (!prefix_val) {
-		return "StorageCredential required property 'prefix' is missing");
+			return "StorageCredential required property 'prefix' is missing";
+		} else {
+			prefix = yyjson_get_str(prefix_val);
 		}
-		prefix = yyjson_get_str(prefix_val);
 
 		auto config_val = yyjson_obj_get(obj, "config");
 		if (!config_val) {
-		return "StorageCredential required property 'config' is missing");
+			return "StorageCredential required property 'config' is missing";
+		} else {
+			config = parse_object_of_strings(config_val);
 		}
-		config = parse_object_of_strings(config_val);
 
 		return string();
 	}

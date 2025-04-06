@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class SetCurrentSchemaUpdate {
 public:
-	SetCurrentSchemaUpdate::SetCurrentSchemaUpdate() {
+	SetCurrentSchemaUpdate() {
 	}
 
 public:
 	static SetCurrentSchemaUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		SetCurrentSchemaUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,9 +39,10 @@ public:
 
 		auto schema_id_val = yyjson_obj_get(obj, "schema_id");
 		if (!schema_id_val) {
-		return "SetCurrentSchemaUpdate required property 'schema_id' is missing");
+			return "SetCurrentSchemaUpdate required property 'schema_id' is missing";
+		} else {
+			schema_id = yyjson_get_sint(schema_id_val);
 		}
-		schema_id = yyjson_get_sint(schema_id_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {

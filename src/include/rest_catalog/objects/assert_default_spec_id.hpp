@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class AssertDefaultSpecId {
 public:
-	AssertDefaultSpecId::AssertDefaultSpecId() {
+	AssertDefaultSpecId() {
 	}
 
 public:
 	static AssertDefaultSpecId FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		AssertDefaultSpecId res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,9 +39,10 @@ public:
 
 		auto default_spec_id_val = yyjson_obj_get(obj, "default_spec_id");
 		if (!default_spec_id_val) {
-		return "AssertDefaultSpecId required property 'default_spec_id' is missing");
+			return "AssertDefaultSpecId required property 'default_spec_id' is missing";
+		} else {
+			default_spec_id = yyjson_get_sint(default_spec_id_val);
 		}
-		default_spec_id = yyjson_get_sint(default_spec_id_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {

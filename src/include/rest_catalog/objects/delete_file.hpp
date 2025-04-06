@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class DeleteFile {
 public:
-	DeleteFile::DeleteFile() {
+	DeleteFile() {
 	}
 
 public:
 	static DeleteFile FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		DeleteFile res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

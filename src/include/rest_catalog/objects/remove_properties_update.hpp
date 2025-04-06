@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class RemovePropertiesUpdate {
 public:
-	RemovePropertiesUpdate::RemovePropertiesUpdate() {
+	RemovePropertiesUpdate() {
 	}
 
 public:
 	static RemovePropertiesUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		RemovePropertiesUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,14 +39,15 @@ public:
 
 		auto removals_val = yyjson_obj_get(obj, "removals");
 		if (!removals_val) {
-		return "RemovePropertiesUpdate required property 'removals' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(removals_val, idx, max, val) {
+			return "RemovePropertiesUpdate required property 'removals' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(removals_val, idx, max, val) {
 
-			auto tmp = yyjson_get_str(val);
-			removals.push_back(tmp);
+				auto tmp = yyjson_get_str(val);
+				removals.push_back(tmp);
+			}
 		}
 
 		auto action_val = yyjson_obj_get(obj, "action");

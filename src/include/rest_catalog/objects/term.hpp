@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class Term {
 public:
-	Term::Term() {
+	Term() {
 	}
 
 public:
 	static Term FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		Term res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -49,8 +50,8 @@ public:
 	}
 
 public:
-	Reference reference;
 	TransformTerm transform_term;
+	Reference reference;
 
 public:
 	bool has_reference = false;

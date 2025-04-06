@@ -30,16 +30,17 @@ namespace rest_api_objects {
 
 class PrimitiveTypeValue {
 public:
-	PrimitiveTypeValue::PrimitiveTypeValue() {
+	PrimitiveTypeValue() {
 	}
 
 public:
 	static PrimitiveTypeValue FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		PrimitiveTypeValue res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -133,22 +134,22 @@ public:
 	}
 
 public:
-	FixedTypeValue fixed_type_value;
+	DateTypeValue date_type_value;
+	LongTypeValue long_type_value;
 	TimestampTzNanoTypeValue timestamp_tz_nano_type_value;
-	TimestampNanoTypeValue timestamp_nano_type_value;
-	TimestampTzTypeValue timestamp_tz_type_value;
 	UUIDTypeValue uuidtype_value;
 	TimestampTypeValue timestamp_type_value;
-	TimeTypeValue time_type_value;
-	DecimalTypeValue decimal_type_value;
-	StringTypeValue string_type_value;
-	BinaryTypeValue binary_type_value;
 	DoubleTypeValue double_type_value;
-	LongTypeValue long_type_value;
-	BooleanTypeValue boolean_type_value;
-	DateTypeValue date_type_value;
+	TimestampNanoTypeValue timestamp_nano_type_value;
 	FloatTypeValue float_type_value;
+	FixedTypeValue fixed_type_value;
+	StringTypeValue string_type_value;
+	DecimalTypeValue decimal_type_value;
+	BooleanTypeValue boolean_type_value;
+	BinaryTypeValue binary_type_value;
+	TimestampTzTypeValue timestamp_tz_type_value;
 	IntegerTypeValue integer_type_value;
+	TimeTypeValue time_type_value;
 
 public:
 	bool has_boolean_type_value = false;

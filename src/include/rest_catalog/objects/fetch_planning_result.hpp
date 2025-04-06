@@ -17,16 +17,17 @@ namespace rest_api_objects {
 
 class FetchPlanningResult {
 public:
-	FetchPlanningResult::FetchPlanningResult() {
+	FetchPlanningResult() {
 	}
 
 public:
 	static FetchPlanningResult FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		FetchPlanningResult res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -55,9 +56,9 @@ public:
 	}
 
 public:
-	CompletedPlanningResult completed_planning_result;
 	EmptyPlanningResult empty_planning_result;
 	FailedPlanningResult failed_planning_result;
+	CompletedPlanningResult completed_planning_result;
 
 public:
 	bool has_completed_planning_result = false;

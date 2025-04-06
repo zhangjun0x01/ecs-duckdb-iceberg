@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class SetLocationUpdate {
 public:
-	SetLocationUpdate::SetLocationUpdate() {
+	SetLocationUpdate() {
 	}
 
 public:
 	static SetLocationUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		SetLocationUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,9 +39,10 @@ public:
 
 		auto location_val = yyjson_obj_get(obj, "location");
 		if (!location_val) {
-		return "SetLocationUpdate required property 'location' is missing");
+			return "SetLocationUpdate required property 'location' is missing";
+		} else {
+			location = yyjson_get_str(location_val);
 		}
-		location = yyjson_get_str(location_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {

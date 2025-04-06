@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class Reference {
 public:
-	Reference::Reference() {
+	Reference() {
 	}
 
 public:
 	static Reference FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		Reference res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

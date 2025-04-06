@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class OAuthError {
 public:
-	OAuthError::OAuthError() {
+	OAuthError() {
 	}
 
 public:
 	static OAuthError FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		OAuthError res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -32,9 +33,10 @@ public:
 
 		auto _error_val = yyjson_obj_get(obj, "_error");
 		if (!_error_val) {
-		return "OAuthError required property '_error' is missing");
+			return "OAuthError required property '_error' is missing";
+		} else {
+			_error = yyjson_get_str(_error_val);
 		}
-		_error = yyjson_get_str(_error_val);
 
 		auto error_description_val = yyjson_obj_get(obj, "error_description");
 		if (error_description_val) {

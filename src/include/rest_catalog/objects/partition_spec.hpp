@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class PartitionSpec {
 public:
-	PartitionSpec::PartitionSpec() {
+	PartitionSpec() {
 	}
 
 public:
 	static PartitionSpec FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		PartitionSpec res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -33,18 +34,19 @@ public:
 
 		auto fields_val = yyjson_obj_get(obj, "fields");
 		if (!fields_val) {
-		return "PartitionSpec required property 'fields' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(fields_val, idx, max, val) {
+			return "PartitionSpec required property 'fields' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(fields_val, idx, max, val) {
 
-			PartitionField tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+				PartitionField tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				fields.push_back(tmp);
 			}
-			fields.push_back(tmp);
 		}
 
 		auto spec_id_val = yyjson_obj_get(obj, "spec_id");

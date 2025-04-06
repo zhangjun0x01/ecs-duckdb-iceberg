@@ -14,22 +14,23 @@ namespace rest_api_objects {
 
 class MetadataLog {
 public:
-	MetadataLog::MetadataLog() {
+	MetadataLog() {
 	}
 
 public:
 	class Object4 {
 	public:
-		Object4::Object4() {
+		Object4() {
 		}
 
 	public:
 		static Object4 FromJSON(yyjson_val *obj) {
-			auto error = TryFromJSON(obj);
+			Object4 res;
+			auto error = res.TryFromJSON(obj);
 			if (!error.empty()) {
 				throw InvalidInputException(error);
 			}
-			return *this;
+			return res;
 		}
 
 	public:
@@ -38,15 +39,17 @@ public:
 
 			auto metadata_file_val = yyjson_obj_get(obj, "metadata_file");
 			if (!metadata_file_val) {
-			return "Object4 required property 'metadata_file' is missing");
+				return "Object4 required property 'metadata_file' is missing";
+			} else {
+				metadata_file = yyjson_get_str(metadata_file_val);
 			}
-			metadata_file = yyjson_get_str(metadata_file_val);
 
 			auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
 			if (!timestamp_ms_val) {
-			return "Object4 required property 'timestamp_ms' is missing");
+				return "Object4 required property 'timestamp_ms' is missing";
+			} else {
+				timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 			}
-			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 
 			return string();
 		}
@@ -59,11 +62,12 @@ public:
 
 public:
 	static MetadataLog FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		MetadataLog res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

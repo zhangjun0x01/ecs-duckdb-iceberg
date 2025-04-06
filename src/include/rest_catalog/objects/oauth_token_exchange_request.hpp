@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class OAuthTokenExchangeRequest {
 public:
-	OAuthTokenExchangeRequest::OAuthTokenExchangeRequest() {
+	OAuthTokenExchangeRequest() {
 	}
 
 public:
 	static OAuthTokenExchangeRequest FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		OAuthTokenExchangeRequest res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -33,23 +34,26 @@ public:
 
 		auto grant_type_val = yyjson_obj_get(obj, "grant_type");
 		if (!grant_type_val) {
-		return "OAuthTokenExchangeRequest required property 'grant_type' is missing");
+			return "OAuthTokenExchangeRequest required property 'grant_type' is missing";
+		} else {
+			grant_type = yyjson_get_str(grant_type_val);
 		}
-		grant_type = yyjson_get_str(grant_type_val);
 
 		auto subject_token_val = yyjson_obj_get(obj, "subject_token");
 		if (!subject_token_val) {
-		return "OAuthTokenExchangeRequest required property 'subject_token' is missing");
+			return "OAuthTokenExchangeRequest required property 'subject_token' is missing";
+		} else {
+			subject_token = yyjson_get_str(subject_token_val);
 		}
-		subject_token = yyjson_get_str(subject_token_val);
 
 		auto subject_token_type_val = yyjson_obj_get(obj, "subject_token_type");
 		if (!subject_token_type_val) {
-		return "OAuthTokenExchangeRequest required property 'subject_token_type' is missing");
-		}
-		error = subject_token_type.TryFromJSON(subject_token_type_val);
-		if (!error.empty()) {
-			return error;
+			return "OAuthTokenExchangeRequest required property 'subject_token_type' is missing";
+		} else {
+			error = subject_token_type.TryFromJSON(subject_token_type_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto scope_val = yyjson_obj_get(obj, "scope");

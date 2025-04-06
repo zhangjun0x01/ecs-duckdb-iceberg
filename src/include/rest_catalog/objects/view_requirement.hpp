@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class ViewRequirement {
 public:
-	ViewRequirement::ViewRequirement() {
+	ViewRequirement() {
 	}
 
 public:
 	static ViewRequirement FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		ViewRequirement res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

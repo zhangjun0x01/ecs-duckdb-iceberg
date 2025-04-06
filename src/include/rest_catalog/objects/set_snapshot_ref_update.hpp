@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class SetSnapshotRefUpdate {
 public:
-	SetSnapshotRefUpdate::SetSnapshotRefUpdate() {
+	SetSnapshotRefUpdate() {
 	}
 
 public:
 	static SetSnapshotRefUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		SetSnapshotRefUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -44,9 +45,10 @@ public:
 
 		auto ref_name_val = yyjson_obj_get(obj, "ref_name");
 		if (!ref_name_val) {
-		return "SetSnapshotRefUpdate required property 'ref_name' is missing");
+			return "SetSnapshotRefUpdate required property 'ref_name' is missing";
+		} else {
+			ref_name = yyjson_get_str(ref_name_val);
 		}
-		ref_name = yyjson_get_str(ref_name_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
@@ -57,8 +59,8 @@ public:
 	}
 
 public:
-	BaseUpdate base_update;
 	SnapshotReference snapshot_reference;
+	BaseUpdate base_update;
 
 public:
 	string action;

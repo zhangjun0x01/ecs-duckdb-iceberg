@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class PositionDeleteFile {
 public:
-	PositionDeleteFile::PositionDeleteFile() {
+	PositionDeleteFile() {
 	}
 
 public:
 	static PositionDeleteFile FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		PositionDeleteFile res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -38,9 +39,10 @@ public:
 
 		auto content_val = yyjson_obj_get(obj, "content");
 		if (!content_val) {
-		return "PositionDeleteFile required property 'content' is missing");
+			return "PositionDeleteFile required property 'content' is missing";
+		} else {
+			content = yyjson_get_str(content_val);
 		}
-		content = yyjson_get_str(content_val);
 
 		auto content_offset_val = yyjson_obj_get(obj, "content_offset");
 		if (content_offset_val) {

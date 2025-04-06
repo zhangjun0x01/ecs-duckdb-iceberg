@@ -15,22 +15,23 @@ namespace rest_api_objects {
 
 class Schema {
 public:
-	Schema::Schema() {
+	Schema() {
 	}
 
 public:
 	class Object1 {
 	public:
-		Object1::Object1() {
+		Object1() {
 		}
 
 	public:
 		static Object1 FromJSON(yyjson_val *obj) {
-			auto error = TryFromJSON(obj);
+			Object1 res;
+			auto error = res.TryFromJSON(obj);
 			if (!error.empty()) {
 				throw InvalidInputException(error);
 			}
-			return *this;
+			return res;
 		}
 
 	public:
@@ -64,11 +65,12 @@ public:
 
 public:
 	static Schema FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		Schema res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -89,8 +91,8 @@ public:
 	}
 
 public:
-	StructType struct_type;
 	Object1 object_1;
+	StructType struct_type;
 
 public:
 };

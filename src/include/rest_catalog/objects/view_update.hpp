@@ -22,16 +22,17 @@ namespace rest_api_objects {
 
 class ViewUpdate {
 public:
-	ViewUpdate::ViewUpdate() {
+	ViewUpdate() {
 	}
 
 public:
 	static ViewUpdate FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		ViewUpdate res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -88,14 +89,14 @@ public:
 	}
 
 public:
-	SetPropertiesUpdate set_properties_update;
-	AssignUUIDUpdate assign_uuidupdate;
 	AddViewVersionUpdate add_view_version_update;
-	AddSchemaUpdate add_schema_update;
-	SetCurrentViewVersionUpdate set_current_view_version_update;
 	RemovePropertiesUpdate remove_properties_update;
+	SetPropertiesUpdate set_properties_update;
 	SetLocationUpdate set_location_update;
+	SetCurrentViewVersionUpdate set_current_view_version_update;
 	UpgradeFormatVersionUpdate upgrade_format_version_update;
+	AssignUUIDUpdate assign_uuidupdate;
+	AddSchemaUpdate add_schema_update;
 
 public:
 	bool has_assign_uuidupdate = false;

@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class ReportMetricsRequest {
 public:
-	ReportMetricsRequest::ReportMetricsRequest() {
+	ReportMetricsRequest() {
 	}
 
 public:
 	static ReportMetricsRequest FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		ReportMetricsRequest res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -48,9 +49,10 @@ public:
 
 		auto report_type_val = yyjson_obj_get(obj, "report_type");
 		if (!report_type_val) {
-		return "ReportMetricsRequest required property 'report_type' is missing");
+			return "ReportMetricsRequest required property 'report_type' is missing";
+		} else {
+			report_type = yyjson_get_str(report_type_val);
 		}
-		report_type = yyjson_get_str(report_type_val);
 
 		return string();
 	}

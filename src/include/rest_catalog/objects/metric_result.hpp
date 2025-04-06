@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class MetricResult {
 public:
-	MetricResult::MetricResult() {
+	MetricResult() {
 	}
 
 public:
 	static MetricResult FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		MetricResult res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

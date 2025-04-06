@@ -14,22 +14,23 @@ namespace rest_api_objects {
 
 class Snapshot {
 public:
-	Snapshot::Snapshot() {
+	Snapshot() {
 	}
 
 public:
 	class Object2 {
 	public:
-		Object2::Object2() {
+		Object2() {
 		}
 
 	public:
 		static Object2 FromJSON(yyjson_val *obj) {
-			auto error = TryFromJSON(obj);
+			Object2 res;
+			auto error = res.TryFromJSON(obj);
 			if (!error.empty()) {
 				throw InvalidInputException(error);
 			}
-			return *this;
+			return res;
 		}
 
 	public:
@@ -38,9 +39,10 @@ public:
 
 			auto operation_val = yyjson_obj_get(obj, "operation");
 			if (!operation_val) {
-			return "Object2 required property 'operation' is missing");
+				return "Object2 required property 'operation' is missing";
+			} else {
+				operation = yyjson_get_str(operation_val);
 			}
-			operation = yyjson_get_str(operation_val);
 
 			case_insensitive_set_t handled_properties {"operation"};
 
@@ -67,11 +69,12 @@ public:
 
 public:
 	static Snapshot FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		Snapshot res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -80,29 +83,33 @@ public:
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
 		if (!snapshot_id_val) {
-		return "Snapshot required property 'snapshot_id' is missing");
+			return "Snapshot required property 'snapshot_id' is missing";
+		} else {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		}
-		snapshot_id = yyjson_get_sint(snapshot_id_val);
 
 		auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
 		if (!timestamp_ms_val) {
-		return "Snapshot required property 'timestamp_ms' is missing");
+			return "Snapshot required property 'timestamp_ms' is missing";
+		} else {
+			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 		}
-		timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 
 		auto manifest_list_val = yyjson_obj_get(obj, "manifest_list");
 		if (!manifest_list_val) {
-		return "Snapshot required property 'manifest_list' is missing");
+			return "Snapshot required property 'manifest_list' is missing";
+		} else {
+			manifest_list = yyjson_get_str(manifest_list_val);
 		}
-		manifest_list = yyjson_get_str(manifest_list_val);
 
 		auto summary_val = yyjson_obj_get(obj, "summary");
 		if (!summary_val) {
-		return "Snapshot required property 'summary' is missing");
-		}
-		error = summary.TryFromJSON(summary_val);
-		if (!error.empty()) {
-			return error;
+			return "Snapshot required property 'summary' is missing";
+		} else {
+			error = summary.TryFromJSON(summary_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto parent_snapshot_id_val = yyjson_obj_get(obj, "parent_snapshot_id");

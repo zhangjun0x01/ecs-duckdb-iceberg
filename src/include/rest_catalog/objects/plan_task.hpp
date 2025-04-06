@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class PlanTask {
 public:
-	PlanTask::PlanTask() {
+	PlanTask() {
 	}
 
 public:
 	static PlanTask FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		PlanTask res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:

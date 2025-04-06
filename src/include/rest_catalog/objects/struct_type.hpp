@@ -15,16 +15,17 @@ namespace rest_api_objects {
 
 class StructType {
 public:
-	StructType::StructType() {
+	StructType() {
 	}
 
 public:
 	static StructType FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		StructType res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -33,24 +34,26 @@ public:
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
-		return "StructType required property 'type' is missing");
+			return "StructType required property 'type' is missing";
+		} else {
+			type = yyjson_get_str(type_val);
 		}
-		type = yyjson_get_str(type_val);
 
 		auto fields_val = yyjson_obj_get(obj, "fields");
 		if (!fields_val) {
-		return "StructType required property 'fields' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(fields_val, idx, max, val) {
+			return "StructType required property 'fields' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(fields_val, idx, max, val) {
 
-			StructField tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+				StructField tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				fields.push_back(tmp);
 			}
-			fields.push_back(tmp);
 		}
 
 		return string();

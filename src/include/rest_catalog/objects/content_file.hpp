@@ -16,16 +16,17 @@ namespace rest_api_objects {
 
 class ContentFile {
 public:
-	ContentFile::ContentFile() {
+	ContentFile() {
 	}
 
 public:
 	static ContentFile FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		ContentFile res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
@@ -34,58 +35,65 @@ public:
 
 		auto spec_id_val = yyjson_obj_get(obj, "spec_id");
 		if (!spec_id_val) {
-		return "ContentFile required property 'spec_id' is missing");
+			return "ContentFile required property 'spec_id' is missing";
+		} else {
+			spec_id = yyjson_get_sint(spec_id_val);
 		}
-		spec_id = yyjson_get_sint(spec_id_val);
 
 		auto partition_val = yyjson_obj_get(obj, "partition");
 		if (!partition_val) {
-		return "ContentFile required property 'partition' is missing");
-		}
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(partition_val, idx, max, val) {
+			return "ContentFile required property 'partition' is missing";
+		} else {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(partition_val, idx, max, val) {
 
-			PrimitiveTypeValue tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+				PrimitiveTypeValue tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				partition.push_back(tmp);
 			}
-			partition.push_back(tmp);
 		}
 
 		auto content_val = yyjson_obj_get(obj, "content");
 		if (!content_val) {
-		return "ContentFile required property 'content' is missing");
+			return "ContentFile required property 'content' is missing";
+		} else {
+			content = yyjson_get_str(content_val);
 		}
-		content = yyjson_get_str(content_val);
 
 		auto file_path_val = yyjson_obj_get(obj, "file_path");
 		if (!file_path_val) {
-		return "ContentFile required property 'file_path' is missing");
+			return "ContentFile required property 'file_path' is missing";
+		} else {
+			file_path = yyjson_get_str(file_path_val);
 		}
-		file_path = yyjson_get_str(file_path_val);
 
 		auto file_format_val = yyjson_obj_get(obj, "file_format");
 		if (!file_format_val) {
-		return "ContentFile required property 'file_format' is missing");
-		}
-		error = file_format.TryFromJSON(file_format_val);
-		if (!error.empty()) {
-			return error;
+			return "ContentFile required property 'file_format' is missing";
+		} else {
+			error = file_format.TryFromJSON(file_format_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto file_size_in_bytes_val = yyjson_obj_get(obj, "file_size_in_bytes");
 		if (!file_size_in_bytes_val) {
-		return "ContentFile required property 'file_size_in_bytes' is missing");
+			return "ContentFile required property 'file_size_in_bytes' is missing";
+		} else {
+			file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
 		}
-		file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
 
 		auto record_count_val = yyjson_obj_get(obj, "record_count");
 		if (!record_count_val) {
-		return "ContentFile required property 'record_count' is missing");
+			return "ContentFile required property 'record_count' is missing";
+		} else {
+			record_count = yyjson_get_sint(record_count_val);
 		}
-		record_count = yyjson_get_sint(record_count_val);
 
 		auto key_metadata_val = yyjson_obj_get(obj, "key_metadata");
 		if (key_metadata_val) {

@@ -14,16 +14,17 @@ namespace rest_api_objects {
 
 class DecimalTypeValue {
 public:
-	DecimalTypeValue::DecimalTypeValue() {
+	DecimalTypeValue() {
 	}
 
 public:
 	static DecimalTypeValue FromJSON(yyjson_val *obj) {
-		auto error = TryFromJSON(obj);
+		DecimalTypeValue res;
+		auto error = res.TryFromJSON(obj);
 		if (!error.empty()) {
 			throw InvalidInputException(error);
 		}
-		return *this;
+		return res;
 	}
 
 public:
