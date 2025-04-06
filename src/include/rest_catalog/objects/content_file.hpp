@@ -6,6 +6,7 @@
 #include "duckdb/common/vector.hpp"
 #include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
+#include "rest_catalog/objects/binary_type_value.hpp"
 #include "rest_catalog/objects/file_format.hpp"
 #include "rest_catalog/objects/primitive_type_value.hpp"
 
@@ -32,7 +33,7 @@ public:
 	FileFormat file_format;
 	int64_t file_size_in_bytes;
 	int64_t record_count;
-	yyjson_val *key_metadata;
+	BinaryTypeValue key_metadata;
 	vector<int64_t> split_offsets;
 	int64_t sort_order_id;
 };

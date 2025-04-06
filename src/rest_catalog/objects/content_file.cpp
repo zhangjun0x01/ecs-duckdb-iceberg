@@ -83,7 +83,10 @@ string ContentFile::TryFromJSON(yyjson_val *obj) {
 	}
 	auto key_metadata_val = yyjson_obj_get(obj, "key_metadata");
 	if (key_metadata_val) {
-		key_metadata = key_metadata_val;
+		error = key_metadata.TryFromJSON(key_metadata_val);
+		if (!error.empty()) {
+			return error;
+		}
 	}
 	auto split_offsets_val = yyjson_obj_get(obj, "split_offsets");
 	if (split_offsets_val) {

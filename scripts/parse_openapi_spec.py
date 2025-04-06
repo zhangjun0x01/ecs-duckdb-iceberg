@@ -91,6 +91,12 @@ class ObjectProperty(Property):
             return False
         if self.additional_properties:
             return False
+        if self.any_of:
+            return False
+        if self.all_of:
+            return False
+        if self.one_of:
+            return False
         return True
 
 
@@ -218,10 +224,18 @@ class ResponseObjectsGenerator:
             and not result.is_object_of_strings()
             and not result.is_raw_object()
         ):
+            if (
+                not result.one_of
+                and not result.any_of
+                and len(result.all_of) == 1
+                and result.all_of[0].type == Property.Type.SCHEMA_REFERENCE
+            ):
+                # Optimizer: object that consists of a single 'allOf' can be simplified to just that single reference
+                return SchemaReferenceProperty(result.all_of[0].ref)
             self.object_schema_count += 1
             new_name = f'Object{self.object_schema_count}'
             self.parsed_schemas[new_name] = result
-            print("CUSTOM SCHEMA", new_name, spec)
+            # print("CUSTOM SCHEMA", new_name, spec)
             return SchemaReferenceProperty(new_name)
         return result
 
@@ -253,10 +267,5 @@ if __name__ == '__main__':
     generator = ResponseObjectsGenerator(API_SPEC_PATH)
     generator.parse_all_schemas()
 
-    # schema = generator.parsed_schemas['AndOrExpression']
-    # content = generator.generate_schema(schema, 'AndOrExpression')
-    # print(content)
-    # exit(1)
-
-    # generator.generate_all_schemas()
-    print("finito")
+    schema = generator.parsed_schemas['DataFile']
+    exit(1)

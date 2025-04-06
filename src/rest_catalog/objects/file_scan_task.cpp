@@ -47,7 +47,11 @@ string FileScanTask::TryFromJSON(yyjson_val *obj) {
 	}
 	auto residual_filter_val = yyjson_obj_get(obj, "residual_filter");
 	if (residual_filter_val) {
-		residual_filter = residual_filter_val;
+		residual_filter = make_uniq<Expression>();
+		error = residual_filter->TryFromJSON(residual_filter_val);
+		if (!error.empty()) {
+			return error;
+		}
 	}
 	return string();
 }

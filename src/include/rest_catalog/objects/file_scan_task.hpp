@@ -13,6 +13,8 @@ using namespace duckdb_yyjson;
 namespace duckdb {
 namespace rest_api_objects {
 
+class Expression;
+
 class FileScanTask {
 public:
 	FileScanTask();
@@ -26,7 +28,7 @@ public:
 public:
 	DataFile data_file;
 	vector<int64_t> delete_file_references;
-	yyjson_val *residual_filter;
+	unique_ptr<Expression> residual_filter;
 };
 
 } // namespace rest_api_objects

@@ -7,6 +7,8 @@
 #include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/content_file.hpp"
+#include "rest_catalog/objects/count_map.hpp"
+#include "rest_catalog/objects/value_map.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -26,12 +28,12 @@ public:
 public:
 	ContentFile content_file;
 	string content;
-	yyjson_val *column_sizes;
-	yyjson_val *value_counts;
-	yyjson_val *null_value_counts;
-	yyjson_val *nan_value_counts;
-	yyjson_val *lower_bounds;
-	yyjson_val *upper_bounds;
+	CountMap column_sizes;
+	CountMap value_counts;
+	CountMap null_value_counts;
+	CountMap nan_value_counts;
+	ValueMap lower_bounds;
+	ValueMap upper_bounds;
 };
 
 } // namespace rest_api_objects
