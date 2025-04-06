@@ -63,9 +63,9 @@ public:
 
 public:
 public:
-	vector<string> updated;
-	vector<string> removed;
 	vector<string> missing;
+	vector<string> removed;
+	vector<string> updated;
 };
 
 } // namespace rest_api_objects

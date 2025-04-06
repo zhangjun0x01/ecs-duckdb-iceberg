@@ -52,8 +52,8 @@ public:
 
 public:
 public:
-	string type;
 	vector<StructField> fields;
+	string type;
 };
 
 } // namespace rest_api_objects

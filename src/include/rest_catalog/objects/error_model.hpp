@@ -61,10 +61,10 @@ public:
 
 public:
 public:
-	string message;
-	string type;
 	int64_t code;
+	string message;
 	vector<string> stack;
+	string type;
 };
 
 } // namespace rest_api_objects

@@ -59,8 +59,8 @@ public:
 
 public:
 public:
-	ExpressionType type;
 	Term term;
+	ExpressionType type;
 	vector<yyjson_val *> values;
 };
 

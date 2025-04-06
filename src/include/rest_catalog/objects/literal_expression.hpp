@@ -55,8 +55,8 @@ public:
 
 public:
 public:
-	ExpressionType type;
 	Term term;
+	ExpressionType type;
 	yyjson_val *value;
 };
 

@@ -60,8 +60,8 @@ public:
 
 public:
 	string action;
-	Schema schema;
 	int64_t last_column_id;
+	Schema schema;
 };
 
 } // namespace rest_api_objects

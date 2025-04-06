@@ -433,10 +433,22 @@ if ({condition}) {{
                 'boolean': 'yyjson_get_bool',
             }
             primitive_property = cast(PrimitiveProperty, property)
-            if primitive_property.primitive_type not in PRIMITIVE_PARSE_FUNCTIONS:
-                print(f"Unrecognized primitive type '{primitive_property.primitive_type}' encountered in array")
+            item_type = primitive_property.primitive_type
+            if item_type in PRIMITIVE_PARSE_FUNCTIONS:
+                parse_func = PRIMITIVE_PARSE_FUNCTIONS[item_type]
+            elif item_type == 'number':
+                format = primitive_property.format
+                if not format:
+                    print(f"'number' without a 'format' property in the spec!")
+                    exit(1)
+                NUMBER_PARSE_FUNCTIONS = {'double': 'yyjson_get_real', 'float': 'yyjson_get_real'}
+                if format not in NUMBER_PARSE_FUNCTIONS:
+                    print(f"'number' without an unrecognized 'format' found, {format}")
+                    exit(1)
+                parse_func = NUMBER_PARSE_FUNCTIONS[format]
+            else:
+                print(f"Unrecognized primitive type '{item_type}' encountered in array")
                 exit(1)
-            parse_func = PRIMITIVE_PARSE_FUNCTIONS[primitive_property.primitive_type]
             return f'{parse_func}({source})'
         elif property.type == Property.Type.OBJECT and property.is_object_of_strings():
             return f'parse_object_of_strings({source})'
@@ -563,6 +575,8 @@ if (!{variable_name}_val) {{
 
         # TODO: implement this
 
+        variable_parsing = self.generate_assignment(schema, 'value', 'obj', referenced_schemas)
+
         variable_type = self.generate_variable_type(schema)
         variable_definition = f'\t{variable_type} value;'
 
@@ -570,7 +584,7 @@ if (!{variable_name}_val) {{
             CLASS_NAME=name,
             NESTED_CLASSES='',
             BASE_CLASS_PARSING='',
-            REQUIRED_PROPERTIES='',
+            REQUIRED_PROPERTIES=variable_parsing,
             OPTIONAL_PROPERTIES='',
             BASE_CLASS_VARIABLES='',
             PROPERTY_VARIABLES=variable_definition,
@@ -639,7 +653,7 @@ if (!{variable_name}_val) {{
             nested_classes = ''
 
         variable_definitions = []
-        for item in object_property.properties:
+        for item in sorted(list(object_property.properties.keys())):
             variable = object_property.properties[item]
             variable_type = self.generate_variable_type(variable)
             variable_definitions.append(f'\t{variable_type} {safe_cpp_name(item)};')

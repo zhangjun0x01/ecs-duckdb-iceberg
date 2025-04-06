@@ -61,9 +61,9 @@ public:
 
 public:
 public:
-	string metadata_location;
-	TableMetadata metadata;
 	yyjson_val *config;
+	TableMetadata metadata;
+	string metadata_location;
 	vector<StorageCredential> storage_credentials;
 };
 

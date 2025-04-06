@@ -68,11 +68,11 @@ public:
 public:
 public:
 	string access_token;
-	string token_type;
 	int64_t expires_in;
 	TokenType issued_token_type;
 	string refresh_token;
 	string scope;
+	string token_type;
 };
 
 } // namespace rest_api_objects

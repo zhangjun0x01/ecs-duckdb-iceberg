@@ -81,13 +81,13 @@ public:
 
 public:
 public:
-	int64_t version_id;
-	int64_t timestamp_ms;
-	int64_t schema_id;
-	yyjson_val *summary;
-	vector<ViewRepresentation> representations;
 	string default_catalog;
 	Namespace default_namespace;
+	vector<ViewRepresentation> representations;
+	int64_t schema_id;
+	yyjson_val *summary;
+	int64_t timestamp_ms;
+	int64_t version_id;
 };
 
 } // namespace rest_api_objects

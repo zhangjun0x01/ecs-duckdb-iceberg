@@ -59,9 +59,9 @@ public:
 	TableRequirement table_requirement;
 
 public:
-	string type;
 	string ref;
 	int64_t snapshot_id;
+	string type;
 };
 
 } // namespace rest_api_objects

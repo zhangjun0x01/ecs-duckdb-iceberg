@@ -52,8 +52,8 @@ public:
 
 public:
 public:
-	int64_t order_id;
 	vector<SortField> fields;
+	int64_t order_id;
 };
 
 } // namespace rest_api_objects

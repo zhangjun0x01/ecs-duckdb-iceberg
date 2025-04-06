@@ -53,8 +53,8 @@ public:
 
 public:
 public:
-	string time_unit;
 	int64_t count;
+	string time_unit;
 	int64_t total_duration;
 };
 

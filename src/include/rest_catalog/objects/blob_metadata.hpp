@@ -67,11 +67,11 @@ public:
 
 public:
 public:
-	string type;
-	int64_t snapshot_id;
-	int64_t sequence_number;
 	vector<int64_t> fields;
 	yyjson_val *properties;
+	int64_t sequence_number;
+	int64_t snapshot_id;
+	string type;
 };
 
 } // namespace rest_api_objects

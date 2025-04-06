@@ -84,14 +84,14 @@ public:
 
 public:
 public:
-	int64_t snapshot_id;
-	vector<FieldName> select;
-	Expression filter;
 	bool case_sensitive;
-	bool use_snapshot_schema;
-	int64_t start_snapshot_id;
 	int64_t end_snapshot_id;
+	Expression filter;
+	vector<FieldName> select;
+	int64_t snapshot_id;
+	int64_t start_snapshot_id;
 	vector<FieldName> stats_fields;
+	bool use_snapshot_schema;
 };
 
 } // namespace rest_api_objects

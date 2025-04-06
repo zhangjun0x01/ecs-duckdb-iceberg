@@ -174,27 +174,27 @@ public:
 
 public:
 public:
-	int64_t format_version;
-	string table_uuid;
-	string location;
-	int64_t last_updated_ms;
-	yyjson_val *properties;
-	vector<Schema> schemas;
 	int64_t current_schema_id;
-	int64_t last_column_id;
-	vector<PartitionSpec> partition_specs;
-	int64_t default_spec_id;
-	int64_t last_partition_id;
-	vector<SortOrder> sort_orders;
-	int64_t default_sort_order_id;
-	vector<Snapshot> snapshots;
-	SnapshotReferences refs;
 	int64_t current_snapshot_id;
+	int64_t default_sort_order_id;
+	int64_t default_spec_id;
+	int64_t format_version;
+	int64_t last_column_id;
+	int64_t last_partition_id;
 	int64_t last_sequence_number;
-	SnapshotLog snapshot_log;
+	int64_t last_updated_ms;
+	string location;
 	MetadataLog metadata_log;
-	vector<StatisticsFile> statistics;
+	vector<PartitionSpec> partition_specs;
 	vector<PartitionStatisticsFile> partition_statistics;
+	yyjson_val *properties;
+	SnapshotReferences refs;
+	vector<Schema> schemas;
+	SnapshotLog snapshot_log;
+	vector<Snapshot> snapshots;
+	vector<SortOrder> sort_orders;
+	vector<StatisticsFile> statistics;
+	string table_uuid;
 };
 
 } // namespace rest_api_objects

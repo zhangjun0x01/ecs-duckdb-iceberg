@@ -75,12 +75,12 @@ public:
 
 public:
 public:
-	int64_t id;
-	string name;
-	Type type;
-	bool required;
 	string doc;
+	int64_t id;
 	PrimitiveTypeValue initial_default;
+	string name;
+	bool required;
+	Type type;
 	PrimitiveTypeValue write_default;
 };
 

@@ -59,8 +59,8 @@ public:
 public:
 public:
 	int64_t field_id;
-	int64_t source_id;
 	string name;
+	int64_t source_id;
 	Transform transform;
 };
 

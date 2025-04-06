@@ -70,11 +70,11 @@ public:
 
 public:
 public:
+	vector<BlobMetadata> blob_metadata;
+	int64_t file_footer_size_in_bytes;
+	int64_t file_size_in_bytes;
 	int64_t snapshot_id;
 	string statistics_path;
-	int64_t file_size_in_bytes;
-	int64_t file_footer_size_in_bytes;
-	vector<BlobMetadata> blob_metadata;
 };
 
 } // namespace rest_api_objects

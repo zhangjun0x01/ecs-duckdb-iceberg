@@ -53,9 +53,9 @@ public:
 
 public:
 public:
+	int64_t file_size_in_bytes;
 	int64_t snapshot_id;
 	string statistics_path;
-	int64_t file_size_in_bytes;
 };
 
 } // namespace rest_api_objects

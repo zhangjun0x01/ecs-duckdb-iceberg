@@ -72,11 +72,11 @@ public:
 
 public:
 public:
-	string type;
-	int64_t key_id;
 	Type key;
-	int64_t value_id;
+	int64_t key_id;
+	string type;
 	Type value;
+	int64_t value_id;
 	bool value_required;
 };
 

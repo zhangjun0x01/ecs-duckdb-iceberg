@@ -48,8 +48,8 @@ public:
 
 public:
 public:
-	Namespace _namespace;
 	string name;
+	Namespace _namespace;
 };
 
 } // namespace rest_api_objects

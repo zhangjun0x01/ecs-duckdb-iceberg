@@ -53,9 +53,9 @@ public:
 
 public:
 public:
-	string type;
-	string sql;
 	string dialect;
+	string sql;
+	string type;
 };
 
 } // namespace rest_api_objects

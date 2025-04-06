@@ -55,9 +55,9 @@ public:
 
 public:
 public:
-	string type;
-	Transform transform;
 	Reference term;
+	Transform transform;
+	string type;
 };
 
 } // namespace rest_api_objects

@@ -50,8 +50,8 @@ public:
 
 public:
 public:
-	int64_t spec_id;
 	vector<PartitionField> fields;
+	int64_t spec_id;
 };
 
 } // namespace rest_api_objects

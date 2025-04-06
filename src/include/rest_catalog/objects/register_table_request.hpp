@@ -51,8 +51,8 @@ public:
 
 public:
 public:
-	string name;
 	string metadata_location;
+	string name;
 	bool overwrite;
 };
 

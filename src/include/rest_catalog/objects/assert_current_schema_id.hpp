@@ -53,8 +53,8 @@ public:
 	TableRequirement table_requirement;
 
 public:
-	string type;
 	int64_t current_schema_id;
+	string type;
 };
 
 } // namespace rest_api_objects
