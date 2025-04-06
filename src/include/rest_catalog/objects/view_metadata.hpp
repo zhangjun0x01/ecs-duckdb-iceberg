@@ -37,25 +37,25 @@ public:
 		if (!view_uuid_val) {
 		return "ViewMetadata required property 'view_uuid' is missing");
 		}
-		result.view_uuid = yyjson_get_str(view_uuid_val);
+		view_uuid = yyjson_get_str(view_uuid_val);
 
 		auto format_version_val = yyjson_obj_get(obj, "format_version");
 		if (!format_version_val) {
 		return "ViewMetadata required property 'format_version' is missing");
 		}
-		result.format_version = yyjson_get_sint(format_version_val);
+		format_version = yyjson_get_sint(format_version_val);
 
 		auto location_val = yyjson_obj_get(obj, "location");
 		if (!location_val) {
 		return "ViewMetadata required property 'location' is missing");
 		}
-		result.location = yyjson_get_str(location_val);
+		location = yyjson_get_str(location_val);
 
 		auto current_version_id_val = yyjson_obj_get(obj, "current_version_id");
 		if (!current_version_id_val) {
 		return "ViewMetadata required property 'current_version_id' is missing");
 		}
-		result.current_version_id = yyjson_get_sint(current_version_id_val);
+		current_version_id = yyjson_get_sint(current_version_id_val);
 
 		auto versions_val = yyjson_obj_get(obj, "versions");
 		if (!versions_val) {
@@ -64,7 +64,13 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(versions_val, idx, max, val) {
-			result.versions.push_back(ViewVersion::FromJSON(val));
+
+			ViewVersion tmp;
+			error = tmp.TryFromJSON(val);
+			if (!error.empty()) {
+				return error;
+			}
+			versions.push_back(tmp);
 		}
 
 		auto version_log_val = yyjson_obj_get(obj, "version_log");
@@ -74,7 +80,13 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(version_log_val, idx, max, val) {
-			result.version_log.push_back(ViewHistoryEntry::FromJSON(val));
+
+			ViewHistoryEntry tmp;
+			error = tmp.TryFromJSON(val);
+			if (!error.empty()) {
+				return error;
+			}
+			version_log.push_back(tmp);
 		}
 
 		auto schemas_val = yyjson_obj_get(obj, "schemas");
@@ -84,12 +96,18 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(schemas_val, idx, max, val) {
-			result.schemas.push_back(Schema::FromJSON(val));
+
+			Schema tmp;
+			error = tmp.TryFromJSON(val);
+			if (!error.empty()) {
+				return error;
+			}
+			schemas.push_back(tmp);
 		}
 
 		auto properties_val = yyjson_obj_get(obj, "properties");
 		if (properties_val) {
-			result.properties = parse_object_of_strings(properties_val);
+			properties = parse_object_of_strings(properties_val);
 		}
 		return string();
 	}

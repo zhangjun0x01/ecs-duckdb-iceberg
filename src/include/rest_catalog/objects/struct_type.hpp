@@ -35,7 +35,7 @@ public:
 		if (!type_val) {
 		return "StructType required property 'type' is missing");
 		}
-		result.type = yyjson_get_str(type_val);
+		type = yyjson_get_str(type_val);
 
 		auto fields_val = yyjson_obj_get(obj, "fields");
 		if (!fields_val) {
@@ -44,7 +44,13 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(fields_val, idx, max, val) {
-			result.fields.push_back(StructField::FromJSON(val));
+
+			StructField tmp;
+			error = tmp.TryFromJSON(val);
+			if (!error.empty()) {
+				return error;
+			}
+			fields.push_back(tmp);
 		}
 
 		return string();

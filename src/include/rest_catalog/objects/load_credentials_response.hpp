@@ -38,7 +38,13 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(storage_credentials_val, idx, max, val) {
-			result.storage_credentials.push_back(StorageCredential::FromJSON(val));
+
+			StorageCredential tmp;
+			error = tmp.TryFromJSON(val);
+			if (!error.empty()) {
+				return error;
+			}
+			storage_credentials.push_back(tmp);
 		}
 
 		return string();

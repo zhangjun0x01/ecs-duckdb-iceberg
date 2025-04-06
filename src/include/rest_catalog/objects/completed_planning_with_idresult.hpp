@@ -39,7 +39,7 @@ public:
 
 			auto plan_id_val = yyjson_obj_get(obj, "plan_id");
 			if (plan_id_val) {
-				result.plan_id = yyjson_get_str(plan_id_val);
+				plan_id = yyjson_get_str(plan_id_val);
 			}
 			return string();
 		}
@@ -76,8 +76,8 @@ public:
 	}
 
 public:
-	CompletedPlanningResult completed_planning_result;
 	Object6 object_6;
+	CompletedPlanningResult completed_planning_result;
 
 public:
 };

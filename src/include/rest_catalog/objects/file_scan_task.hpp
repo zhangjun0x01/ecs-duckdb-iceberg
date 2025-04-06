@@ -35,20 +35,25 @@ public:
 		if (!data_file_val) {
 		return "FileScanTask required property 'data_file' is missing");
 		}
-		result.data_file = DataFile::FromJSON(data_file_val);
+		error = data_file.TryFromJSON(data_file_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto delete_file_references_val = yyjson_obj_get(obj, "delete_file_references");
 		if (delete_file_references_val) {
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(delete_file_references_val, idx, max, val) {
-				result.delete_file_references.push_back(yyjson_get_sint(val));
+
+				auto tmp = yyjson_get_sint(val);
+				delete_file_references.push_back(tmp);
 			}
 		}
 
 		auto residual_filter_val = yyjson_obj_get(obj, "residual_filter");
 		if (residual_filter_val) {
-			result.residual_filter = residual_filter_val;
+			residual_filter = residual_filter_val;
 		}
 		return string();
 	}

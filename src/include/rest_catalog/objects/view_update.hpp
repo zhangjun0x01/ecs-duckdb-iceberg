@@ -89,8 +89,8 @@ public:
 
 public:
 	SetPropertiesUpdate set_properties_update;
-	SetCurrentViewVersionUpdate set_current_view_version_update;
 	AddViewVersionUpdate add_view_version_update;
+	SetCurrentViewVersionUpdate set_current_view_version_update;
 	SetLocationUpdate set_location_update;
 	UpgradeFormatVersionUpdate upgrade_format_version_update;
 	RemovePropertiesUpdate remove_properties_update;

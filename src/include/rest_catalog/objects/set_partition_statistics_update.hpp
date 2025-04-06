@@ -41,11 +41,14 @@ public:
 		if (!partition_statistics_val) {
 		return "SetPartitionStatisticsUpdate required property 'partition_statistics' is missing");
 		}
-		result.partition_statistics = PartitionStatisticsFile::FromJSON(partition_statistics_val);
+		error = partition_statistics_file.TryFromJSON(partition_statistics_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
-			result.action = yyjson_get_str(action_val);
+			action = yyjson_get_str(action_val);
 		}
 		return string();
 	}

@@ -41,16 +41,19 @@ public:
 		if (!statistics_val) {
 		return "SetStatisticsUpdate required property 'statistics' is missing");
 		}
-		result.statistics = StatisticsFile::FromJSON(statistics_val);
+		error = statistics_file.TryFromJSON(statistics_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
-			result.action = yyjson_get_str(action_val);
+			action = yyjson_get_str(action_val);
 		}
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
 		if (snapshot_id_val) {
-			result.snapshot_id = yyjson_get_sint(snapshot_id_val);
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		}
 		return string();
 	}

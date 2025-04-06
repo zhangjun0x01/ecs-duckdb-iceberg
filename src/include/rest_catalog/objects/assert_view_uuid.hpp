@@ -34,13 +34,13 @@ public:
 		if (!type_val) {
 		return "AssertViewUUID required property 'type' is missing");
 		}
-		result.type = yyjson_get_str(type_val);
+		type = yyjson_get_str(type_val);
 
 		auto uuid_val = yyjson_obj_get(obj, "uuid");
 		if (!uuid_val) {
 		return "AssertViewUUID required property 'uuid' is missing");
 		}
-		result.uuid = yyjson_get_str(uuid_val);
+		uuid = yyjson_get_str(uuid_val);
 
 		return string();
 	}

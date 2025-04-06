@@ -37,7 +37,9 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(updated_val, idx, max, val) {
-			result.updated.push_back(yyjson_get_str(val));
+
+			auto tmp = yyjson_get_str(val);
+			updated.push_back(tmp);
 		}
 
 		auto removed_val = yyjson_obj_get(obj, "removed");
@@ -47,7 +49,9 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(removed_val, idx, max, val) {
-			result.removed.push_back(yyjson_get_str(val));
+
+			auto tmp = yyjson_get_str(val);
+			removed.push_back(tmp);
 		}
 
 		auto missing_val = yyjson_obj_get(obj, "missing");
@@ -55,7 +59,9 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(missing_val, idx, max, val) {
-				result.missing.push_back(yyjson_get_str(val));
+
+				auto tmp = yyjson_get_str(val);
+				missing.push_back(tmp);
 			}
 		}
 		return string();

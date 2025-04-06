@@ -35,7 +35,10 @@ public:
 		if (!error_val) {
 		return "IcebergErrorResponse required property 'error' is missing");
 		}
-		result.error = ErrorModel::FromJSON(error_val);
+		error = error_model.TryFromJSON(error_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		return string();
 	}

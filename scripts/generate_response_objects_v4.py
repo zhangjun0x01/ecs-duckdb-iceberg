@@ -408,21 +408,35 @@ if ({condition}) {{
         # Then do the array iteration
         res.append(f'yyjson_arr_foreach({array_name}, idx, max, val) {{')
 
-        ARRAY_PUSHBACK_FORMAT = "\tresult.{ARRAY_VARIABLE}.push_back({ITEM_PARSE});"
-        item_parse = self.generate_item_parse(item_type, 'val', referenced_schemas)
+        if item_type.type != Property.Type.SCHEMA_REFERENCE:
+            item_definition = self.generate_item_parse(item_type, 'val', referenced_schemas)
+            item_definition = f'\tauto tmp = {item_definition};\n'
+        else:
+            schema_property = cast(SchemaReferenceProperty, item_type)
+            referenced_schemas.add(schema_property.ref)
+            item_definition = f'\t{schema_property.ref} tmp;\n'
+            item_definition += """error = tmp.TryFromJSON(val);
+if (!error.empty()) {
+    return error;
+}"""
+
+        ARRAY_PUSHBACK_FORMAT = """
+{ITEM_DEFINITION}\t{ARRAY_VARIABLE}.push_back(tmp);"""
 
         body = ''
-        body += ARRAY_PUSHBACK_FORMAT.format(ARRAY_VARIABLE=destination_name, ITEM_PARSE=item_parse)
+        body += ARRAY_PUSHBACK_FORMAT.format(
+            ITEM_DEFINITION=item_definition,
+            ARRAY_VARIABLE=destination_name,
+        )
         res.append(body)
         res.append('}')
         return '\n'.join(res)
 
     def generate_item_parse(self, property: Property, source: str, referenced_schemas: set) -> str:
         if property.type == Property.Type.SCHEMA_REFERENCE:
-            schema_property = cast(SchemaReferenceProperty, property)
-            referenced_schemas.add(schema_property.ref)
-            return f'{schema_property.ref}::FromJSON({source})'
-        elif property.type == Property.Type.ARRAY:
+            print(f"Unrecognized property type {property.type}, {source}")
+            exit(1)
+        if property.type == Property.Type.ARRAY:
             # TODO: maybe we move the array parse to a function that creates a vector<...>, instead of parsing it inline
             print(f'Nested arrays are not supported, hopefully we dont have to!')
             exit(1)
@@ -462,9 +476,17 @@ if ({condition}) {{
         if property.type == Property.Type.ARRAY:
             array_property = cast(ArrayProperty, property)
             result = self.generate_array_loop(source, target, array_property.item_type, referenced_schemas)
+        elif property.type == Property.Type.SCHEMA_REFERENCE:
+            schema_property = cast(SchemaReferenceProperty, property)
+            referenced_schemas.add(schema_property.ref)
+            variable_name = to_snake_case(schema_property.ref)
+            result = f"""error = {variable_name}.TryFromJSON({source});
+if (!error.empty()) {{
+    return error;
+}}"""
         else:
             item_parse = self.generate_item_parse(property, source, referenced_schemas)
-            result = f'result.{target} = {item_parse};'
+            result = f'{target} = {item_parse};'
         return result
 
     def generate_optional_properties(self, name: str, properties: Dict[str, Property], referenced_schemas: set):
@@ -550,21 +572,20 @@ if (!{variable_name}_val) {{
 
         body = self.generate_array_loop('obj', 'value', array_property.item_type, referenced_schemas)
 
-        generated_schemas_referenced = [x for x in referenced_schemas if x not in self.schemas]
-        for item in generated_schemas_referenced:
-            parsed_schema = self.parsed_schemas[item]
-            content = self.generate_class(parsed_schema, item, referenced_schemas)
-            print(content)
+        nested_classes = self.generate_nested_class_definitions(referenced_schemas)
+
+        variable_type = self.generate_variable_type(schema)
+        variable_definition = f'\t{variable_type} value;'
 
         body = '\n'.join([f'\t{x}' for x in body.split('\n')])
         class_definition = CLASS_FORMAT.format(
             CLASS_NAME=name,
-            NESTED_CLASSES='',
+            NESTED_CLASSES=nested_classes,
             BASE_CLASS_PARSING='',
             REQUIRED_PROPERTIES=body,
             OPTIONAL_PROPERTIES='',
             BASE_CLASS_VARIABLES='',
-            PROPERTY_VARIABLES='',
+            PROPERTY_VARIABLES=variable_definition,
         )
         return class_definition
 
@@ -590,6 +611,20 @@ if (!{variable_name}_val) {{
             PROPERTY_VARIABLES=variable_definition,
         )
         return class_definition
+
+    def generate_nested_class_definitions(self, referenced_schemas: set):
+        generated_schemas_referenced = [x for x in referenced_schemas if x not in self.schemas]
+        nested_classes = []
+        for item in generated_schemas_referenced:
+            parsed_schema = self.parsed_schemas[item]
+            content = self.generate_class(parsed_schema, item, referenced_schemas)
+            nested_classes.append(content)
+
+        if not nested_classes:
+            return ''
+        nested_classes = '\n'.join(nested_classes)
+        nested_classes = '\n'.join([f'\t{x}' for x in nested_classes.split('\n')])
+        return 'public:\n' + nested_classes
 
     def generate_object_class(self, schema: Property, name: str, referenced_schemas: set):
         assert schema.type == Property.Type.OBJECT
@@ -632,25 +667,13 @@ if (!{variable_name}_val) {{
         if any([x.startswith('Object') for x in referenced_schemas]):
             print("referenced_schemas", referenced_schemas)
 
-        generated_schemas_referenced = [x for x in referenced_schemas if x not in self.schemas]
-        nested_classes = []
-        for item in generated_schemas_referenced:
-            parsed_schema = self.parsed_schemas[item]
-            content = self.generate_class(parsed_schema, item, referenced_schemas)
-            nested_classes.append(content)
-
         base_class_variables = []
         for item in base_classes:
             base_class = self.parsed_schemas[item]
             variable_name = to_snake_case(item)
             base_class_variables.append(f'\t{item} {variable_name};')
 
-        if nested_classes:
-            nested_classes = '\n'.join(nested_classes)
-            nested_classes = '\n'.join([f'\t{x}' for x in nested_classes.split('\n')])
-            nested_classes = 'public:\n' + nested_classes
-        else:
-            nested_classes = ''
+        nested_classes = self.generate_nested_class_definitions(referenced_schemas)
 
         variable_definitions = []
         for item in sorted(list(object_property.properties.keys())):

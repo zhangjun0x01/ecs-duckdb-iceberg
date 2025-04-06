@@ -50,7 +50,7 @@ public:
 		if (!report_type_val) {
 		return "ReportMetricsRequest required property 'report_type' is missing");
 		}
-		result.report_type = yyjson_get_str(report_type_val);
+		report_type = yyjson_get_str(report_type_val);
 
 		return string();
 	}

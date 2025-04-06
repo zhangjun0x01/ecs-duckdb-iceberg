@@ -37,25 +37,34 @@ public:
 		if (!source_id_val) {
 		return "SortField required property 'source_id' is missing");
 		}
-		result.source_id = yyjson_get_sint(source_id_val);
+		source_id = yyjson_get_sint(source_id_val);
 
 		auto transform_val = yyjson_obj_get(obj, "transform");
 		if (!transform_val) {
 		return "SortField required property 'transform' is missing");
 		}
-		result.transform = Transform::FromJSON(transform_val);
+		error = transform.TryFromJSON(transform_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto direction_val = yyjson_obj_get(obj, "direction");
 		if (!direction_val) {
 		return "SortField required property 'direction' is missing");
 		}
-		result.direction = SortDirection::FromJSON(direction_val);
+		error = sort_direction.TryFromJSON(direction_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto null_order_val = yyjson_obj_get(obj, "null_order");
 		if (!null_order_val) {
 		return "SortField required property 'null_order' is missing");
 		}
-		result.null_order = NullOrder::FromJSON(null_order_val);
+		error = null_order.TryFromJSON(null_order_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		return string();
 	}

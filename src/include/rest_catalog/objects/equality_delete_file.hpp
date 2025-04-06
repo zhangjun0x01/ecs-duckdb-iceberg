@@ -40,14 +40,16 @@ public:
 		if (!content_val) {
 		return "EqualityDeleteFile required property 'content' is missing");
 		}
-		result.content = yyjson_get_str(content_val);
+		content = yyjson_get_str(content_val);
 
 		auto equality_ids_val = yyjson_obj_get(obj, "equality_ids");
 		if (equality_ids_val) {
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(equality_ids_val, idx, max, val) {
-				result.equality_ids.push_back(yyjson_get_sint(val));
+
+				auto tmp = yyjson_get_sint(val);
+				equality_ids.push_back(tmp);
 			}
 		}
 		return string();

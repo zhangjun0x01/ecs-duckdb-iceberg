@@ -36,19 +36,25 @@ public:
 		if (!type_val) {
 		return "LiteralExpression required property 'type' is missing");
 		}
-		result.type = ExpressionType::FromJSON(type_val);
+		error = expression_type.TryFromJSON(type_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto term_val = yyjson_obj_get(obj, "term");
 		if (!term_val) {
 		return "LiteralExpression required property 'term' is missing");
 		}
-		result.term = Term::FromJSON(term_val);
+		error = term.TryFromJSON(term_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto value_val = yyjson_obj_get(obj, "value");
 		if (!value_val) {
 		return "LiteralExpression required property 'value' is missing");
 		}
-		result.value = value_val;
+		value = value_val;
 
 		return string();
 	}

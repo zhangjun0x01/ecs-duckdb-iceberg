@@ -41,11 +41,14 @@ public:
 		if (!sort_order_val) {
 		return "AddSortOrderUpdate required property 'sort_order' is missing");
 		}
-		result.sort_order = SortOrder::FromJSON(sort_order_val);
+		error = sort_order.TryFromJSON(sort_order_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
-			result.action = yyjson_get_str(action_val);
+			action = yyjson_get_str(action_val);
 		}
 		return string();
 	}

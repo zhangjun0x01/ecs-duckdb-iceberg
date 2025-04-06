@@ -42,7 +42,10 @@ public:
 			if (!status_val) {
 			return "Object5 required property 'status' is missing");
 			}
-			result.status = PlanStatus::FromJSON(status_val);
+			error = plan_status.TryFromJSON(status_val);
+			if (!error.empty()) {
+				return error;
+			}
 
 			return string();
 		}
@@ -79,8 +82,8 @@ public:
 	}
 
 public:
-	ScanTasks scan_tasks;
 	Object5 object_5;
+	ScanTasks scan_tasks;
 
 public:
 };

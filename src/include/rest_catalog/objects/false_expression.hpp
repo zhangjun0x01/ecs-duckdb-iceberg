@@ -35,7 +35,10 @@ public:
 		if (!type_val) {
 		return "FalseExpression required property 'type' is missing");
 		}
-		result.type = ExpressionType::FromJSON(type_val);
+		error = expression_type.TryFromJSON(type_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		return string();
 	}

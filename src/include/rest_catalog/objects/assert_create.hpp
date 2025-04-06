@@ -40,7 +40,7 @@ public:
 		if (!type_val) {
 		return "AssertCreate required property 'type' is missing");
 		}
-		result.type = yyjson_get_str(type_val);
+		type = yyjson_get_str(type_val);
 
 		return string();
 	}

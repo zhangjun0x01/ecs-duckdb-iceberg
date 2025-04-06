@@ -164,26 +164,26 @@ public:
 	}
 
 public:
-	SetCurrentSchemaUpdate set_current_schema_update;
-	SetSnapshotRefUpdate set_snapshot_ref_update;
-	RemoveStatisticsUpdate remove_statistics_update;
-	AddSchemaUpdate add_schema_update;
 	RemovePartitionSpecsUpdate remove_partition_specs_update;
-	AddSortOrderUpdate add_sort_order_update;
-	AssignUUIDUpdate assign_uuidupdate;
-	SetDefaultSpecUpdate set_default_spec_update;
-	SetLocationUpdate set_location_update;
-	AddSnapshotUpdate add_snapshot_update;
-	UpgradeFormatVersionUpdate upgrade_format_version_update;
-	EnableRowLineageUpdate enable_row_lineage_update;
-	SetDefaultSortOrderUpdate set_default_sort_order_update;
-	AddPartitionSpecUpdate add_partition_spec_update;
 	SetPropertiesUpdate set_properties_update;
 	RemoveSchemasUpdate remove_schemas_update;
-	RemoveSnapshotRefUpdate remove_snapshot_ref_update;
-	RemoveSnapshotsUpdate remove_snapshots_update;
-	SetStatisticsUpdate set_statistics_update;
 	RemovePropertiesUpdate remove_properties_update;
+	SetSnapshotRefUpdate set_snapshot_ref_update;
+	EnableRowLineageUpdate enable_row_lineage_update;
+	SetStatisticsUpdate set_statistics_update;
+	RemoveStatisticsUpdate remove_statistics_update;
+	SetDefaultSortOrderUpdate set_default_sort_order_update;
+	AssignUUIDUpdate assign_uuidupdate;
+	AddSnapshotUpdate add_snapshot_update;
+	RemoveSnapshotRefUpdate remove_snapshot_ref_update;
+	AddSortOrderUpdate add_sort_order_update;
+	SetCurrentSchemaUpdate set_current_schema_update;
+	AddPartitionSpecUpdate add_partition_spec_update;
+	AddSchemaUpdate add_schema_update;
+	SetDefaultSpecUpdate set_default_spec_update;
+	SetLocationUpdate set_location_update;
+	UpgradeFormatVersionUpdate upgrade_format_version_update;
+	RemoveSnapshotsUpdate remove_snapshots_update;
 
 public:
 };

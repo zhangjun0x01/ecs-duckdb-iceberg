@@ -38,7 +38,13 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(delete_files_val, idx, max, val) {
-				result.delete_files.push_back(DeleteFile::FromJSON(val));
+
+				DeleteFile tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				delete_files.push_back(tmp);
 			}
 		}
 
@@ -47,7 +53,13 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(file_scan_tasks_val, idx, max, val) {
-				result.file_scan_tasks.push_back(FileScanTask::FromJSON(val));
+
+				FileScanTask tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				file_scan_tasks.push_back(tmp);
 			}
 		}
 
@@ -56,7 +68,13 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(plan_tasks_val, idx, max, val) {
-				result.plan_tasks.push_back(PlanTask::FromJSON(val));
+
+				PlanTask tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				plan_tasks.push_back(tmp);
 			}
 		}
 		return string();

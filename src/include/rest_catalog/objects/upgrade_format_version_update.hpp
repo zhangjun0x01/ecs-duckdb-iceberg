@@ -40,11 +40,11 @@ public:
 		if (!format_version_val) {
 		return "UpgradeFormatVersionUpdate required property 'format_version' is missing");
 		}
-		result.format_version = yyjson_get_sint(format_version_val);
+		format_version = yyjson_get_sint(format_version_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
-			result.action = yyjson_get_str(action_val);
+			action = yyjson_get_str(action_val);
 		}
 		return string();
 	}

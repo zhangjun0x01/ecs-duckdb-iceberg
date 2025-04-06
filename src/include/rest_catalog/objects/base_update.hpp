@@ -34,7 +34,7 @@ public:
 		if (!action_val) {
 		return "BaseUpdate required property 'action' is missing");
 		}
-		result.action = yyjson_get_str(action_val);
+		action = yyjson_get_str(action_val);
 
 		return string();
 	}

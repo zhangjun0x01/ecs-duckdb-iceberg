@@ -36,16 +36,19 @@ public:
 		if (!metadata_val) {
 		return "LoadTableResult required property 'metadata' is missing");
 		}
-		result.metadata = TableMetadata::FromJSON(metadata_val);
+		error = table_metadata.TryFromJSON(metadata_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto metadata_location_val = yyjson_obj_get(obj, "metadata_location");
 		if (metadata_location_val) {
-			result.metadata_location = yyjson_get_str(metadata_location_val);
+			metadata_location = yyjson_get_str(metadata_location_val);
 		}
 
 		auto config_val = yyjson_obj_get(obj, "config");
 		if (config_val) {
-			result.config = parse_object_of_strings(config_val);
+			config = parse_object_of_strings(config_val);
 		}
 
 		auto storage_credentials_val = yyjson_obj_get(obj, "storage_credentials");
@@ -53,7 +56,13 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(storage_credentials_val, idx, max, val) {
-				result.storage_credentials.push_back(StorageCredential::FromJSON(val));
+
+				StorageCredential tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				storage_credentials.push_back(tmp);
 			}
 		}
 		return string();

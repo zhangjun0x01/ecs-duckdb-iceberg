@@ -34,20 +34,22 @@ public:
 		if (!defaults_val) {
 		return "CatalogConfig required property 'defaults' is missing");
 		}
-		result.defaults = parse_object_of_strings(defaults_val);
+		defaults = parse_object_of_strings(defaults_val);
 
 		auto overrides_val = yyjson_obj_get(obj, "overrides");
 		if (!overrides_val) {
 		return "CatalogConfig required property 'overrides' is missing");
 		}
-		result.overrides = parse_object_of_strings(overrides_val);
+		overrides = parse_object_of_strings(overrides_val);
 
 		auto endpoints_val = yyjson_obj_get(obj, "endpoints");
 		if (endpoints_val) {
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(endpoints_val, idx, max, val) {
-				result.endpoints.push_back(yyjson_get_str(val));
+
+				auto tmp = yyjson_get_str(val);
+				endpoints.push_back(tmp);
 			}
 		}
 		return string();

@@ -35,7 +35,10 @@ public:
 		if (!plan_task_val) {
 		return "FetchScanTasksRequest required property 'plan_task' is missing");
 		}
-		result.plan_task = PlanTask::FromJSON(plan_task_val);
+		error = plan_task.TryFromJSON(plan_task_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		return string();
 	}

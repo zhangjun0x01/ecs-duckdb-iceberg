@@ -40,11 +40,11 @@ public:
 		if (!schema_id_val) {
 		return "SetCurrentSchemaUpdate required property 'schema_id' is missing");
 		}
-		result.schema_id = yyjson_get_sint(schema_id_val);
+		schema_id = yyjson_get_sint(schema_id_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
-			result.action = yyjson_get_str(action_val);
+			action = yyjson_get_str(action_val);
 		}
 		return string();
 	}

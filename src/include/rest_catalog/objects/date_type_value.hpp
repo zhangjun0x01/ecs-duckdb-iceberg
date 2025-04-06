@@ -30,7 +30,7 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		result.value = yyjson_get_str(obj);
+		value = yyjson_get_str(obj);
 
 		return string();
 	}

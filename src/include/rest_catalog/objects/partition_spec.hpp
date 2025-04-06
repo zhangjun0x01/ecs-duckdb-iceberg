@@ -38,12 +38,18 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(fields_val, idx, max, val) {
-			result.fields.push_back(PartitionField::FromJSON(val));
+
+			PartitionField tmp;
+			error = tmp.TryFromJSON(val);
+			if (!error.empty()) {
+				return error;
+			}
+			fields.push_back(tmp);
 		}
 
 		auto spec_id_val = yyjson_obj_get(obj, "spec_id");
 		if (spec_id_val) {
-			result.spec_id = yyjson_get_sint(spec_id_val);
+			spec_id = yyjson_get_sint(spec_id_val);
 		}
 		return string();
 	}

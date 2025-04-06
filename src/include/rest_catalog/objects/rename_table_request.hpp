@@ -35,13 +35,19 @@ public:
 		if (!source_val) {
 		return "RenameTableRequest required property 'source' is missing");
 		}
-		result.source = TableIdentifier::FromJSON(source_val);
+		error = table_identifier.TryFromJSON(source_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto destination_val = yyjson_obj_get(obj, "destination");
 		if (!destination_val) {
 		return "RenameTableRequest required property 'destination' is missing");
 		}
-		result.destination = TableIdentifier::FromJSON(destination_val);
+		error = table_identifier.TryFromJSON(destination_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		return string();
 	}

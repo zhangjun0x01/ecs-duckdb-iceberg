@@ -35,13 +35,16 @@ public:
 		if (!_namespace_val) {
 		return "TableIdentifier required property '_namespace' is missing");
 		}
-		result._namespace = Namespace::FromJSON(_namespace_val);
+		error = namespace.TryFromJSON(_namespace_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (!name_val) {
 		return "TableIdentifier required property 'name' is missing");
 		}
-		result.name = yyjson_get_str(name_val);
+		name = yyjson_get_str(name_val);
 
 		return string();
 	}

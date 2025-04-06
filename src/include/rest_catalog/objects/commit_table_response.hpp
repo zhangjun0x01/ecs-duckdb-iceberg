@@ -35,13 +35,16 @@ public:
 		if (!metadata_location_val) {
 		return "CommitTableResponse required property 'metadata_location' is missing");
 		}
-		result.metadata_location = yyjson_get_str(metadata_location_val);
+		metadata_location = yyjson_get_str(metadata_location_val);
 
 		auto metadata_val = yyjson_obj_get(obj, "metadata");
 		if (!metadata_val) {
 		return "CommitTableResponse required property 'metadata' is missing");
 		}
-		result.metadata = TableMetadata::FromJSON(metadata_val);
+		error = table_metadata.TryFromJSON(metadata_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		return string();
 	}

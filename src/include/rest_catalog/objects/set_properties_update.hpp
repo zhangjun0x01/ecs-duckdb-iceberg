@@ -40,11 +40,11 @@ public:
 		if (!updates_val) {
 		return "SetPropertiesUpdate required property 'updates' is missing");
 		}
-		result.updates = parse_object_of_strings(updates_val);
+		updates = parse_object_of_strings(updates_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
-			result.action = yyjson_get_str(action_val);
+			action = yyjson_get_str(action_val);
 		}
 		return string();
 	}

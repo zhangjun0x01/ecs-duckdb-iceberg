@@ -36,19 +36,25 @@ public:
 		if (!type_val) {
 		return "TransformTerm required property 'type' is missing");
 		}
-		result.type = yyjson_get_str(type_val);
+		type = yyjson_get_str(type_val);
 
 		auto transform_val = yyjson_obj_get(obj, "transform");
 		if (!transform_val) {
 		return "TransformTerm required property 'transform' is missing");
 		}
-		result.transform = Transform::FromJSON(transform_val);
+		error = transform.TryFromJSON(transform_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto term_val = yyjson_obj_get(obj, "term");
 		if (!term_val) {
 		return "TransformTerm required property 'term' is missing");
 		}
-		result.term = Reference::FromJSON(term_val);
+		error = reference.TryFromJSON(term_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		return string();
 	}

@@ -49,8 +49,8 @@ public:
 	}
 
 public:
-	Reference reference;
 	TransformTerm transform_term;
+	Reference reference;
 
 public:
 };

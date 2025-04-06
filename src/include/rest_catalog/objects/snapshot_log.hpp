@@ -18,6 +18,46 @@ public:
 	}
 
 public:
+	class Object3 {
+	public:
+		Object3::Object3() {
+		}
+
+	public:
+		static Object3 FromJSON(yyjson_val *obj) {
+			auto error = TryFromJSON(obj);
+			if (!error.empty()) {
+				throw InvalidInputException(error);
+			}
+			return *this;
+		}
+
+	public:
+		string TryFromJSON(yyjson_val *obj) {
+			string error;
+
+			auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
+			if (!snapshot_id_val) {
+			return "Object3 required property 'snapshot_id' is missing");
+			}
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
+
+			auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
+			if (!timestamp_ms_val) {
+			return "Object3 required property 'timestamp_ms' is missing");
+			}
+			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+
+			return string();
+		}
+
+	public:
+	public:
+		int64_t snapshot_id;
+		int64_t timestamp_ms;
+	};
+
+public:
 	static SnapshotLog FromJSON(yyjson_val *obj) {
 		auto error = TryFromJSON(obj);
 		if (!error.empty()) {
@@ -33,7 +73,13 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(obj, idx, max, val) {
-			result.value.push_back(Object3::FromJSON(val));
+
+			Object3 tmp;
+			error = tmp.TryFromJSON(val);
+			if (!error.empty()) {
+				return error;
+			}
+			value.push_back(tmp);
 		}
 
 		return string();
@@ -41,6 +87,7 @@ public:
 
 public:
 public:
+	vector<Object3> value;
 };
 
 } // namespace rest_api_objects

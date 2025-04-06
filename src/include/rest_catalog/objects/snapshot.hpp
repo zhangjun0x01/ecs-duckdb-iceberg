@@ -40,7 +40,7 @@ public:
 			if (!operation_val) {
 			return "Object2 required property 'operation' is missing");
 			}
-			result.operation = yyjson_get_str(operation_val);
+			operation = yyjson_get_str(operation_val);
 
 			return string();
 		}
@@ -67,39 +67,42 @@ public:
 		if (!snapshot_id_val) {
 		return "Snapshot required property 'snapshot_id' is missing");
 		}
-		result.snapshot_id = yyjson_get_sint(snapshot_id_val);
+		snapshot_id = yyjson_get_sint(snapshot_id_val);
 
 		auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
 		if (!timestamp_ms_val) {
 		return "Snapshot required property 'timestamp_ms' is missing");
 		}
-		result.timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 
 		auto manifest_list_val = yyjson_obj_get(obj, "manifest_list");
 		if (!manifest_list_val) {
 		return "Snapshot required property 'manifest_list' is missing");
 		}
-		result.manifest_list = yyjson_get_str(manifest_list_val);
+		manifest_list = yyjson_get_str(manifest_list_val);
 
 		auto summary_val = yyjson_obj_get(obj, "summary");
 		if (!summary_val) {
 		return "Snapshot required property 'summary' is missing");
 		}
-		result.summary = Object2::FromJSON(summary_val);
+		error = object_2.TryFromJSON(summary_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto parent_snapshot_id_val = yyjson_obj_get(obj, "parent_snapshot_id");
 		if (parent_snapshot_id_val) {
-			result.parent_snapshot_id = yyjson_get_sint(parent_snapshot_id_val);
+			parent_snapshot_id = yyjson_get_sint(parent_snapshot_id_val);
 		}
 
 		auto sequence_number_val = yyjson_obj_get(obj, "sequence_number");
 		if (sequence_number_val) {
-			result.sequence_number = yyjson_get_sint(sequence_number_val);
+			sequence_number = yyjson_get_sint(sequence_number_val);
 		}
 
 		auto schema_id_val = yyjson_obj_get(obj, "schema_id");
 		if (schema_id_val) {
-			result.schema_id = yyjson_get_sint(schema_id_val);
+			schema_id = yyjson_get_sint(schema_id_val);
 		}
 		return string();
 	}

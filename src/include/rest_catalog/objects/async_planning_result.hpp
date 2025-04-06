@@ -35,11 +35,14 @@ public:
 		if (!status_val) {
 		return "AsyncPlanningResult required property 'status' is missing");
 		}
-		result.status = PlanStatus::FromJSON(status_val);
+		error = plan_status.TryFromJSON(status_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto plan_id_val = yyjson_obj_get(obj, "plan_id");
 		if (plan_id_val) {
-			result.plan_id = yyjson_get_str(plan_id_val);
+			plan_id = yyjson_get_str(plan_id_val);
 		}
 		return string();
 	}

@@ -40,11 +40,11 @@ public:
 		if (!snapshot_id_val) {
 		return "RemovePartitionStatisticsUpdate required property 'snapshot_id' is missing");
 		}
-		result.snapshot_id = yyjson_get_sint(snapshot_id_val);
+		snapshot_id = yyjson_get_sint(snapshot_id_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
-			result.action = yyjson_get_str(action_val);
+			action = yyjson_get_str(action_val);
 		}
 		return string();
 	}

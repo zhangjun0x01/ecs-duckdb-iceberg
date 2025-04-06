@@ -40,11 +40,11 @@ public:
 		if (!last_assigned_partition_id_val) {
 		return "AssertLastAssignedPartitionId required property 'last_assigned_partition_id' is missing");
 		}
-		result.last_assigned_partition_id = yyjson_get_sint(last_assigned_partition_id_val);
+		last_assigned_partition_id = yyjson_get_sint(last_assigned_partition_id_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
-			result.type = yyjson_get_str(type_val);
+			type = yyjson_get_str(type_val);
 		}
 		return string();
 	}

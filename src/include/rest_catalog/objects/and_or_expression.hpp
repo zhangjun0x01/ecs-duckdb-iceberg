@@ -36,19 +36,28 @@ public:
 		if (!type_val) {
 		return "AndOrExpression required property 'type' is missing");
 		}
-		result.type = ExpressionType::FromJSON(type_val);
+		error = expression_type.TryFromJSON(type_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto left_val = yyjson_obj_get(obj, "left");
 		if (!left_val) {
 		return "AndOrExpression required property 'left' is missing");
 		}
-		result.left = Expression::FromJSON(left_val);
+		error = expression.TryFromJSON(left_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto right_val = yyjson_obj_get(obj, "right");
 		if (!right_val) {
 		return "AndOrExpression required property 'right' is missing");
 		}
-		result.right = Expression::FromJSON(right_val);
+		error = expression.TryFromJSON(right_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		return string();
 	}

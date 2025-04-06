@@ -34,23 +34,23 @@ public:
 		if (!grant_type_val) {
 		return "OAuthClientCredentialsRequest required property 'grant_type' is missing");
 		}
-		result.grant_type = yyjson_get_str(grant_type_val);
+		grant_type = yyjson_get_str(grant_type_val);
 
 		auto client_id_val = yyjson_obj_get(obj, "client_id");
 		if (!client_id_val) {
 		return "OAuthClientCredentialsRequest required property 'client_id' is missing");
 		}
-		result.client_id = yyjson_get_str(client_id_val);
+		client_id = yyjson_get_str(client_id_val);
 
 		auto client_secret_val = yyjson_obj_get(obj, "client_secret");
 		if (!client_secret_val) {
 		return "OAuthClientCredentialsRequest required property 'client_secret' is missing");
 		}
-		result.client_secret = yyjson_get_str(client_secret_val);
+		client_secret = yyjson_get_str(client_secret_val);
 
 		auto scope_val = yyjson_obj_get(obj, "scope");
 		if (scope_val) {
-			result.scope = yyjson_get_str(scope_val);
+			scope = yyjson_get_str(scope_val);
 		}
 		return string();
 	}

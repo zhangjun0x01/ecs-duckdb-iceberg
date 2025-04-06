@@ -35,7 +35,10 @@ public:
 		if (!status_val) {
 		return "EmptyPlanningResult required property 'status' is missing");
 		}
-		result.status = PlanStatus::FromJSON(status_val);
+		error = plan_status.TryFromJSON(status_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		return string();
 	}

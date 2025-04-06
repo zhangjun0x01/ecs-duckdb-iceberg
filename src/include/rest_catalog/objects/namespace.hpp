@@ -33,7 +33,9 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(obj, idx, max, val) {
-			result.value.push_back(yyjson_get_str(val));
+
+			auto tmp = yyjson_get_str(val);
+			value.push_back(tmp);
 		}
 
 		return string();
@@ -41,6 +43,7 @@ public:
 
 public:
 public:
+	vector<string> value;
 };
 
 } // namespace rest_api_objects

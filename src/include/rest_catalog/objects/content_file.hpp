@@ -36,7 +36,7 @@ public:
 		if (!spec_id_val) {
 		return "ContentFile required property 'spec_id' is missing");
 		}
-		result.spec_id = yyjson_get_sint(spec_id_val);
+		spec_id = yyjson_get_sint(spec_id_val);
 
 		auto partition_val = yyjson_obj_get(obj, "partition");
 		if (!partition_val) {
@@ -45,42 +45,51 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(partition_val, idx, max, val) {
-			result.partition.push_back(PrimitiveTypeValue::FromJSON(val));
+
+			PrimitiveTypeValue tmp;
+			error = tmp.TryFromJSON(val);
+			if (!error.empty()) {
+				return error;
+			}
+			partition.push_back(tmp);
 		}
 
 		auto content_val = yyjson_obj_get(obj, "content");
 		if (!content_val) {
 		return "ContentFile required property 'content' is missing");
 		}
-		result.content = yyjson_get_str(content_val);
+		content = yyjson_get_str(content_val);
 
 		auto file_path_val = yyjson_obj_get(obj, "file_path");
 		if (!file_path_val) {
 		return "ContentFile required property 'file_path' is missing");
 		}
-		result.file_path = yyjson_get_str(file_path_val);
+		file_path = yyjson_get_str(file_path_val);
 
 		auto file_format_val = yyjson_obj_get(obj, "file_format");
 		if (!file_format_val) {
 		return "ContentFile required property 'file_format' is missing");
 		}
-		result.file_format = FileFormat::FromJSON(file_format_val);
+		error = file_format.TryFromJSON(file_format_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto file_size_in_bytes_val = yyjson_obj_get(obj, "file_size_in_bytes");
 		if (!file_size_in_bytes_val) {
 		return "ContentFile required property 'file_size_in_bytes' is missing");
 		}
-		result.file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
+		file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
 
 		auto record_count_val = yyjson_obj_get(obj, "record_count");
 		if (!record_count_val) {
 		return "ContentFile required property 'record_count' is missing");
 		}
-		result.record_count = yyjson_get_sint(record_count_val);
+		record_count = yyjson_get_sint(record_count_val);
 
 		auto key_metadata_val = yyjson_obj_get(obj, "key_metadata");
 		if (key_metadata_val) {
-			result.key_metadata = key_metadata_val;
+			key_metadata = key_metadata_val;
 		}
 
 		auto split_offsets_val = yyjson_obj_get(obj, "split_offsets");
@@ -88,13 +97,15 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(split_offsets_val, idx, max, val) {
-				result.split_offsets.push_back(yyjson_get_sint(val));
+
+				auto tmp = yyjson_get_sint(val);
+				split_offsets.push_back(tmp);
 			}
 		}
 
 		auto sort_order_id_val = yyjson_obj_get(obj, "sort_order_id");
 		if (sort_order_id_val) {
-			result.sort_order_id = yyjson_get_sint(sort_order_id_val);
+			sort_order_id = yyjson_get_sint(sort_order_id_val);
 		}
 		return string();
 	}

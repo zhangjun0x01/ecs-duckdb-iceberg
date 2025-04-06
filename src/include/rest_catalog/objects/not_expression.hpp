@@ -36,13 +36,19 @@ public:
 		if (!type_val) {
 		return "NotExpression required property 'type' is missing");
 		}
-		result.type = ExpressionType::FromJSON(type_val);
+		error = expression_type.TryFromJSON(type_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto child_val = yyjson_obj_get(obj, "child");
 		if (!child_val) {
 		return "NotExpression required property 'child' is missing");
 		}
-		result.child = Expression::FromJSON(child_val);
+		error = expression.TryFromJSON(child_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		return string();
 	}

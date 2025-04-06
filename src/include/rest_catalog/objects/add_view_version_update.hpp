@@ -41,11 +41,14 @@ public:
 		if (!view_version_val) {
 		return "AddViewVersionUpdate required property 'view_version' is missing");
 		}
-		result.view_version = ViewVersion::FromJSON(view_version_val);
+		error = view_version.TryFromJSON(view_version_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
-			result.action = yyjson_get_str(action_val);
+			action = yyjson_get_str(action_val);
 		}
 		return string();
 	}

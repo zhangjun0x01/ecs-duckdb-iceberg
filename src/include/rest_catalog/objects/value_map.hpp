@@ -37,7 +37,13 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(keys_val, idx, max, val) {
-				result.keys.push_back(IntegerTypeValue::FromJSON(val));
+
+				IntegerTypeValue tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				keys.push_back(tmp);
 			}
 		}
 
@@ -46,7 +52,13 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(values_val, idx, max, val) {
-				result.values.push_back(PrimitiveTypeValue::FromJSON(val));
+
+				PrimitiveTypeValue tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				values.push_back(tmp);
 			}
 		}
 		return string();

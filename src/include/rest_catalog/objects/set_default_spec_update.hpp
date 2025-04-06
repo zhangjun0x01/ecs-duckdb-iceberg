@@ -40,11 +40,11 @@ public:
 		if (!spec_id_val) {
 		return "SetDefaultSpecUpdate required property 'spec_id' is missing");
 		}
-		result.spec_id = yyjson_get_sint(spec_id_val);
+		spec_id = yyjson_get_sint(spec_id_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
-			result.action = yyjson_get_str(action_val);
+			action = yyjson_get_str(action_val);
 		}
 		return string();
 	}

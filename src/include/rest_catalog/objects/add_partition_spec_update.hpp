@@ -41,11 +41,14 @@ public:
 		if (!spec_val) {
 		return "AddPartitionSpecUpdate required property 'spec' is missing");
 		}
-		result.spec = PartitionSpec::FromJSON(spec_val);
+		error = partition_spec.TryFromJSON(spec_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
-			result.action = yyjson_get_str(action_val);
+			action = yyjson_get_str(action_val);
 		}
 		return string();
 	}

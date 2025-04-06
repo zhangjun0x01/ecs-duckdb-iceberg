@@ -34,13 +34,13 @@ public:
 		if (!version_id_val) {
 		return "ViewHistoryEntry required property 'version_id' is missing");
 		}
-		result.version_id = yyjson_get_sint(version_id_val);
+		version_id = yyjson_get_sint(version_id_val);
 
 		auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
 		if (!timestamp_ms_val) {
 		return "ViewHistoryEntry required property 'timestamp_ms' is missing");
 		}
-		result.timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 
 		return string();
 	}

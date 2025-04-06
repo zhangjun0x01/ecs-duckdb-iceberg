@@ -34,7 +34,7 @@ public:
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
 		if (snapshot_id_val) {
-			result.snapshot_id = yyjson_get_sint(snapshot_id_val);
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		}
 
 		auto select_val = yyjson_obj_get(obj, "select");
@@ -42,33 +42,42 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(select_val, idx, max, val) {
-				result.select.push_back(FieldName::FromJSON(val));
+
+				FieldName tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				select.push_back(tmp);
 			}
 		}
 
 		auto filter_val = yyjson_obj_get(obj, "filter");
 		if (filter_val) {
-			result.filter = Expression::FromJSON(filter_val);
+			error = expression.TryFromJSON(filter_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto case_sensitive_val = yyjson_obj_get(obj, "case_sensitive");
 		if (case_sensitive_val) {
-			result.case_sensitive = yyjson_get_bool(case_sensitive_val);
+			case_sensitive = yyjson_get_bool(case_sensitive_val);
 		}
 
 		auto use_snapshot_schema_val = yyjson_obj_get(obj, "use_snapshot_schema");
 		if (use_snapshot_schema_val) {
-			result.use_snapshot_schema = yyjson_get_bool(use_snapshot_schema_val);
+			use_snapshot_schema = yyjson_get_bool(use_snapshot_schema_val);
 		}
 
 		auto start_snapshot_id_val = yyjson_obj_get(obj, "start_snapshot_id");
 		if (start_snapshot_id_val) {
-			result.start_snapshot_id = yyjson_get_sint(start_snapshot_id_val);
+			start_snapshot_id = yyjson_get_sint(start_snapshot_id_val);
 		}
 
 		auto end_snapshot_id_val = yyjson_obj_get(obj, "end_snapshot_id");
 		if (end_snapshot_id_val) {
-			result.end_snapshot_id = yyjson_get_sint(end_snapshot_id_val);
+			end_snapshot_id = yyjson_get_sint(end_snapshot_id_val);
 		}
 
 		auto stats_fields_val = yyjson_obj_get(obj, "stats_fields");
@@ -76,7 +85,13 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(stats_fields_val, idx, max, val) {
-				result.stats_fields.push_back(FieldName::FromJSON(val));
+
+				FieldName tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				stats_fields.push_back(tmp);
 			}
 		}
 		return string();

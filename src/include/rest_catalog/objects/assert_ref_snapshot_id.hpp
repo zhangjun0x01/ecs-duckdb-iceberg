@@ -40,17 +40,17 @@ public:
 		if (!ref_val) {
 		return "AssertRefSnapshotId required property 'ref' is missing");
 		}
-		result.ref = yyjson_get_str(ref_val);
+		ref = yyjson_get_str(ref_val);
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
 		if (!snapshot_id_val) {
 		return "AssertRefSnapshotId required property 'snapshot_id' is missing");
 		}
-		result.snapshot_id = yyjson_get_sint(snapshot_id_val);
+		snapshot_id = yyjson_get_sint(snapshot_id_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
-			result.type = yyjson_get_str(type_val);
+			type = yyjson_get_str(type_val);
 		}
 		return string();
 	}

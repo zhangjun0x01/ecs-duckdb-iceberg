@@ -34,7 +34,7 @@ public:
 		if (!type_val) {
 		return "TableRequirement required property 'type' is missing");
 		}
-		result.type = yyjson_get_str(type_val);
+		type = yyjson_get_str(type_val);
 
 		return string();
 	}

@@ -40,11 +40,11 @@ public:
 		if (!default_sort_order_id_val) {
 		return "AssertDefaultSortOrderId required property 'default_sort_order_id' is missing");
 		}
-		result.default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
+		default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
-			result.type = yyjson_get_str(type_val);
+			type = yyjson_get_str(type_val);
 		}
 		return string();
 	}

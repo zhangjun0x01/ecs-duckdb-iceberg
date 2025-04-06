@@ -35,25 +35,28 @@ public:
 		if (!type_val) {
 		return "ListType required property 'type' is missing");
 		}
-		result.type = yyjson_get_str(type_val);
+		type = yyjson_get_str(type_val);
 
 		auto element_id_val = yyjson_obj_get(obj, "element_id");
 		if (!element_id_val) {
 		return "ListType required property 'element_id' is missing");
 		}
-		result.element_id = yyjson_get_sint(element_id_val);
+		element_id = yyjson_get_sint(element_id_val);
 
 		auto element_val = yyjson_obj_get(obj, "element");
 		if (!element_val) {
 		return "ListType required property 'element' is missing");
 		}
-		result.element = Type::FromJSON(element_val);
+		error = type.TryFromJSON(element_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto element_required_val = yyjson_obj_get(obj, "element_required");
 		if (!element_required_val) {
 		return "ListType required property 'element_required' is missing");
 		}
-		result.element_required = yyjson_get_bool(element_required_val);
+		element_required = yyjson_get_bool(element_required_val);
 
 		return string();
 	}

@@ -34,7 +34,10 @@ public:
 
 		auto next_page_token_val = yyjson_obj_get(obj, "next_page_token");
 		if (next_page_token_val) {
-			result.next_page_token = PageToken::FromJSON(next_page_token_val);
+			error = page_token.TryFromJSON(next_page_token_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 
 		auto identifiers_val = yyjson_obj_get(obj, "identifiers");
@@ -42,7 +45,13 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(identifiers_val, idx, max, val) {
-				result.identifiers.push_back(TableIdentifier::FromJSON(val));
+
+				TableIdentifier tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				identifiers.push_back(tmp);
 			}
 		}
 		return string();

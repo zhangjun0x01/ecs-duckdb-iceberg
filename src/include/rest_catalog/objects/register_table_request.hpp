@@ -34,17 +34,17 @@ public:
 		if (!name_val) {
 		return "RegisterTableRequest required property 'name' is missing");
 		}
-		result.name = yyjson_get_str(name_val);
+		name = yyjson_get_str(name_val);
 
 		auto metadata_location_val = yyjson_obj_get(obj, "metadata_location");
 		if (!metadata_location_val) {
 		return "RegisterTableRequest required property 'metadata_location' is missing");
 		}
-		result.metadata_location = yyjson_get_str(metadata_location_val);
+		metadata_location = yyjson_get_str(metadata_location_val);
 
 		auto overwrite_val = yyjson_obj_get(obj, "overwrite");
 		if (overwrite_val) {
-			result.overwrite = yyjson_get_bool(overwrite_val);
+			overwrite = yyjson_get_bool(overwrite_val);
 		}
 		return string();
 	}

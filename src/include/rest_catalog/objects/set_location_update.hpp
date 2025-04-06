@@ -40,11 +40,11 @@ public:
 		if (!location_val) {
 		return "SetLocationUpdate required property 'location' is missing");
 		}
-		result.location = yyjson_get_str(location_val);
+		location = yyjson_get_str(location_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
-			result.action = yyjson_get_str(action_val);
+			action = yyjson_get_str(action_val);
 		}
 		return string();
 	}

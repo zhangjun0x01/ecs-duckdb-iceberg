@@ -40,7 +40,13 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(requirements_val, idx, max, val) {
-			result.requirements.push_back(TableRequirement::FromJSON(val));
+
+			TableRequirement tmp;
+			error = tmp.TryFromJSON(val);
+			if (!error.empty()) {
+				return error;
+			}
+			requirements.push_back(tmp);
 		}
 
 		auto updates_val = yyjson_obj_get(obj, "updates");
@@ -50,12 +56,21 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(updates_val, idx, max, val) {
-			result.updates.push_back(TableUpdate::FromJSON(val));
+
+			TableUpdate tmp;
+			error = tmp.TryFromJSON(val);
+			if (!error.empty()) {
+				return error;
+			}
+			updates.push_back(tmp);
 		}
 
 		auto identifier_val = yyjson_obj_get(obj, "identifier");
 		if (identifier_val) {
-			result.identifier = TableIdentifier::FromJSON(identifier_val);
+			error = table_identifier.TryFromJSON(identifier_val);
+			if (!error.empty()) {
+				return error;
+			}
 		}
 		return string();
 	}

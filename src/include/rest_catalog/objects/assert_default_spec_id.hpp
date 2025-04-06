@@ -40,11 +40,11 @@ public:
 		if (!default_spec_id_val) {
 		return "AssertDefaultSpecId required property 'default_spec_id' is missing");
 		}
-		result.default_spec_id = yyjson_get_sint(default_spec_id_val);
+		default_spec_id = yyjson_get_sint(default_spec_id_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
-			result.type = yyjson_get_str(type_val);
+			type = yyjson_get_str(type_val);
 		}
 		return string();
 	}

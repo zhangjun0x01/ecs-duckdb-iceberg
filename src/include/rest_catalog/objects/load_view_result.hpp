@@ -35,17 +35,20 @@ public:
 		if (!metadata_location_val) {
 		return "LoadViewResult required property 'metadata_location' is missing");
 		}
-		result.metadata_location = yyjson_get_str(metadata_location_val);
+		metadata_location = yyjson_get_str(metadata_location_val);
 
 		auto metadata_val = yyjson_obj_get(obj, "metadata");
 		if (!metadata_val) {
 		return "LoadViewResult required property 'metadata' is missing");
 		}
-		result.metadata = ViewMetadata::FromJSON(metadata_val);
+		error = view_metadata.TryFromJSON(metadata_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto config_val = yyjson_obj_get(obj, "config");
 		if (config_val) {
-			result.config = parse_object_of_strings(config_val);
+			config = parse_object_of_strings(config_val);
 		}
 		return string();
 	}

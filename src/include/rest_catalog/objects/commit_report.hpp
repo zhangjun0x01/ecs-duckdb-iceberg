@@ -35,35 +35,38 @@ public:
 		if (!table_name_val) {
 		return "CommitReport required property 'table_name' is missing");
 		}
-		result.table_name = yyjson_get_str(table_name_val);
+		table_name = yyjson_get_str(table_name_val);
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
 		if (!snapshot_id_val) {
 		return "CommitReport required property 'snapshot_id' is missing");
 		}
-		result.snapshot_id = yyjson_get_sint(snapshot_id_val);
+		snapshot_id = yyjson_get_sint(snapshot_id_val);
 
 		auto sequence_number_val = yyjson_obj_get(obj, "sequence_number");
 		if (!sequence_number_val) {
 		return "CommitReport required property 'sequence_number' is missing");
 		}
-		result.sequence_number = yyjson_get_sint(sequence_number_val);
+		sequence_number = yyjson_get_sint(sequence_number_val);
 
 		auto operation_val = yyjson_obj_get(obj, "operation");
 		if (!operation_val) {
 		return "CommitReport required property 'operation' is missing");
 		}
-		result.operation = yyjson_get_str(operation_val);
+		operation = yyjson_get_str(operation_val);
 
 		auto metrics_val = yyjson_obj_get(obj, "metrics");
 		if (!metrics_val) {
 		return "CommitReport required property 'metrics' is missing");
 		}
-		result.metrics = Metrics::FromJSON(metrics_val);
+		error = metrics.TryFromJSON(metrics_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto metadata_val = yyjson_obj_get(obj, "metadata");
 		if (metadata_val) {
-			result.metadata = parse_object_of_strings(metadata_val);
+			metadata = parse_object_of_strings(metadata_val);
 		}
 		return string();
 	}

@@ -35,7 +35,7 @@ public:
 		if (!order_id_val) {
 		return "SortOrder required property 'order_id' is missing");
 		}
-		result.order_id = yyjson_get_sint(order_id_val);
+		order_id = yyjson_get_sint(order_id_val);
 
 		auto fields_val = yyjson_obj_get(obj, "fields");
 		if (!fields_val) {
@@ -44,7 +44,13 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(fields_val, idx, max, val) {
-			result.fields.push_back(SortField::FromJSON(val));
+
+			SortField tmp;
+			error = tmp.TryFromJSON(val);
+			if (!error.empty()) {
+				return error;
+			}
+			fields.push_back(tmp);
 		}
 
 		return string();

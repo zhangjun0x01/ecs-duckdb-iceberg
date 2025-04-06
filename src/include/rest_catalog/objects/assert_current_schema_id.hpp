@@ -40,11 +40,11 @@ public:
 		if (!current_schema_id_val) {
 		return "AssertCurrentSchemaId required property 'current_schema_id' is missing");
 		}
-		result.current_schema_id = yyjson_get_sint(current_schema_id_val);
+		current_schema_id = yyjson_get_sint(current_schema_id_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
-			result.type = yyjson_get_str(type_val);
+			type = yyjson_get_str(type_val);
 		}
 		return string();
 	}

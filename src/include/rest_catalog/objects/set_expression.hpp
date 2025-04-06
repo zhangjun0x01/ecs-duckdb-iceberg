@@ -36,13 +36,19 @@ public:
 		if (!type_val) {
 		return "SetExpression required property 'type' is missing");
 		}
-		result.type = ExpressionType::FromJSON(type_val);
+		error = expression_type.TryFromJSON(type_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto term_val = yyjson_obj_get(obj, "term");
 		if (!term_val) {
 		return "SetExpression required property 'term' is missing");
 		}
-		result.term = Term::FromJSON(term_val);
+		error = term.TryFromJSON(term_val);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto values_val = yyjson_obj_get(obj, "values");
 		if (!values_val) {
@@ -51,7 +57,9 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(values_val, idx, max, val) {
-			result.values.push_back(val);
+
+			auto tmp = val;
+			values.push_back(tmp);
 		}
 
 		return string();

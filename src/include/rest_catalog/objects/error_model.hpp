@@ -34,26 +34,28 @@ public:
 		if (!message_val) {
 		return "ErrorModel required property 'message' is missing");
 		}
-		result.message = yyjson_get_str(message_val);
+		message = yyjson_get_str(message_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
 		return "ErrorModel required property 'type' is missing");
 		}
-		result.type = yyjson_get_str(type_val);
+		type = yyjson_get_str(type_val);
 
 		auto code_val = yyjson_obj_get(obj, "code");
 		if (!code_val) {
 		return "ErrorModel required property 'code' is missing");
 		}
-		result.code = yyjson_get_sint(code_val);
+		code = yyjson_get_sint(code_val);
 
 		auto stack_val = yyjson_obj_get(obj, "stack");
 		if (stack_val) {
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(stack_val, idx, max, val) {
-				result.stack.push_back(yyjson_get_str(val));
+
+				auto tmp = yyjson_get_str(val);
+				stack.push_back(tmp);
 			}
 		}
 		return string();

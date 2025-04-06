@@ -34,13 +34,13 @@ public:
 		if (!unit_val) {
 		return "CounterResult required property 'unit' is missing");
 		}
-		result.unit = yyjson_get_str(unit_val);
+		unit = yyjson_get_str(unit_val);
 
 		auto value_val = yyjson_obj_get(obj, "value");
 		if (!value_val) {
 		return "CounterResult required property 'value' is missing");
 		}
-		result.value = yyjson_get_sint(value_val);
+		value = yyjson_get_sint(value_val);
 
 		return string();
 	}

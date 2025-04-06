@@ -38,7 +38,13 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(table_changes_val, idx, max, val) {
-			result.table_changes.push_back(CommitTableRequest::FromJSON(val));
+
+			CommitTableRequest tmp;
+			error = tmp.TryFromJSON(val);
+			if (!error.empty()) {
+				return error;
+			}
+			table_changes.push_back(tmp);
 		}
 
 		return string();

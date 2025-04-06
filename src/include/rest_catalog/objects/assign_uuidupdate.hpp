@@ -40,11 +40,11 @@ public:
 		if (!uuid_val) {
 		return "AssignUUIDUpdate required property 'uuid' is missing");
 		}
-		result.uuid = yyjson_get_str(uuid_val);
+		uuid = yyjson_get_str(uuid_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
-			result.action = yyjson_get_str(action_val);
+			action = yyjson_get_str(action_val);
 		}
 		return string();
 	}

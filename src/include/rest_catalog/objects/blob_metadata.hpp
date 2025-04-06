@@ -34,19 +34,19 @@ public:
 		if (!type_val) {
 		return "BlobMetadata required property 'type' is missing");
 		}
-		result.type = yyjson_get_str(type_val);
+		type = yyjson_get_str(type_val);
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
 		if (!snapshot_id_val) {
 		return "BlobMetadata required property 'snapshot_id' is missing");
 		}
-		result.snapshot_id = yyjson_get_sint(snapshot_id_val);
+		snapshot_id = yyjson_get_sint(snapshot_id_val);
 
 		auto sequence_number_val = yyjson_obj_get(obj, "sequence_number");
 		if (!sequence_number_val) {
 		return "BlobMetadata required property 'sequence_number' is missing");
 		}
-		result.sequence_number = yyjson_get_sint(sequence_number_val);
+		sequence_number = yyjson_get_sint(sequence_number_val);
 
 		auto fields_val = yyjson_obj_get(obj, "fields");
 		if (!fields_val) {
@@ -55,12 +55,14 @@ public:
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(fields_val, idx, max, val) {
-			result.fields.push_back(yyjson_get_sint(val));
+
+			auto tmp = yyjson_get_sint(val);
+			fields.push_back(tmp);
 		}
 
 		auto properties_val = yyjson_obj_get(obj, "properties");
 		if (properties_val) {
-			result.properties = parse_object_of_strings(properties_val);
+			properties = parse_object_of_strings(properties_val);
 		}
 		return string();
 	}

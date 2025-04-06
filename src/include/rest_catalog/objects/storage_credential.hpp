@@ -34,13 +34,13 @@ public:
 		if (!prefix_val) {
 		return "StorageCredential required property 'prefix' is missing");
 		}
-		result.prefix = yyjson_get_str(prefix_val);
+		prefix = yyjson_get_str(prefix_val);
 
 		auto config_val = yyjson_obj_get(obj, "config");
 		if (!config_val) {
 		return "StorageCredential required property 'config' is missing");
 		}
-		result.config = parse_object_of_strings(config_val);
+		config = parse_object_of_strings(config_val);
 
 		return string();
 	}

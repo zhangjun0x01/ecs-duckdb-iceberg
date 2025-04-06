@@ -34,19 +34,19 @@ public:
 		if (!snapshot_id_val) {
 		return "PartitionStatisticsFile required property 'snapshot_id' is missing");
 		}
-		result.snapshot_id = yyjson_get_sint(snapshot_id_val);
+		snapshot_id = yyjson_get_sint(snapshot_id_val);
 
 		auto statistics_path_val = yyjson_obj_get(obj, "statistics_path");
 		if (!statistics_path_val) {
 		return "PartitionStatisticsFile required property 'statistics_path' is missing");
 		}
-		result.statistics_path = yyjson_get_str(statistics_path_val);
+		statistics_path = yyjson_get_str(statistics_path_val);
 
 		auto file_size_in_bytes_val = yyjson_obj_get(obj, "file_size_in_bytes");
 		if (!file_size_in_bytes_val) {
 		return "PartitionStatisticsFile required property 'file_size_in_bytes' is missing");
 		}
-		result.file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
+		file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
 
 		return string();
 	}
