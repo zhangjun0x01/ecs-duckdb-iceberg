@@ -35,7 +35,6 @@ public:
 		auto next_page_token_val = yyjson_obj_get(obj, "next_page_token");
 		if (next_page_token_val) {
 			result.next_page_token = PageToken::FromJSON(next_page_token_val);
-			;
 		}
 
 		auto namespaces_val = yyjson_obj_get(obj, "namespaces");
@@ -44,7 +43,7 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(namespaces_val, idx, max, val) {
 				result.namespaces.push_back(Namespace::FromJSON(val));
-			};
+			}
 		}
 		return string();
 	}

@@ -39,13 +39,11 @@ public:
 		auto error_description_val = yyjson_obj_get(obj, "error_description");
 		if (error_description_val) {
 			result.error_description = yyjson_get_str(error_description_val);
-			;
 		}
 
 		auto error_uri_val = yyjson_obj_get(obj, "error_uri");
 		if (error_uri_val) {
 			result.error_uri = yyjson_get_str(error_uri_val);
-			;
 		}
 		return string();
 	}

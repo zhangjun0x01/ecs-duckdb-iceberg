@@ -48,7 +48,7 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(endpoints_val, idx, max, val) {
 				result.endpoints.push_back(yyjson_get_str(val));
-			};
+			}
 		}
 		return string();
 	}

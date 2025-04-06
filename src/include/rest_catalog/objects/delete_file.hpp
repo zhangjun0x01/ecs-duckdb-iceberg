@@ -49,8 +49,8 @@ public:
 	}
 
 public:
-	PositionDeleteFile position_delete_file;
 	EqualityDeleteFile equality_delete_file;
+	PositionDeleteFile position_delete_file;
 
 public:
 };

@@ -50,8 +50,8 @@ public:
 	}
 
 public:
-	CounterResult counter_result;
 	TimerResult timer_result;
+	CounterResult counter_result;
 
 public:
 };

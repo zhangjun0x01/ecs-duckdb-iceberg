@@ -75,7 +75,6 @@ public:
 		auto default_catalog_val = yyjson_obj_get(obj, "default_catalog");
 		if (default_catalog_val) {
 			result.default_catalog = yyjson_get_str(default_catalog_val);
-			;
 		}
 		return string();
 	}

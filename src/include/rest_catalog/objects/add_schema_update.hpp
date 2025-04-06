@@ -46,13 +46,11 @@ public:
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
-			;
 		}
 
 		auto last_column_id_val = yyjson_obj_get(obj, "last_column_id");
 		if (last_column_id_val) {
 			result.last_column_id = yyjson_get_sint(last_column_id_val);
-			;
 		}
 		return string();
 	}

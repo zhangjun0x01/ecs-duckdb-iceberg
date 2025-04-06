@@ -46,7 +46,6 @@ public:
 		auto identifier_val = yyjson_obj_get(obj, "identifier");
 		if (identifier_val) {
 			result.identifier = TableIdentifier::FromJSON(identifier_val);
-			;
 		}
 
 		auto requirements_val = yyjson_obj_get(obj, "requirements");
@@ -55,7 +54,7 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(requirements_val, idx, max, val) {
 				result.requirements.push_back(ViewRequirement::FromJSON(val));
-			};
+			}
 		}
 		return string();
 	}

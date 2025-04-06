@@ -40,7 +40,6 @@ public:
 		auto plan_id_val = yyjson_obj_get(obj, "plan_id");
 		if (plan_id_val) {
 			result.plan_id = yyjson_get_str(plan_id_val);
-			;
 		}
 		return string();
 	}

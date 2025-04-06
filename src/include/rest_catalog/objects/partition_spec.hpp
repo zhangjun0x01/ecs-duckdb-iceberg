@@ -44,7 +44,6 @@ public:
 		auto spec_id_val = yyjson_obj_get(obj, "spec_id");
 		if (spec_id_val) {
 			result.spec_id = yyjson_get_sint(spec_id_val);
-			;
 		}
 		return string();
 	}

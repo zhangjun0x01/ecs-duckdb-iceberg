@@ -41,13 +41,11 @@ public:
 		auto metadata_location_val = yyjson_obj_get(obj, "metadata_location");
 		if (metadata_location_val) {
 			result.metadata_location = yyjson_get_str(metadata_location_val);
-			;
 		}
 
 		auto config_val = yyjson_obj_get(obj, "config");
 		if (config_val) {
 			result.config = parse_object_of_strings(config_val);
-			;
 		}
 
 		auto storage_credentials_val = yyjson_obj_get(obj, "storage_credentials");
@@ -56,7 +54,7 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(storage_credentials_val, idx, max, val) {
 				result.storage_credentials.push_back(StorageCredential::FromJSON(val));
-			};
+			}
 		}
 		return string();
 	}

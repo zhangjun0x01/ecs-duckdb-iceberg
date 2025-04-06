@@ -46,13 +46,11 @@ public:
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
-			;
 		}
 
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
 		if (snapshot_id_val) {
 			result.snapshot_id = yyjson_get_sint(snapshot_id_val);
-			;
 		}
 		return string();
 	}

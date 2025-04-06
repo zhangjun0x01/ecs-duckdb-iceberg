@@ -45,19 +45,16 @@ public:
 		auto max_ref_age_ms_val = yyjson_obj_get(obj, "max_ref_age_ms");
 		if (max_ref_age_ms_val) {
 			result.max_ref_age_ms = yyjson_get_sint(max_ref_age_ms_val);
-			;
 		}
 
 		auto max_snapshot_age_ms_val = yyjson_obj_get(obj, "max_snapshot_age_ms");
 		if (max_snapshot_age_ms_val) {
 			result.max_snapshot_age_ms = yyjson_get_sint(max_snapshot_age_ms_val);
-			;
 		}
 
 		auto min_snapshots_to_keep_val = yyjson_obj_get(obj, "min_snapshots_to_keep");
 		if (min_snapshots_to_keep_val) {
 			result.min_snapshots_to_keep = yyjson_get_sint(min_snapshots_to_keep_val);
-			;
 		}
 		return string();
 	}

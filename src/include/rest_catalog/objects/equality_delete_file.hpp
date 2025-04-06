@@ -48,7 +48,7 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(equality_ids_val, idx, max, val) {
 				result.equality_ids.push_back(yyjson_get_sint(val));
-			};
+			}
 		}
 		return string();
 	}

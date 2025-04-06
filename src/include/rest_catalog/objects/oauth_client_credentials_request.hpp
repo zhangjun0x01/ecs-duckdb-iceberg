@@ -51,7 +51,6 @@ public:
 		auto scope_val = yyjson_obj_get(obj, "scope");
 		if (scope_val) {
 			result.scope = yyjson_get_str(scope_val);
-			;
 		}
 		return string();
 	}

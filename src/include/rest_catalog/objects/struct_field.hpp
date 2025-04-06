@@ -59,19 +59,16 @@ public:
 		auto doc_val = yyjson_obj_get(obj, "doc");
 		if (doc_val) {
 			result.doc = yyjson_get_str(doc_val);
-			;
 		}
 
 		auto initial_default_val = yyjson_obj_get(obj, "initial_default");
 		if (initial_default_val) {
 			result.initial_default = PrimitiveTypeValue::FromJSON(initial_default_val);
-			;
 		}
 
 		auto write_default_val = yyjson_obj_get(obj, "write_default");
 		if (write_default_val) {
 			result.write_default = PrimitiveTypeValue::FromJSON(write_default_val);
-			;
 		}
 		return string();
 	}

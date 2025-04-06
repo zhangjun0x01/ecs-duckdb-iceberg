@@ -40,7 +40,6 @@ public:
 		auto properties_val = yyjson_obj_get(obj, "properties");
 		if (properties_val) {
 			result.properties = parse_object_of_strings(properties_val);
-			;
 		}
 		return string();
 	}

@@ -48,31 +48,26 @@ public:
 		auto location_val = yyjson_obj_get(obj, "location");
 		if (location_val) {
 			result.location = yyjson_get_str(location_val);
-			;
 		}
 
 		auto partition_spec_val = yyjson_obj_get(obj, "partition_spec");
 		if (partition_spec_val) {
 			result.partition_spec = PartitionSpec::FromJSON(partition_spec_val);
-			;
 		}
 
 		auto write_order_val = yyjson_obj_get(obj, "write_order");
 		if (write_order_val) {
 			result.write_order = SortOrder::FromJSON(write_order_val);
-			;
 		}
 
 		auto stage_create_val = yyjson_obj_get(obj, "stage_create");
 		if (stage_create_val) {
 			result.stage_create = yyjson_get_bool(stage_create_val);
-			;
 		}
 
 		auto properties_val = yyjson_obj_get(obj, "properties");
 		if (properties_val) {
 			result.properties = parse_object_of_strings(properties_val);
-			;
 		}
 		return string();
 	}

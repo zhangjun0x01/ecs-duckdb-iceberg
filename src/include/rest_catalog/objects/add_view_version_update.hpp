@@ -46,7 +46,6 @@ public:
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
-			;
 		}
 		return string();
 	}

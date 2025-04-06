@@ -56,7 +56,6 @@ public:
 		auto identifier_val = yyjson_obj_get(obj, "identifier");
 		if (identifier_val) {
 			result.identifier = TableIdentifier::FromJSON(identifier_val);
-			;
 		}
 		return string();
 	}

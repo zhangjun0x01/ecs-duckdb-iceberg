@@ -125,41 +125,17 @@ class Property:
         self.any_of: List[Property] = []
         self.one_of: List[Property] = []
 
-    def get_referenced_schemas_base(self):
-        res = set()
-        for item in self.all_of:
-            res.update(item.get_referenced_schemas())
-        for item in self.any_of:
-            res.update(item.get_referenced_schemas())
-        for item in self.one_of:
-            res.update(item.get_referenced_schemas())
-        return res
-
-    def get_referenced_schemas(self):
-        print(f"'get_referenced_schemas' not implemented for property type {self.type}")
-        exit(1)
-
 
 class SchemaReferenceProperty(Property):
     def __init__(self, name):
         super().__init__(Property.Type.SCHEMA_REFERENCE)
         self.ref = name
 
-    def get_referenced_schemas(self):
-        res = super().get_referenced_schemas_base()
-        res.add(self.ref)
-        return res
-
 
 class ArrayProperty(Property):
     def __init__(self):
         super().__init__(Property.Type.ARRAY)
         self.item_type: Optional[Property] = None
-
-    def get_referenced_schemas(self):
-        res = super().get_referenced_schemas_base()
-        res.update(self.item_type.get_referenced_schemas())
-        return res
 
 
 class PrimitiveProperty(Property):
@@ -171,9 +147,6 @@ class PrimitiveProperty(Property):
         self.enum: Optional[List[str]] = None
         # TODO: same for this, this property *has* to have this value
         self.const: Optional[str] = None
-
-    def get_referenced_schemas(self):
-        return super().get_referenced_schemas_base()
 
 
 class ObjectProperty(Property):
@@ -203,12 +176,6 @@ class ObjectProperty(Property):
             return False
         return True
 
-    def get_referenced_schemas(self):
-        res = super().get_referenced_schemas_base()
-        for item in self.properties:
-            res.update(self.properties[item].get_referenced_schemas())
-        return res
-
 
 class ResponseObjectsGenerator:
     def __init__(self, path: str):
@@ -231,7 +198,7 @@ class ResponseObjectsGenerator:
         self.schemas = spec['components']['schemas']
         self.responses = spec['components']['responses']
 
-    def parse_object_property(self, spec: dict, result: Property):
+    def parse_object_property(self, spec: dict, result: Property) -> None:
         # For polymorphic types, this defines a mapping based on the content of a property
         discriminator = spec.get('discriminator')
         # Get the required properties of the schema
@@ -252,7 +219,7 @@ class ResponseObjectsGenerator:
             property_spec = properties[name]
             object_result.properties[name] = self.parse_property(property_spec)
 
-    def parse_primitive_property(self, spec: dict, result: Property):
+    def parse_primitive_property(self, spec: dict, result: Property) -> None:
         primitive_type = spec['type']
         format = spec.get('format')
         assert primitive_type in PRIMITIVE_TYPES
@@ -261,7 +228,7 @@ class ResponseObjectsGenerator:
         primitive_result.format = format
         primitive_result.primitive_type = primitive_type
 
-    def parse_array_property(self, spec: dict, result: Property):
+    def parse_array_property(self, spec: dict, result: Property) -> None:
         item_type = spec['items']
         assert result.type == Property.Type.ARRAY
         array_result = cast(ArrayProperty, result)
@@ -341,7 +308,7 @@ class ResponseObjectsGenerator:
             return SchemaReferenceProperty(new_name)
         return result
 
-    def parse_schema(self, name: str):
+    def parse_schema(self, name: str) -> None:
         if name in self.parsed_schemas:
             return
         if name in self.schemas_being_parsed:
@@ -354,11 +321,11 @@ class ResponseObjectsGenerator:
         self.schemas_being_parsed.add(name)
         schema = self.schemas[name]
 
-        property = self.parse_property(schema, name)
-        property.reference = name
+        result = self.parse_property(schema, name)
+        result.reference = name
 
         self.schemas_being_parsed.remove(name)
-        self.parsed_schemas[name] = property
+        self.parsed_schemas[name] = result
 
     def parse_all_schemas(self):
         for name in self.schemas:
@@ -503,7 +470,7 @@ if ({condition}) {{
                 f"""
 auto {variable_name}_val = yyjson_obj_get(obj, "{variable_name}");
 if ({variable_name}_val) {{
-{variable_assignment};
+{variable_assignment}
 }}"""
             )
         return '\n'.join(res)

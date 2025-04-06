@@ -78,8 +78,8 @@ public:
 	}
 
 public:
-	ScanTasks scan_tasks;
 	Object5 object_5;
+	ScanTasks scan_tasks;
 
 public:
 };

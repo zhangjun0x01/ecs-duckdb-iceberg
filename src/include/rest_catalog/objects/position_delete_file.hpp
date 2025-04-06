@@ -45,13 +45,11 @@ public:
 		auto content_offset_val = yyjson_obj_get(obj, "content_offset");
 		if (content_offset_val) {
 			result.content_offset = yyjson_get_sint(content_offset_val);
-			;
 		}
 
 		auto content_size_in_bytes_val = yyjson_obj_get(obj, "content_size_in_bytes");
 		if (content_size_in_bytes_val) {
 			result.content_size_in_bytes = yyjson_get_sint(content_size_in_bytes_val);
-			;
 		}
 		return string();
 	}

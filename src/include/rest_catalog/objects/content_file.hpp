@@ -81,7 +81,6 @@ public:
 		auto key_metadata_val = yyjson_obj_get(obj, "key_metadata");
 		if (key_metadata_val) {
 			result.key_metadata = key_metadata_val;
-			;
 		}
 
 		auto split_offsets_val = yyjson_obj_get(obj, "split_offsets");
@@ -90,13 +89,12 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(split_offsets_val, idx, max, val) {
 				result.split_offsets.push_back(yyjson_get_sint(val));
-			};
+			}
 		}
 
 		auto sort_order_id_val = yyjson_obj_get(obj, "sort_order_id");
 		if (sort_order_id_val) {
 			result.sort_order_id = yyjson_get_sint(sort_order_id_val);
-			;
 		}
 		return string();
 	}

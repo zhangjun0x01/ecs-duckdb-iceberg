@@ -45,37 +45,31 @@ public:
 		auto column_sizes_val = yyjson_obj_get(obj, "column_sizes");
 		if (column_sizes_val) {
 			result.column_sizes = column_sizes_val;
-			;
 		}
 
 		auto value_counts_val = yyjson_obj_get(obj, "value_counts");
 		if (value_counts_val) {
 			result.value_counts = value_counts_val;
-			;
 		}
 
 		auto null_value_counts_val = yyjson_obj_get(obj, "null_value_counts");
 		if (null_value_counts_val) {
 			result.null_value_counts = null_value_counts_val;
-			;
 		}
 
 		auto nan_value_counts_val = yyjson_obj_get(obj, "nan_value_counts");
 		if (nan_value_counts_val) {
 			result.nan_value_counts = nan_value_counts_val;
-			;
 		}
 
 		auto lower_bounds_val = yyjson_obj_get(obj, "lower_bounds");
 		if (lower_bounds_val) {
 			result.lower_bounds = lower_bounds_val;
-			;
 		}
 
 		auto upper_bounds_val = yyjson_obj_get(obj, "upper_bounds");
 		if (upper_bounds_val) {
 			result.upper_bounds = upper_bounds_val;
-			;
 		}
 		return string();
 	}

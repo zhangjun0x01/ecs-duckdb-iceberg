@@ -38,7 +38,7 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(keys_val, idx, max, val) {
 				result.keys.push_back(IntegerTypeValue::FromJSON(val));
-			};
+			}
 		}
 
 		auto values_val = yyjson_obj_get(obj, "values");
@@ -47,7 +47,7 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(values_val, idx, max, val) {
 				result.values.push_back(PrimitiveTypeValue::FromJSON(val));
-			};
+			}
 		}
 		return string();
 	}

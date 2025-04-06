@@ -36,13 +36,12 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(removals_val, idx, max, val) {
 				result.removals.push_back(yyjson_get_str(val));
-			};
+			}
 		}
 
 		auto updates_val = yyjson_obj_get(obj, "updates");
 		if (updates_val) {
 			result.updates = parse_object_of_strings(updates_val);
-			;
 		}
 		return string();
 	}

@@ -40,7 +40,6 @@ public:
 			auto schema_id_val = yyjson_obj_get(obj, "schema_id");
 			if (schema_id_val) {
 				result.schema_id = yyjson_get_sint(schema_id_val);
-				;
 			}
 
 			auto identifier_field_ids_val = yyjson_obj_get(obj, "identifier_field_ids");
@@ -49,7 +48,7 @@ public:
 				yyjson_val *val;
 				yyjson_arr_foreach(identifier_field_ids_val, idx, max, val) {
 					result.identifier_field_ids.push_back(yyjson_get_sint(val));
-				};
+				}
 			}
 			return string();
 		}
@@ -85,8 +84,8 @@ public:
 	}
 
 public:
-	Object1 object_1;
 	StructType struct_type;
+	Object1 object_1;
 
 public:
 };

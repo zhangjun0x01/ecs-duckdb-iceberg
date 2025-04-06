@@ -64,7 +64,6 @@ public:
 		auto metadata_val = yyjson_obj_get(obj, "metadata");
 		if (metadata_val) {
 			result.metadata = parse_object_of_strings(metadata_val);
-			;
 		}
 		return string();
 	}

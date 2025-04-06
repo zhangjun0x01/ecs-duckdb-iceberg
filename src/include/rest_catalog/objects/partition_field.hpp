@@ -52,7 +52,6 @@ public:
 		auto field_id_val = yyjson_obj_get(obj, "field_id");
 		if (field_id_val) {
 			result.field_id = yyjson_get_sint(field_id_val);
-			;
 		}
 		return string();
 	}

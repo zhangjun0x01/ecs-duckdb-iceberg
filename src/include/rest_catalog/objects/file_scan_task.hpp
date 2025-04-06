@@ -43,13 +43,12 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(delete_file_references_val, idx, max, val) {
 				result.delete_file_references.push_back(yyjson_get_sint(val));
-			};
+			}
 		}
 
 		auto residual_filter_val = yyjson_obj_get(obj, "residual_filter");
 		if (residual_filter_val) {
 			result.residual_filter = residual_filter_val;
-			;
 		}
 		return string();
 	}

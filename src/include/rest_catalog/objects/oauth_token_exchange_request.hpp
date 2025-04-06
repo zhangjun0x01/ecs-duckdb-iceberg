@@ -52,25 +52,21 @@ public:
 		auto scope_val = yyjson_obj_get(obj, "scope");
 		if (scope_val) {
 			result.scope = yyjson_get_str(scope_val);
-			;
 		}
 
 		auto requested_token_type_val = yyjson_obj_get(obj, "requested_token_type");
 		if (requested_token_type_val) {
 			result.requested_token_type = TokenType::FromJSON(requested_token_type_val);
-			;
 		}
 
 		auto actor_token_val = yyjson_obj_get(obj, "actor_token");
 		if (actor_token_val) {
 			result.actor_token = yyjson_get_str(actor_token_val);
-			;
 		}
 
 		auto actor_token_type_val = yyjson_obj_get(obj, "actor_token_type");
 		if (actor_token_type_val) {
 			result.actor_token_type = TokenType::FromJSON(actor_token_type_val);
-			;
 		}
 		return string();
 	}

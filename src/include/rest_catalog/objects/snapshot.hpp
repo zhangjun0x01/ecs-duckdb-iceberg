@@ -89,19 +89,16 @@ public:
 		auto parent_snapshot_id_val = yyjson_obj_get(obj, "parent_snapshot_id");
 		if (parent_snapshot_id_val) {
 			result.parent_snapshot_id = yyjson_get_sint(parent_snapshot_id_val);
-			;
 		}
 
 		auto sequence_number_val = yyjson_obj_get(obj, "sequence_number");
 		if (sequence_number_val) {
 			result.sequence_number = yyjson_get_sint(sequence_number_val);
-			;
 		}
 
 		auto schema_id_val = yyjson_obj_get(obj, "schema_id");
 		if (schema_id_val) {
 			result.schema_id = yyjson_get_sint(schema_id_val);
-			;
 		}
 		return string();
 	}

@@ -39,7 +39,7 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(delete_files_val, idx, max, val) {
 				result.delete_files.push_back(DeleteFile::FromJSON(val));
-			};
+			}
 		}
 
 		auto file_scan_tasks_val = yyjson_obj_get(obj, "file_scan_tasks");
@@ -48,7 +48,7 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(file_scan_tasks_val, idx, max, val) {
 				result.file_scan_tasks.push_back(FileScanTask::FromJSON(val));
-			};
+			}
 		}
 
 		auto plan_tasks_val = yyjson_obj_get(obj, "plan_tasks");
@@ -57,7 +57,7 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(plan_tasks_val, idx, max, val) {
 				result.plan_tasks.push_back(PlanTask::FromJSON(val));
-			};
+			}
 		}
 		return string();
 	}

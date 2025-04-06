@@ -50,8 +50,8 @@ public:
 	}
 
 public:
-	OAuthTokenExchangeRequest oauth_token_exchange_request;
 	OAuthClientCredentialsRequest oauth_client_credentials_request;
+	OAuthTokenExchangeRequest oauth_token_exchange_request;
 
 public:
 };
