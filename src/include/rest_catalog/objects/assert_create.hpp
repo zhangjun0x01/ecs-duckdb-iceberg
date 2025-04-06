@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,25 +15,41 @@ namespace rest_api_objects {
 
 class AssertCreate {
 public:
+	AssertCreate::AssertCreate() {
+	}
+
+public:
 	static AssertCreate FromJSON(yyjson_val *obj) {
-		AssertCreate result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
 
-		// Parse TableRequirement fields
-		result.table_requirement = TableRequirement::FromJSON(obj);
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
 
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = yyjson_get_str(type_val);
-		} else {
-			throw IOException("AssertCreate required property 'type' is missing");
+		error = base_table_requirement.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
 		}
 
-		return result;
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (!type_val) {
+		return "AssertCreate required property 'type' is missing");
+		}
+		result.type = yyjson_get_str(type_val);
+
+		return string();
 	}
 
 public:
 	TableRequirement table_requirement;
-	string type;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

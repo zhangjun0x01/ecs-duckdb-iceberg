@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,31 +16,46 @@ namespace rest_api_objects {
 
 class AddSnapshotUpdate {
 public:
-	static AddSnapshotUpdate FromJSON(yyjson_val *obj) {
-		AddSnapshotUpdate result;
+	AddSnapshotUpdate::AddSnapshotUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static AddSnapshotUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto snapshot_val = yyjson_obj_get(obj, "snapshot");
+		if (!snapshot_val) {
+		return "AddSnapshotUpdate required property 'snapshot' is missing");
+		}
+		result.snapshot = Snapshot::FromJSON(snapshot_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto snapshot_val = yyjson_obj_get(obj, "snapshot");
-		if (snapshot_val) {
-			result.snapshot = Snapshot::FromJSON(snapshot_val);
-		} else {
-			throw IOException("AddSnapshotUpdate required property 'snapshot' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	Snapshot snapshot;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

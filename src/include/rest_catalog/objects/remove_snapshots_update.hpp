@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,35 +15,50 @@ namespace rest_api_objects {
 
 class RemoveSnapshotsUpdate {
 public:
-	static RemoveSnapshotsUpdate FromJSON(yyjson_val *obj) {
-		RemoveSnapshotsUpdate result;
+	RemoveSnapshotsUpdate::RemoveSnapshotsUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static RemoveSnapshotsUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto snapshot_ids_val = yyjson_obj_get(obj, "snapshot_ids");
+		if (!snapshot_ids_val) {
+		return "RemoveSnapshotsUpdate required property 'snapshot_ids' is missing");
+		}
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(snapshot_ids_val, idx, max, val) {
+			result.snapshot_ids.push_back(yyjson_get_sint(val));
+		}
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto snapshot_ids_val = yyjson_obj_get(obj, "snapshot-ids");
-		if (snapshot_ids_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(snapshot_ids_val, idx, max, val) {
-				result.snapshot_ids.push_back(yyjson_get_sint(val));
-			}
-		} else {
-			throw IOException("RemoveSnapshotsUpdate required property 'snapshot-ids' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	vector<int64_t> snapshot_ids;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

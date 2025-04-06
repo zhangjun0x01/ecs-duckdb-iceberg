@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,21 +15,34 @@ namespace rest_api_objects {
 
 class IcebergErrorResponse {
 public:
-	static IcebergErrorResponse FromJSON(yyjson_val *obj) {
-		IcebergErrorResponse result;
-
-		auto error_val = yyjson_obj_get(obj, "error");
-		if (error_val) {
-			result.error = ErrorModel::FromJSON(error_val);
-		} else {
-			throw IOException("IcebergErrorResponse required property 'error' is missing");
-		}
-
-		return result;
+	IcebergErrorResponse::IcebergErrorResponse() {
 	}
 
 public:
-	ErrorModel error;
+	static IcebergErrorResponse FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto error_val = yyjson_obj_get(obj, "error");
+		if (!error_val) {
+		return "IcebergErrorResponse required property 'error' is missing");
+		}
+		result.error = ErrorModel::FromJSON(error_val);
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

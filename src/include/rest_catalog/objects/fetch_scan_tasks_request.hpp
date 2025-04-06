@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,21 +15,34 @@ namespace rest_api_objects {
 
 class FetchScanTasksRequest {
 public:
-	static FetchScanTasksRequest FromJSON(yyjson_val *obj) {
-		FetchScanTasksRequest result;
-
-		auto plan_task_val = yyjson_obj_get(obj, "plan-task");
-		if (plan_task_val) {
-			result.plan_task = PlanTask::FromJSON(plan_task_val);
-		} else {
-			throw IOException("FetchScanTasksRequest required property 'plan-task' is missing");
-		}
-
-		return result;
+	FetchScanTasksRequest::FetchScanTasksRequest() {
 	}
 
 public:
-	PlanTask plan_task;
+	static FetchScanTasksRequest FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto plan_task_val = yyjson_obj_get(obj, "plan_task");
+		if (!plan_task_val) {
+		return "FetchScanTasksRequest required property 'plan_task' is missing");
+		}
+		result.plan_task = PlanTask::FromJSON(plan_task_val);
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

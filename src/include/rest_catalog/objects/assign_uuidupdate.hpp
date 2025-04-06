@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,31 +15,46 @@ namespace rest_api_objects {
 
 class AssignUUIDUpdate {
 public:
-	static AssignUUIDUpdate FromJSON(yyjson_val *obj) {
-		AssignUUIDUpdate result;
+	AssignUUIDUpdate::AssignUUIDUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static AssignUUIDUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto uuid_val = yyjson_obj_get(obj, "uuid");
+		if (!uuid_val) {
+		return "AssignUUIDUpdate required property 'uuid' is missing");
+		}
+		result.uuid = yyjson_get_str(uuid_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto uuid_val = yyjson_obj_get(obj, "uuid");
-		if (uuid_val) {
-			result.uuid = yyjson_get_str(uuid_val);
-		} else {
-			throw IOException("AssignUUIDUpdate required property 'uuid' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	string uuid;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

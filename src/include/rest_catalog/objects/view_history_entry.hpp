@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,29 +14,40 @@ namespace rest_api_objects {
 
 class ViewHistoryEntry {
 public:
-	static ViewHistoryEntry FromJSON(yyjson_val *obj) {
-		ViewHistoryEntry result;
-
-		auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
-		if (timestamp_ms_val) {
-			result.timestamp_ms = yyjson_get_sint(timestamp_ms_val);
-		} else {
-			throw IOException("ViewHistoryEntry required property 'timestamp-ms' is missing");
-		}
-
-		auto version_id_val = yyjson_obj_get(obj, "version-id");
-		if (version_id_val) {
-			result.version_id = yyjson_get_sint(version_id_val);
-		} else {
-			throw IOException("ViewHistoryEntry required property 'version-id' is missing");
-		}
-
-		return result;
+	ViewHistoryEntry::ViewHistoryEntry() {
 	}
 
 public:
-	int64_t timestamp_ms;
-	int64_t version_id;
+	static ViewHistoryEntry FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto version_id_val = yyjson_obj_get(obj, "version_id");
+		if (!version_id_val) {
+		return "ViewHistoryEntry required property 'version_id' is missing");
+		}
+		result.version_id = yyjson_get_sint(version_id_val);
+
+		auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
+		if (!timestamp_ms_val) {
+		return "ViewHistoryEntry required property 'timestamp_ms' is missing");
+		}
+		result.timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

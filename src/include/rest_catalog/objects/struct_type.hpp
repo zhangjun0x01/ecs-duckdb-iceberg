@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,33 +15,44 @@ namespace rest_api_objects {
 
 class StructType {
 public:
-	static StructType FromJSON(yyjson_val *obj) {
-		StructType result;
-
-		auto fields_val = yyjson_obj_get(obj, "fields");
-		if (fields_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(fields_val, idx, max, val) {
-				result.fields.push_back(StructField::FromJSON(val));
-			}
-		} else {
-			throw IOException("StructType required property 'fields' is missing");
-		}
-
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = yyjson_get_str(type_val);
-		} else {
-			throw IOException("StructType required property 'type' is missing");
-		}
-
-		return result;
+	StructType::StructType() {
 	}
 
 public:
-	vector<StructField> fields;
-	string type;
+	static StructType FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (!type_val) {
+		return "StructType required property 'type' is missing");
+		}
+		result.type = yyjson_get_str(type_val);
+
+		auto fields_val = yyjson_obj_get(obj, "fields");
+		if (!fields_val) {
+		return "StructType required property 'fields' is missing");
+		}
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(fields_val, idx, max, val) {
+			result.fields.push_back(StructField::FromJSON(val));
+		}
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

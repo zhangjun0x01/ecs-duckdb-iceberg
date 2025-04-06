@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,31 +15,46 @@ namespace rest_api_objects {
 
 class AssertDefaultSpecId {
 public:
+	AssertDefaultSpecId::AssertDefaultSpecId() {
+	}
+
+public:
 	static AssertDefaultSpecId FromJSON(yyjson_val *obj) {
-		AssertDefaultSpecId result;
-
-		// Parse TableRequirement fields
-		result.table_requirement = TableRequirement::FromJSON(obj);
-
-		auto default_spec_id_val = yyjson_obj_get(obj, "default-spec-id");
-		if (default_spec_id_val) {
-			result.default_spec_id = yyjson_get_sint(default_spec_id_val);
-		} else {
-			throw IOException("AssertDefaultSpecId required property 'default-spec-id' is missing");
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
 		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_table_requirement.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto default_spec_id_val = yyjson_obj_get(obj, "default_spec_id");
+		if (!default_spec_id_val) {
+		return "AssertDefaultSpecId required property 'default_spec_id' is missing");
+		}
+		result.default_spec_id = yyjson_get_sint(default_spec_id_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = yyjson_get_str(type_val);
+			;
 		}
-
-		return result;
+		return string();
 	}
 
 public:
 	TableRequirement table_requirement;
-	int64_t default_spec_id;
-	string type;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

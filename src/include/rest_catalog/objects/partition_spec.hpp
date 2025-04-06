@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,31 +15,43 @@ namespace rest_api_objects {
 
 class PartitionSpec {
 public:
-	static PartitionSpec FromJSON(yyjson_val *obj) {
-		PartitionSpec result;
-
-		auto fields_val = yyjson_obj_get(obj, "fields");
-		if (fields_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(fields_val, idx, max, val) {
-				result.fields.push_back(PartitionField::FromJSON(val));
-			}
-		} else {
-			throw IOException("PartitionSpec required property 'fields' is missing");
-		}
-
-		auto spec_id_val = yyjson_obj_get(obj, "spec-id");
-		if (spec_id_val) {
-			result.spec_id = yyjson_get_sint(spec_id_val);
-		}
-
-		return result;
+	PartitionSpec::PartitionSpec() {
 	}
 
 public:
-	vector<PartitionField> fields;
-	int64_t spec_id;
+	static PartitionSpec FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto fields_val = yyjson_obj_get(obj, "fields");
+		if (!fields_val) {
+		return "PartitionSpec required property 'fields' is missing");
+		}
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(fields_val, idx, max, val) {
+			result.fields.push_back(PartitionField::FromJSON(val));
+		}
+
+		auto spec_id_val = yyjson_obj_get(obj, "spec_id");
+		if (spec_id_val) {
+			result.spec_id = yyjson_get_sint(spec_id_val);
+			;
+		}
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

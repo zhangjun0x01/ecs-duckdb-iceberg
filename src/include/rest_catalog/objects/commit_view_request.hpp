@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -16,12 +17,36 @@ namespace rest_api_objects {
 
 class CommitViewRequest {
 public:
+	CommitViewRequest::CommitViewRequest() {
+	}
+
+public:
 	static CommitViewRequest FromJSON(yyjson_val *obj) {
-		CommitViewRequest result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto updates_val = yyjson_obj_get(obj, "updates");
+		if (!updates_val) {
+		return "CommitViewRequest required property 'updates' is missing");
+		}
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(updates_val, idx, max, val) {
+			result.updates.push_back(ViewUpdate::FromJSON(val));
+		}
 
 		auto identifier_val = yyjson_obj_get(obj, "identifier");
 		if (identifier_val) {
 			result.identifier = TableIdentifier::FromJSON(identifier_val);
+			;
 		}
 
 		auto requirements_val = yyjson_obj_get(obj, "requirements");
@@ -30,27 +55,14 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(requirements_val, idx, max, val) {
 				result.requirements.push_back(ViewRequirement::FromJSON(val));
-			}
+			};
 		}
-
-		auto updates_val = yyjson_obj_get(obj, "updates");
-		if (updates_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(updates_val, idx, max, val) {
-				result.updates.push_back(ViewUpdate::FromJSON(val));
-			}
-		} else {
-			throw IOException("CommitViewRequest required property 'updates' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
-	TableIdentifier identifier;
-	vector<ViewRequirement> requirements;
-	vector<ViewUpdate> updates;
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

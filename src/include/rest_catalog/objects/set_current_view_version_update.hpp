@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,31 +15,46 @@ namespace rest_api_objects {
 
 class SetCurrentViewVersionUpdate {
 public:
-	static SetCurrentViewVersionUpdate FromJSON(yyjson_val *obj) {
-		SetCurrentViewVersionUpdate result;
+	SetCurrentViewVersionUpdate::SetCurrentViewVersionUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static SetCurrentViewVersionUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto view_version_id_val = yyjson_obj_get(obj, "view_version_id");
+		if (!view_version_id_val) {
+		return "SetCurrentViewVersionUpdate required property 'view_version_id' is missing");
+		}
+		result.view_version_id = yyjson_get_sint(view_version_id_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto view_version_id_val = yyjson_obj_get(obj, "view-version-id");
-		if (view_version_id_val) {
-			result.view_version_id = yyjson_get_sint(view_version_id_val);
-		} else {
-			throw IOException("SetCurrentViewVersionUpdate required property 'view-version-id' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	int64_t view_version_id;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

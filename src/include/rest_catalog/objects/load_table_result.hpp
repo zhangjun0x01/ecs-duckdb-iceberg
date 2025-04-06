@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,43 +16,54 @@ namespace rest_api_objects {
 
 class LoadTableResult {
 public:
+	LoadTableResult::LoadTableResult() {
+	}
+
+public:
 	static LoadTableResult FromJSON(yyjson_val *obj) {
-		LoadTableResult result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto metadata_val = yyjson_obj_get(obj, "metadata");
+		if (!metadata_val) {
+		return "LoadTableResult required property 'metadata' is missing");
+		}
+		result.metadata = TableMetadata::FromJSON(metadata_val);
+
+		auto metadata_location_val = yyjson_obj_get(obj, "metadata_location");
+		if (metadata_location_val) {
+			result.metadata_location = yyjson_get_str(metadata_location_val);
+			;
+		}
 
 		auto config_val = yyjson_obj_get(obj, "config");
 		if (config_val) {
 			result.config = parse_object_of_strings(config_val);
+			;
 		}
 
-		auto metadata_val = yyjson_obj_get(obj, "metadata");
-		if (metadata_val) {
-			result.metadata = TableMetadata::FromJSON(metadata_val);
-		} else {
-			throw IOException("LoadTableResult required property 'metadata' is missing");
-		}
-
-		auto metadata_location_val = yyjson_obj_get(obj, "metadata-location");
-		if (metadata_location_val) {
-			result.metadata_location = yyjson_get_str(metadata_location_val);
-		}
-
-		auto storage_credentials_val = yyjson_obj_get(obj, "storage-credentials");
+		auto storage_credentials_val = yyjson_obj_get(obj, "storage_credentials");
 		if (storage_credentials_val) {
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(storage_credentials_val, idx, max, val) {
 				result.storage_credentials.push_back(StorageCredential::FromJSON(val));
-			}
+			};
 		}
-
-		return result;
+		return string();
 	}
 
 public:
-	case_insensitive_map_t<string> config;
-	TableMetadata metadata;
-	string metadata_location;
-	vector<StorageCredential> storage_credentials;
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

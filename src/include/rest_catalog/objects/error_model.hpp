@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,22 +14,39 @@ namespace rest_api_objects {
 
 class ErrorModel {
 public:
-	static ErrorModel FromJSON(yyjson_val *obj) {
-		ErrorModel result;
+	ErrorModel::ErrorModel() {
+	}
 
-		auto code_val = yyjson_obj_get(obj, "code");
-		if (code_val) {
-			result.code = yyjson_get_sint(code_val);
-		} else {
-			throw IOException("ErrorModel required property 'code' is missing");
+public:
+	static ErrorModel FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
 		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
 
 		auto message_val = yyjson_obj_get(obj, "message");
-		if (message_val) {
-			result.message = yyjson_get_str(message_val);
-		} else {
-			throw IOException("ErrorModel required property 'message' is missing");
+		if (!message_val) {
+		return "ErrorModel required property 'message' is missing");
 		}
+		result.message = yyjson_get_str(message_val);
+
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (!type_val) {
+		return "ErrorModel required property 'type' is missing");
+		}
+		result.type = yyjson_get_str(type_val);
+
+		auto code_val = yyjson_obj_get(obj, "code");
+		if (!code_val) {
+		return "ErrorModel required property 'code' is missing");
+		}
+		result.code = yyjson_get_sint(code_val);
 
 		auto stack_val = yyjson_obj_get(obj, "stack");
 		if (stack_val) {
@@ -36,24 +54,14 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(stack_val, idx, max, val) {
 				result.stack.push_back(yyjson_get_str(val));
-			}
+			};
 		}
-
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = yyjson_get_str(type_val);
-		} else {
-			throw IOException("ErrorModel required property 'type' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
-	int64_t code;
-	string message;
-	vector<string> stack;
-	string type;
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

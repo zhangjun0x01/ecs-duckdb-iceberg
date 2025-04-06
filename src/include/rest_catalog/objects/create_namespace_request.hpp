@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,27 +15,39 @@ namespace rest_api_objects {
 
 class CreateNamespaceRequest {
 public:
-	static CreateNamespaceRequest FromJSON(yyjson_val *obj) {
-		CreateNamespaceRequest result;
+	CreateNamespaceRequest::CreateNamespaceRequest() {
+	}
 
-		auto _namespace_val = yyjson_obj_get(obj, "namespace");
-		if (_namespace_val) {
-			result._namespace = Namespace::FromJSON(_namespace_val);
-		} else {
-			throw IOException("CreateNamespaceRequest required property 'namespace' is missing");
+public:
+	static CreateNamespaceRequest FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
 		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto _namespace_val = yyjson_obj_get(obj, "_namespace");
+		if (!_namespace_val) {
+		return "CreateNamespaceRequest required property '_namespace' is missing");
+		}
+		result._namespace = Namespace::FromJSON(_namespace_val);
 
 		auto properties_val = yyjson_obj_get(obj, "properties");
 		if (properties_val) {
 			result.properties = parse_object_of_strings(properties_val);
+			;
 		}
-
-		return result;
+		return string();
 	}
 
 public:
-	Namespace _namespace;
-	case_insensitive_map_t<string> properties;
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

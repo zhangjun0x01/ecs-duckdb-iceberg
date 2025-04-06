@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,23 +15,72 @@ namespace rest_api_objects {
 
 class CompletedPlanningWithIDResult {
 public:
-	static CompletedPlanningWithIDResult FromJSON(yyjson_val *obj) {
-		CompletedPlanningWithIDResult result;
-
-		// Parse CompletedPlanningResult fields
-		result.completed_planning_result = CompletedPlanningResult::FromJSON(obj);
-
-		auto plan_id_val = yyjson_obj_get(obj, "plan-id");
-		if (plan_id_val) {
-			result.plan_id = yyjson_get_str(plan_id_val);
-		}
-
-		return result;
+	CompletedPlanningWithIDResult::CompletedPlanningWithIDResult() {
 	}
 
 public:
+	class Object6 {
+	public:
+		Object6::Object6() {
+		}
+
+	public:
+		static Object6 FromJSON(yyjson_val *obj) {
+			auto error = TryFromJSON(obj);
+			if (!error.empty()) {
+				throw InvalidInputException(error);
+			}
+			return *this;
+		}
+
+	public:
+		string TryFromJSON(yyjson_val *obj) {
+			string error;
+
+			auto plan_id_val = yyjson_obj_get(obj, "plan_id");
+			if (plan_id_val) {
+				result.plan_id = yyjson_get_str(plan_id_val);
+				;
+			}
+			return string();
+		}
+
+	public:
+	public:
+	};
+
+public:
+	static CompletedPlanningWithIDResult FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_completed_planning_result.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		error = base_object_6.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		return string();
+	}
+
+public:
+	Object6 object_6;
 	CompletedPlanningResult completed_planning_result;
-	string plan_id;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

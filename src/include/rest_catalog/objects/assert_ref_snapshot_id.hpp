@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,39 +15,52 @@ namespace rest_api_objects {
 
 class AssertRefSnapshotId {
 public:
-	static AssertRefSnapshotId FromJSON(yyjson_val *obj) {
-		AssertRefSnapshotId result;
+	AssertRefSnapshotId::AssertRefSnapshotId() {
+	}
 
-		// Parse TableRequirement fields
-		result.table_requirement = TableRequirement::FromJSON(obj);
+public:
+	static AssertRefSnapshotId FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_table_requirement.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
 
 		auto ref_val = yyjson_obj_get(obj, "ref");
-		if (ref_val) {
-			result.ref = yyjson_get_str(ref_val);
-		} else {
-			throw IOException("AssertRefSnapshotId required property 'ref' is missing");
+		if (!ref_val) {
+		return "AssertRefSnapshotId required property 'ref' is missing");
 		}
+		result.ref = yyjson_get_str(ref_val);
 
-		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
-		if (snapshot_id_val) {
-			result.snapshot_id = yyjson_get_sint(snapshot_id_val);
-		} else {
-			throw IOException("AssertRefSnapshotId required property 'snapshot-id' is missing");
+		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
+		if (!snapshot_id_val) {
+		return "AssertRefSnapshotId required property 'snapshot_id' is missing");
 		}
+		result.snapshot_id = yyjson_get_sint(snapshot_id_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = yyjson_get_str(type_val);
+			;
 		}
-
-		return result;
+		return string();
 	}
 
 public:
 	TableRequirement table_requirement;
-	string ref;
-	int64_t snapshot_id;
-	string type;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

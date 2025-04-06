@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,37 +16,46 @@ namespace rest_api_objects {
 
 class TransformTerm {
 public:
-	static TransformTerm FromJSON(yyjson_val *obj) {
-		TransformTerm result;
-
-		auto term_val = yyjson_obj_get(obj, "term");
-		if (term_val) {
-			result.term = Reference::FromJSON(term_val);
-		} else {
-			throw IOException("TransformTerm required property 'term' is missing");
-		}
-
-		auto transform_val = yyjson_obj_get(obj, "transform");
-		if (transform_val) {
-			result.transform = Transform::FromJSON(transform_val);
-		} else {
-			throw IOException("TransformTerm required property 'transform' is missing");
-		}
-
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = yyjson_get_str(type_val);
-		} else {
-			throw IOException("TransformTerm required property 'type' is missing");
-		}
-
-		return result;
+	TransformTerm::TransformTerm() {
 	}
 
 public:
-	Reference term;
-	Transform transform;
-	string type;
+	static TransformTerm FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (!type_val) {
+		return "TransformTerm required property 'type' is missing");
+		}
+		result.type = yyjson_get_str(type_val);
+
+		auto transform_val = yyjson_obj_get(obj, "transform");
+		if (!transform_val) {
+		return "TransformTerm required property 'transform' is missing");
+		}
+		result.transform = Transform::FromJSON(transform_val);
+
+		auto term_val = yyjson_obj_get(obj, "term");
+		if (!term_val) {
+		return "TransformTerm required property 'term' is missing");
+		}
+		result.term = Reference::FromJSON(term_val);
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

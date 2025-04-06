@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,14 +14,28 @@ namespace rest_api_objects {
 
 class SortDirection {
 public:
-	static SortDirection FromJSON(yyjson_val *obj) {
-		SortDirection result;
-		result.value = yyjson_get_str(obj);
-		return result;
+	SortDirection::SortDirection() {
 	}
 
 public:
-	string value;
+	static SortDirection FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

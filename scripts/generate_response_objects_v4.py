@@ -87,6 +87,7 @@ CLASS_FORMAT = """
 class {CLASS_NAME} {{
 public:
     {CLASS_NAME}::{CLASS_NAME}() {{}}
+{NESTED_CLASSES}
 public:
     static {CLASS_NAME} FromJSON(yyjson_val *obj) {{
         auto error = TryFromJSON(obj);
@@ -120,7 +121,6 @@ class Property:
 
     def __init__(self, type: "Property.Type"):
         self.type = type
-        # TODO: need to be prepared to generate additional structs, not always a '$ref' (see 'Schema')
         self.all_of: List[Property] = []
         self.any_of: List[Property] = []
         self.one_of: List[Property] = []
@@ -176,206 +176,12 @@ class PrimitiveProperty(Property):
         return super().get_referenced_schemas_base()
 
 
-"""
-allOf: the object should satisfy all of the constraints of every entry of the allOf list
-(we can add each reference as member variable to the created class, using the base 'obj' as argument to the FromJSON)
-
-class AllOfExample {
-public:
-    AllOfExample() {}
-public:
-    static AllOfExample FromJSON(yyjson_val *obj) {
-        AllOfExample res;
-        auto error = res.TryFromJSON(obj);
-        if (!error.empty()) {
-            throw InvalidInputException(error);
-        }
-        return res;
-    }
-    string TryFromJSON(yyjson_val *obj) {
-        string error;
-
-        error = base_foo.TryFromJSON(obj);
-        if (!error.empty()) {
-            return error;
-        }
-        error = base_bar.TryFromJSON(obj);
-        if (!error.empty()) {
-            return error;
-        }
-        error = base_baz.TryFromJSON(obj);
-        if (!error.empty()) {
-            return error;
-        }
-
-        auto type_val = yyjson_obj_get(obj, "type");
-        if (type_val) {
-            type = yyjson_get_str(type_val);
-        }
-
-        auto content_val = yyjson_obj_get(obj, "content");
-        if (content_val) {
-            content = yyjson_get_str(content_val);
-        }
-
-        auto id_val = yyjson_obj_get(obj, "id");
-        if (id_val) {
-            id = yyjson_get_sint(id_val);
-        }
-        return string();
-    }
-public:
-    Foo base_foo;
-    bool has_foo = false;
-    Bar base_bar;
-    bool has_bar = false;
-    Baz base_baz;
-    bool has_baz = false;
-public:
-    string type;
-    string content;
-    int64_t id;
-};
-
-oneOf: the property will satisfy one of the referenced schemas
-(we can add 'has_<ref>' boolean member variables to the class, along with every referenced schema)
-we probably want to create a TryFromJSON method, which takes in an instance of the class, returns a string
-if string is empty - it was successful, otherwise it wasn't
-
-class OneOfExample {
-public:
-    OneOfExample() {}
-public:
-    static OneOfExample FromJSON(yyjson_val *obj) {
-        OneOfExample res;
-        auto error = res.TryFromJSON(obj);
-        if (!error.empty()) {
-            throw InvalidInputException(error);
-        }
-        return res;
-    }
-    string TryFromJSON(yyjson_val *obj) {
-        string error;
-
-        error = base_foo.TryFromJSON(obj);
-        if (error.empty()) {
-            has_foo = true;
-            return string();
-        }
-        error = base_bar.TryFromJSON(obj);
-        if (error.empty()) {
-            has_bar = true;
-            return string();
-        }
-        error = base_baz.TryFromJSON(obj);
-        if (error.empty()) {
-            has_baz = true;
-            return string();
-        }
-        return "OneOfExample failed to parse, none of the oneOf candidates matched";
-
-        auto type_val = yyjson_obj_get(obj, "type");
-        if (type_val) {
-            type = yyjson_get_str(type_val);
-        }
-
-        auto content_val = yyjson_obj_get(obj, "content");
-        if (content_val) {
-            content = yyjson_get_str(content_val);
-        }
-
-        auto id_val = yyjson_obj_get(obj, "id");
-        if (id_val) {
-            id = yyjson_get_sint(id_val);
-        }
-        return string();
-    }
-public:
-    Foo base_foo;
-    bool has_foo = false;
-    Bar base_bar;
-    bool has_bar = false;
-    Baz base_baz;
-    bool has_baz = false;
-public:
-    string type;
-    string content;
-    int64_t id;
-};
-
-anyOf: same as oneOf but it matches one or more of the referenced schemas
-the TryFromJSON will also be handy here
-(TODO: make sure the base class variables dont collide with any property variable)
-
-class AnyOfExample {
-public:
-    AnyOfExample() {}
-public:
-    static AnyOfExample FromJSON(yyjson_val *obj) {
-        AnyOfExample res;
-        auto error = res.TryFromJSON(obj);
-        if (!error.empty()) {
-            throw InvalidInputException(error);
-        }
-        return res;
-    }
-    string TryFromJSON(yyjson_val *obj) {
-        string error;
-
-        error = base_foo.TryFromJSON(obj);
-        if (error.empty()) {
-            has_foo = true;
-        }
-        error = base_bar.TryFromJSON(obj);
-        if (error.empty()) {
-            has_bar = true;
-        }
-        error = base_baz.TryFromJSON(obj);
-        if (error.empty()) {
-            has_baz = true;
-        }
-        if (!has_foo && !has_bar && !has_baz) {
-            return "AnyOfExample failed to parse, none of the anyOf candidates matched";
-        }
-
-        auto type_val = yyjson_obj_get(obj, "type");
-        if (type_val) {
-            type = yyjson_get_str(type_val);
-        }
-
-        auto content_val = yyjson_obj_get(obj, "content");
-        if (content_val) {
-            content = yyjson_get_str(content_val);
-        }
-
-        auto id_val = yyjson_obj_get(obj, "id");
-        if (id_val) {
-            id = yyjson_get_sint(id_val);
-        }
-        return string();
-    }
-public:
-    Foo base_foo;
-    bool has_foo = false;
-    Bar base_bar;
-    bool has_bar = false;
-    Baz base_baz;
-    bool has_baz = false;
-public:
-    string type;
-    string content;
-    int64_t id;
-};
-
-"""
-
-
 class ObjectProperty(Property):
     def __init__(self):
         super().__init__(Property.Type.OBJECT)
-        # TODO: when generating the C++ code, these properties should be present, anything else is optional
         self.required = []
         self.properties: Dict[str, Property] = {}
+        # TODO: if present, we should collect these in a 'case_insensitive_map_t'
         self.additional_properties: Optional[Property] = None
         # TODO: do we need this? the schema validation shouldn't need it
         self.discriminator = None
@@ -560,16 +366,13 @@ class ResponseObjectsGenerator:
 
     # Generation of CPP code
 
-    def generate_all_of(self, name: str, property: Property, nested_classes: Dict[str, Property], base_classes: set):
+    def generate_all_of(self, name: str, property: Property, base_classes: set):
         if not property.all_of:
             return ''
         res = []
         for item in property.all_of:
-            if item.type == Property.Type.SCHEMA_REFERENCE:
-                class_name = item.ref
-            else:
-                class_name = f'{name}Partial{len(nested_classes) + 1}'
-                nested_classes[class_name] = item
+            assert item.type == Property.Type.SCHEMA_REFERENCE
+            class_name = item.ref
             base_classes.add(class_name)
             property_name = to_snake_case(class_name)
             res.append(
@@ -581,17 +384,14 @@ if (!error.empty()) {{
             )
         return '\n'.join(res)
 
-    def generate_any_of(self, name: str, property: Property, nested_classes: Dict[str, Property], base_classes: set):
+    def generate_any_of(self, name: str, property: Property, base_classes: set):
         if not property.any_of:
             return ''
         all_base_classes = set()
         res = []
         for item in property.any_of:
-            if item.type == Property.Type.SCHEMA_REFERENCE:
-                class_name = item.ref
-            else:
-                class_name = f'{name}Partial{len(nested_classes) + 1}'
-                nested_classes[class_name] = item
+            assert item.type == Property.Type.SCHEMA_REFERENCE
+            class_name = item.ref
             base_classes.add(class_name)
             property_name = to_snake_case(class_name)
             all_base_classes.add(property_name)
@@ -611,18 +411,15 @@ if ({condition}) {{
         )
         return '\n'.join(res)
 
-    def generate_one_of(self, name: str, property: Property, nested_classes: Dict[str, Property], base_classes: set):
+    def generate_one_of(self, name: str, property: Property, base_classes: set):
         if not property.one_of:
             return ''
         res = []
 
         res.append('do {')
         for item in property.one_of:
-            if item.type == Property.Type.SCHEMA_REFERENCE:
-                class_name = item.ref
-            else:
-                class_name = f'{name}Partial{len(nested_classes) + 1}'
-                nested_classes[class_name] = item
+            assert item.type == Property.Type.SCHEMA_REFERENCE
+            class_name = item.ref
             base_classes.add(class_name)
             property_name = to_snake_case(class_name)
             res.append(
@@ -730,55 +527,60 @@ if (!{variable_name}_val) {{
             )
         return '\n'.join(res)
 
-    def generate_array_schema(self, schema: Property, name: str):
+    def generate_array_class(self, schema: Property, name: str, referenced_schemas: set):
         assert schema.type == Property.Type.ARRAY
         array_property = cast(ArrayProperty, schema)
 
-        referenced_schemas = schema.get_referenced_schemas()
-        include_schemas = [x for x in referenced_schemas if x not in self.schemas]
-        additional_headers = [
-            f'#include "rest_catalog/objects/{to_snake_case(x)}.hpp' for x in sorted(list(include_schemas))
-        ]
+        assert not array_property.all_of
+        assert not array_property.one_of
+        assert not array_property.any_of
 
-        referenced_schemas: Set[str] = set()
         body = self.generate_array_loop('obj', 'value', array_property.item_type, referenced_schemas)
+
+        generated_schemas_referenced = [x for x in referenced_schemas if x not in self.schemas]
+        for item in generated_schemas_referenced:
+            parsed_schema = self.parsed_schemas[item]
+            content = self.generate_class(parsed_schema, item, referenced_schemas)
+            print(content)
+
         body = '\n'.join([f'\t{x}' for x in body.split('\n')])
         class_definition = CLASS_FORMAT.format(
             CLASS_NAME=name,
+            NESTED_CLASSES='',
             BASE_CLASS_PARSING='',
             REQUIRED_PROPERTIES=body,
             OPTIONAL_PROPERTIES='',
             BASE_CLASS_VARIABLES='',
             PROPERTY_VARIABLES='',
         )
+        return class_definition
 
-        file_contents = HEADER_FORMAT.format(
-            ADDITIONAL_HEADERS='\n'.join(additional_headers), CLASS_DEFINITION=class_definition
-        )
-        return file_contents
+    def generate_primitive_class(self, schema: Property, name: str, referenced_schemas: set):
+        assert not schema.all_of
+        assert not schema.one_of
+        assert not schema.any_of
 
-    def generate_primitive_schema(self, schema: Property, name: str):
         # TODO: implement this
-        return ''
+        class_definition = CLASS_FORMAT.format(
+            CLASS_NAME=name,
+            NESTED_CLASSES='',
+            BASE_CLASS_PARSING='',
+            REQUIRED_PROPERTIES='',
+            OPTIONAL_PROPERTIES='',
+            BASE_CLASS_VARIABLES='',
+            PROPERTY_VARIABLES='',
+        )
+        return class_definition
 
-    def generate_object_schema(self, schema: Property, name: str):
+    def generate_object_class(self, schema: Property, name: str, referenced_schemas: set):
         assert schema.type == Property.Type.OBJECT
         object_property = cast(ObjectProperty, schema)
-
-        # Find all the headers we need to include (direct references)
-        referenced_schemas = schema.get_referenced_schemas()
-        include_schemas = [x for x in referenced_schemas if x not in self.schemas]
-        additional_headers = [
-            f'#include "rest_catalog/objects/{to_snake_case(x)}.hpp' for x in sorted(list(include_schemas))
-        ]
-
-        nested_classes: Dict[str, Property] = {}
         base_classes = set()
 
         # Parse any base classes required for the schema (anyOf, allOf, oneOf)
-        all_of_parsing = self.generate_all_of(name, schema, nested_classes, base_classes)
-        one_of_parsing = self.generate_one_of(name, schema, nested_classes, base_classes)
-        any_of_parsing = self.generate_any_of(name, schema, nested_classes, base_classes)
+        all_of_parsing = self.generate_all_of(name, schema, base_classes)
+        one_of_parsing = self.generate_one_of(name, schema, base_classes)
+        any_of_parsing = self.generate_any_of(name, schema, base_classes)
 
         base_class_parsing = []
         if all_of_parsing:
@@ -788,14 +590,12 @@ if (!{variable_name}_val) {{
         if any_of_parsing:
             base_class_parsing.append(any_of_parsing)
 
-        referenced_schemas: Set[str] = set()
+        referenced_schemas.update(base_classes)
 
         required = object_property.required
         if not required:
             required = []
         remaining_properties = [x for x in object_property.properties if x not in required]
-        if not remaining_properties:
-            return ''
 
         required_properties = {}
         optional_properties = {}
@@ -813,86 +613,94 @@ if (!{variable_name}_val) {{
         if any([x.startswith('Object') for x in referenced_schemas]):
             print("referenced_schemas", referenced_schemas)
 
-        if any([x.startswith('Object') for x in nested_classes.keys()]):
-            print("nested_classes", nested_classes)
-
-        # Parse the nested classes (objects that are not $ref, split for easy of generation)
-        if nested_classes:
-            keys = list(nested_classes.keys())
-            nested_class = nested_classes[keys[0]]
-            content = self.generate_schema(nested_class, keys[0])
+        generated_schemas_referenced = [x for x in referenced_schemas if x not in self.schemas]
+        nested_classes = []
+        for item in generated_schemas_referenced:
+            parsed_schema = self.parsed_schemas[item]
+            content = self.generate_class(parsed_schema, item, referenced_schemas)
+            nested_classes.append(content)
 
         base_class_variables = []
         for item in base_classes:
-            if item in nested_classes:
-                base_class = nested_classes[item]
-            else:
-                base_class = self.parsed_schemas[item]
+            base_class = self.parsed_schemas[item]
             variable_name = to_snake_case(item)
             base_class_variables.append(f'\t{item} {variable_name};')
 
+        if nested_classes:
+            nested_classes = '\n'.join(nested_classes)
+            nested_classes = '\n'.join([f'\t{x}' for x in nested_classes.split('\n')])
+            nested_classes = 'public:\n' + nested_classes
+        else:
+            nested_classes = ''
+
         class_definition = CLASS_FORMAT.format(
             CLASS_NAME=name,
+            NESTED_CLASSES=nested_classes,
             BASE_CLASS_PARSING='\n'.join(base_class_parsing),
             REQUIRED_PROPERTIES=required_property_parsing,
             OPTIONAL_PROPERTIES=optional_property_parsing,
             BASE_CLASS_VARIABLES='\n'.join(base_class_variables),
             PROPERTY_VARIABLES='',
         )
+        return class_definition
+
+    def generate_class(self, schema: Property, name: str, referenced_schemas: set):
+        new_referenced_schemas = set()
+        if schema.type == Property.Type.OBJECT:
+            result = self.generate_object_class(schema, name, new_referenced_schemas)
+        elif schema.type == Property.Type.ARRAY:
+            result = self.generate_array_class(schema, name, new_referenced_schemas)
+        elif schema.type == Property.Type.PRIMITIVE:
+            result = self.generate_primitive_class(schema, name, new_referenced_schemas)
+        else:
+            print(f"Unrecognized 'generate_schema' type {schema.type}")
+        referenced_schemas.update(new_referenced_schemas)
+        return result
+
+    def generate_schema(self, schema: Property, name: str):
+        referenced_schemas = set()
+        class_definition = self.generate_class(schema, name, referenced_schemas)
+
+        include_schemas = [x for x in referenced_schemas if x in self.schemas]
+        additional_headers = [
+            f'#include "rest_catalog/objects/{to_snake_case(x)}.hpp"' for x in sorted(list(include_schemas))
+        ]
 
         file_contents = HEADER_FORMAT.format(
             ADDITIONAL_HEADERS='\n'.join(additional_headers), CLASS_DEFINITION=class_definition
         )
-        print(file_contents)
-        exit(1)
         return file_contents
 
-    def generate_schema(self, schema: Property, name: str):
-        if schema.type == Property.Type.OBJECT:
-            return self.generate_object_schema(schema, name)
-        elif schema.type == Property.Type.ARRAY:
-            return self.generate_array_schema(schema, name)
-        elif schema.type == Property.Type.PRIMITIVE:
-            return self.generate_primitive_schema(schema, name)
-        else:
-            print(f"Unrecognized 'generate_schema' type {schema.type}")
+    def generate_list_header(self) -> str:
+        lines = ["", "// This file is automatically generated and contains all REST API object headers", ""]
+
+        # Add includes for all generated headers
+        for name in self.schemas:
+            lines.append(f'#include "rest_catalog/objects/{to_snake_case(name)}.hpp"')
+        return '\n'.join(lines)
 
     def generate_all_schemas(self):
+        # Create directory if it doesn't exist
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+        with open(os.path.join(OUTPUT_DIR, 'list.hpp'), 'w') as f:
+            f.write(self.generate_list_header())
+
         for name in self.schemas:
             schema = self.parsed_schemas[name]
-            self.generate_schema(schema, name)
-
-
-def main():
-    # Load OpenAPI spec
-    with open(API_SPEC_PATH) as f:
-        spec = yaml.safe_load(f)
-
-    schemas = spec['components']['schemas']
-    parsed_schemas: Dict[str, Schema] = {}
-
-    # Create schema objects with access to all schemas
-    for name, schema in schemas.items():
-        create_schema(name, schema, schemas, parsed_schemas)
-
-    # Create directory if it doesn't exist
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-    # Generate a header file for each schema
-    for name, schema in parsed_schemas.items():
-        if name in SCHEMA_BLACKLIST:
-            # We don't want to generate this, this file is written/edited manually
-            continue
-        output_path = os.path.join(OUTPUT_DIR, f'{to_snake_case(name)}.hpp')
-        with open(output_path, 'w') as f:
-            f.write(schema.parse_header_file())
-
-    with open(os.path.join(OUTPUT_DIR, 'list.hpp'), 'w') as f:
-        f.write(parse_list_header(parsed_schemas))
+            file_content = self.generate_schema(schema, name)
+            output_path = os.path.join(OUTPUT_DIR, f'{to_snake_case(name)}.hpp')
+            with open(output_path, 'w') as f:
+                f.write(file_content)
 
 
 if __name__ == '__main__':
-    # main()
     generator = ResponseObjectsGenerator(API_SPEC_PATH)
     generator.parse_all_schemas()
+
+    # schema = generator.parsed_schemas['AddPartitionSpecUpdate']
+    # generator.generate_schema(schema, 'AddPartitionSpecUpdate')
+    # exit(1)
+
     generator.generate_all_schemas()
+    print("finito")

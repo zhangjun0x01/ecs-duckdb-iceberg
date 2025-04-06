@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,13 +14,28 @@ namespace rest_api_objects {
 
 class SnapshotReferences {
 public:
-	static SnapshotReferences FromJSON(yyjson_val *obj) {
-		SnapshotReferences result;
-
-		return result;
+	SnapshotReferences::SnapshotReferences() {
 	}
 
 public:
+	static SnapshotReferences FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

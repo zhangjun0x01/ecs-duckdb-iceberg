@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,25 +16,73 @@ namespace rest_api_objects {
 
 class CompletedPlanningResult {
 public:
-	static CompletedPlanningResult FromJSON(yyjson_val *obj) {
-		CompletedPlanningResult result;
+	CompletedPlanningResult::CompletedPlanningResult() {
+	}
 
-		// Parse ScanTasks fields
-		result.scan_tasks = ScanTasks::FromJSON(obj);
-
-		auto status_val = yyjson_obj_get(obj, "status");
-		if (status_val) {
-			result.status = PlanStatus::FromJSON(status_val);
-		} else {
-			throw IOException("CompletedPlanningResult required property 'status' is missing");
+public:
+	class Object5 {
+	public:
+		Object5::Object5() {
 		}
 
-		return result;
+	public:
+		static Object5 FromJSON(yyjson_val *obj) {
+			auto error = TryFromJSON(obj);
+			if (!error.empty()) {
+				throw InvalidInputException(error);
+			}
+			return *this;
+		}
+
+	public:
+		string TryFromJSON(yyjson_val *obj) {
+			string error;
+
+			auto status_val = yyjson_obj_get(obj, "status");
+			if (!status_val) {
+			return "Object5 required property 'status' is missing");
+			}
+			result.status = PlanStatus::FromJSON(status_val);
+
+			return string();
+		}
+
+	public:
+	public:
+	};
+
+public:
+	static CompletedPlanningResult FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_scan_tasks.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		error = base_object_5.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		return string();
 	}
 
 public:
 	ScanTasks scan_tasks;
-	PlanStatus status;
+	Object5 object_5;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

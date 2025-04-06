@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,35 +15,45 @@ namespace rest_api_objects {
 
 class LoadViewResult {
 public:
+	LoadViewResult::LoadViewResult() {
+	}
+
+public:
 	static LoadViewResult FromJSON(yyjson_val *obj) {
-		LoadViewResult result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto metadata_location_val = yyjson_obj_get(obj, "metadata_location");
+		if (!metadata_location_val) {
+		return "LoadViewResult required property 'metadata_location' is missing");
+		}
+		result.metadata_location = yyjson_get_str(metadata_location_val);
+
+		auto metadata_val = yyjson_obj_get(obj, "metadata");
+		if (!metadata_val) {
+		return "LoadViewResult required property 'metadata' is missing");
+		}
+		result.metadata = ViewMetadata::FromJSON(metadata_val);
 
 		auto config_val = yyjson_obj_get(obj, "config");
 		if (config_val) {
 			result.config = parse_object_of_strings(config_val);
+			;
 		}
-
-		auto metadata_val = yyjson_obj_get(obj, "metadata");
-		if (metadata_val) {
-			result.metadata = ViewMetadata::FromJSON(metadata_val);
-		} else {
-			throw IOException("LoadViewResult required property 'metadata' is missing");
-		}
-
-		auto metadata_location_val = yyjson_obj_get(obj, "metadata-location");
-		if (metadata_location_val) {
-			result.metadata_location = yyjson_get_str(metadata_location_val);
-		} else {
-			throw IOException("LoadViewResult required property 'metadata-location' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
-	case_insensitive_map_t<string> config;
-	ViewMetadata metadata;
-	string metadata_location;
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

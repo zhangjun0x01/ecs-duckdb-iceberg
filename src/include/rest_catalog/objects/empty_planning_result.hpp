@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,21 +15,34 @@ namespace rest_api_objects {
 
 class EmptyPlanningResult {
 public:
-	static EmptyPlanningResult FromJSON(yyjson_val *obj) {
-		EmptyPlanningResult result;
-
-		auto status_val = yyjson_obj_get(obj, "status");
-		if (status_val) {
-			result.status = PlanStatus::FromJSON(status_val);
-		} else {
-			throw IOException("EmptyPlanningResult required property 'status' is missing");
-		}
-
-		return result;
+	EmptyPlanningResult::EmptyPlanningResult() {
 	}
 
 public:
-	PlanStatus status;
+	static EmptyPlanningResult FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto status_val = yyjson_obj_get(obj, "status");
+		if (!status_val) {
+		return "EmptyPlanningResult required property 'status' is missing");
+		}
+		result.status = PlanStatus::FromJSON(status_val);
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

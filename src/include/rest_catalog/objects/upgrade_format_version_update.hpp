@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,31 +15,46 @@ namespace rest_api_objects {
 
 class UpgradeFormatVersionUpdate {
 public:
-	static UpgradeFormatVersionUpdate FromJSON(yyjson_val *obj) {
-		UpgradeFormatVersionUpdate result;
+	UpgradeFormatVersionUpdate::UpgradeFormatVersionUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static UpgradeFormatVersionUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto format_version_val = yyjson_obj_get(obj, "format_version");
+		if (!format_version_val) {
+		return "UpgradeFormatVersionUpdate required property 'format_version' is missing");
+		}
+		result.format_version = yyjson_get_sint(format_version_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto format_version_val = yyjson_obj_get(obj, "format-version");
-		if (format_version_val) {
-			result.format_version = yyjson_get_sint(format_version_val);
-		} else {
-			throw IOException("UpgradeFormatVersionUpdate required property 'format-version' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	int64_t format_version;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

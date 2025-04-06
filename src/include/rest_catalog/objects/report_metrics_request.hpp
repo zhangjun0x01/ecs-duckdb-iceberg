@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -5,6 +6,8 @@
 #include "duckdb/common/vector.hpp"
 #include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
+#include "rest_catalog/objects/commit_report.hpp"
+#include "rest_catalog/objects/scan_report.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -13,36 +16,51 @@ namespace rest_api_objects {
 
 class ReportMetricsRequest {
 public:
+	ReportMetricsRequest::ReportMetricsRequest() {
+	}
+
+public:
 	static ReportMetricsRequest FromJSON(yyjson_val *obj) {
-		ReportMetricsRequest result;
-		if (yyjson_is_obj(obj)) {
-			if (yyjson_obj_get(obj, "filter") && yyjson_obj_get(obj, "metrics") &&
-			    yyjson_obj_get(obj, "projected-field-ids") && yyjson_obj_get(obj, "projected-field-names") &&
-			    yyjson_obj_get(obj, "schema-id") && yyjson_obj_get(obj, "snapshot-id") &&
-			    yyjson_obj_get(obj, "table-name")) {
-				result.scan_report = ScanReport::FromJSON(obj);
-				result.has_scan_report = true;
-			}
-			if (yyjson_obj_get(obj, "metrics") && yyjson_obj_get(obj, "operation") &&
-			    yyjson_obj_get(obj, "sequence-number") && yyjson_obj_get(obj, "snapshot-id") &&
-			    yyjson_obj_get(obj, "table-name")) {
-				result.commit_report = CommitReport::FromJSON(obj);
-				result.has_commit_report = true;
-			}
-			if (!(result.has_scan_report || result.has_commit_report)) {
-				throw IOException("ReportMetricsRequest failed to parse, none of the accepted schemas found");
-			}
-		} else {
-			throw IOException("ReportMetricsRequest must be an object");
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
 		}
-		return result;
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_scan_report.TryFromJSON(obj);
+		if (error.empty()) {
+			has_scan_report = true;
+		}
+
+		error = base_commit_report.TryFromJSON(obj);
+		if (error.empty()) {
+			has_commit_report = true;
+		}
+
+		if (!has_commit_report && !has_scan_report) {
+			return "ReportMetricsRequest failed to parse, none of the anyOf candidates matched";
+		}
+
+		auto report_type_val = yyjson_obj_get(obj, "report_type");
+		if (!report_type_val) {
+		return "ReportMetricsRequest required property 'report_type' is missing");
+		}
+		result.report_type = yyjson_get_str(report_type_val);
+
+		return string();
 	}
 
 public:
 	ScanReport scan_report;
-	bool has_scan_report = false;
 	CommitReport commit_report;
-	bool has_commit_report = false;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

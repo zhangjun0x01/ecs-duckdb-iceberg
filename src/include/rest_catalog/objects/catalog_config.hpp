@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,15 +14,33 @@ namespace rest_api_objects {
 
 class CatalogConfig {
 public:
+	CatalogConfig::CatalogConfig() {
+	}
+
+public:
 	static CatalogConfig FromJSON(yyjson_val *obj) {
-		CatalogConfig result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
 
 		auto defaults_val = yyjson_obj_get(obj, "defaults");
-		if (defaults_val) {
-			result.defaults = parse_object_of_strings(defaults_val);
-		} else {
-			throw IOException("CatalogConfig required property 'defaults' is missing");
+		if (!defaults_val) {
+		return "CatalogConfig required property 'defaults' is missing");
 		}
+		result.defaults = parse_object_of_strings(defaults_val);
+
+		auto overrides_val = yyjson_obj_get(obj, "overrides");
+		if (!overrides_val) {
+		return "CatalogConfig required property 'overrides' is missing");
+		}
+		result.overrides = parse_object_of_strings(overrides_val);
 
 		auto endpoints_val = yyjson_obj_get(obj, "endpoints");
 		if (endpoints_val) {
@@ -29,23 +48,14 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(endpoints_val, idx, max, val) {
 				result.endpoints.push_back(yyjson_get_str(val));
-			}
+			};
 		}
-
-		auto overrides_val = yyjson_obj_get(obj, "overrides");
-		if (overrides_val) {
-			result.overrides = parse_object_of_strings(overrides_val);
-		} else {
-			throw IOException("CatalogConfig required property 'overrides' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
-	case_insensitive_map_t<string> defaults;
-	vector<string> endpoints;
-	case_insensitive_map_t<string> overrides;
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

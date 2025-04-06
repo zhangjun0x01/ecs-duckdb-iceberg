@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,35 +15,50 @@ namespace rest_api_objects {
 
 class RemoveSchemasUpdate {
 public:
-	static RemoveSchemasUpdate FromJSON(yyjson_val *obj) {
-		RemoveSchemasUpdate result;
+	RemoveSchemasUpdate::RemoveSchemasUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static RemoveSchemasUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto schema_ids_val = yyjson_obj_get(obj, "schema_ids");
+		if (!schema_ids_val) {
+		return "RemoveSchemasUpdate required property 'schema_ids' is missing");
+		}
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(schema_ids_val, idx, max, val) {
+			result.schema_ids.push_back(yyjson_get_sint(val));
+		}
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto schema_ids_val = yyjson_obj_get(obj, "schema-ids");
-		if (schema_ids_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(schema_ids_val, idx, max, val) {
-				result.schema_ids.push_back(yyjson_get_sint(val));
-			}
-		} else {
-			throw IOException("RemoveSchemasUpdate required property 'schema-ids' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	vector<int64_t> schema_ids;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

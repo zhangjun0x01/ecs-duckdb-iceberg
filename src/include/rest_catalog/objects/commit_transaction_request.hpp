@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,25 +15,38 @@ namespace rest_api_objects {
 
 class CommitTransactionRequest {
 public:
-	static CommitTransactionRequest FromJSON(yyjson_val *obj) {
-		CommitTransactionRequest result;
-
-		auto table_changes_val = yyjson_obj_get(obj, "table-changes");
-		if (table_changes_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(table_changes_val, idx, max, val) {
-				result.table_changes.push_back(CommitTableRequest::FromJSON(val));
-			}
-		} else {
-			throw IOException("CommitTransactionRequest required property 'table-changes' is missing");
-		}
-
-		return result;
+	CommitTransactionRequest::CommitTransactionRequest() {
 	}
 
 public:
-	vector<CommitTableRequest> table_changes;
+	static CommitTransactionRequest FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto table_changes_val = yyjson_obj_get(obj, "table_changes");
+		if (!table_changes_val) {
+		return "CommitTransactionRequest required property 'table_changes' is missing");
+		}
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(table_changes_val, idx, max, val) {
+			result.table_changes.push_back(CommitTableRequest::FromJSON(val));
+		}
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

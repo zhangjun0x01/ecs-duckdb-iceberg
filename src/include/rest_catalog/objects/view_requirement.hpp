@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -5,6 +6,7 @@
 #include "duckdb/common/vector.hpp"
 #include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
+#include "rest_catalog/objects/assert_view_uuid.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -13,16 +15,38 @@ namespace rest_api_objects {
 
 class ViewRequirement {
 public:
+	ViewRequirement::ViewRequirement() {
+	}
+
+public:
 	static ViewRequirement FromJSON(yyjson_val *obj) {
-		ViewRequirement result;
-		result.assert_view_uuid = AssertViewUUID::FromJSON(obj);
-		result.has_assert_view_uuid = true;
-		return result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+		do {
+			error = base_assert_view_uuid.TryFromJSON(obj);
+			if (error.empty()) {
+				has_assert_view_uuid = true;
+				break;
+			}
+			return "ViewRequirement failed to parse, none of the oneOf candidates matched";
+		} while (false);
+
+		return string();
 	}
 
 public:
 	AssertViewUUID assert_view_uuid;
-	bool has_assert_view_uuid = false;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

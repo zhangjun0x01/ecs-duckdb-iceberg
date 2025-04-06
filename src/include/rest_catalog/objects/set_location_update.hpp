@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,31 +15,46 @@ namespace rest_api_objects {
 
 class SetLocationUpdate {
 public:
-	static SetLocationUpdate FromJSON(yyjson_val *obj) {
-		SetLocationUpdate result;
+	SetLocationUpdate::SetLocationUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static SetLocationUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto location_val = yyjson_obj_get(obj, "location");
+		if (!location_val) {
+		return "SetLocationUpdate required property 'location' is missing");
+		}
+		result.location = yyjson_get_str(location_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto location_val = yyjson_obj_get(obj, "location");
-		if (location_val) {
-			result.location = yyjson_get_str(location_val);
-		} else {
-			throw IOException("SetLocationUpdate required property 'location' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	string location;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

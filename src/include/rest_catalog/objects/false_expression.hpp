@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,21 +15,34 @@ namespace rest_api_objects {
 
 class FalseExpression {
 public:
-	static FalseExpression FromJSON(yyjson_val *obj) {
-		FalseExpression result;
-
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = ExpressionType::FromJSON(type_val);
-		} else {
-			throw IOException("FalseExpression required property 'type' is missing");
-		}
-
-		return result;
+	FalseExpression::FalseExpression() {
 	}
 
 public:
-	ExpressionType type;
+	static FalseExpression FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (!type_val) {
+		return "FalseExpression required property 'type' is missing");
+		}
+		result.type = ExpressionType::FromJSON(type_val);
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,35 +16,52 @@ namespace rest_api_objects {
 
 class SetSnapshotRefUpdate {
 public:
+	SetSnapshotRefUpdate::SetSnapshotRefUpdate() {
+	}
+
+public:
 	static SetSnapshotRefUpdate FromJSON(yyjson_val *obj) {
-		SetSnapshotRefUpdate result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
 
-		// Parse SnapshotReference fields
-		result.snapshot_reference = SnapshotReference::FromJSON(obj);
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		error = base_snapshot_reference.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto ref_name_val = yyjson_obj_get(obj, "ref_name");
+		if (!ref_name_val) {
+		return "SetSnapshotRefUpdate required property 'ref_name' is missing");
+		}
+		result.ref_name = yyjson_get_str(ref_name_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto ref_name_val = yyjson_obj_get(obj, "ref-name");
-		if (ref_name_val) {
-			result.ref_name = yyjson_get_str(ref_name_val);
-		} else {
-			throw IOException("SetSnapshotRefUpdate required property 'ref-name' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
 	SnapshotReference snapshot_reference;
-	string action;
-	string ref_name;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

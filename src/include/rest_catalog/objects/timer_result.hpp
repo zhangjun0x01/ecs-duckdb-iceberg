@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,37 +14,46 @@ namespace rest_api_objects {
 
 class TimerResult {
 public:
-	static TimerResult FromJSON(yyjson_val *obj) {
-		TimerResult result;
-
-		auto count_val = yyjson_obj_get(obj, "count");
-		if (count_val) {
-			result.count = yyjson_get_sint(count_val);
-		} else {
-			throw IOException("TimerResult required property 'count' is missing");
-		}
-
-		auto time_unit_val = yyjson_obj_get(obj, "time-unit");
-		if (time_unit_val) {
-			result.time_unit = yyjson_get_str(time_unit_val);
-		} else {
-			throw IOException("TimerResult required property 'time-unit' is missing");
-		}
-
-		auto total_duration_val = yyjson_obj_get(obj, "total-duration");
-		if (total_duration_val) {
-			result.total_duration = yyjson_get_sint(total_duration_val);
-		} else {
-			throw IOException("TimerResult required property 'total-duration' is missing");
-		}
-
-		return result;
+	TimerResult::TimerResult() {
 	}
 
 public:
-	int64_t count;
-	string time_unit;
-	int64_t total_duration;
+	static TimerResult FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto time_unit_val = yyjson_obj_get(obj, "time_unit");
+		if (!time_unit_val) {
+		return "TimerResult required property 'time_unit' is missing");
+		}
+		result.time_unit = yyjson_get_str(time_unit_val);
+
+		auto count_val = yyjson_obj_get(obj, "count");
+		if (!count_val) {
+		return "TimerResult required property 'count' is missing");
+		}
+		result.count = yyjson_get_sint(count_val);
+
+		auto total_duration_val = yyjson_obj_get(obj, "total_duration");
+		if (!total_duration_val) {
+		return "TimerResult required property 'total_duration' is missing");
+		}
+		result.total_duration = yyjson_get_sint(total_duration_val);
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

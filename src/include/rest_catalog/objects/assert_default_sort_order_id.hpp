@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,31 +15,46 @@ namespace rest_api_objects {
 
 class AssertDefaultSortOrderId {
 public:
+	AssertDefaultSortOrderId::AssertDefaultSortOrderId() {
+	}
+
+public:
 	static AssertDefaultSortOrderId FromJSON(yyjson_val *obj) {
-		AssertDefaultSortOrderId result;
-
-		// Parse TableRequirement fields
-		result.table_requirement = TableRequirement::FromJSON(obj);
-
-		auto default_sort_order_id_val = yyjson_obj_get(obj, "default-sort-order-id");
-		if (default_sort_order_id_val) {
-			result.default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
-		} else {
-			throw IOException("AssertDefaultSortOrderId required property 'default-sort-order-id' is missing");
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
 		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_table_requirement.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto default_sort_order_id_val = yyjson_obj_get(obj, "default_sort_order_id");
+		if (!default_sort_order_id_val) {
+		return "AssertDefaultSortOrderId required property 'default_sort_order_id' is missing");
+		}
+		result.default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = yyjson_get_str(type_val);
+			;
 		}
-
-		return result;
+		return string();
 	}
 
 public:
 	TableRequirement table_requirement;
-	int64_t default_sort_order_id;
-	string type;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

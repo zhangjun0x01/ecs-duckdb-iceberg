@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,29 +15,40 @@ namespace rest_api_objects {
 
 class TableIdentifier {
 public:
-	static TableIdentifier FromJSON(yyjson_val *obj) {
-		TableIdentifier result;
-
-		auto name_val = yyjson_obj_get(obj, "name");
-		if (name_val) {
-			result.name = yyjson_get_str(name_val);
-		} else {
-			throw IOException("TableIdentifier required property 'name' is missing");
-		}
-
-		auto _namespace_val = yyjson_obj_get(obj, "namespace");
-		if (_namespace_val) {
-			result._namespace = Namespace::FromJSON(_namespace_val);
-		} else {
-			throw IOException("TableIdentifier required property 'namespace' is missing");
-		}
-
-		return result;
+	TableIdentifier::TableIdentifier() {
 	}
 
 public:
-	string name;
-	Namespace _namespace;
+	static TableIdentifier FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto _namespace_val = yyjson_obj_get(obj, "_namespace");
+		if (!_namespace_val) {
+		return "TableIdentifier required property '_namespace' is missing");
+		}
+		result._namespace = Namespace::FromJSON(_namespace_val);
+
+		auto name_val = yyjson_obj_get(obj, "name");
+		if (!name_val) {
+		return "TableIdentifier required property 'name' is missing");
+		}
+		result.name = yyjson_get_str(name_val);
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

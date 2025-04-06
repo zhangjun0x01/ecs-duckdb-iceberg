@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,18 +14,34 @@ namespace rest_api_objects {
 
 class Namespace {
 public:
+	Namespace::Namespace() {
+	}
+
+public:
 	static Namespace FromJSON(yyjson_val *obj) {
-		Namespace result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(obj, idx, max, val) {
 			result.value.push_back(yyjson_get_str(val));
 		}
-		return result;
+
+		return string();
 	}
 
 public:
-	vector<string> value;
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

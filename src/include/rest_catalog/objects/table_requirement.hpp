@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,21 +14,34 @@ namespace rest_api_objects {
 
 class TableRequirement {
 public:
-	static TableRequirement FromJSON(yyjson_val *obj) {
-		TableRequirement result;
-
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = yyjson_get_str(type_val);
-		} else {
-			throw IOException("TableRequirement required property 'type' is missing");
-		}
-
-		return result;
+	TableRequirement::TableRequirement() {
 	}
 
 public:
-	string type;
+	static TableRequirement FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (!type_val) {
+		return "TableRequirement required property 'type' is missing");
+		}
+		result.type = yyjson_get_str(type_val);
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

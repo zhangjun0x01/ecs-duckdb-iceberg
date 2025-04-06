@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -5,6 +6,10 @@
 #include "duckdb/common/vector.hpp"
 #include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
+#include "rest_catalog/objects/list_type.hpp"
+#include "rest_catalog/objects/map_type.hpp"
+#include "rest_catalog/objects/primitive_type.hpp"
+#include "rest_catalog/objects/struct_type.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -13,35 +18,56 @@ namespace rest_api_objects {
 
 class Type {
 public:
-	static Type FromJSON(yyjson_val *obj) {
-		Type result;
-		if (yyjson_is_obj(obj)) {
-			auto type_val = yyjson_obj_get(obj, "type");
-			if (type_val && strcmp(yyjson_get_str(type_val), "struct") == 0) {
-				result.struct_type = StructType::FromJSON(obj);
-				result.has_struct_type = true;
-			} else if (type_val && strcmp(yyjson_get_str(type_val), "list") == 0) {
-				result.list_type = ListType::FromJSON(obj);
-				result.has_list_type = true;
-			} else if (type_val && strcmp(yyjson_get_str(type_val), "map") == 0) {
-				result.map_type = MapType::FromJSON(obj);
-				result.has_map_type = true;
-			}
-		} else {
-			throw IOException("Type failed to parse, none of the accepted schemas found");
-		}
-		return result;
+	Type::Type() {
 	}
 
 public:
-	PrimitiveType primitive_type;
-	bool has_primitive_type = false;
-	StructType struct_type;
-	bool has_struct_type = false;
+	static Type FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+		do {
+			error = base_primitive_type.TryFromJSON(obj);
+			if (error.empty()) {
+				has_primitive_type = true;
+				break;
+			}
+			error = base_struct_type.TryFromJSON(obj);
+			if (error.empty()) {
+				has_struct_type = true;
+				break;
+			}
+			error = base_list_type.TryFromJSON(obj);
+			if (error.empty()) {
+				has_list_type = true;
+				break;
+			}
+			error = base_map_type.TryFromJSON(obj);
+			if (error.empty()) {
+				has_map_type = true;
+				break;
+			}
+			return "Type failed to parse, none of the oneOf candidates matched";
+		} while (false);
+
+		return string();
+	}
+
+public:
 	ListType list_type;
-	bool has_list_type = false;
+	PrimitiveType primitive_type;
+	StructType struct_type;
 	MapType map_type;
-	bool has_map_type = false;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

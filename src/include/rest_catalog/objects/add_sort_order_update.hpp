@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,31 +16,46 @@ namespace rest_api_objects {
 
 class AddSortOrderUpdate {
 public:
-	static AddSortOrderUpdate FromJSON(yyjson_val *obj) {
-		AddSortOrderUpdate result;
+	AddSortOrderUpdate::AddSortOrderUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static AddSortOrderUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto sort_order_val = yyjson_obj_get(obj, "sort_order");
+		if (!sort_order_val) {
+		return "AddSortOrderUpdate required property 'sort_order' is missing");
+		}
+		result.sort_order = SortOrder::FromJSON(sort_order_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto sort_order_val = yyjson_obj_get(obj, "sort-order");
-		if (sort_order_val) {
-			result.sort_order = SortOrder::FromJSON(sort_order_val);
-		} else {
-			throw IOException("AddSortOrderUpdate required property 'sort-order' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	SortOrder sort_order;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

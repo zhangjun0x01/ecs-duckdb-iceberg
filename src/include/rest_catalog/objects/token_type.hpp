@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,14 +14,28 @@ namespace rest_api_objects {
 
 class TokenType {
 public:
-	static TokenType FromJSON(yyjson_val *obj) {
-		TokenType result;
-		result.value = yyjson_get_str(obj);
-		return result;
+	TokenType::TokenType() {
 	}
 
 public:
-	string value;
+	static TokenType FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

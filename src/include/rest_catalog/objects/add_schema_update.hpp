@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,37 +16,52 @@ namespace rest_api_objects {
 
 class AddSchemaUpdate {
 public:
-	static AddSchemaUpdate FromJSON(yyjson_val *obj) {
-		AddSchemaUpdate result;
+	AddSchemaUpdate::AddSchemaUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static AddSchemaUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto schema_val = yyjson_obj_get(obj, "schema");
+		if (!schema_val) {
+		return "AddSchemaUpdate required property 'schema' is missing");
+		}
+		result.schema = Schema::FromJSON(schema_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
 
-		auto last_column_id_val = yyjson_obj_get(obj, "last-column-id");
+		auto last_column_id_val = yyjson_obj_get(obj, "last_column_id");
 		if (last_column_id_val) {
 			result.last_column_id = yyjson_get_sint(last_column_id_val);
+			;
 		}
-
-		auto schema_val = yyjson_obj_get(obj, "schema");
-		if (schema_val) {
-			result.schema = Schema::FromJSON(schema_val);
-		} else {
-			throw IOException("AddSchemaUpdate required property 'schema' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	int64_t last_column_id;
-	Schema schema;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

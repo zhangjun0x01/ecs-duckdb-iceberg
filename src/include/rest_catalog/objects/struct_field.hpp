@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,63 +16,69 @@ namespace rest_api_objects {
 
 class StructField {
 public:
+	StructField::StructField() {
+	}
+
+public:
 	static StructField FromJSON(yyjson_val *obj) {
-		StructField result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto id_val = yyjson_obj_get(obj, "id");
+		if (!id_val) {
+		return "StructField required property 'id' is missing");
+		}
+		result.id = yyjson_get_sint(id_val);
+
+		auto name_val = yyjson_obj_get(obj, "name");
+		if (!name_val) {
+		return "StructField required property 'name' is missing");
+		}
+		result.name = yyjson_get_str(name_val);
+
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (!type_val) {
+		return "StructField required property 'type' is missing");
+		}
+		result.type = Type::FromJSON(type_val);
+
+		auto required_val = yyjson_obj_get(obj, "required");
+		if (!required_val) {
+		return "StructField required property 'required' is missing");
+		}
+		result.required = yyjson_get_bool(required_val);
 
 		auto doc_val = yyjson_obj_get(obj, "doc");
 		if (doc_val) {
 			result.doc = yyjson_get_str(doc_val);
+			;
 		}
 
-		auto id_val = yyjson_obj_get(obj, "id");
-		if (id_val) {
-			result.id = yyjson_get_sint(id_val);
-		} else {
-			throw IOException("StructField required property 'id' is missing");
-		}
-
-		auto initial_default_val = yyjson_obj_get(obj, "initial-default");
+		auto initial_default_val = yyjson_obj_get(obj, "initial_default");
 		if (initial_default_val) {
 			result.initial_default = PrimitiveTypeValue::FromJSON(initial_default_val);
+			;
 		}
 
-		auto name_val = yyjson_obj_get(obj, "name");
-		if (name_val) {
-			result.name = yyjson_get_str(name_val);
-		} else {
-			throw IOException("StructField required property 'name' is missing");
-		}
-
-		auto required_val = yyjson_obj_get(obj, "required");
-		if (required_val) {
-			result.required = yyjson_get_bool(required_val);
-		} else {
-			throw IOException("StructField required property 'required' is missing");
-		}
-
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = Type::FromJSON(type_val);
-		} else {
-			throw IOException("StructField required property 'type' is missing");
-		}
-
-		auto write_default_val = yyjson_obj_get(obj, "write-default");
+		auto write_default_val = yyjson_obj_get(obj, "write_default");
 		if (write_default_val) {
 			result.write_default = PrimitiveTypeValue::FromJSON(write_default_val);
+			;
 		}
-
-		return result;
+		return string();
 	}
 
 public:
-	string doc;
-	int64_t id;
-	PrimitiveTypeValue initial_default;
-	string name;
-	bool required;
-	Type type;
-	PrimitiveTypeValue write_default;
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,8 +16,27 @@ namespace rest_api_objects {
 
 class ListNamespacesResponse {
 public:
+	ListNamespacesResponse::ListNamespacesResponse() {
+	}
+
+public:
 	static ListNamespacesResponse FromJSON(yyjson_val *obj) {
-		ListNamespacesResponse result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto next_page_token_val = yyjson_obj_get(obj, "next_page_token");
+		if (next_page_token_val) {
+			result.next_page_token = PageToken::FromJSON(next_page_token_val);
+			;
+		}
 
 		auto namespaces_val = yyjson_obj_get(obj, "namespaces");
 		if (namespaces_val) {
@@ -24,20 +44,14 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(namespaces_val, idx, max, val) {
 				result.namespaces.push_back(Namespace::FromJSON(val));
-			}
+			};
 		}
-
-		auto next_page_token_val = yyjson_obj_get(obj, "next-page-token");
-		if (next_page_token_val) {
-			result.next_page_token = PageToken::FromJSON(next_page_token_val);
-		}
-
-		return result;
+		return string();
 	}
 
 public:
-	vector<Namespace> namespaces;
-	PageToken next_page_token;
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

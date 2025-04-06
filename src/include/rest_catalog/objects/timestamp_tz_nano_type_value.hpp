@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,14 +14,28 @@ namespace rest_api_objects {
 
 class TimestampTzNanoTypeValue {
 public:
-	static TimestampTzNanoTypeValue FromJSON(yyjson_val *obj) {
-		TimestampTzNanoTypeValue result;
-		result.value = yyjson_get_str(obj);
-		return result;
+	TimestampTzNanoTypeValue::TimestampTzNanoTypeValue() {
 	}
 
 public:
-	string value;
+	static TimestampTzNanoTypeValue FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

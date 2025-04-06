@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,17 +15,35 @@ namespace rest_api_objects {
 
 class FetchScanTasksResult {
 public:
+	FetchScanTasksResult::FetchScanTasksResult() {
+	}
+
+public:
 	static FetchScanTasksResult FromJSON(yyjson_val *obj) {
-		FetchScanTasksResult result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
 
-		// Parse ScanTasks fields
-		result.scan_tasks = ScanTasks::FromJSON(obj);
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
 
-		return result;
+		error = base_scan_tasks.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		return string();
 	}
 
 public:
 	ScanTasks scan_tasks;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,31 +16,46 @@ namespace rest_api_objects {
 
 class AddPartitionSpecUpdate {
 public:
-	static AddPartitionSpecUpdate FromJSON(yyjson_val *obj) {
-		AddPartitionSpecUpdate result;
+	AddPartitionSpecUpdate::AddPartitionSpecUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static AddPartitionSpecUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto spec_val = yyjson_obj_get(obj, "spec");
+		if (!spec_val) {
+		return "AddPartitionSpecUpdate required property 'spec' is missing");
+		}
+		result.spec = PartitionSpec::FromJSON(spec_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto spec_val = yyjson_obj_get(obj, "spec");
-		if (spec_val) {
-			result.spec = PartitionSpec::FromJSON(spec_val);
-		} else {
-			throw IOException("AddPartitionSpecUpdate required property 'spec' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	PartitionSpec spec;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

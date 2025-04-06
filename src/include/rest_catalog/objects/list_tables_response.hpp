@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,8 +16,27 @@ namespace rest_api_objects {
 
 class ListTablesResponse {
 public:
+	ListTablesResponse::ListTablesResponse() {
+	}
+
+public:
 	static ListTablesResponse FromJSON(yyjson_val *obj) {
-		ListTablesResponse result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto next_page_token_val = yyjson_obj_get(obj, "next_page_token");
+		if (next_page_token_val) {
+			result.next_page_token = PageToken::FromJSON(next_page_token_val);
+			;
+		}
 
 		auto identifiers_val = yyjson_obj_get(obj, "identifiers");
 		if (identifiers_val) {
@@ -24,20 +44,14 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(identifiers_val, idx, max, val) {
 				result.identifiers.push_back(TableIdentifier::FromJSON(val));
-			}
+			};
 		}
-
-		auto next_page_token_val = yyjson_obj_get(obj, "next-page-token");
-		if (next_page_token_val) {
-			result.next_page_token = PageToken::FromJSON(next_page_token_val);
-		}
-
-		return result;
+		return string();
 	}
 
 public:
-	vector<TableIdentifier> identifiers;
-	PageToken next_page_token;
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

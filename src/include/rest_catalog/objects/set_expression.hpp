@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,41 +16,50 @@ namespace rest_api_objects {
 
 class SetExpression {
 public:
-	static SetExpression FromJSON(yyjson_val *obj) {
-		SetExpression result;
-
-		auto term_val = yyjson_obj_get(obj, "term");
-		if (term_val) {
-			result.term = Term::FromJSON(term_val);
-		} else {
-			throw IOException("SetExpression required property 'term' is missing");
-		}
-
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = ExpressionType::FromJSON(type_val);
-		} else {
-			throw IOException("SetExpression required property 'type' is missing");
-		}
-
-		auto values_val = yyjson_obj_get(obj, "values");
-		if (values_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(values_val, idx, max, val) {
-				result.values.push_back(val);
-			}
-		} else {
-			throw IOException("SetExpression required property 'values' is missing");
-		}
-
-		return result;
+	SetExpression::SetExpression() {
 	}
 
 public:
-	Term term;
-	ExpressionType type;
-	vector<yyjson_val *> values;
+	static SetExpression FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (!type_val) {
+		return "SetExpression required property 'type' is missing");
+		}
+		result.type = ExpressionType::FromJSON(type_val);
+
+		auto term_val = yyjson_obj_get(obj, "term");
+		if (!term_val) {
+		return "SetExpression required property 'term' is missing");
+		}
+		result.term = Term::FromJSON(term_val);
+
+		auto values_val = yyjson_obj_get(obj, "values");
+		if (!values_val) {
+		return "SetExpression required property 'values' is missing");
+		}
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(values_val, idx, max, val) {
+			result.values.push_back(val);
+		}
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

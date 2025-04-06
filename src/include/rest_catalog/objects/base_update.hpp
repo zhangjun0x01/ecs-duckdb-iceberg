@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,21 +14,34 @@ namespace rest_api_objects {
 
 class BaseUpdate {
 public:
-	static BaseUpdate FromJSON(yyjson_val *obj) {
-		BaseUpdate result;
-
-		auto action_val = yyjson_obj_get(obj, "action");
-		if (action_val) {
-			result.action = yyjson_get_str(action_val);
-		} else {
-			throw IOException("BaseUpdate required property 'action' is missing");
-		}
-
-		return result;
+	BaseUpdate::BaseUpdate() {
 	}
 
 public:
-	string action;
+	static BaseUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto action_val = yyjson_obj_get(obj, "action");
+		if (!action_val) {
+		return "BaseUpdate required property 'action' is missing");
+		}
+		result.action = yyjson_get_str(action_val);
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

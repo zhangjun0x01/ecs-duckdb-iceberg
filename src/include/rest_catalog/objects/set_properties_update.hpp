@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,31 +15,46 @@ namespace rest_api_objects {
 
 class SetPropertiesUpdate {
 public:
-	static SetPropertiesUpdate FromJSON(yyjson_val *obj) {
-		SetPropertiesUpdate result;
+	SetPropertiesUpdate::SetPropertiesUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static SetPropertiesUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto updates_val = yyjson_obj_get(obj, "updates");
+		if (!updates_val) {
+		return "SetPropertiesUpdate required property 'updates' is missing");
+		}
+		result.updates = parse_object_of_strings(updates_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto updates_val = yyjson_obj_get(obj, "updates");
-		if (updates_val) {
-			result.updates = parse_object_of_strings(updates_val);
-		} else {
-			throw IOException("SetPropertiesUpdate required property 'updates' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	case_insensitive_map_t<string> updates;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

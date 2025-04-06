@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -16,87 +17,87 @@ namespace rest_api_objects {
 
 class ViewMetadata {
 public:
+	ViewMetadata::ViewMetadata() {
+	}
+
+public:
 	static ViewMetadata FromJSON(yyjson_val *obj) {
-		ViewMetadata result;
-
-		auto current_version_id_val = yyjson_obj_get(obj, "current-version-id");
-		if (current_version_id_val) {
-			result.current_version_id = yyjson_get_sint(current_version_id_val);
-		} else {
-			throw IOException("ViewMetadata required property 'current-version-id' is missing");
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
 		}
+		return *this;
+	}
 
-		auto format_version_val = yyjson_obj_get(obj, "format-version");
-		if (format_version_val) {
-			result.format_version = yyjson_get_sint(format_version_val);
-		} else {
-			throw IOException("ViewMetadata required property 'format-version' is missing");
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto view_uuid_val = yyjson_obj_get(obj, "view_uuid");
+		if (!view_uuid_val) {
+		return "ViewMetadata required property 'view_uuid' is missing");
 		}
+		result.view_uuid = yyjson_get_str(view_uuid_val);
+
+		auto format_version_val = yyjson_obj_get(obj, "format_version");
+		if (!format_version_val) {
+		return "ViewMetadata required property 'format_version' is missing");
+		}
+		result.format_version = yyjson_get_sint(format_version_val);
 
 		auto location_val = yyjson_obj_get(obj, "location");
-		if (location_val) {
-			result.location = yyjson_get_str(location_val);
-		} else {
-			throw IOException("ViewMetadata required property 'location' is missing");
+		if (!location_val) {
+		return "ViewMetadata required property 'location' is missing");
+		}
+		result.location = yyjson_get_str(location_val);
+
+		auto current_version_id_val = yyjson_obj_get(obj, "current_version_id");
+		if (!current_version_id_val) {
+		return "ViewMetadata required property 'current_version_id' is missing");
+		}
+		result.current_version_id = yyjson_get_sint(current_version_id_val);
+
+		auto versions_val = yyjson_obj_get(obj, "versions");
+		if (!versions_val) {
+		return "ViewMetadata required property 'versions' is missing");
+		}
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(versions_val, idx, max, val) {
+			result.versions.push_back(ViewVersion::FromJSON(val));
+		}
+
+		auto version_log_val = yyjson_obj_get(obj, "version_log");
+		if (!version_log_val) {
+		return "ViewMetadata required property 'version_log' is missing");
+		}
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(version_log_val, idx, max, val) {
+			result.version_log.push_back(ViewHistoryEntry::FromJSON(val));
+		}
+
+		auto schemas_val = yyjson_obj_get(obj, "schemas");
+		if (!schemas_val) {
+		return "ViewMetadata required property 'schemas' is missing");
+		}
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(schemas_val, idx, max, val) {
+			result.schemas.push_back(Schema::FromJSON(val));
 		}
 
 		auto properties_val = yyjson_obj_get(obj, "properties");
 		if (properties_val) {
 			result.properties = parse_object_of_strings(properties_val);
+			;
 		}
-
-		auto schemas_val = yyjson_obj_get(obj, "schemas");
-		if (schemas_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(schemas_val, idx, max, val) {
-				result.schemas.push_back(Schema::FromJSON(val));
-			}
-		} else {
-			throw IOException("ViewMetadata required property 'schemas' is missing");
-		}
-
-		auto version_log_val = yyjson_obj_get(obj, "version-log");
-		if (version_log_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(version_log_val, idx, max, val) {
-				result.version_log.push_back(ViewHistoryEntry::FromJSON(val));
-			}
-		} else {
-			throw IOException("ViewMetadata required property 'version-log' is missing");
-		}
-
-		auto versions_val = yyjson_obj_get(obj, "versions");
-		if (versions_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(versions_val, idx, max, val) {
-				result.versions.push_back(ViewVersion::FromJSON(val));
-			}
-		} else {
-			throw IOException("ViewMetadata required property 'versions' is missing");
-		}
-
-		auto view_uuid_val = yyjson_obj_get(obj, "view-uuid");
-		if (view_uuid_val) {
-			result.view_uuid = yyjson_get_str(view_uuid_val);
-		} else {
-			throw IOException("ViewMetadata required property 'view-uuid' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
-	int64_t current_version_id;
-	int64_t format_version;
-	string location;
-	case_insensitive_map_t<string> properties;
-	vector<Schema> schemas;
-	vector<ViewHistoryEntry> version_log;
-	vector<ViewVersion> versions;
-	string view_uuid;
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

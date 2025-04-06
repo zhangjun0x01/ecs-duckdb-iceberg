@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,31 +15,46 @@ namespace rest_api_objects {
 
 class SetDefaultSortOrderUpdate {
 public:
-	static SetDefaultSortOrderUpdate FromJSON(yyjson_val *obj) {
-		SetDefaultSortOrderUpdate result;
+	SetDefaultSortOrderUpdate::SetDefaultSortOrderUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static SetDefaultSortOrderUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto sort_order_id_val = yyjson_obj_get(obj, "sort_order_id");
+		if (!sort_order_id_val) {
+		return "SetDefaultSortOrderUpdate required property 'sort_order_id' is missing");
+		}
+		result.sort_order_id = yyjson_get_sint(sort_order_id_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto sort_order_id_val = yyjson_obj_get(obj, "sort-order-id");
-		if (sort_order_id_val) {
-			result.sort_order_id = yyjson_get_sint(sort_order_id_val);
-		} else {
-			throw IOException("SetDefaultSortOrderUpdate required property 'sort-order-id' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	int64_t sort_order_id;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

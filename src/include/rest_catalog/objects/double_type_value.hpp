@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,14 +14,28 @@ namespace rest_api_objects {
 
 class DoubleTypeValue {
 public:
-	static DoubleTypeValue FromJSON(yyjson_val *obj) {
-		DoubleTypeValue result;
-		result.value = yyjson_get_real(obj);
-		return result;
+	DoubleTypeValue::DoubleTypeValue() {
 	}
 
 public:
-	double value;
+	static DoubleTypeValue FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

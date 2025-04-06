@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,14 +14,28 @@ namespace rest_api_objects {
 
 class LongTypeValue {
 public:
-	static LongTypeValue FromJSON(yyjson_val *obj) {
-		LongTypeValue result;
-		result.value = yyjson_get_sint(obj);
-		return result;
+	LongTypeValue::LongTypeValue() {
 	}
 
 public:
-	int64_t value;
+	static LongTypeValue FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

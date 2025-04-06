@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,31 +16,46 @@ namespace rest_api_objects {
 
 class SetPartitionStatisticsUpdate {
 public:
-	static SetPartitionStatisticsUpdate FromJSON(yyjson_val *obj) {
-		SetPartitionStatisticsUpdate result;
+	SetPartitionStatisticsUpdate::SetPartitionStatisticsUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static SetPartitionStatisticsUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto partition_statistics_val = yyjson_obj_get(obj, "partition_statistics");
+		if (!partition_statistics_val) {
+		return "SetPartitionStatisticsUpdate required property 'partition_statistics' is missing");
+		}
+		result.partition_statistics = PartitionStatisticsFile::FromJSON(partition_statistics_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto partition_statistics_val = yyjson_obj_get(obj, "partition-statistics");
-		if (partition_statistics_val) {
-			result.partition_statistics = PartitionStatisticsFile::FromJSON(partition_statistics_val);
-		} else {
-			throw IOException("SetPartitionStatisticsUpdate required property 'partition-statistics' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	PartitionStatisticsFile partition_statistics;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

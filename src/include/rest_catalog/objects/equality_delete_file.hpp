@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,35 +15,49 @@ namespace rest_api_objects {
 
 class EqualityDeleteFile {
 public:
+	EqualityDeleteFile::EqualityDeleteFile() {
+	}
+
+public:
 	static EqualityDeleteFile FromJSON(yyjson_val *obj) {
-		EqualityDeleteFile result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
 
-		// Parse ContentFile fields
-		result.content_file = ContentFile::FromJSON(obj);
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
 
-		auto content_val = yyjson_obj_get(obj, "content");
-		if (content_val) {
-			result.content = yyjson_get_str(content_val);
-		} else {
-			throw IOException("EqualityDeleteFile required property 'content' is missing");
+		error = base_content_file.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
 		}
 
-		auto equality_ids_val = yyjson_obj_get(obj, "equality-ids");
+		auto content_val = yyjson_obj_get(obj, "content");
+		if (!content_val) {
+		return "EqualityDeleteFile required property 'content' is missing");
+		}
+		result.content = yyjson_get_str(content_val);
+
+		auto equality_ids_val = yyjson_obj_get(obj, "equality_ids");
 		if (equality_ids_val) {
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(equality_ids_val, idx, max, val) {
 				result.equality_ids.push_back(yyjson_get_sint(val));
-			}
+			};
 		}
-
-		return result;
+		return string();
 	}
 
 public:
 	ContentFile content_file;
-	string content;
-	vector<int64_t> equality_ids;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -5,6 +6,13 @@
 #include "duckdb/common/vector.hpp"
 #include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
+#include "rest_catalog/objects/and_or_expression.hpp"
+#include "rest_catalog/objects/false_expression.hpp"
+#include "rest_catalog/objects/literal_expression.hpp"
+#include "rest_catalog/objects/not_expression.hpp"
+#include "rest_catalog/objects/set_expression.hpp"
+#include "rest_catalog/objects/true_expression.hpp"
+#include "rest_catalog/objects/unary_expression.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -13,41 +21,74 @@ namespace rest_api_objects {
 
 class Expression {
 public:
-	static Expression FromJSON(yyjson_val *obj) {
-		Expression result;
-		if (yyjson_is_obj(obj)) {
-			auto type_val = yyjson_obj_get(obj, "type");
-			if (type_val && strcmp(yyjson_get_str(type_val), "true") == 0) {
-				result.true_expression = TrueExpression::FromJSON(obj);
-				result.has_true_expression = true;
-			} else if (type_val && strcmp(yyjson_get_str(type_val), "false") == 0) {
-				result.false_expression = FalseExpression::FromJSON(obj);
-				result.has_false_expression = true;
-			} else if (type_val && strcmp(yyjson_get_str(type_val), "not") == 0) {
-				result.not_expression = NotExpression::FromJSON(obj);
-				result.has_not_expression = true;
-			}
-		} else {
-			throw IOException("Expression failed to parse, none of the accepted schemas found");
-		}
-		return result;
+	Expression::Expression() {
 	}
 
 public:
-	TrueExpression true_expression;
-	bool has_true_expression = false;
-	FalseExpression false_expression;
-	bool has_false_expression = false;
+	static Expression FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+		do {
+			error = base_true_expression.TryFromJSON(obj);
+			if (error.empty()) {
+				has_true_expression = true;
+				break;
+			}
+			error = base_false_expression.TryFromJSON(obj);
+			if (error.empty()) {
+				has_false_expression = true;
+				break;
+			}
+			error = base_and_or_expression.TryFromJSON(obj);
+			if (error.empty()) {
+				has_and_or_expression = true;
+				break;
+			}
+			error = base_not_expression.TryFromJSON(obj);
+			if (error.empty()) {
+				has_not_expression = true;
+				break;
+			}
+			error = base_set_expression.TryFromJSON(obj);
+			if (error.empty()) {
+				has_set_expression = true;
+				break;
+			}
+			error = base_literal_expression.TryFromJSON(obj);
+			if (error.empty()) {
+				has_literal_expression = true;
+				break;
+			}
+			error = base_unary_expression.TryFromJSON(obj);
+			if (error.empty()) {
+				has_unary_expression = true;
+				break;
+			}
+			return "Expression failed to parse, none of the oneOf candidates matched";
+		} while (false);
+
+		return string();
+	}
+
+public:
 	AndOrExpression and_or_expression;
-	bool has_and_or_expression = false;
-	NotExpression not_expression;
-	bool has_not_expression = false;
-	SetExpression set_expression;
-	bool has_set_expression = false;
 	LiteralExpression literal_expression;
-	bool has_literal_expression = false;
+	FalseExpression false_expression;
+	TrueExpression true_expression;
+	SetExpression set_expression;
 	UnaryExpression unary_expression;
-	bool has_unary_expression = false;
+	NotExpression not_expression;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

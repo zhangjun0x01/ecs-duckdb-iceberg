@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,27 +15,39 @@ namespace rest_api_objects {
 
 class AsyncPlanningResult {
 public:
-	static AsyncPlanningResult FromJSON(yyjson_val *obj) {
-		AsyncPlanningResult result;
-
-		auto plan_id_val = yyjson_obj_get(obj, "plan-id");
-		if (plan_id_val) {
-			result.plan_id = yyjson_get_str(plan_id_val);
-		}
-
-		auto status_val = yyjson_obj_get(obj, "status");
-		if (status_val) {
-			result.status = PlanStatus::FromJSON(status_val);
-		} else {
-			throw IOException("AsyncPlanningResult required property 'status' is missing");
-		}
-
-		return result;
+	AsyncPlanningResult::AsyncPlanningResult() {
 	}
 
 public:
-	string plan_id;
-	PlanStatus status;
+	static AsyncPlanningResult FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto status_val = yyjson_obj_get(obj, "status");
+		if (!status_val) {
+		return "AsyncPlanningResult required property 'status' is missing");
+		}
+		result.status = PlanStatus::FromJSON(status_val);
+
+		auto plan_id_val = yyjson_obj_get(obj, "plan_id");
+		if (plan_id_val) {
+			result.plan_id = yyjson_get_str(plan_id_val);
+			;
+		}
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

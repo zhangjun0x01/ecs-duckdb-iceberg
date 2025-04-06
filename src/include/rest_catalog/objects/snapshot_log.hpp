@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,18 +14,34 @@ namespace rest_api_objects {
 
 class SnapshotLog {
 public:
-	static SnapshotLog FromJSON(yyjson_val *obj) {
-		SnapshotLog result;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(obj, idx, max, val) {
-			result.value.push_back(val);
-		}
-		return result;
+	SnapshotLog::SnapshotLog() {
 	}
 
 public:
-	vector<yyjson_val *> value;
+	static SnapshotLog FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(obj, idx, max, val) {
+			result.value.push_back(Object3::FromJSON(val));
+		}
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

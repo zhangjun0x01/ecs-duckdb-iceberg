@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,8 +16,21 @@ namespace rest_api_objects {
 
 class CountMap {
 public:
+	CountMap::CountMap() {
+	}
+
+public:
 	static CountMap FromJSON(yyjson_val *obj) {
-		CountMap result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
 
 		auto keys_val = yyjson_obj_get(obj, "keys");
 		if (keys_val) {
@@ -24,7 +38,7 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(keys_val, idx, max, val) {
 				result.keys.push_back(IntegerTypeValue::FromJSON(val));
-			}
+			};
 		}
 
 		auto values_val = yyjson_obj_get(obj, "values");
@@ -33,15 +47,14 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(values_val, idx, max, val) {
 				result.values.push_back(LongTypeValue::FromJSON(val));
-			}
+			};
 		}
-
-		return result;
+		return string();
 	}
 
 public:
-	vector<IntegerTypeValue> keys;
-	vector<LongTypeValue> values;
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

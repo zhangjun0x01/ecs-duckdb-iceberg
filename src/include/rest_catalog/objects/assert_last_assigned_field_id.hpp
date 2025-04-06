@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,31 +15,46 @@ namespace rest_api_objects {
 
 class AssertLastAssignedFieldId {
 public:
+	AssertLastAssignedFieldId::AssertLastAssignedFieldId() {
+	}
+
+public:
 	static AssertLastAssignedFieldId FromJSON(yyjson_val *obj) {
-		AssertLastAssignedFieldId result;
-
-		// Parse TableRequirement fields
-		result.table_requirement = TableRequirement::FromJSON(obj);
-
-		auto last_assigned_field_id_val = yyjson_obj_get(obj, "last-assigned-field-id");
-		if (last_assigned_field_id_val) {
-			result.last_assigned_field_id = yyjson_get_sint(last_assigned_field_id_val);
-		} else {
-			throw IOException("AssertLastAssignedFieldId required property 'last-assigned-field-id' is missing");
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
 		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_table_requirement.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto last_assigned_field_id_val = yyjson_obj_get(obj, "last_assigned_field_id");
+		if (!last_assigned_field_id_val) {
+		return "AssertLastAssignedFieldId required property 'last_assigned_field_id' is missing");
+		}
+		result.last_assigned_field_id = yyjson_get_sint(last_assigned_field_id_val);
 
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			result.type = yyjson_get_str(type_val);
+			;
 		}
-
-		return result;
+		return string();
 	}
 
 public:
 	TableRequirement table_requirement;
-	int64_t last_assigned_field_id;
-	string type;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

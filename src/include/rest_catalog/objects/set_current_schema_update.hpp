@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,31 +15,46 @@ namespace rest_api_objects {
 
 class SetCurrentSchemaUpdate {
 public:
-	static SetCurrentSchemaUpdate FromJSON(yyjson_val *obj) {
-		SetCurrentSchemaUpdate result;
+	SetCurrentSchemaUpdate::SetCurrentSchemaUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static SetCurrentSchemaUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto schema_id_val = yyjson_obj_get(obj, "schema_id");
+		if (!schema_id_val) {
+		return "SetCurrentSchemaUpdate required property 'schema_id' is missing");
+		}
+		result.schema_id = yyjson_get_sint(schema_id_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto schema_id_val = yyjson_obj_get(obj, "schema-id");
-		if (schema_id_val) {
-			result.schema_id = yyjson_get_sint(schema_id_val);
-		} else {
-			throw IOException("SetCurrentSchemaUpdate required property 'schema-id' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	int64_t schema_id;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

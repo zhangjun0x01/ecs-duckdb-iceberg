@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,29 +16,40 @@ namespace rest_api_objects {
 
 class NotExpression {
 public:
-	static NotExpression FromJSON(yyjson_val *obj) {
-		NotExpression result;
-
-		auto child_val = yyjson_obj_get(obj, "child");
-		if (child_val) {
-			result.child = Expression::FromJSON(child_val);
-		} else {
-			throw IOException("NotExpression required property 'child' is missing");
-		}
-
-		auto type_val = yyjson_obj_get(obj, "type");
-		if (type_val) {
-			result.type = ExpressionType::FromJSON(type_val);
-		} else {
-			throw IOException("NotExpression required property 'type' is missing");
-		}
-
-		return result;
+	NotExpression::NotExpression() {
 	}
 
 public:
-	Expression child;
-	ExpressionType type;
+	static NotExpression FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto type_val = yyjson_obj_get(obj, "type");
+		if (!type_val) {
+		return "NotExpression required property 'type' is missing");
+		}
+		result.type = ExpressionType::FromJSON(type_val);
+
+		auto child_val = yyjson_obj_get(obj, "child");
+		if (!child_val) {
+		return "NotExpression required property 'child' is missing");
+		}
+		result.child = Expression::FromJSON(child_val);
+
+		return string();
+	}
+
+public:
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

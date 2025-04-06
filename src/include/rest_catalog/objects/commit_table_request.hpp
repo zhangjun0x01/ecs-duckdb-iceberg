@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -16,43 +17,53 @@ namespace rest_api_objects {
 
 class CommitTableRequest {
 public:
+	CommitTableRequest::CommitTableRequest() {
+	}
+
+public:
 	static CommitTableRequest FromJSON(yyjson_val *obj) {
-		CommitTableRequest result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		auto requirements_val = yyjson_obj_get(obj, "requirements");
+		if (!requirements_val) {
+		return "CommitTableRequest required property 'requirements' is missing");
+		}
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(requirements_val, idx, max, val) {
+			result.requirements.push_back(TableRequirement::FromJSON(val));
+		}
+
+		auto updates_val = yyjson_obj_get(obj, "updates");
+		if (!updates_val) {
+		return "CommitTableRequest required property 'updates' is missing");
+		}
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(updates_val, idx, max, val) {
+			result.updates.push_back(TableUpdate::FromJSON(val));
+		}
 
 		auto identifier_val = yyjson_obj_get(obj, "identifier");
 		if (identifier_val) {
 			result.identifier = TableIdentifier::FromJSON(identifier_val);
+			;
 		}
-
-		auto requirements_val = yyjson_obj_get(obj, "requirements");
-		if (requirements_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(requirements_val, idx, max, val) {
-				result.requirements.push_back(TableRequirement::FromJSON(val));
-			}
-		} else {
-			throw IOException("CommitTableRequest required property 'requirements' is missing");
-		}
-
-		auto updates_val = yyjson_obj_get(obj, "updates");
-		if (updates_val) {
-			size_t idx, max;
-			yyjson_val *val;
-			yyjson_arr_foreach(updates_val, idx, max, val) {
-				result.updates.push_back(TableUpdate::FromJSON(val));
-			}
-		} else {
-			throw IOException("CommitTableRequest required property 'updates' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
-	TableIdentifier identifier;
-	vector<TableRequirement> requirements;
-	vector<TableUpdate> updates;
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

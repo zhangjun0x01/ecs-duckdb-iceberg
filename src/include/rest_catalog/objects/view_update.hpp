@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -5,6 +6,14 @@
 #include "duckdb/common/vector.hpp"
 #include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
+#include "rest_catalog/objects/add_schema_update.hpp"
+#include "rest_catalog/objects/add_view_version_update.hpp"
+#include "rest_catalog/objects/assign_uuidupdate.hpp"
+#include "rest_catalog/objects/remove_properties_update.hpp"
+#include "rest_catalog/objects/set_current_view_version_update.hpp"
+#include "rest_catalog/objects/set_location_update.hpp"
+#include "rest_catalog/objects/set_properties_update.hpp"
+#include "rest_catalog/objects/upgrade_format_version_update.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -13,70 +22,83 @@ namespace rest_api_objects {
 
 class ViewUpdate {
 public:
-	static ViewUpdate FromJSON(yyjson_val *obj) {
-		ViewUpdate result;
-		if (yyjson_is_obj(obj)) {
-			if (yyjson_obj_get(obj, "uuid")) {
-				result.assign_uuidupdate = AssignUUIDUpdate::FromJSON(obj);
-				result.has_assign_uuidupdate = true;
-			}
-			if (yyjson_obj_get(obj, "format-version")) {
-				result.upgrade_format_version_update = UpgradeFormatVersionUpdate::FromJSON(obj);
-				result.has_upgrade_format_version_update = true;
-			}
-			if (yyjson_obj_get(obj, "schema")) {
-				result.add_schema_update = AddSchemaUpdate::FromJSON(obj);
-				result.has_add_schema_update = true;
-			}
-			if (yyjson_obj_get(obj, "location")) {
-				result.set_location_update = SetLocationUpdate::FromJSON(obj);
-				result.has_set_location_update = true;
-			}
-			if (yyjson_obj_get(obj, "updates")) {
-				result.set_properties_update = SetPropertiesUpdate::FromJSON(obj);
-				result.has_set_properties_update = true;
-			}
-			if (yyjson_obj_get(obj, "removals")) {
-				result.remove_properties_update = RemovePropertiesUpdate::FromJSON(obj);
-				result.has_remove_properties_update = true;
-			}
-			if (yyjson_obj_get(obj, "view-version")) {
-				result.add_view_version_update = AddViewVersionUpdate::FromJSON(obj);
-				result.has_add_view_version_update = true;
-			}
-			if (yyjson_obj_get(obj, "view-version-id")) {
-				result.set_current_view_version_update = SetCurrentViewVersionUpdate::FromJSON(obj);
-				result.has_set_current_view_version_update = true;
-			}
-			if (!(result.has_assign_uuidupdate || result.has_upgrade_format_version_update ||
-			      result.has_add_schema_update || result.has_set_location_update || result.has_set_properties_update ||
-			      result.has_remove_properties_update || result.has_add_view_version_update ||
-			      result.has_set_current_view_version_update)) {
-				throw IOException("ViewUpdate failed to parse, none of the accepted schemas found");
-			}
-		} else {
-			throw IOException("ViewUpdate must be an object");
-		}
-		return result;
+	ViewUpdate::ViewUpdate() {
 	}
 
 public:
-	AssignUUIDUpdate assign_uuidupdate;
-	bool has_assign_uuidupdate = false;
-	UpgradeFormatVersionUpdate upgrade_format_version_update;
-	bool has_upgrade_format_version_update = false;
-	AddSchemaUpdate add_schema_update;
-	bool has_add_schema_update = false;
-	SetLocationUpdate set_location_update;
-	bool has_set_location_update = false;
+	static ViewUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_assign_uuidupdate.TryFromJSON(obj);
+		if (error.empty()) {
+			has_assign_uuidupdate = true;
+		}
+
+		error = base_upgrade_format_version_update.TryFromJSON(obj);
+		if (error.empty()) {
+			has_upgrade_format_version_update = true;
+		}
+
+		error = base_add_schema_update.TryFromJSON(obj);
+		if (error.empty()) {
+			has_add_schema_update = true;
+		}
+
+		error = base_set_location_update.TryFromJSON(obj);
+		if (error.empty()) {
+			has_set_location_update = true;
+		}
+
+		error = base_set_properties_update.TryFromJSON(obj);
+		if (error.empty()) {
+			has_set_properties_update = true;
+		}
+
+		error = base_remove_properties_update.TryFromJSON(obj);
+		if (error.empty()) {
+			has_remove_properties_update = true;
+		}
+
+		error = base_add_view_version_update.TryFromJSON(obj);
+		if (error.empty()) {
+			has_add_view_version_update = true;
+		}
+
+		error = base_set_current_view_version_update.TryFromJSON(obj);
+		if (error.empty()) {
+			has_set_current_view_version_update = true;
+		}
+
+		if (!has_add_schema_update && !has_add_view_version_update && !has_assign_uuidupdate &&
+		    !has_remove_properties_update && !has_set_current_view_version_update && !has_set_location_update &&
+		    !has_set_properties_update && !has_upgrade_format_version_update) {
+			return "ViewUpdate failed to parse, none of the anyOf candidates matched";
+		}
+
+		return string();
+	}
+
+public:
 	SetPropertiesUpdate set_properties_update;
-	bool has_set_properties_update = false;
-	RemovePropertiesUpdate remove_properties_update;
-	bool has_remove_properties_update = false;
+	SetLocationUpdate set_location_update;
+	AddSchemaUpdate add_schema_update;
 	AddViewVersionUpdate add_view_version_update;
-	bool has_add_view_version_update = false;
+	RemovePropertiesUpdate remove_properties_update;
 	SetCurrentViewVersionUpdate set_current_view_version_update;
-	bool has_set_current_view_version_update = false;
+	UpgradeFormatVersionUpdate upgrade_format_version_update;
+	AssignUUIDUpdate assign_uuidupdate;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

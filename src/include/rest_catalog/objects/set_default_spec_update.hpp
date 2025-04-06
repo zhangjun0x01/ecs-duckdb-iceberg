@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -14,31 +15,46 @@ namespace rest_api_objects {
 
 class SetDefaultSpecUpdate {
 public:
-	static SetDefaultSpecUpdate FromJSON(yyjson_val *obj) {
-		SetDefaultSpecUpdate result;
+	SetDefaultSpecUpdate::SetDefaultSpecUpdate() {
+	}
 
-		// Parse BaseUpdate fields
-		result.base_update = BaseUpdate::FromJSON(obj);
+public:
+	static SetDefaultSpecUpdate FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_base_update.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		auto spec_id_val = yyjson_obj_get(obj, "spec_id");
+		if (!spec_id_val) {
+		return "SetDefaultSpecUpdate required property 'spec_id' is missing");
+		}
+		result.spec_id = yyjson_get_sint(spec_id_val);
 
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			result.action = yyjson_get_str(action_val);
+			;
 		}
-
-		auto spec_id_val = yyjson_obj_get(obj, "spec-id");
-		if (spec_id_val) {
-			result.spec_id = yyjson_get_sint(spec_id_val);
-		} else {
-			throw IOException("SetDefaultSpecUpdate required property 'spec-id' is missing");
-		}
-
-		return result;
+		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-	string action;
-	int64_t spec_id;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

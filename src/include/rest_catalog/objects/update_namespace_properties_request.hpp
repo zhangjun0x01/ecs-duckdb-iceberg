@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -13,8 +14,21 @@ namespace rest_api_objects {
 
 class UpdateNamespacePropertiesRequest {
 public:
+	UpdateNamespacePropertiesRequest::UpdateNamespacePropertiesRequest() {
+	}
+
+public:
 	static UpdateNamespacePropertiesRequest FromJSON(yyjson_val *obj) {
-		UpdateNamespacePropertiesRequest result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
 
 		auto removals_val = yyjson_obj_get(obj, "removals");
 		if (removals_val) {
@@ -22,20 +36,20 @@ public:
 			yyjson_val *val;
 			yyjson_arr_foreach(removals_val, idx, max, val) {
 				result.removals.push_back(yyjson_get_str(val));
-			}
+			};
 		}
 
 		auto updates_val = yyjson_obj_get(obj, "updates");
 		if (updates_val) {
 			result.updates = parse_object_of_strings(updates_val);
+			;
 		}
-
-		return result;
+		return string();
 	}
 
 public:
-	vector<string> removals;
-	case_insensitive_map_t<string> updates;
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

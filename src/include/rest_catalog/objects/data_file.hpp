@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -6,8 +7,6 @@
 #include "duckdb/common/case_insensitive_map.hpp"
 #include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/content_file.hpp"
-#include "rest_catalog/objects/count_map.hpp"
-#include "rest_catalog/objects/value_map.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -16,61 +15,76 @@ namespace rest_api_objects {
 
 class DataFile {
 public:
+	DataFile::DataFile() {
+	}
+
+public:
 	static DataFile FromJSON(yyjson_val *obj) {
-		DataFile result;
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
 
-		// Parse ContentFile fields
-		result.content_file = ContentFile::FromJSON(obj);
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
 
-		auto column_sizes_val = yyjson_obj_get(obj, "column-sizes");
-		if (column_sizes_val) {
-			result.column_sizes = CountMap::FromJSON(column_sizes_val);
+		error = base_content_file.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
 		}
 
 		auto content_val = yyjson_obj_get(obj, "content");
-		if (content_val) {
-			result.content = yyjson_get_str(content_val);
-		} else {
-			throw IOException("DataFile required property 'content' is missing");
+		if (!content_val) {
+		return "DataFile required property 'content' is missing");
+		}
+		result.content = yyjson_get_str(content_val);
+
+		auto column_sizes_val = yyjson_obj_get(obj, "column_sizes");
+		if (column_sizes_val) {
+			result.column_sizes = column_sizes_val;
+			;
 		}
 
-		auto lower_bounds_val = yyjson_obj_get(obj, "lower-bounds");
-		if (lower_bounds_val) {
-			result.lower_bounds = ValueMap::FromJSON(lower_bounds_val);
-		}
-
-		auto nan_value_counts_val = yyjson_obj_get(obj, "nan-value-counts");
-		if (nan_value_counts_val) {
-			result.nan_value_counts = CountMap::FromJSON(nan_value_counts_val);
-		}
-
-		auto null_value_counts_val = yyjson_obj_get(obj, "null-value-counts");
-		if (null_value_counts_val) {
-			result.null_value_counts = CountMap::FromJSON(null_value_counts_val);
-		}
-
-		auto upper_bounds_val = yyjson_obj_get(obj, "upper-bounds");
-		if (upper_bounds_val) {
-			result.upper_bounds = ValueMap::FromJSON(upper_bounds_val);
-		}
-
-		auto value_counts_val = yyjson_obj_get(obj, "value-counts");
+		auto value_counts_val = yyjson_obj_get(obj, "value_counts");
 		if (value_counts_val) {
-			result.value_counts = CountMap::FromJSON(value_counts_val);
+			result.value_counts = value_counts_val;
+			;
 		}
 
-		return result;
+		auto null_value_counts_val = yyjson_obj_get(obj, "null_value_counts");
+		if (null_value_counts_val) {
+			result.null_value_counts = null_value_counts_val;
+			;
+		}
+
+		auto nan_value_counts_val = yyjson_obj_get(obj, "nan_value_counts");
+		if (nan_value_counts_val) {
+			result.nan_value_counts = nan_value_counts_val;
+			;
+		}
+
+		auto lower_bounds_val = yyjson_obj_get(obj, "lower_bounds");
+		if (lower_bounds_val) {
+			result.lower_bounds = lower_bounds_val;
+			;
+		}
+
+		auto upper_bounds_val = yyjson_obj_get(obj, "upper_bounds");
+		if (upper_bounds_val) {
+			result.upper_bounds = upper_bounds_val;
+			;
+		}
+		return string();
 	}
 
 public:
 	ContentFile content_file;
-	CountMap column_sizes;
-	string content;
-	ValueMap lower_bounds;
-	CountMap nan_value_counts;
-	CountMap null_value_counts;
-	ValueMap upper_bounds;
-	CountMap value_counts;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb

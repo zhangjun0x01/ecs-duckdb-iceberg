@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "yyjson.hpp"
@@ -15,25 +16,73 @@ namespace rest_api_objects {
 
 class FailedPlanningResult {
 public:
-	static FailedPlanningResult FromJSON(yyjson_val *obj) {
-		FailedPlanningResult result;
+	FailedPlanningResult::FailedPlanningResult() {
+	}
 
-		// Parse IcebergErrorResponse fields
-		result.iceberg_error_response = IcebergErrorResponse::FromJSON(obj);
-
-		auto status_val = yyjson_obj_get(obj, "status");
-		if (status_val) {
-			result.status = PlanStatus::FromJSON(status_val);
-		} else {
-			throw IOException("FailedPlanningResult required property 'status' is missing");
+public:
+	class Object7 {
+	public:
+		Object7::Object7() {
 		}
 
-		return result;
+	public:
+		static Object7 FromJSON(yyjson_val *obj) {
+			auto error = TryFromJSON(obj);
+			if (!error.empty()) {
+				throw InvalidInputException(error);
+			}
+			return *this;
+		}
+
+	public:
+		string TryFromJSON(yyjson_val *obj) {
+			string error;
+
+			auto status_val = yyjson_obj_get(obj, "status");
+			if (!status_val) {
+			return "Object7 required property 'status' is missing");
+			}
+			result.status = PlanStatus::FromJSON(status_val);
+
+			return string();
+		}
+
+	public:
+	public:
+	};
+
+public:
+	static FailedPlanningResult FromJSON(yyjson_val *obj) {
+		auto error = TryFromJSON(obj);
+		if (!error.empty()) {
+			throw InvalidInputException(error);
+		}
+		return *this;
+	}
+
+public:
+	string TryFromJSON(yyjson_val *obj) {
+		string error;
+
+		error = base_iceberg_error_response.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		error = base_object_7.TryFromJSON(obj);
+		if (!error.empty()) {
+			return error;
+		}
+
+		return string();
 	}
 
 public:
 	IcebergErrorResponse iceberg_error_response;
-	PlanStatus status;
+	Object7 object_7;
+
+public:
 };
+
 } // namespace rest_api_objects
 } // namespace duckdb
