@@ -31,14 +31,12 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto order_id_val = yyjson_obj_get(obj, "order_id");
 		if (!order_id_val) {
 			return "SortOrder required property 'order_id' is missing";
 		} else {
 			order_id = yyjson_get_sint(order_id_val);
 		}
-
 		auto fields_val = yyjson_obj_get(obj, "fields");
 		if (!fields_val) {
 			return "SortOrder required property 'fields' is missing";
@@ -46,7 +44,6 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(fields_val, idx, max, val) {
-
 				SortField tmp;
 				error = tmp.TryFromJSON(val);
 				if (!error.empty()) {
@@ -55,14 +52,12 @@ public:
 				fields.push_back(tmp);
 			}
 		}
-
 		return string();
 	}
 
 public:
-public:
-	vector<SortField> fields;
 	int64_t order_id;
+	vector<SortField> fields;
 };
 
 } // namespace rest_api_objects

@@ -31,14 +31,12 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto metadata_location_val = yyjson_obj_get(obj, "metadata_location");
 		if (!metadata_location_val) {
 			return "CommitTableResponse required property 'metadata_location' is missing";
 		} else {
 			metadata_location = yyjson_get_str(metadata_location_val);
 		}
-
 		auto metadata_val = yyjson_obj_get(obj, "metadata");
 		if (!metadata_val) {
 			return "CommitTableResponse required property 'metadata' is missing";
@@ -48,14 +46,12 @@ public:
 				return error;
 			}
 		}
-
 		return string();
 	}
 
 public:
-public:
-	TableMetadata metadata;
 	string metadata_location;
+	TableMetadata metadata;
 };
 
 } // namespace rest_api_objects

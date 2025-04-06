@@ -17,8 +17,6 @@ class CompletedPlanningWithIDResult {
 public:
 	CompletedPlanningWithIDResult() {
 	}
-
-public:
 	class Object6 {
 	public:
 		Object6() {
@@ -37,16 +35,13 @@ public:
 	public:
 		string TryFromJSON(yyjson_val *obj) {
 			string error;
-
 			auto plan_id_val = yyjson_obj_get(obj, "plan_id");
 			if (plan_id_val) {
 				plan_id = yyjson_get_str(plan_id_val);
 			}
-
 			return string();
 		}
 
-	public:
 	public:
 		string plan_id;
 	};
@@ -72,15 +67,12 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		return string();
 	}
 
 public:
 	CompletedPlanningResult completed_planning_result;
 	Object6 object_6;
-
-public:
 };
 
 } // namespace rest_api_objects

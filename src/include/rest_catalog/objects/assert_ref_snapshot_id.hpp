@@ -35,33 +35,27 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto ref_val = yyjson_obj_get(obj, "ref");
 		if (!ref_val) {
 			return "AssertRefSnapshotId required property 'ref' is missing";
 		} else {
 			ref = yyjson_get_str(ref_val);
 		}
-
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
 		if (!snapshot_id_val) {
 			return "AssertRefSnapshotId required property 'snapshot_id' is missing";
 		} else {
 			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		}
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			type = yyjson_get_str(type_val);
 		}
-
 		return string();
 	}
 
 public:
 	TableRequirement table_requirement;
-
-public:
 	string ref;
 	int64_t snapshot_id;
 	string type;

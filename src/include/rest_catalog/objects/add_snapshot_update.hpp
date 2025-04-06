@@ -36,7 +36,6 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto snapshot_val = yyjson_obj_get(obj, "snapshot");
 		if (!snapshot_val) {
 			return "AddSnapshotUpdate required property 'snapshot' is missing";
@@ -46,21 +45,17 @@ public:
 				return error;
 			}
 		}
-
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			action = yyjson_get_str(action_val);
 		}
-
 		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-
-public:
-	string action;
 	Snapshot snapshot;
+	string action;
 };
 
 } // namespace rest_api_objects

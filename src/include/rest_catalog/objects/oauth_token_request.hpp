@@ -40,20 +40,16 @@ public:
 		if (error.empty()) {
 			has_oauth_token_exchange_request = true;
 		}
-
 		if (!has_oauth_client_credentials_request && !has_oauth_token_exchange_request) {
 			return "OAuthTokenRequest failed to parse, none of the anyOf candidates matched";
 		}
-
 		return string();
 	}
 
 public:
 	OAuthClientCredentialsRequest oauth_client_credentials_request;
-	OAuthTokenExchangeRequest oauth_token_exchange_request;
-
-public:
 	bool has_oauth_client_credentials_request = false;
+	OAuthTokenExchangeRequest oauth_token_exchange_request;
 	bool has_oauth_token_exchange_request = false;
 };
 

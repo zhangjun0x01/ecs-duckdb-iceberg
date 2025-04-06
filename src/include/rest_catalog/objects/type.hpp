@@ -57,20 +57,17 @@ public:
 			}
 			return "Type failed to parse, none of the oneOf candidates matched";
 		} while (false);
-
 		return string();
 	}
 
 public:
-	MapType map_type;
-	StructType struct_type;
 	PrimitiveType primitive_type;
-	ListType list_type;
-
-public:
 	bool has_primitive_type = false;
+	StructType struct_type;
 	bool has_struct_type = false;
+	ListType list_type;
 	bool has_list_type = false;
+	MapType map_type;
 	bool has_map_type = false;
 };
 

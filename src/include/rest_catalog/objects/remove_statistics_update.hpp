@@ -35,28 +35,23 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
 		if (!snapshot_id_val) {
 			return "RemoveStatisticsUpdate required property 'snapshot_id' is missing";
 		} else {
 			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		}
-
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			action = yyjson_get_str(action_val);
 		}
-
 		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-
-public:
-	string action;
 	int64_t snapshot_id;
+	string action;
 };
 
 } // namespace rest_api_objects

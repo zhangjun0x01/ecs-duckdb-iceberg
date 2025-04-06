@@ -33,7 +33,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto requirements_val = yyjson_obj_get(obj, "requirements");
 		if (!requirements_val) {
 			return "CommitTableRequest required property 'requirements' is missing";
@@ -41,7 +40,6 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(requirements_val, idx, max, val) {
-
 				TableRequirement tmp;
 				error = tmp.TryFromJSON(val);
 				if (!error.empty()) {
@@ -50,7 +48,6 @@ public:
 				requirements.push_back(tmp);
 			}
 		}
-
 		auto updates_val = yyjson_obj_get(obj, "updates");
 		if (!updates_val) {
 			return "CommitTableRequest required property 'updates' is missing";
@@ -58,7 +55,6 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(updates_val, idx, max, val) {
-
 				TableUpdate tmp;
 				error = tmp.TryFromJSON(val);
 				if (!error.empty()) {
@@ -67,7 +63,6 @@ public:
 				updates.push_back(tmp);
 			}
 		}
-
 		auto identifier_val = yyjson_obj_get(obj, "identifier");
 		if (identifier_val) {
 			error = identifier.TryFromJSON(identifier_val);
@@ -75,15 +70,13 @@ public:
 				return error;
 			}
 		}
-
 		return string();
 	}
 
 public:
-public:
-	TableIdentifier identifier;
 	vector<TableRequirement> requirements;
 	vector<TableUpdate> updates;
+	TableIdentifier identifier;
 };
 
 } // namespace rest_api_objects

@@ -32,7 +32,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto next_page_token_val = yyjson_obj_get(obj, "next_page_token");
 		if (next_page_token_val) {
 			error = next_page_token.TryFromJSON(next_page_token_val);
@@ -40,13 +39,11 @@ public:
 				return error;
 			}
 		}
-
 		auto namespaces_val = yyjson_obj_get(obj, "namespaces");
 		if (namespaces_val) {
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(namespaces_val, idx, max, val) {
-
 				Namespace tmp;
 				error = tmp.TryFromJSON(val);
 				if (!error.empty()) {
@@ -55,14 +52,12 @@ public:
 				namespaces.push_back(tmp);
 			}
 		}
-
 		return string();
 	}
 
 public:
-public:
-	vector<Namespace> namespaces;
 	PageToken next_page_token;
+	vector<Namespace> namespaces;
 };
 
 } // namespace rest_api_objects

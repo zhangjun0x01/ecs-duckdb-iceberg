@@ -57,20 +57,17 @@ public:
 			}
 			return "PlanTableScanResult failed to parse, none of the oneOf candidates matched";
 		} while (false);
-
 		return string();
 	}
 
 public:
 	CompletedPlanningWithIDResult completed_planning_with_idresult;
-	EmptyPlanningResult empty_planning_result;
-	FailedPlanningResult failed_planning_result;
-	AsyncPlanningResult async_planning_result;
-
-public:
 	bool has_completed_planning_with_idresult = false;
+	FailedPlanningResult failed_planning_result;
 	bool has_failed_planning_result = false;
+	AsyncPlanningResult async_planning_result;
 	bool has_async_planning_result = false;
+	EmptyPlanningResult empty_planning_result;
 	bool has_empty_planning_result = false;
 };
 

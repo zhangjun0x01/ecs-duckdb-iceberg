@@ -32,7 +32,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
 			return "NotExpression required property 'type' is missing";
@@ -42,7 +41,6 @@ public:
 				return error;
 			}
 		}
-
 		auto child_val = yyjson_obj_get(obj, "child");
 		if (!child_val) {
 			return "NotExpression required property 'child' is missing";
@@ -53,14 +51,12 @@ public:
 				return error;
 			}
 		}
-
 		return string();
 	}
 
 public:
-public:
-	unique_ptr<Expression> child;
 	ExpressionType type;
+	unique_ptr<Expression> child;
 };
 
 } // namespace rest_api_objects

@@ -35,26 +35,21 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto last_assigned_partition_id_val = yyjson_obj_get(obj, "last_assigned_partition_id");
 		if (!last_assigned_partition_id_val) {
 			return "AssertLastAssignedPartitionId required property 'last_assigned_partition_id' is missing";
 		} else {
 			last_assigned_partition_id = yyjson_get_sint(last_assigned_partition_id_val);
 		}
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			type = yyjson_get_str(type_val);
 		}
-
 		return string();
 	}
 
 public:
 	TableRequirement table_requirement;
-
-public:
 	int64_t last_assigned_partition_id;
 	string type;
 };

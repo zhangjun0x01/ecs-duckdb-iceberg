@@ -30,18 +30,15 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
 			return "TableRequirement required property 'type' is missing";
 		} else {
 			type = yyjson_get_str(type_val);
 		}
-
 		return string();
 	}
 
-public:
 public:
 	string type;
 };

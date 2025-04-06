@@ -32,14 +32,12 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
 			return "TransformTerm required property 'type' is missing";
 		} else {
 			type = yyjson_get_str(type_val);
 		}
-
 		auto transform_val = yyjson_obj_get(obj, "transform");
 		if (!transform_val) {
 			return "TransformTerm required property 'transform' is missing";
@@ -49,7 +47,6 @@ public:
 				return error;
 			}
 		}
-
 		auto term_val = yyjson_obj_get(obj, "term");
 		if (!term_val) {
 			return "TransformTerm required property 'term' is missing";
@@ -59,15 +56,13 @@ public:
 				return error;
 			}
 		}
-
 		return string();
 	}
 
 public:
-public:
-	Reference term;
-	Transform transform;
 	string type;
+	Transform transform;
+	Reference term;
 };
 
 } // namespace rest_api_objects

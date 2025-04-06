@@ -30,28 +30,24 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto version_id_val = yyjson_obj_get(obj, "version_id");
 		if (!version_id_val) {
 			return "ViewHistoryEntry required property 'version_id' is missing";
 		} else {
 			version_id = yyjson_get_sint(version_id_val);
 		}
-
 		auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
 		if (!timestamp_ms_val) {
 			return "ViewHistoryEntry required property 'timestamp_ms' is missing";
 		} else {
 			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 		}
-
 		return string();
 	}
 
 public:
-public:
-	int64_t timestamp_ms;
 	int64_t version_id;
+	int64_t timestamp_ms;
 };
 
 } // namespace rest_api_objects

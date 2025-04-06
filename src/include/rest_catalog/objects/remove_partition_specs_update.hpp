@@ -35,7 +35,6 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto spec_ids_val = yyjson_obj_get(obj, "spec_ids");
 		if (!spec_ids_val) {
 			return "RemovePartitionSpecsUpdate required property 'spec_ids' is missing";
@@ -43,26 +42,21 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(spec_ids_val, idx, max, val) {
-
 				auto tmp = yyjson_get_sint(val);
 				spec_ids.push_back(tmp);
 			}
 		}
-
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			action = yyjson_get_str(action_val);
 		}
-
 		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-
-public:
-	string action;
 	vector<int64_t> spec_ids;
+	string action;
 };
 
 } // namespace rest_api_objects

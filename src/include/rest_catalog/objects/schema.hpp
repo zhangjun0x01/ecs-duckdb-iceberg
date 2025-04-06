@@ -17,8 +17,6 @@ class Schema {
 public:
 	Schema() {
 	}
-
-public:
 	class Object1 {
 	public:
 		Object1() {
@@ -37,30 +35,25 @@ public:
 	public:
 		string TryFromJSON(yyjson_val *obj) {
 			string error;
-
 			auto schema_id_val = yyjson_obj_get(obj, "schema_id");
 			if (schema_id_val) {
 				schema_id = yyjson_get_sint(schema_id_val);
 			}
-
 			auto identifier_field_ids_val = yyjson_obj_get(obj, "identifier_field_ids");
 			if (identifier_field_ids_val) {
 				size_t idx, max;
 				yyjson_val *val;
 				yyjson_arr_foreach(identifier_field_ids_val, idx, max, val) {
-
 					auto tmp = yyjson_get_sint(val);
 					identifier_field_ids.push_back(tmp);
 				}
 			}
-
 			return string();
 		}
 
 	public:
-	public:
-		vector<int64_t> identifier_field_ids;
 		int64_t schema_id;
+		vector<int64_t> identifier_field_ids;
 	};
 
 public:
@@ -84,15 +77,12 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		return string();
 	}
 
 public:
-	Object1 object_1;
 	StructType struct_type;
-
-public:
+	Object1 object_1;
 };
 
 } // namespace rest_api_objects

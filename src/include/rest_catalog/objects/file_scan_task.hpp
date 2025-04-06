@@ -31,7 +31,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto data_file_val = yyjson_obj_get(obj, "data_file");
 		if (!data_file_val) {
 			return "FileScanTask required property 'data_file' is missing";
@@ -41,27 +40,22 @@ public:
 				return error;
 			}
 		}
-
 		auto delete_file_references_val = yyjson_obj_get(obj, "delete_file_references");
 		if (delete_file_references_val) {
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(delete_file_references_val, idx, max, val) {
-
 				auto tmp = yyjson_get_sint(val);
 				delete_file_references.push_back(tmp);
 			}
 		}
-
 		auto residual_filter_val = yyjson_obj_get(obj, "residual_filter");
 		if (residual_filter_val) {
 			residual_filter = residual_filter_val;
 		}
-
 		return string();
 	}
 
-public:
 public:
 	DataFile data_file;
 	vector<int64_t> delete_file_references;

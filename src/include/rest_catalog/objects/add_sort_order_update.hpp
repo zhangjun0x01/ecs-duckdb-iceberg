@@ -36,7 +36,6 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto sort_order_val = yyjson_obj_get(obj, "sort_order");
 		if (!sort_order_val) {
 			return "AddSortOrderUpdate required property 'sort_order' is missing";
@@ -46,21 +45,17 @@ public:
 				return error;
 			}
 		}
-
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			action = yyjson_get_str(action_val);
 		}
-
 		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-
-public:
-	string action;
 	SortOrder sort_order;
+	string action;
 };
 
 } // namespace rest_api_objects

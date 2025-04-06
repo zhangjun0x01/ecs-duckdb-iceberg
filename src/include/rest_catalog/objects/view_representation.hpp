@@ -39,14 +39,11 @@ public:
 			}
 			return "ViewRepresentation failed to parse, none of the oneOf candidates matched";
 		} while (false);
-
 		return string();
 	}
 
 public:
 	SQLViewRepresentation sqlview_representation;
-
-public:
 	bool has_sqlview_representation = false;
 };
 

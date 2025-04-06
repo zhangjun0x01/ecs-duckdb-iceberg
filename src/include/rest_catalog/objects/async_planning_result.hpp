@@ -31,7 +31,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto status_val = yyjson_obj_get(obj, "status");
 		if (!status_val) {
 			return "AsyncPlanningResult required property 'status' is missing";
@@ -41,19 +40,16 @@ public:
 				return error;
 			}
 		}
-
 		auto plan_id_val = yyjson_obj_get(obj, "plan_id");
 		if (plan_id_val) {
 			plan_id = yyjson_get_str(plan_id_val);
 		}
-
 		return string();
 	}
 
 public:
-public:
-	string plan_id;
 	PlanStatus status;
+	string plan_id;
 };
 
 } // namespace rest_api_objects

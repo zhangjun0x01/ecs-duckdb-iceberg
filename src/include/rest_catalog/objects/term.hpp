@@ -45,16 +45,13 @@ public:
 			}
 			return "Term failed to parse, none of the oneOf candidates matched";
 		} while (false);
-
 		return string();
 	}
 
 public:
 	Reference reference;
-	TransformTerm transform_term;
-
-public:
 	bool has_reference = false;
+	TransformTerm transform_term;
 	bool has_transform_term = false;
 };
 

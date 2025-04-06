@@ -35,26 +35,21 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto default_spec_id_val = yyjson_obj_get(obj, "default_spec_id");
 		if (!default_spec_id_val) {
 			return "AssertDefaultSpecId required property 'default_spec_id' is missing";
 		} else {
 			default_spec_id = yyjson_get_sint(default_spec_id_val);
 		}
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			type = yyjson_get_str(type_val);
 		}
-
 		return string();
 	}
 
 public:
 	TableRequirement table_requirement;
-
-public:
 	int64_t default_spec_id;
 	string type;
 };

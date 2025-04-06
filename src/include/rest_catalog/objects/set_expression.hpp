@@ -32,7 +32,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
 			return "SetExpression required property 'type' is missing";
@@ -42,7 +41,6 @@ public:
 				return error;
 			}
 		}
-
 		auto term_val = yyjson_obj_get(obj, "term");
 		if (!term_val) {
 			return "SetExpression required property 'term' is missing";
@@ -52,7 +50,6 @@ public:
 				return error;
 			}
 		}
-
 		auto values_val = yyjson_obj_get(obj, "values");
 		if (!values_val) {
 			return "SetExpression required property 'values' is missing";
@@ -60,19 +57,16 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(values_val, idx, max, val) {
-
 				auto tmp = val;
 				values.push_back(tmp);
 			}
 		}
-
 		return string();
 	}
 
 public:
-public:
-	Term term;
 	ExpressionType type;
+	Term term;
 	vector<yyjson_val *> values;
 };
 

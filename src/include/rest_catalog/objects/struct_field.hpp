@@ -32,21 +32,18 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto id_val = yyjson_obj_get(obj, "id");
 		if (!id_val) {
 			return "StructField required property 'id' is missing";
 		} else {
 			id = yyjson_get_sint(id_val);
 		}
-
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (!name_val) {
 			return "StructField required property 'name' is missing";
 		} else {
 			name = yyjson_get_str(name_val);
 		}
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
 			return "StructField required property 'type' is missing";
@@ -57,19 +54,16 @@ public:
 				return error;
 			}
 		}
-
 		auto required_val = yyjson_obj_get(obj, "required");
 		if (!required_val) {
 			return "StructField required property 'required' is missing";
 		} else {
 			required = yyjson_get_bool(required_val);
 		}
-
 		auto doc_val = yyjson_obj_get(obj, "doc");
 		if (doc_val) {
 			doc = yyjson_get_str(doc_val);
 		}
-
 		auto initial_default_val = yyjson_obj_get(obj, "initial_default");
 		if (initial_default_val) {
 			error = initial_default.TryFromJSON(initial_default_val);
@@ -77,7 +71,6 @@ public:
 				return error;
 			}
 		}
-
 		auto write_default_val = yyjson_obj_get(obj, "write_default");
 		if (write_default_val) {
 			error = write_default.TryFromJSON(write_default_val);
@@ -85,18 +78,16 @@ public:
 				return error;
 			}
 		}
-
 		return string();
 	}
 
 public:
-public:
-	string doc;
 	int64_t id;
-	PrimitiveTypeValue initial_default;
 	string name;
-	bool required;
 	unique_ptr<Type> type;
+	bool required;
+	string doc;
+	PrimitiveTypeValue initial_default;
 	PrimitiveTypeValue write_default;
 };
 

@@ -35,14 +35,11 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		return string();
 	}
 
 public:
 	ScanTasks scan_tasks;
-
-public:
 };
 
 } // namespace rest_api_objects

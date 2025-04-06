@@ -32,21 +32,18 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto table_name_val = yyjson_obj_get(obj, "table_name");
 		if (!table_name_val) {
 			return "ScanReport required property 'table_name' is missing";
 		} else {
 			table_name = yyjson_get_str(table_name_val);
 		}
-
 		auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
 		if (!snapshot_id_val) {
 			return "ScanReport required property 'snapshot_id' is missing";
 		} else {
 			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		}
-
 		auto filter_val = yyjson_obj_get(obj, "filter");
 		if (!filter_val) {
 			return "ScanReport required property 'filter' is missing";
@@ -57,14 +54,12 @@ public:
 				return error;
 			}
 		}
-
 		auto schema_id_val = yyjson_obj_get(obj, "schema_id");
 		if (!schema_id_val) {
 			return "ScanReport required property 'schema_id' is missing";
 		} else {
 			schema_id = yyjson_get_sint(schema_id_val);
 		}
-
 		auto projected_field_ids_val = yyjson_obj_get(obj, "projected_field_ids");
 		if (!projected_field_ids_val) {
 			return "ScanReport required property 'projected_field_ids' is missing";
@@ -72,12 +67,10 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(projected_field_ids_val, idx, max, val) {
-
 				auto tmp = yyjson_get_sint(val);
 				projected_field_ids.push_back(tmp);
 			}
 		}
-
 		auto projected_field_names_val = yyjson_obj_get(obj, "projected_field_names");
 		if (!projected_field_names_val) {
 			return "ScanReport required property 'projected_field_names' is missing";
@@ -85,12 +78,10 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(projected_field_names_val, idx, max, val) {
-
 				auto tmp = yyjson_get_str(val);
 				projected_field_names.push_back(tmp);
 			}
 		}
-
 		auto metrics_val = yyjson_obj_get(obj, "metrics");
 		if (!metrics_val) {
 			return "ScanReport required property 'metrics' is missing";
@@ -100,25 +91,22 @@ public:
 				return error;
 			}
 		}
-
 		auto metadata_val = yyjson_obj_get(obj, "metadata");
 		if (metadata_val) {
 			metadata = parse_object_of_strings(metadata_val);
 		}
-
 		return string();
 	}
 
 public:
-public:
+	string table_name;
+	int64_t snapshot_id;
 	unique_ptr<Expression> filter;
-	case_insensitive_map_t<string> metadata;
-	Metrics metrics;
+	int64_t schema_id;
 	vector<int64_t> projected_field_ids;
 	vector<string> projected_field_names;
-	int64_t schema_id;
-	int64_t snapshot_id;
-	string table_name;
+	Metrics metrics;
+	case_insensitive_map_t<string> metadata;
 };
 
 } // namespace rest_api_objects

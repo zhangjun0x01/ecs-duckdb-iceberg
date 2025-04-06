@@ -40,20 +40,16 @@ public:
 		if (error.empty()) {
 			has_timer_result = true;
 		}
-
 		if (!has_counter_result && !has_timer_result) {
 			return "MetricResult failed to parse, none of the anyOf candidates matched";
 		}
-
 		return string();
 	}
 
 public:
 	CounterResult counter_result;
-	TimerResult timer_result;
-
-public:
 	bool has_counter_result = false;
+	TimerResult timer_result;
 	bool has_timer_result = false;
 };
 

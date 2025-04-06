@@ -35,7 +35,6 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto snapshot_ids_val = yyjson_obj_get(obj, "snapshot_ids");
 		if (!snapshot_ids_val) {
 			return "RemoveSnapshotsUpdate required property 'snapshot_ids' is missing";
@@ -43,26 +42,21 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(snapshot_ids_val, idx, max, val) {
-
 				auto tmp = yyjson_get_sint(val);
 				snapshot_ids.push_back(tmp);
 			}
 		}
-
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			action = yyjson_get_str(action_val);
 		}
-
 		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-
-public:
-	string action;
 	vector<int64_t> snapshot_ids;
+	string action;
 };
 
 } // namespace rest_api_objects

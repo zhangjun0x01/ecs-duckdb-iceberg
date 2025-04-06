@@ -35,32 +35,26 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto content_val = yyjson_obj_get(obj, "content");
 		if (!content_val) {
 			return "EqualityDeleteFile required property 'content' is missing";
 		} else {
 			content = yyjson_get_str(content_val);
 		}
-
 		auto equality_ids_val = yyjson_obj_get(obj, "equality_ids");
 		if (equality_ids_val) {
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(equality_ids_val, idx, max, val) {
-
 				auto tmp = yyjson_get_sint(val);
 				equality_ids.push_back(tmp);
 			}
 		}
-
 		return string();
 	}
 
 public:
 	ContentFile content_file;
-
-public:
 	string content;
 	vector<int64_t> equality_ids;
 };

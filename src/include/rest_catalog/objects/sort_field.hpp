@@ -33,14 +33,12 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto source_id_val = yyjson_obj_get(obj, "source_id");
 		if (!source_id_val) {
 			return "SortField required property 'source_id' is missing";
 		} else {
 			source_id = yyjson_get_sint(source_id_val);
 		}
-
 		auto transform_val = yyjson_obj_get(obj, "transform");
 		if (!transform_val) {
 			return "SortField required property 'transform' is missing";
@@ -50,7 +48,6 @@ public:
 				return error;
 			}
 		}
-
 		auto direction_val = yyjson_obj_get(obj, "direction");
 		if (!direction_val) {
 			return "SortField required property 'direction' is missing";
@@ -60,7 +57,6 @@ public:
 				return error;
 			}
 		}
-
 		auto null_order_val = yyjson_obj_get(obj, "null_order");
 		if (!null_order_val) {
 			return "SortField required property 'null_order' is missing";
@@ -70,16 +66,14 @@ public:
 				return error;
 			}
 		}
-
 		return string();
 	}
 
 public:
-public:
-	SortDirection direction;
-	NullOrder null_order;
 	int64_t source_id;
 	Transform transform;
+	SortDirection direction;
+	NullOrder null_order;
 };
 
 } // namespace rest_api_objects

@@ -31,7 +31,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto _namespace_val = yyjson_obj_get(obj, "_namespace");
 		if (!_namespace_val) {
 			return "TableIdentifier required property '_namespace' is missing";
@@ -41,21 +40,18 @@ public:
 				return error;
 			}
 		}
-
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (!name_val) {
 			return "TableIdentifier required property 'name' is missing";
 		} else {
 			name = yyjson_get_str(name_val);
 		}
-
 		return string();
 	}
 
 public:
-public:
-	string name;
 	Namespace _namespace;
+	string name;
 };
 
 } // namespace rest_api_objects

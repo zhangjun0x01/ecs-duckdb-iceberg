@@ -30,28 +30,24 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto prefix_val = yyjson_obj_get(obj, "prefix");
 		if (!prefix_val) {
 			return "StorageCredential required property 'prefix' is missing";
 		} else {
 			prefix = yyjson_get_str(prefix_val);
 		}
-
 		auto config_val = yyjson_obj_get(obj, "config");
 		if (!config_val) {
 			return "StorageCredential required property 'config' is missing";
 		} else {
 			config = parse_object_of_strings(config_val);
 		}
-
 		return string();
 	}
 
 public:
-public:
-	case_insensitive_map_t<string> config;
 	string prefix;
+	case_insensitive_map_t<string> config;
 };
 
 } // namespace rest_api_objects

@@ -35,31 +35,25 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto content_val = yyjson_obj_get(obj, "content");
 		if (!content_val) {
 			return "PositionDeleteFile required property 'content' is missing";
 		} else {
 			content = yyjson_get_str(content_val);
 		}
-
 		auto content_offset_val = yyjson_obj_get(obj, "content_offset");
 		if (content_offset_val) {
 			content_offset = yyjson_get_sint(content_offset_val);
 		}
-
 		auto content_size_in_bytes_val = yyjson_obj_get(obj, "content_size_in_bytes");
 		if (content_size_in_bytes_val) {
 			content_size_in_bytes = yyjson_get_sint(content_size_in_bytes_val);
 		}
-
 		return string();
 	}
 
 public:
 	ContentFile content_file;
-
-public:
 	string content;
 	int64_t content_offset;
 	int64_t content_size_in_bytes;

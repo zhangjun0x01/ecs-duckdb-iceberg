@@ -51,18 +51,15 @@ public:
 			}
 			return "FetchPlanningResult failed to parse, none of the oneOf candidates matched";
 		} while (false);
-
 		return string();
 	}
 
 public:
 	CompletedPlanningResult completed_planning_result;
-	FailedPlanningResult failed_planning_result;
-	EmptyPlanningResult empty_planning_result;
-
-public:
 	bool has_completed_planning_result = false;
+	FailedPlanningResult failed_planning_result;
 	bool has_failed_planning_result = false;
+	EmptyPlanningResult empty_planning_result;
 	bool has_empty_planning_result = false;
 };
 

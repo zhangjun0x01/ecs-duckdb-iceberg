@@ -32,7 +32,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
 			return "AndOrExpression required property 'type' is missing";
@@ -42,7 +41,6 @@ public:
 				return error;
 			}
 		}
-
 		auto left_val = yyjson_obj_get(obj, "left");
 		if (!left_val) {
 			return "AndOrExpression required property 'left' is missing";
@@ -53,7 +51,6 @@ public:
 				return error;
 			}
 		}
-
 		auto right_val = yyjson_obj_get(obj, "right");
 		if (!right_val) {
 			return "AndOrExpression required property 'right' is missing";
@@ -64,15 +61,13 @@ public:
 				return error;
 			}
 		}
-
 		return string();
 	}
 
 public:
-public:
+	ExpressionType type;
 	unique_ptr<Expression> left;
 	unique_ptr<Expression> right;
-	ExpressionType type;
 };
 
 } // namespace rest_api_objects

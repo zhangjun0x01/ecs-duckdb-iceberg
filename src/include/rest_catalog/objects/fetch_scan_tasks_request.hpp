@@ -31,7 +31,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto plan_task_val = yyjson_obj_get(obj, "plan_task");
 		if (!plan_task_val) {
 			return "FetchScanTasksRequest required property 'plan_task' is missing";
@@ -41,11 +40,9 @@ public:
 				return error;
 			}
 		}
-
 		return string();
 	}
 
-public:
 public:
 	PlanTask plan_task;
 };

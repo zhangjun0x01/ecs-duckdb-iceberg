@@ -33,35 +33,30 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto view_uuid_val = yyjson_obj_get(obj, "view_uuid");
 		if (!view_uuid_val) {
 			return "ViewMetadata required property 'view_uuid' is missing";
 		} else {
 			view_uuid = yyjson_get_str(view_uuid_val);
 		}
-
 		auto format_version_val = yyjson_obj_get(obj, "format_version");
 		if (!format_version_val) {
 			return "ViewMetadata required property 'format_version' is missing";
 		} else {
 			format_version = yyjson_get_sint(format_version_val);
 		}
-
 		auto location_val = yyjson_obj_get(obj, "location");
 		if (!location_val) {
 			return "ViewMetadata required property 'location' is missing";
 		} else {
 			location = yyjson_get_str(location_val);
 		}
-
 		auto current_version_id_val = yyjson_obj_get(obj, "current_version_id");
 		if (!current_version_id_val) {
 			return "ViewMetadata required property 'current_version_id' is missing";
 		} else {
 			current_version_id = yyjson_get_sint(current_version_id_val);
 		}
-
 		auto versions_val = yyjson_obj_get(obj, "versions");
 		if (!versions_val) {
 			return "ViewMetadata required property 'versions' is missing";
@@ -69,7 +64,6 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(versions_val, idx, max, val) {
-
 				ViewVersion tmp;
 				error = tmp.TryFromJSON(val);
 				if (!error.empty()) {
@@ -78,7 +72,6 @@ public:
 				versions.push_back(tmp);
 			}
 		}
-
 		auto version_log_val = yyjson_obj_get(obj, "version_log");
 		if (!version_log_val) {
 			return "ViewMetadata required property 'version_log' is missing";
@@ -86,7 +79,6 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(version_log_val, idx, max, val) {
-
 				ViewHistoryEntry tmp;
 				error = tmp.TryFromJSON(val);
 				if (!error.empty()) {
@@ -95,7 +87,6 @@ public:
 				version_log.push_back(tmp);
 			}
 		}
-
 		auto schemas_val = yyjson_obj_get(obj, "schemas");
 		if (!schemas_val) {
 			return "ViewMetadata required property 'schemas' is missing";
@@ -103,7 +94,6 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(schemas_val, idx, max, val) {
-
 				Schema tmp;
 				error = tmp.TryFromJSON(val);
 				if (!error.empty()) {
@@ -112,25 +102,22 @@ public:
 				schemas.push_back(tmp);
 			}
 		}
-
 		auto properties_val = yyjson_obj_get(obj, "properties");
 		if (properties_val) {
 			properties = parse_object_of_strings(properties_val);
 		}
-
 		return string();
 	}
 
 public:
-public:
-	int64_t current_version_id;
+	string view_uuid;
 	int64_t format_version;
 	string location;
-	case_insensitive_map_t<string> properties;
-	vector<Schema> schemas;
-	vector<ViewHistoryEntry> version_log;
+	int64_t current_version_id;
 	vector<ViewVersion> versions;
-	string view_uuid;
+	vector<ViewHistoryEntry> version_log;
+	vector<Schema> schemas;
+	case_insensitive_map_t<string> properties;
 };
 
 } // namespace rest_api_objects

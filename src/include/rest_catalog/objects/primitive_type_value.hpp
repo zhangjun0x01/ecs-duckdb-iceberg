@@ -129,44 +129,41 @@ public:
 			}
 			return "PrimitiveTypeValue failed to parse, none of the oneOf candidates matched";
 		} while (false);
-
 		return string();
 	}
 
 public:
-	TimestampTypeValue timestamp_type_value;
 	BooleanTypeValue boolean_type_value;
-	LongTypeValue long_type_value;
-	DateTypeValue date_type_value;
-	TimeTypeValue time_type_value;
-	TimestampTzNanoTypeValue timestamp_tz_nano_type_value;
-	TimestampTzTypeValue timestamp_tz_type_value;
-	FloatTypeValue float_type_value;
-	StringTypeValue string_type_value;
-	BinaryTypeValue binary_type_value;
-	IntegerTypeValue integer_type_value;
-	FixedTypeValue fixed_type_value;
-	TimestampNanoTypeValue timestamp_nano_type_value;
-	UUIDTypeValue uuidtype_value;
-	DoubleTypeValue double_type_value;
-	DecimalTypeValue decimal_type_value;
-
-public:
 	bool has_boolean_type_value = false;
+	IntegerTypeValue integer_type_value;
 	bool has_integer_type_value = false;
+	LongTypeValue long_type_value;
 	bool has_long_type_value = false;
+	FloatTypeValue float_type_value;
 	bool has_float_type_value = false;
+	DoubleTypeValue double_type_value;
 	bool has_double_type_value = false;
+	DecimalTypeValue decimal_type_value;
 	bool has_decimal_type_value = false;
+	StringTypeValue string_type_value;
 	bool has_string_type_value = false;
+	UUIDTypeValue uuidtype_value;
 	bool has_uuidtype_value = false;
+	DateTypeValue date_type_value;
 	bool has_date_type_value = false;
+	TimeTypeValue time_type_value;
 	bool has_time_type_value = false;
+	TimestampTypeValue timestamp_type_value;
 	bool has_timestamp_type_value = false;
+	TimestampTzTypeValue timestamp_tz_type_value;
 	bool has_timestamp_tz_type_value = false;
+	TimestampNanoTypeValue timestamp_nano_type_value;
 	bool has_timestamp_nano_type_value = false;
+	TimestampTzNanoTypeValue timestamp_tz_nano_type_value;
 	bool has_timestamp_tz_nano_type_value = false;
+	FixedTypeValue fixed_type_value;
 	bool has_fixed_type_value = false;
+	BinaryTypeValue binary_type_value;
 	bool has_binary_type_value = false;
 };
 

@@ -30,25 +30,21 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
 			return "AssertViewUUID required property 'type' is missing";
 		} else {
 			type = yyjson_get_str(type_val);
 		}
-
 		auto uuid_val = yyjson_obj_get(obj, "uuid");
 		if (!uuid_val) {
 			return "AssertViewUUID required property 'uuid' is missing";
 		} else {
 			uuid = yyjson_get_str(uuid_val);
 		}
-
 		return string();
 	}
 
-public:
 public:
 	string type;
 	string uuid;

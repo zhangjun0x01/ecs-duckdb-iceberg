@@ -35,28 +35,23 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto view_version_id_val = yyjson_obj_get(obj, "view_version_id");
 		if (!view_version_id_val) {
 			return "SetCurrentViewVersionUpdate required property 'view_version_id' is missing";
 		} else {
 			view_version_id = yyjson_get_sint(view_version_id_val);
 		}
-
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			action = yyjson_get_str(action_val);
 		}
-
 		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-
-public:
-	string action;
 	int64_t view_version_id;
+	string action;
 };
 
 } // namespace rest_api_objects

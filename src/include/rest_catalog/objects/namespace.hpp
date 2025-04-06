@@ -30,19 +30,15 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(obj, idx, max, val) {
-
 			auto tmp = yyjson_get_str(val);
 			value.push_back(tmp);
 		}
-
 		return string();
 	}
 
-public:
 public:
 	vector<string> value;
 };

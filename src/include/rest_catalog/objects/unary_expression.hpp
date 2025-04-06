@@ -32,7 +32,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
 			return "UnaryExpression required property 'type' is missing";
@@ -42,7 +41,6 @@ public:
 				return error;
 			}
 		}
-
 		auto term_val = yyjson_obj_get(obj, "term");
 		if (!term_val) {
 			return "UnaryExpression required property 'term' is missing";
@@ -52,21 +50,18 @@ public:
 				return error;
 			}
 		}
-
 		auto value_val = yyjson_obj_get(obj, "value");
 		if (!value_val) {
 			return "UnaryExpression required property 'value' is missing";
 		} else {
 			value = value_val;
 		}
-
 		return string();
 	}
 
 public:
-public:
-	Term term;
 	ExpressionType type;
+	Term term;
 	yyjson_val *value;
 };
 

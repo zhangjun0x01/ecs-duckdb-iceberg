@@ -35,26 +35,21 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto default_sort_order_id_val = yyjson_obj_get(obj, "default_sort_order_id");
 		if (!default_sort_order_id_val) {
 			return "AssertDefaultSortOrderId required property 'default_sort_order_id' is missing";
 		} else {
 			default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
 		}
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			type = yyjson_get_str(type_val);
 		}
-
 		return string();
 	}
 
 public:
 	TableRequirement table_requirement;
-
-public:
 	int64_t default_sort_order_id;
 	string type;
 };

@@ -40,29 +40,24 @@ public:
 		if (error.empty()) {
 			has_commit_report = true;
 		}
-
 		if (!has_commit_report && !has_scan_report) {
 			return "ReportMetricsRequest failed to parse, none of the anyOf candidates matched";
 		}
-
 		auto report_type_val = yyjson_obj_get(obj, "report_type");
 		if (!report_type_val) {
 			return "ReportMetricsRequest required property 'report_type' is missing";
 		} else {
 			report_type = yyjson_get_str(report_type_val);
 		}
-
 		return string();
 	}
 
 public:
-	CommitReport commit_report;
 	ScanReport scan_report;
-
-public:
-	string report_type;
 	bool has_scan_report = false;
+	CommitReport commit_report;
 	bool has_commit_report = false;
+	string report_type;
 };
 
 } // namespace rest_api_objects

@@ -30,27 +30,22 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto removals_val = yyjson_obj_get(obj, "removals");
 		if (removals_val) {
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(removals_val, idx, max, val) {
-
 				auto tmp = yyjson_get_str(val);
 				removals.push_back(tmp);
 			}
 		}
-
 		auto updates_val = yyjson_obj_get(obj, "updates");
 		if (updates_val) {
 			updates = parse_object_of_strings(updates_val);
 		}
-
 		return string();
 	}
 
-public:
 public:
 	vector<string> removals;
 	case_insensitive_map_t<string> updates;

@@ -35,21 +35,17 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
 			return "AssertCreate required property 'type' is missing";
 		} else {
 			type = yyjson_get_str(type_val);
 		}
-
 		return string();
 	}
 
 public:
 	TableRequirement table_requirement;
-
-public:
 	string type;
 };
 

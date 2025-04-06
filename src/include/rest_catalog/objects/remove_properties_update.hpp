@@ -35,7 +35,6 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto removals_val = yyjson_obj_get(obj, "removals");
 		if (!removals_val) {
 			return "RemovePropertiesUpdate required property 'removals' is missing";
@@ -43,26 +42,21 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(removals_val, idx, max, val) {
-
 				auto tmp = yyjson_get_str(val);
 				removals.push_back(tmp);
 			}
 		}
-
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			action = yyjson_get_str(action_val);
 		}
-
 		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-
-public:
-	string action;
 	vector<string> removals;
+	string action;
 };
 
 } // namespace rest_api_objects

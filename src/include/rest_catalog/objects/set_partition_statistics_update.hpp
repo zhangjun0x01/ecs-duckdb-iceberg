@@ -36,7 +36,6 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto partition_statistics_val = yyjson_obj_get(obj, "partition_statistics");
 		if (!partition_statistics_val) {
 			return "SetPartitionStatisticsUpdate required property 'partition_statistics' is missing";
@@ -46,21 +45,17 @@ public:
 				return error;
 			}
 		}
-
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			action = yyjson_get_str(action_val);
 		}
-
 		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-
-public:
-	string action;
 	PartitionStatisticsFile partition_statistics;
+	string action;
 };
 
 } // namespace rest_api_objects

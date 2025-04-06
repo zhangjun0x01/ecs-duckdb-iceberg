@@ -36,7 +36,6 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto schema_val = yyjson_obj_get(obj, "schema");
 		if (!schema_val) {
 			return "AddSchemaUpdate required property 'schema' is missing";
@@ -46,27 +45,22 @@ public:
 				return error;
 			}
 		}
-
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			action = yyjson_get_str(action_val);
 		}
-
 		auto last_column_id_val = yyjson_obj_get(obj, "last_column_id");
 		if (last_column_id_val) {
 			last_column_id = yyjson_get_sint(last_column_id_val);
 		}
-
 		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-
-public:
+	Schema schema;
 	string action;
 	int64_t last_column_id;
-	Schema schema;
 };
 
 } // namespace rest_api_objects

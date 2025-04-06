@@ -31,7 +31,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto status_val = yyjson_obj_get(obj, "status");
 		if (!status_val) {
 			return "EmptyPlanningResult required property 'status' is missing";
@@ -41,11 +40,9 @@ public:
 				return error;
 			}
 		}
-
 		return string();
 	}
 
-public:
 public:
 	PlanStatus status;
 };

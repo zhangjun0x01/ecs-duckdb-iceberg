@@ -31,7 +31,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto source_val = yyjson_obj_get(obj, "source");
 		if (!source_val) {
 			return "RenameTableRequest required property 'source' is missing";
@@ -41,7 +40,6 @@ public:
 				return error;
 			}
 		}
-
 		auto destination_val = yyjson_obj_get(obj, "destination");
 		if (!destination_val) {
 			return "RenameTableRequest required property 'destination' is missing";
@@ -51,14 +49,12 @@ public:
 				return error;
 			}
 		}
-
 		return string();
 	}
 
 public:
-public:
-	TableIdentifier destination;
 	TableIdentifier source;
+	TableIdentifier destination;
 };
 
 } // namespace rest_api_objects

@@ -31,7 +31,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto _namespace_val = yyjson_obj_get(obj, "_namespace");
 		if (!_namespace_val) {
 			return "CreateNamespaceResponse required property '_namespace' is missing";
@@ -41,16 +40,13 @@ public:
 				return error;
 			}
 		}
-
 		auto properties_val = yyjson_obj_get(obj, "properties");
 		if (properties_val) {
 			properties = parse_object_of_strings(properties_val);
 		}
-
 		return string();
 	}
 
-public:
 public:
 	Namespace _namespace;
 	case_insensitive_map_t<string> properties;

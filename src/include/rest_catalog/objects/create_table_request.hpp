@@ -33,14 +33,12 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (!name_val) {
 			return "CreateTableRequest required property 'name' is missing";
 		} else {
 			name = yyjson_get_str(name_val);
 		}
-
 		auto schema_val = yyjson_obj_get(obj, "schema");
 		if (!schema_val) {
 			return "CreateTableRequest required property 'schema' is missing";
@@ -50,12 +48,10 @@ public:
 				return error;
 			}
 		}
-
 		auto location_val = yyjson_obj_get(obj, "location");
 		if (location_val) {
 			location = yyjson_get_str(location_val);
 		}
-
 		auto partition_spec_val = yyjson_obj_get(obj, "partition_spec");
 		if (partition_spec_val) {
 			error = partition_spec.TryFromJSON(partition_spec_val);
@@ -63,7 +59,6 @@ public:
 				return error;
 			}
 		}
-
 		auto write_order_val = yyjson_obj_get(obj, "write_order");
 		if (write_order_val) {
 			error = write_order.TryFromJSON(write_order_val);
@@ -71,29 +66,25 @@ public:
 				return error;
 			}
 		}
-
 		auto stage_create_val = yyjson_obj_get(obj, "stage_create");
 		if (stage_create_val) {
 			stage_create = yyjson_get_bool(stage_create_val);
 		}
-
 		auto properties_val = yyjson_obj_get(obj, "properties");
 		if (properties_val) {
 			properties = parse_object_of_strings(properties_val);
 		}
-
 		return string();
 	}
 
 public:
-public:
-	string location;
 	string name;
-	PartitionSpec partition_spec;
-	case_insensitive_map_t<string> properties;
 	Schema schema;
-	bool stage_create;
+	string location;
+	PartitionSpec partition_spec;
 	SortOrder write_order;
+	bool stage_create;
+	case_insensitive_map_t<string> properties;
 };
 
 } // namespace rest_api_objects

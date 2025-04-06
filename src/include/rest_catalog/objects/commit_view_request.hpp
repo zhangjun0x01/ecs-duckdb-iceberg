@@ -33,7 +33,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto updates_val = yyjson_obj_get(obj, "updates");
 		if (!updates_val) {
 			return "CommitViewRequest required property 'updates' is missing";
@@ -41,7 +40,6 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(updates_val, idx, max, val) {
-
 				ViewUpdate tmp;
 				error = tmp.TryFromJSON(val);
 				if (!error.empty()) {
@@ -50,7 +48,6 @@ public:
 				updates.push_back(tmp);
 			}
 		}
-
 		auto identifier_val = yyjson_obj_get(obj, "identifier");
 		if (identifier_val) {
 			error = identifier.TryFromJSON(identifier_val);
@@ -58,13 +55,11 @@ public:
 				return error;
 			}
 		}
-
 		auto requirements_val = yyjson_obj_get(obj, "requirements");
 		if (requirements_val) {
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(requirements_val, idx, max, val) {
-
 				ViewRequirement tmp;
 				error = tmp.TryFromJSON(val);
 				if (!error.empty()) {
@@ -73,15 +68,13 @@ public:
 				requirements.push_back(tmp);
 			}
 		}
-
 		return string();
 	}
 
 public:
-public:
+	vector<ViewUpdate> updates;
 	TableIdentifier identifier;
 	vector<ViewRequirement> requirements;
-	vector<ViewUpdate> updates;
 };
 
 } // namespace rest_api_objects

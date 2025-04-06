@@ -30,13 +30,10 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		value = yyjson_get_bool(obj);
-
 		return string();
 	}
 
-public:
 public:
 	bool value;
 };

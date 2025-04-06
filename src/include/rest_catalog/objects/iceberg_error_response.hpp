@@ -31,7 +31,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto _error_val = yyjson_obj_get(obj, "_error");
 		if (!_error_val) {
 			return "IcebergErrorResponse required property '_error' is missing";
@@ -41,11 +40,9 @@ public:
 				return error;
 			}
 		}
-
 		return string();
 	}
 
-public:
 public:
 	ErrorModel _error;
 };

@@ -39,14 +39,11 @@ public:
 			}
 			return "ViewRequirement failed to parse, none of the oneOf candidates matched";
 		} while (false);
-
 		return string();
 	}
 
 public:
 	AssertViewUUID assert_view_uuid;
-
-public:
 	bool has_assert_view_uuid = false;
 };
 

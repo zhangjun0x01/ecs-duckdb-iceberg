@@ -70,34 +70,30 @@ public:
 		if (error.empty()) {
 			has_set_current_view_version_update = true;
 		}
-
 		if (!has_add_schema_update && !has_add_view_version_update && !has_assign_uuidupdate &&
 		    !has_remove_properties_update && !has_set_current_view_version_update && !has_set_location_update &&
 		    !has_set_properties_update && !has_upgrade_format_version_update) {
 			return "ViewUpdate failed to parse, none of the anyOf candidates matched";
 		}
-
 		return string();
 	}
 
 public:
 	AssignUUIDUpdate assign_uuidupdate;
-	AddViewVersionUpdate add_view_version_update;
-	AddSchemaUpdate add_schema_update;
-	SetCurrentViewVersionUpdate set_current_view_version_update;
-	SetPropertiesUpdate set_properties_update;
-	RemovePropertiesUpdate remove_properties_update;
-	SetLocationUpdate set_location_update;
-	UpgradeFormatVersionUpdate upgrade_format_version_update;
-
-public:
 	bool has_assign_uuidupdate = false;
+	UpgradeFormatVersionUpdate upgrade_format_version_update;
 	bool has_upgrade_format_version_update = false;
+	AddSchemaUpdate add_schema_update;
 	bool has_add_schema_update = false;
+	SetLocationUpdate set_location_update;
 	bool has_set_location_update = false;
+	SetPropertiesUpdate set_properties_update;
 	bool has_set_properties_update = false;
+	RemovePropertiesUpdate remove_properties_update;
 	bool has_remove_properties_update = false;
+	AddViewVersionUpdate add_view_version_update;
 	bool has_add_view_version_update = false;
+	SetCurrentViewVersionUpdate set_current_view_version_update;
 	bool has_set_current_view_version_update = false;
 };
 

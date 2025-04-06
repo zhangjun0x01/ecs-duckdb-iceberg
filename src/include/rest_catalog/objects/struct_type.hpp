@@ -31,14 +31,12 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
 			return "StructType required property 'type' is missing";
 		} else {
 			type = yyjson_get_str(type_val);
 		}
-
 		auto fields_val = yyjson_obj_get(obj, "fields");
 		if (!fields_val) {
 			return "StructType required property 'fields' is missing";
@@ -46,7 +44,6 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(fields_val, idx, max, val) {
-
 				auto tmp_p = make_uniq<StructField>();
 				auto &tmp = *tmp_p;
 				error = tmp.TryFromJSON(val);
@@ -56,14 +53,12 @@ public:
 				fields.push_back(std::move(tmp_p));
 			}
 		}
-
 		return string();
 	}
 
 public:
-public:
-	vector<unique_ptr<StructField>> fields;
 	string type;
+	vector<unique_ptr<StructField>> fields;
 };
 
 } // namespace rest_api_objects

@@ -35,28 +35,23 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto spec_id_val = yyjson_obj_get(obj, "spec_id");
 		if (!spec_id_val) {
 			return "SetDefaultSpecUpdate required property 'spec_id' is missing";
 		} else {
 			spec_id = yyjson_get_sint(spec_id_val);
 		}
-
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (action_val) {
 			action = yyjson_get_str(action_val);
 		}
-
 		return string();
 	}
 
 public:
 	BaseUpdate base_update;
-
-public:
-	string action;
 	int64_t spec_id;
+	string action;
 };
 
 } // namespace rest_api_objects

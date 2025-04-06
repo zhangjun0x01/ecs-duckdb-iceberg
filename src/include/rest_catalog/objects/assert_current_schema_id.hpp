@@ -35,26 +35,21 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		auto current_schema_id_val = yyjson_obj_get(obj, "current_schema_id");
 		if (!current_schema_id_val) {
 			return "AssertCurrentSchemaId required property 'current_schema_id' is missing";
 		} else {
 			current_schema_id = yyjson_get_sint(current_schema_id_val);
 		}
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (type_val) {
 			type = yyjson_get_str(type_val);
 		}
-
 		return string();
 	}
 
 public:
 	TableRequirement table_requirement;
-
-public:
 	int64_t current_schema_id;
 	string type;
 };

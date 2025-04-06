@@ -75,26 +75,23 @@ public:
 			}
 			return "Expression failed to parse, none of the oneOf candidates matched";
 		} while (false);
-
 		return string();
 	}
 
 public:
-	SetExpression set_expression;
-	FalseExpression false_expression;
-	LiteralExpression literal_expression;
-	AndOrExpression and_or_expression;
 	TrueExpression true_expression;
-	UnaryExpression unary_expression;
-	NotExpression not_expression;
-
-public:
 	bool has_true_expression = false;
+	FalseExpression false_expression;
 	bool has_false_expression = false;
+	AndOrExpression and_or_expression;
 	bool has_and_or_expression = false;
+	NotExpression not_expression;
 	bool has_not_expression = false;
+	SetExpression set_expression;
 	bool has_set_expression = false;
+	LiteralExpression literal_expression;
 	bool has_literal_expression = false;
+	UnaryExpression unary_expression;
 	bool has_unary_expression = false;
 };
 

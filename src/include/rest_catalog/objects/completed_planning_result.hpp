@@ -18,8 +18,6 @@ class CompletedPlanningResult {
 public:
 	CompletedPlanningResult() {
 	}
-
-public:
 	class Object5 {
 	public:
 		Object5() {
@@ -38,7 +36,6 @@ public:
 	public:
 		string TryFromJSON(yyjson_val *obj) {
 			string error;
-
 			auto status_val = yyjson_obj_get(obj, "status");
 			if (!status_val) {
 				return "Object5 required property 'status' is missing";
@@ -48,11 +45,9 @@ public:
 					return error;
 				}
 			}
-
 			return string();
 		}
 
-	public:
 	public:
 		PlanStatus status;
 	};
@@ -78,15 +73,12 @@ public:
 		if (!error.empty()) {
 			return error;
 		}
-
 		return string();
 	}
 
 public:
-	Object5 object_5;
 	ScanTasks scan_tasks;
-
-public:
+	Object5 object_5;
 };
 
 } // namespace rest_api_objects

@@ -30,18 +30,15 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto action_val = yyjson_obj_get(obj, "action");
 		if (!action_val) {
 			return "BaseUpdate required property 'action' is missing";
 		} else {
 			action = yyjson_get_str(action_val);
 		}
-
 		return string();
 	}
 
-public:
 public:
 	string action;
 };

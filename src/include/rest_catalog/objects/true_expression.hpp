@@ -31,7 +31,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
 			return "TrueExpression required property 'type' is missing";
@@ -41,11 +40,9 @@ public:
 				return error;
 			}
 		}
-
 		return string();
 	}
 
-public:
 public:
 	ExpressionType type;
 };

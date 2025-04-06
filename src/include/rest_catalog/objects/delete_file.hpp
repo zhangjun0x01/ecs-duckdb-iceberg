@@ -45,16 +45,13 @@ public:
 			}
 			return "DeleteFile failed to parse, none of the oneOf candidates matched";
 		} while (false);
-
 		return string();
 	}
 
 public:
-	EqualityDeleteFile equality_delete_file;
 	PositionDeleteFile position_delete_file;
-
-public:
 	bool has_position_delete_file = false;
+	EqualityDeleteFile equality_delete_file;
 	bool has_equality_delete_file = false;
 };
 

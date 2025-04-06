@@ -30,13 +30,10 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		value = yyjson_get_sint(obj);
-
 		return string();
 	}
 
-public:
 public:
 	int64_t value;
 };

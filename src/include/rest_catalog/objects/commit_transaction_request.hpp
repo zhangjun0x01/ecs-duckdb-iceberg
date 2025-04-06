@@ -31,7 +31,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto table_changes_val = yyjson_obj_get(obj, "table_changes");
 		if (!table_changes_val) {
 			return "CommitTransactionRequest required property 'table_changes' is missing";
@@ -39,7 +38,6 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(table_changes_val, idx, max, val) {
-
 				CommitTableRequest tmp;
 				error = tmp.TryFromJSON(val);
 				if (!error.empty()) {
@@ -48,11 +46,9 @@ public:
 				table_changes.push_back(tmp);
 			}
 		}
-
 		return string();
 	}
 
-public:
 public:
 	vector<CommitTableRequest> table_changes;
 };

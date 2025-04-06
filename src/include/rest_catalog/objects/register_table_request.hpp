@@ -30,33 +30,28 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto name_val = yyjson_obj_get(obj, "name");
 		if (!name_val) {
 			return "RegisterTableRequest required property 'name' is missing";
 		} else {
 			name = yyjson_get_str(name_val);
 		}
-
 		auto metadata_location_val = yyjson_obj_get(obj, "metadata_location");
 		if (!metadata_location_val) {
 			return "RegisterTableRequest required property 'metadata_location' is missing";
 		} else {
 			metadata_location = yyjson_get_str(metadata_location_val);
 		}
-
 		auto overwrite_val = yyjson_obj_get(obj, "overwrite");
 		if (overwrite_val) {
 			overwrite = yyjson_get_bool(overwrite_val);
 		}
-
 		return string();
 	}
 
 public:
-public:
-	string metadata_location;
 	string name;
+	string metadata_location;
 	bool overwrite;
 };
 

@@ -31,21 +31,18 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto type_val = yyjson_obj_get(obj, "type");
 		if (!type_val) {
 			return "ListType required property 'type' is missing";
 		} else {
 			type = yyjson_get_str(type_val);
 		}
-
 		auto element_id_val = yyjson_obj_get(obj, "element_id");
 		if (!element_id_val) {
 			return "ListType required property 'element_id' is missing";
 		} else {
 			element_id = yyjson_get_sint(element_id_val);
 		}
-
 		auto element_val = yyjson_obj_get(obj, "element");
 		if (!element_val) {
 			return "ListType required property 'element' is missing";
@@ -56,23 +53,20 @@ public:
 				return error;
 			}
 		}
-
 		auto element_required_val = yyjson_obj_get(obj, "element_required");
 		if (!element_required_val) {
 			return "ListType required property 'element_required' is missing";
 		} else {
 			element_required = yyjson_get_bool(element_required_val);
 		}
-
 		return string();
 	}
 
 public:
-public:
-	unique_ptr<Type> element;
-	int64_t element_id;
-	bool element_required;
 	string type;
+	int64_t element_id;
+	unique_ptr<Type> element;
+	bool element_required;
 };
 
 } // namespace rest_api_objects

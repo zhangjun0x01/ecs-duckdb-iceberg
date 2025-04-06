@@ -7,7 +7,7 @@ from parse_openapi_spec import (
     ObjectProperty,
 )
 import os
-from typing import Dict, List, Set, Optional, cast
+from typing import Dict, List, Set, Optional, cast, Callable
 from enum import Enum, auto
 from dataclasses import dataclass, field
 
@@ -86,62 +86,14 @@ namespace rest_api_objects {{
 
 """
 
-CLASS_FORMAT = """
-class {CLASS_NAME} {{
-public:
-    {CLASS_NAME}() {{}}
-{NESTED_CLASSES}
-public:
-    static {CLASS_NAME} FromJSON(yyjson_val *obj) {{
-        {CLASS_NAME} res;
-        auto error = res.TryFromJSON(obj);
-        if (!error.empty()) {{
-            throw InvalidInputException(error);
-        }}
-        return res;
-    }}
-public:
-    string TryFromJSON(yyjson_val *obj) {{
-        string error;
-{BASE_CLASS_PARSING}
-{REQUIRED_PROPERTIES}
-{OPTIONAL_PROPERTIES}
-{ADDITIONAL_PROPERTIES}
-        return string();
-    }}
-public:
-{BASE_CLASS_VARIABLES}
-public:
-{PROPERTY_VARIABLES}
-}};
-"""
-
-"""
-    SnapshotReference tmp;
-    error = tmp.TryFromJSON(val);
-    if (!error.empty()) {
-        return error;
-    }
-"""
-
-ADDITIONAL_PROPERTIES_FORMAT = """
-{HANDLED_PROPERTIES}
-size_t idx, max;
-yyjson_val *key, *val;
-yyjson_obj_foreach(obj, idx, max, key, val) {{
-    auto key_str = yyjson_get_str(key);
-    {SKIP_HANDLED_PROPERTIES}
-    {PARSE_PROPERTY}
-    additional_properties[key_str] = tmp;
-}}
-"""
-
 
 @dataclass
 class ParseInfo:
     """Data taken from the parser"""
 
     recursive_schemas: Set[str]
+    schemas: dict
+    parsed_schemas: Dict[str, Property]
 
 
 @dataclass
@@ -197,68 +149,67 @@ class AdditionalProperty:
 
 
 class CPPClass:
-    def __init__(self, class_name):
+    def __init__(self, class_name, parse_info: ParseInfo):
         self.name = class_name
+        self.parse_info = parse_info
         # The base classes that make up this class
         self.one_of: List[OneOf] = []
         self.all_of: List[AllOf] = []
         self.any_of: List[AnyOf] = []
 
         # Parsing code of the TryFromJSON method
-        self.required_properties: Dict[str, Variable] = {}
-        self.optional_properties: Dict[str, Variable] = {}
-        self.additional_properties: Optional[Variable] = None
+        self.required_properties: Dict[str, RequiredProperty] = {}
+        self.optional_properties: Dict[str, OptionalProperty] = {}
+        self.additional_properties: Optional[AdditionalProperty] = None
 
         # Nested classes of this class (referenced by variables)
         self.nested_classes: Dict[str, "CPPClass"] = {}
         # (member) variables of the class
         self.variables: List[str] = []
+        self.referenced_schemas: Set[str] = set()
+        self.try_from_json_body: List[str] = []
 
-    def from_object_property(self, schema: ObjectProperty, parse_info: ParseInfo):
+    def get_all_referenced_schemas(self) -> Set[str]:
+        res = set()
+        res.update(self.referenced_schemas)
+        for item in self.nested_classes.values():
+            res.update(item.get_all_referenced_schemas())
+        return res
+
+    def from_object_property(self, schema: ObjectProperty):
         assert schema.type == Property.Type.OBJECT
         object_property = cast(ObjectProperty, schema)
 
         # Parse any base classes required for the schema (anyOf, allOf, oneOf)
-        self.generate_all_of(schema, parse_info)
-        self.generate_one_of(schema, parse_info)
-        self.generate_any_of(schema, parse_info)
+        self.generate_all_of(schema)
+        self.generate_one_of(schema)
+        self.generate_any_of(schema)
 
-        # base_class_parsing = []
-        # if all_of_parsing:
-        #    base_class_parsing.append(all_of_parsing)
-        # if one_of_parsing:
-        #    base_class_parsing.append(one_of_parsing)
-        # if any_of_parsing:
-        #    base_class_parsing.append(any_of_parsing)
+        required = object_property.required
+        if not required:
+            required = []
+        remaining_properties = [x for x in object_property.properties if x not in required]
 
-        # referenced_schemas.update(base_classes)
+        required_properties = {}
+        optional_properties = {}
+        for item in remaining_properties:
+            optional_properties[item] = object_property.properties[item]
+        for item in required:
+            required_properties[item] = object_property.properties[item]
 
-        # required = object_property.required
-        # if not required:
-        #    required = []
-        # remaining_properties = [x for x in object_property.properties if x not in required]
+        self.generate_required_properties(name, required_properties)
+        self.generate_optional_properties(name, optional_properties)
+        self.generate_additional_properties(object_property.properties.keys(), object_property.additional_properties)
 
-        # required_properties = {}
-        # optional_properties = {}
-        # for item in remaining_properties:
-        #    optional_properties[item] = object_property.properties[item]
-        # for item in required:
-        #    required_properties[item] = object_property.properties[item]
+        res = []
+        for _, item in self.required_properties.items():
+            res.extend([f'\t\t{x}' for x in self.write_required_property(item)])
+        for _, item in self.optional_properties.items():
+            res.extend([f'\t\t{x}' for x in self.write_optional_property(item)])
+        res.extend([f'\t\t{x}' for x in self.write_additional_properties()])
+        self.try_from_json_body = res
 
-        # required_property_parsing = self.generate_required_properties(name, required_properties, referenced_schemas)
-        # required_property_parsing = '\n'.join([f'\t{x}' for x in required_property_parsing.split('\n')])
-
-        # optional_property_parsing = self.generate_optional_properties(name, optional_properties, referenced_schemas)
-        # optional_property_parsing = '\n'.join([f'\t{x}' for x in optional_property_parsing.split('\n')])
-
-        # additional_property_parsing = self.generate_additional_properties(
-        #    object_property.properties.keys(), object_property.additional_properties, referenced_schemas
-        # )
-        # additional_property_parsing = '\n'.join([f'\t{x}' for x in additional_property_parsing.split('\n')])
-
-        # if any([x.startswith('Object') for x in referenced_schemas]):
-        #    print("referenced_schemas", referenced_schemas)
-
+        self.generate_nested_class_definitions()
         # base_class_variables = []
         # for item in base_classes:
         #    base_class = self.parsed_schemas[item]
@@ -295,65 +246,38 @@ class CPPClass:
         #    PROPERTY_VARIABLES='\n'.join(variable_definitions),
         # )
 
-    def from_array_property(self, schema: ArrayProperty, parse_info: ParseInfo):
-        pass
-        # assert schema.type == Property.Type.ARRAY
-        # array_property = cast(ArrayProperty, schema)
+    def from_array_property(self, schema: ArrayProperty):
+        assert schema.type == Property.Type.ARRAY
+        array_property = cast(ArrayProperty, schema)
 
-        # assert not array_property.all_of
-        # assert not array_property.one_of
-        # assert not array_property.any_of
+        assert not array_property.all_of
+        assert not array_property.one_of
+        assert not array_property.any_of
 
-        # body = self.generate_array_loop('obj', 'value', array_property.item_type, referenced_schemas)
+        self.try_from_json_body = self.generate_array_loop('obj', 'value', array_property.item_type)
 
-        # nested_classes = self.generate_nested_class_definitions(referenced_schemas)
+        nested_classes = self.generate_nested_class_definitions()
 
-        # variable_type = self.generate_variable_type(schema)
-        # variable_definition = f'\t{variable_type} value;'
+        variable_type = self.generate_variable_type(schema)
+        self.variables.append(f'\t{variable_type} value;')
 
-        # body = '\n'.join([f'\t{x}' for x in body.split('\n')])
-        # class_definition = CLASS_FORMAT.format(
-        #    CLASS_NAME=name,
-        #    NESTED_CLASSES=nested_classes,
-        #    BASE_CLASS_PARSING='',
-        #    REQUIRED_PROPERTIES=body,
-        #    OPTIONAL_PROPERTIES='',
-        #    ADDITIONAL_PROPERTIES='',
-        #    BASE_CLASS_VARIABLES='',
-        #    PROPERTY_VARIABLES=variable_definition,
-        # )
+    def from_primitive_property(self, schema: PrimitiveProperty):
+        assert not schema.all_of
+        assert not schema.one_of
+        assert not schema.any_of
 
-    def from_primitive_property(self, schema: PrimitiveProperty, parse_info: ParseInfo):
-        pass
-        # assert not schema.all_of
-        # assert not schema.one_of
-        # assert not schema.any_of
+        self.try_from_json_body = self.generate_assignment(schema, 'value', 'obj')
 
-        ## TODO: implement this
+        variable_type = self.generate_variable_type(schema)
+        self.variables.append(f'\t{variable_type} value;')
 
-        # variable_parsing = self.generate_assignment(schema, 'value', 'obj', referenced_schemas)
-
-        # variable_type = self.generate_variable_type(schema)
-        # variable_definition = f'\t{variable_type} value;'
-
-        # class_definition = CLASS_FORMAT.format(
-        #    CLASS_NAME=name,
-        #    NESTED_CLASSES='',
-        #    BASE_CLASS_PARSING='',
-        #    REQUIRED_PROPERTIES=variable_parsing,
-        #    OPTIONAL_PROPERTIES='',
-        #    ADDITIONAL_PROPERTIES='',
-        #    BASE_CLASS_VARIABLES='',
-        #    PROPERTY_VARIABLES=variable_definition,
-        # )
-
-    def from_property(self, schema: Property, parse_info: ParseInfo) -> None:
+    def from_property(self, schema: Property) -> None:
         if schema.type == Property.Type.OBJECT:
-            self.from_object_property(schema, parse_info)
+            self.from_object_property(schema)
         elif schema.type == Property.Type.ARRAY:
-            self.from_array_property(schema, parse_info)
+            self.from_array_property(schema)
         elif schema.type == Property.Type.PRIMITIVE:
-            self.from_primitive_property(schema, parse_info)
+            self.from_primitive_property(schema)
         else:
             print(f"Unrecognized 'from_property' type {schema.type}")
             exit(1)
@@ -368,7 +292,7 @@ class CPPClass:
                 '} else {',
             ]
         )
-        res.extend(required_property.body)
+        res.extend([f'\t{x}' for x in required_property.body])
         res.append('}')
         return res
 
@@ -380,14 +304,16 @@ class CPPClass:
                 f'if ({optional_property.name}_val) {{',
             ]
         )
-        res.extend(optional_property.body)
+        res.extend([f'\t{x}' for x in optional_property.body])
         res.append('}')
         return res
 
-    def write_additional_properties(self, additional_property: AdditionalProperty) -> List[str]:
+    def write_additional_properties(self) -> List[str]:
+        if not self.additional_properties:
+            return []
         res = []
 
-        res.extend(additional_property.exclude_list)
+        res.extend(self.additional_properties.exclude_list)
         res.extend(
             [
                 'size_t idx, max;',
@@ -395,9 +321,9 @@ class CPPClass:
                 'yyjson_obj_foreach(obj, idx, max, key, val) {',
             ]
         )
-        res.extend(additional_property.skip_if_excluded)
+        res.extend(self.additional_properties.skip_if_excluded)
         res.append('\tauto key_str = yyjson_get_str(key);')
-        res.extend(additional_property.body)
+        res.extend(self.additional_properties.body)
         res.extend(
             [
                 '\tadditional_properties[key_str] = tmp;',
@@ -448,8 +374,7 @@ class CPPClass:
             return []
         res = []
 
-        all_options = [f'!has_{item.name}' for item in self.any_of]
-        sort(all_options)
+        all_options = sorted([f'!has_{item.name}' for item in self.any_of])
         condition = ' && '.join(all_options)
 
         for item in self.any_of:
@@ -472,53 +397,95 @@ class CPPClass:
         )
         return res
 
-    def write_class(self) -> List[str]:
-        pass
+    def write_nested_classes(self) -> List[str]:
+        if not self.nested_classes:
+            return []
+        res = []
+        for item, nested_class in self.nested_classes.items():
+            res.extend(nested_class.write_class())
+        return [f'\t{x}' for x in res]
 
-    def generate_all_of(self, property: Property, parse_info: ParseInfo):
+    def write_variables(self) -> List[str]:
+        res = []
+        if self.variables:
+            res.append('public:')
+            res.extend(self.variables)
+        return res
+
+    def write_class(self) -> List[str]:
+        res = []
+        res.extend([f'class {self.name} {{', 'public:', f'\t{self.name}() {{}}'])
+        res.extend(self.write_nested_classes())
+        res.extend(
+            [
+                'public:',
+                f'\tstatic {self.name} FromJSON(yyjson_val *obj) {{',
+                f'\t\t{self.name} res;',
+                '\t\tauto error = res.TryFromJSON(obj);',
+                '\t\tif (!error.empty()) {',
+                '\t\t\tthrow InvalidInputException(error);',
+                '\t\t}',
+                '\t\treturn res;',
+                '\t}',
+                'public:',
+                '\tstring TryFromJSON(yyjson_val *obj) {',
+                '\t\tstring error;',
+            ]
+        )
+        res.extend(self.write_one_of())
+        res.extend(self.write_all_of())
+        res.extend(self.write_any_of())
+        res.extend(self.try_from_json_body)
+        res.extend(['\t\treturn string();', '\t}'])
+        res.extend(self.write_variables())
+        res.append('};')
+        return res
+
+    def generate_all_of(self, property: Property):
         if not property.all_of:
             return
         for item in property.all_of:
             assert item.type == Property.Type.SCHEMA_REFERENCE
+            self.referenced_schemas.add(item.ref)
 
             class_name = item.ref
             property_name = to_snake_case(class_name)
-            dereference_style = '->' if item.ref in parse_info.recursive_schemas else '.'
+            dereference_style = '->' if item.ref in self.parse_info.recursive_schemas else '.'
 
             self.all_of.append(AllOf(name=property_name, dereference_style=dereference_style, class_name=class_name))
             self.variables.append(f'\t{item.ref} {property_name};')
 
-    def generate_any_of(self, property: Property, parse_info: ParseInfo):
+    def generate_any_of(self, property: Property):
         if not property.any_of:
             return
         for item in property.any_of:
             assert item.type == Property.Type.SCHEMA_REFERENCE
+            self.referenced_schemas.add(item.ref)
 
             class_name = item.ref
             property_name = to_snake_case(class_name)
-            dereference_style = '->' if item.ref in parse_info.recursive_schemas else '.'
+            dereference_style = '->' if item.ref in self.parse_info.recursive_schemas else '.'
 
             self.any_of.append(AnyOf(name=property_name, dereference_style=dereference_style, class_name=class_name))
             self.variables.append(f'\t{item.ref} {property_name};')
             self.variables.append(f'\tbool has_{property_name} = false;')
 
-    def generate_one_of(self, property: Property, parse_info: ParseInfo):
+    def generate_one_of(self, property: Property):
         if not property.one_of:
             return
         for item in property.one_of:
             assert item.type == Property.Type.SCHEMA_REFERENCE
+            self.referenced_schemas.add(item.ref)
 
             class_name = item.ref
             property_name = to_snake_case(class_name)
-            dereference_style = '->' if item.ref in parse_info.recursive_schemas else '.'
+            dereference_style = '->' if item.ref in self.parse_info.recursive_schemas else '.'
 
             self.one_of.append(OneOf(name=property_name, dereference_style=dereference_style, class_name=class_name))
             self.variables.append(f'\t{item.ref} {property_name};')
             self.variables.append(f'\tbool has_{property_name} = false;')
 
-    def generate_array_loop(
-        self, array_name, destination_name, item_type: Property, referenced_schemas: set
-    ) -> List[str]:
+    def generate_array_loop(self, array_name, destination_name, item_type: Property) -> List[str]:
         res = []
         res.append('size_t idx, max;')
         res.append('yyjson_val *val;')
@@ -526,13 +493,13 @@ class CPPClass:
 
         assignment = 'tmp'
         if item_type.type != Property.Type.SCHEMA_REFERENCE:
-            item_parse = self.generate_item_parse(item_type, 'val', referenced_schemas)
+            item_parse = self.generate_item_parse(item_type, 'val')
             res.append(f'\tauto tmp = {item_parse};')
         else:
             schema_property = cast(SchemaReferenceProperty, item_type)
-            referenced_schemas.add(schema_property.ref)
+            self.referenced_schemas.add(schema_property.ref)
             item_definition = ''
-            if schema_property.ref in self.recursive_schemas:
+            if schema_property.ref in self.parse_info.recursive_schemas:
                 res.extend([f'\tauto tmp_p = make_uniq<{schema_property.ref}>();' '\tauto &tmp = *tmp_p;'])
                 assignment = 'std::move(tmp_p)'
             else:
@@ -542,7 +509,7 @@ class CPPClass:
         res.append('}')
         return res
 
-    def generate_item_parse(self, property: Property, source: str, referenced_schemas: set) -> str:
+    def generate_item_parse(self, property: Property, source: str) -> str:
         if property.type == Property.Type.SCHEMA_REFERENCE:
             print(f"Unrecognized property type {property.type}, {source}")
             exit(1)
@@ -582,16 +549,16 @@ class CPPClass:
             print(f"Unrecognized type in 'generate_item_parse', {property.type}")
             exit(1)
 
-    def generate_assignment(self, schema: Property, target: str, source: str, referenced_schemas: set) -> List[str]:
+    def generate_assignment(self, schema: Property, target: str, source: str) -> List[str]:
         if schema.type == Property.Type.ARRAY:
             array_property = cast(ArrayProperty, schema)
-            return self.generate_array_loop(source, target, array_property.item_type, referenced_schemas)
+            return self.generate_array_loop(source, target, array_property.item_type)
         elif schema.type == Property.Type.SCHEMA_REFERENCE:
             schema_property = cast(SchemaReferenceProperty, schema)
-            referenced_schemas.add(schema_property.ref)
+            self.referenced_schemas.add(schema_property.ref)
             result = []
             dereference_style = '.'
-            if schema_property.ref in self.recursive_schemas:
+            if schema_property.ref in self.parse_info.recursive_schemas:
                 result.append(f'{target} = make_uniq<{schema_property.ref}>();')
                 dereference_style = '->'
             result.extend(
@@ -604,38 +571,32 @@ class CPPClass:
             )
             return result
         else:
-            item_parse = self.generate_item_parse(schema, source, referenced_schemas)
+            item_parse = self.generate_item_parse(schema, source)
             return [f'{target} = {item_parse};']
 
-    def generate_optional_properties(self, name: str, properties: Dict[str, Property], referenced_schemas: set):
+    def generate_optional_properties(self, name: str, properties: Dict[str, Property]):
         if not properties:
             return
         res = []
         for item, optional_property in properties.items():
             variable_name = safe_cpp_name(item)
-            body = self.generate_assignment(
-                optional_property, variable_name, f'{variable_name}_val', referenced_schemas
-            )
-            self.required_properties.append(OptionalProperty(name=variable_name, body=body))
+            body = self.generate_assignment(optional_property, variable_name, f'{variable_name}_val')
+            self.optional_properties[item] = OptionalProperty(name=variable_name, body=body)
             variable_type = self.generate_variable_type(optional_property)
             self.variables.append(f'\t{variable_type} {variable_name};')
 
-    def generate_required_properties(self, name: str, properties: Dict[str, Property], referenced_schemas: set):
+    def generate_required_properties(self, name: str, properties: Dict[str, Property]):
         if not properties:
             return
         res = []
         for item, required_property in properties.items():
             variable_name = safe_cpp_name(item)
-            body = self.generate_assignment(
-                required_property, variable_name, f'{variable_name}_val', referenced_schemas
-            )
-            self.required_properties.append(RequiredProperty(name=variable_name, body=body))
+            body = self.generate_assignment(required_property, variable_name, f'{variable_name}_val')
+            self.required_properties[item] = RequiredProperty(name=variable_name, body=body)
             variable_type = self.generate_variable_type(required_property)
             self.variables.append(f'\t{variable_type} {variable_name};')
 
-    def generate_additional_properties(
-        self, properties: List[str], additional_properties: Property, referenced_schemas: set
-    ):
+    def generate_additional_properties(self, properties: List[str], additional_properties: Property):
         if not additional_properties:
             return
 
@@ -644,7 +605,7 @@ class CPPClass:
         if properties:
             exclude_list = [
                 'case_insensitive_set_t handled_properties {',
-                f"""\t\t{', '.join(f'"{x}"' for x in properties)}""" '}',
+                f"""\t\t{', '.join(f'"{x}"' for x in properties)} }}""",
             ]
             skip_if_excluded = [
                 '\tif (handled_properties.count(key_str)) {',
@@ -654,12 +615,12 @@ class CPPClass:
 
         body = []
         if additional_properties.type != Property.Type.SCHEMA_REFERENCE:
-            item_definition = self.generate_item_parse(additional_properties, 'val', referenced_schemas)
+            item_definition = self.generate_item_parse(additional_properties, 'val')
             body.append(f'\tauto tmp = {item_definition};')
         else:
             schema_property = cast(SchemaReferenceProperty, additional_properties)
-            referenced_schemas.add(schema_property.ref)
-            if schema_property.ref in self.recursive_schemas:
+            self.referenced_schemas.add(schema_property.ref)
+            if schema_property.ref in self.parse_info.recursive_schemas:
                 print(f"Encountered recursive schema '{schema_property.ref}' in 'generate_additional_properties'")
                 exit(1)
             body.append(f'\t{schema_property.ref} tmp;')
@@ -709,26 +670,20 @@ class CPPClass:
                 exit(1)
         elif schema.type == Property.Type.SCHEMA_REFERENCE:
             schema_property = cast(SchemaReferenceProperty, schema)
-            if schema_property.ref in self.recursive_schemas:
+            if schema_property.ref in self.parse_info.recursive_schemas:
                 return f'unique_ptr<{schema_property.ref}>'
             return schema_property.ref
         else:
             print(f"Unrecognized 'generate_variable_type' type {schema.type}")
             exit(1)
 
-    # def generate_nested_class_definitions(self, referenced_schemas: set):
-    #    generated_schemas_referenced = [x for x in referenced_schemas if x not in self.schemas]
-    #    nested_classes = []
-    #    for item in generated_schemas_referenced:
-    #        parsed_schema = self.parsed_schemas[item]
-    #        content = self.generate_class(parsed_schema, item, referenced_schemas)
-    #        nested_classes.append(content)
-
-    #    if not nested_classes:
-    #        return ''
-    #    nested_classes = '\n'.join(nested_classes)
-    #    nested_classes = '\n'.join([f'\t{x}' for x in nested_classes.split('\n')])
-    #    return 'public:\n' + nested_classes
+    def generate_nested_class_definitions(self):
+        generated_schemas_referenced = [x for x in self.referenced_schemas if x not in self.parse_info.schemas]
+        for item in generated_schemas_referenced:
+            parsed_schema = self.parse_info.parsed_schemas[item]
+            nested_class = CPPClass(item, self.parse_info)
+            nested_class.from_property(parsed_schema)
+            self.nested_classes[item] = nested_class
 
     # def generate_schema(self, schema: Property, name: str):
     #    referenced_schemas = set()
@@ -759,15 +714,29 @@ if __name__ == '__main__':
             lines.append(f'#include "rest_catalog/objects/{to_snake_case(name)}.hpp"')
         f.write('\n'.join(lines))
 
-    parse_info = ParseInfo(recursive_schemas=openapi_parser.recursive_schemas)
+    parse_info = ParseInfo(
+        recursive_schemas=openapi_parser.recursive_schemas,
+        schemas=openapi_parser.schemas,
+        parsed_schemas=openapi_parser.parsed_schemas,
+    )
 
     for name in openapi_parser.schemas:
         schema = openapi_parser.parsed_schemas[name]
 
-        cpp_class = CPPClass(name)
-        cpp_class.from_property(schema, parse_info)
+        cpp_class = CPPClass(name, parse_info)
+        cpp_class.from_property(schema)
 
-        # output_path = os.path.join(OUTPUT_DIR, f'{to_snake_case(name)}.hpp')
-        # with open(output_path, 'w') as f:
-        #    file_content = ''
-        #    f.write(file_content)
+        content = cpp_class.write_class()
+        referenced_schemas = cpp_class.get_all_referenced_schemas()
+        include_schemas = [x for x in referenced_schemas if x in parse_info.schemas]
+        additional_headers = [
+            f'#include "rest_catalog/objects/{to_snake_case(x)}.hpp"' for x in sorted(list(include_schemas))
+        ]
+
+        file_content = HEADER_FORMAT.format(
+            ADDITIONAL_HEADERS='\n'.join(additional_headers), CLASS_DEFINITION='\n'.join(content)
+        )
+
+        output_path = os.path.join(OUTPUT_DIR, f'{to_snake_case(name)}.hpp')
+        with open(output_path, 'w') as f:
+            f.write(file_content)

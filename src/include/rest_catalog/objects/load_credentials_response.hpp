@@ -31,7 +31,6 @@ public:
 public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
-
 		auto storage_credentials_val = yyjson_obj_get(obj, "storage_credentials");
 		if (!storage_credentials_val) {
 			return "LoadCredentialsResponse required property 'storage_credentials' is missing";
@@ -39,7 +38,6 @@ public:
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(storage_credentials_val, idx, max, val) {
-
 				StorageCredential tmp;
 				error = tmp.TryFromJSON(val);
 				if (!error.empty()) {
@@ -48,11 +46,9 @@ public:
 				storage_credentials.push_back(tmp);
 			}
 		}
-
 		return string();
 	}
 
-public:
 public:
 	vector<StorageCredential> storage_credentials;
 };
