@@ -37,37 +37,37 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 		do {
-			error = base_true_expression.TryFromJSON(obj);
+			error = true_expression.TryFromJSON(obj);
 			if (error.empty()) {
 				has_true_expression = true;
 				break;
 			}
-			error = base_false_expression.TryFromJSON(obj);
+			error = false_expression.TryFromJSON(obj);
 			if (error.empty()) {
 				has_false_expression = true;
 				break;
 			}
-			error = base_and_or_expression.TryFromJSON(obj);
+			error = and_or_expression.TryFromJSON(obj);
 			if (error.empty()) {
 				has_and_or_expression = true;
 				break;
 			}
-			error = base_not_expression.TryFromJSON(obj);
+			error = not_expression.TryFromJSON(obj);
 			if (error.empty()) {
 				has_not_expression = true;
 				break;
 			}
-			error = base_set_expression.TryFromJSON(obj);
+			error = set_expression.TryFromJSON(obj);
 			if (error.empty()) {
 				has_set_expression = true;
 				break;
 			}
-			error = base_literal_expression.TryFromJSON(obj);
+			error = literal_expression.TryFromJSON(obj);
 			if (error.empty()) {
 				has_literal_expression = true;
 				break;
 			}
-			error = base_unary_expression.TryFromJSON(obj);
+			error = unary_expression.TryFromJSON(obj);
 			if (error.empty()) {
 				has_unary_expression = true;
 				break;
@@ -79,15 +79,22 @@ public:
 	}
 
 public:
-	TrueExpression true_expression;
-	UnaryExpression unary_expression;
-	FalseExpression false_expression;
 	NotExpression not_expression;
+	UnaryExpression unary_expression;
+	TrueExpression true_expression;
 	SetExpression set_expression;
 	LiteralExpression literal_expression;
+	FalseExpression false_expression;
 	AndOrExpression and_or_expression;
 
 public:
+	bool has_true_expression = false;
+	bool has_false_expression = false;
+	bool has_and_or_expression = false;
+	bool has_not_expression = false;
+	bool has_set_expression = false;
+	bool has_literal_expression = false;
+	bool has_unary_expression = false;
 };
 
 } // namespace rest_api_objects

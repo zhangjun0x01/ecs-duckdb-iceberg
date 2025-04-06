@@ -34,22 +34,22 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 		do {
-			error = base_primitive_type.TryFromJSON(obj);
+			error = primitive_type.TryFromJSON(obj);
 			if (error.empty()) {
 				has_primitive_type = true;
 				break;
 			}
-			error = base_struct_type.TryFromJSON(obj);
+			error = struct_type.TryFromJSON(obj);
 			if (error.empty()) {
 				has_struct_type = true;
 				break;
 			}
-			error = base_list_type.TryFromJSON(obj);
+			error = list_type.TryFromJSON(obj);
 			if (error.empty()) {
 				has_list_type = true;
 				break;
 			}
-			error = base_map_type.TryFromJSON(obj);
+			error = map_type.TryFromJSON(obj);
 			if (error.empty()) {
 				has_map_type = true;
 				break;
@@ -62,11 +62,15 @@ public:
 
 public:
 	StructType struct_type;
-	MapType map_type;
-	ListType list_type;
 	PrimitiveType primitive_type;
+	ListType list_type;
+	MapType map_type;
 
 public:
+	bool has_primitive_type = false;
+	bool has_struct_type = false;
+	bool has_list_type = false;
+	bool has_map_type = false;
 };
 
 } // namespace rest_api_objects

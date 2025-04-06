@@ -31,7 +31,7 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		error = base_scan_tasks.TryFromJSON(obj);
+		error = scan_tasks.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;
 		}

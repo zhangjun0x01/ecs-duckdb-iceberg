@@ -62,12 +62,12 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		error = base_completed_planning_result.TryFromJSON(obj);
+		error = completed_planning_result.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;
 		}
 
-		error = base_object_6.TryFromJSON(obj);
+		error = object_6.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;
 		}

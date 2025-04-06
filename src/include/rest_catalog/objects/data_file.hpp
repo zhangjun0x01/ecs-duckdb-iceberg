@@ -31,7 +31,7 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		error = base_content_file.TryFromJSON(obj);
+		error = content_file.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;
 		}

@@ -32,12 +32,12 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		error = base_counter_result.TryFromJSON(obj);
+		error = counter_result.TryFromJSON(obj);
 		if (error.empty()) {
 			has_counter_result = true;
 		}
 
-		error = base_timer_result.TryFromJSON(obj);
+		error = timer_result.TryFromJSON(obj);
 		if (error.empty()) {
 			has_timer_result = true;
 		}
@@ -54,6 +54,8 @@ public:
 	CounterResult counter_result;
 
 public:
+	bool has_counter_result = false;
+	bool has_timer_result = false;
 };
 
 } // namespace rest_api_objects

@@ -38,42 +38,42 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		error = base_assign_uuidupdate.TryFromJSON(obj);
+		error = assign_uuidupdate.TryFromJSON(obj);
 		if (error.empty()) {
 			has_assign_uuidupdate = true;
 		}
 
-		error = base_upgrade_format_version_update.TryFromJSON(obj);
+		error = upgrade_format_version_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_upgrade_format_version_update = true;
 		}
 
-		error = base_add_schema_update.TryFromJSON(obj);
+		error = add_schema_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_add_schema_update = true;
 		}
 
-		error = base_set_location_update.TryFromJSON(obj);
+		error = set_location_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_set_location_update = true;
 		}
 
-		error = base_set_properties_update.TryFromJSON(obj);
+		error = set_properties_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_set_properties_update = true;
 		}
 
-		error = base_remove_properties_update.TryFromJSON(obj);
+		error = remove_properties_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_remove_properties_update = true;
 		}
 
-		error = base_add_view_version_update.TryFromJSON(obj);
+		error = add_view_version_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_add_view_version_update = true;
 		}
 
-		error = base_set_current_view_version_update.TryFromJSON(obj);
+		error = set_current_view_version_update.TryFromJSON(obj);
 		if (error.empty()) {
 			has_set_current_view_version_update = true;
 		}
@@ -88,16 +88,24 @@ public:
 	}
 
 public:
-	SetPropertiesUpdate set_properties_update;
-	AddViewVersionUpdate add_view_version_update;
 	SetCurrentViewVersionUpdate set_current_view_version_update;
-	SetLocationUpdate set_location_update;
-	UpgradeFormatVersionUpdate upgrade_format_version_update;
 	RemovePropertiesUpdate remove_properties_update;
-	AssignUUIDUpdate assign_uuidupdate;
+	AddViewVersionUpdate add_view_version_update;
+	SetLocationUpdate set_location_update;
+	SetPropertiesUpdate set_properties_update;
 	AddSchemaUpdate add_schema_update;
+	UpgradeFormatVersionUpdate upgrade_format_version_update;
+	AssignUUIDUpdate assign_uuidupdate;
 
 public:
+	bool has_assign_uuidupdate = false;
+	bool has_upgrade_format_version_update = false;
+	bool has_add_schema_update = false;
+	bool has_set_location_update = false;
+	bool has_set_properties_update = false;
+	bool has_remove_properties_update = false;
+	bool has_add_view_version_update = false;
+	bool has_set_current_view_version_update = false;
 };
 
 } // namespace rest_api_objects

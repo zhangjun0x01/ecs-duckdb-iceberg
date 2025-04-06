@@ -32,12 +32,12 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 		do {
-			error = base_reference.TryFromJSON(obj);
+			error = reference.TryFromJSON(obj);
 			if (error.empty()) {
 				has_reference = true;
 				break;
 			}
-			error = base_transform_term.TryFromJSON(obj);
+			error = transform_term.TryFromJSON(obj);
 			if (error.empty()) {
 				has_transform_term = true;
 				break;
@@ -53,6 +53,8 @@ public:
 	Reference reference;
 
 public:
+	bool has_reference = false;
+	bool has_transform_term = false;
 };
 
 } // namespace rest_api_objects

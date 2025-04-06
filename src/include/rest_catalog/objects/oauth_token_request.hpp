@@ -32,12 +32,12 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		error = base_oauth_client_credentials_request.TryFromJSON(obj);
+		error = oauth_client_credentials_request.TryFromJSON(obj);
 		if (error.empty()) {
 			has_oauth_client_credentials_request = true;
 		}
 
-		error = base_oauth_token_exchange_request.TryFromJSON(obj);
+		error = oauth_token_exchange_request.TryFromJSON(obj);
 		if (error.empty()) {
 			has_oauth_token_exchange_request = true;
 		}
@@ -54,6 +54,8 @@ public:
 	OAuthClientCredentialsRequest oauth_client_credentials_request;
 
 public:
+	bool has_oauth_client_credentials_request = false;
+	bool has_oauth_token_exchange_request = false;
 };
 
 } // namespace rest_api_objects

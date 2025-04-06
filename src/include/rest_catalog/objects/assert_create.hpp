@@ -31,7 +31,7 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		error = base_table_requirement.TryFromJSON(obj);
+		error = table_requirement.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;
 		}

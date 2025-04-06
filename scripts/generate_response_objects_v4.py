@@ -344,7 +344,7 @@ class ResponseObjectsGenerator:
             property_name = to_snake_case(class_name)
             res.append(
                 f"""
-error = base_{property_name}.TryFromJSON(obj);
+error = {property_name}.TryFromJSON(obj);
 if (!error.empty()) {{
     return error;
 }}"""
@@ -364,7 +364,7 @@ if (!error.empty()) {{
             all_base_classes.add(property_name)
             res.append(
                 f"""
-error = base_{property_name}.TryFromJSON(obj);
+error = {property_name}.TryFromJSON(obj);
 if (error.empty()) {{
     has_{property_name} = true;
 }}"""
@@ -390,7 +390,7 @@ if ({condition}) {{
             base_classes.add(class_name)
             property_name = to_snake_case(class_name)
             res.append(
-                f"""\terror = base_{property_name}.TryFromJSON(obj);
+                f"""\terror = {property_name}.TryFromJSON(obj);
 \tif (error.empty()) {{
 \t\thas_{property_name} = true;
 \t\tbreak;
@@ -680,6 +680,13 @@ if (!{variable_name}_val) {{
             variable = object_property.properties[item]
             variable_type = self.generate_variable_type(variable)
             variable_definitions.append(f'\t{variable_type} {safe_cpp_name(item)};')
+
+        for item in object_property.any_of:
+            item_name = to_snake_case(item.ref)
+            variable_definitions.append(f'\tbool has_{safe_cpp_name(item_name)} = false;')
+        for item in object_property.one_of:
+            item_name = to_snake_case(item.ref)
+            variable_definitions.append(f'\tbool has_{safe_cpp_name(item_name)} = false;')
 
         class_definition = CLASS_FORMAT.format(
             CLASS_NAME=name,

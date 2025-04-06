@@ -68,12 +68,12 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		error = base_iceberg_error_response.TryFromJSON(obj);
+		error = iceberg_error_response.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;
 		}
 
-		error = base_object_7.TryFromJSON(obj);
+		error = object_7.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;
 		}

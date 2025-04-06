@@ -74,12 +74,12 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		error = base_struct_type.TryFromJSON(obj);
+		error = struct_type.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;
 		}
 
-		error = base_object_1.TryFromJSON(obj);
+		error = object_1.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;
 		}

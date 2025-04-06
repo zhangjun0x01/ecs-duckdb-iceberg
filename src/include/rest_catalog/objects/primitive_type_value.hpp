@@ -46,82 +46,82 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 		do {
-			error = base_boolean_type_value.TryFromJSON(obj);
+			error = boolean_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_boolean_type_value = true;
 				break;
 			}
-			error = base_integer_type_value.TryFromJSON(obj);
+			error = integer_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_integer_type_value = true;
 				break;
 			}
-			error = base_long_type_value.TryFromJSON(obj);
+			error = long_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_long_type_value = true;
 				break;
 			}
-			error = base_float_type_value.TryFromJSON(obj);
+			error = float_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_float_type_value = true;
 				break;
 			}
-			error = base_double_type_value.TryFromJSON(obj);
+			error = double_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_double_type_value = true;
 				break;
 			}
-			error = base_decimal_type_value.TryFromJSON(obj);
+			error = decimal_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_decimal_type_value = true;
 				break;
 			}
-			error = base_string_type_value.TryFromJSON(obj);
+			error = string_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_string_type_value = true;
 				break;
 			}
-			error = base_uuidtype_value.TryFromJSON(obj);
+			error = uuidtype_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_uuidtype_value = true;
 				break;
 			}
-			error = base_date_type_value.TryFromJSON(obj);
+			error = date_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_date_type_value = true;
 				break;
 			}
-			error = base_time_type_value.TryFromJSON(obj);
+			error = time_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_time_type_value = true;
 				break;
 			}
-			error = base_timestamp_type_value.TryFromJSON(obj);
+			error = timestamp_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_timestamp_type_value = true;
 				break;
 			}
-			error = base_timestamp_tz_type_value.TryFromJSON(obj);
+			error = timestamp_tz_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_timestamp_tz_type_value = true;
 				break;
 			}
-			error = base_timestamp_nano_type_value.TryFromJSON(obj);
+			error = timestamp_nano_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_timestamp_nano_type_value = true;
 				break;
 			}
-			error = base_timestamp_tz_nano_type_value.TryFromJSON(obj);
+			error = timestamp_tz_nano_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_timestamp_tz_nano_type_value = true;
 				break;
 			}
-			error = base_fixed_type_value.TryFromJSON(obj);
+			error = fixed_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_fixed_type_value = true;
 				break;
 			}
-			error = base_binary_type_value.TryFromJSON(obj);
+			error = binary_type_value.TryFromJSON(obj);
 			if (error.empty()) {
 				has_binary_type_value = true;
 				break;
@@ -133,24 +133,40 @@ public:
 	}
 
 public:
-	UUIDTypeValue uuidtype_value;
-	TimestampTzNanoTypeValue timestamp_tz_nano_type_value;
-	FloatTypeValue float_type_value;
-	LongTypeValue long_type_value;
-	TimestampTypeValue timestamp_type_value;
-	TimeTypeValue time_type_value;
-	StringTypeValue string_type_value;
-	DoubleTypeValue double_type_value;
-	TimestampTzTypeValue timestamp_tz_type_value;
 	FixedTypeValue fixed_type_value;
-	BooleanTypeValue boolean_type_value;
+	TimestampTypeValue timestamp_type_value;
 	TimestampNanoTypeValue timestamp_nano_type_value;
-	DateTypeValue date_type_value;
-	DecimalTypeValue decimal_type_value;
-	IntegerTypeValue integer_type_value;
+	TimestampTzNanoTypeValue timestamp_tz_nano_type_value;
 	BinaryTypeValue binary_type_value;
+	BooleanTypeValue boolean_type_value;
+	StringTypeValue string_type_value;
+	IntegerTypeValue integer_type_value;
+	DoubleTypeValue double_type_value;
+	LongTypeValue long_type_value;
+	DecimalTypeValue decimal_type_value;
+	DateTypeValue date_type_value;
+	FloatTypeValue float_type_value;
+	TimeTypeValue time_type_value;
+	TimestampTzTypeValue timestamp_tz_type_value;
+	UUIDTypeValue uuidtype_value;
 
 public:
+	bool has_boolean_type_value = false;
+	bool has_integer_type_value = false;
+	bool has_long_type_value = false;
+	bool has_float_type_value = false;
+	bool has_double_type_value = false;
+	bool has_decimal_type_value = false;
+	bool has_string_type_value = false;
+	bool has_uuidtype_value = false;
+	bool has_date_type_value = false;
+	bool has_time_type_value = false;
+	bool has_timestamp_type_value = false;
+	bool has_timestamp_tz_type_value = false;
+	bool has_timestamp_nano_type_value = false;
+	bool has_timestamp_tz_nano_type_value = false;
+	bool has_fixed_type_value = false;
+	bool has_binary_type_value = false;
 };
 
 } // namespace rest_api_objects

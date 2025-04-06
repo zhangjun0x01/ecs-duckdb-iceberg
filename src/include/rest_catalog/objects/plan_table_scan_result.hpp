@@ -34,22 +34,22 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 		do {
-			error = base_completed_planning_with_idresult.TryFromJSON(obj);
+			error = completed_planning_with_idresult.TryFromJSON(obj);
 			if (error.empty()) {
 				has_completed_planning_with_idresult = true;
 				break;
 			}
-			error = base_failed_planning_result.TryFromJSON(obj);
+			error = failed_planning_result.TryFromJSON(obj);
 			if (error.empty()) {
 				has_failed_planning_result = true;
 				break;
 			}
-			error = base_async_planning_result.TryFromJSON(obj);
+			error = async_planning_result.TryFromJSON(obj);
 			if (error.empty()) {
 				has_async_planning_result = true;
 				break;
 			}
-			error = base_empty_planning_result.TryFromJSON(obj);
+			error = empty_planning_result.TryFromJSON(obj);
 			if (error.empty()) {
 				has_empty_planning_result = true;
 				break;
@@ -61,12 +61,16 @@ public:
 	}
 
 public:
-	AsyncPlanningResult async_planning_result;
 	EmptyPlanningResult empty_planning_result;
 	CompletedPlanningWithIDResult completed_planning_with_idresult;
+	AsyncPlanningResult async_planning_result;
 	FailedPlanningResult failed_planning_result;
 
 public:
+	bool has_completed_planning_with_idresult = false;
+	bool has_failed_planning_result = false;
+	bool has_async_planning_result = false;
+	bool has_empty_planning_result = false;
 };
 
 } // namespace rest_api_objects

@@ -68,12 +68,12 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		error = base_scan_tasks.TryFromJSON(obj);
+		error = scan_tasks.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;
 		}
 
-		error = base_object_5.TryFromJSON(obj);
+		error = object_5.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;
 		}
@@ -82,8 +82,8 @@ public:
 	}
 
 public:
-	Object5 object_5;
 	ScanTasks scan_tasks;
+	Object5 object_5;
 
 public:
 };

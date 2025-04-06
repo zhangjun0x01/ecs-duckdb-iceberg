@@ -32,12 +32,12 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		error = base_base_update.TryFromJSON(obj);
+		error = base_update.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;
 		}
 
-		error = base_snapshot_reference.TryFromJSON(obj);
+		error = snapshot_reference.TryFromJSON(obj);
 		if (!error.empty()) {
 			return error;
 		}

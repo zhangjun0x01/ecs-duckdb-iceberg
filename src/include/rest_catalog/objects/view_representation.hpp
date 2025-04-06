@@ -31,7 +31,7 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 		do {
-			error = base_sqlview_representation.TryFromJSON(obj);
+			error = sqlview_representation.TryFromJSON(obj);
 			if (error.empty()) {
 				has_sqlview_representation = true;
 				break;
@@ -46,6 +46,7 @@ public:
 	SQLViewRepresentation sqlview_representation;
 
 public:
+	bool has_sqlview_representation = false;
 };
 
 } // namespace rest_api_objects

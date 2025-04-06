@@ -32,12 +32,12 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 
-		error = base_scan_report.TryFromJSON(obj);
+		error = scan_report.TryFromJSON(obj);
 		if (error.empty()) {
 			has_scan_report = true;
 		}
 
-		error = base_commit_report.TryFromJSON(obj);
+		error = commit_report.TryFromJSON(obj);
 		if (error.empty()) {
 			has_commit_report = true;
 		}
@@ -61,6 +61,8 @@ public:
 
 public:
 	string report_type;
+	bool has_scan_report = false;
+	bool has_commit_report = false;
 };
 
 } // namespace rest_api_objects

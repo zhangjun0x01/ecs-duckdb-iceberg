@@ -31,7 +31,7 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 		do {
-			error = base_assert_view_uuid.TryFromJSON(obj);
+			error = assert_view_uuid.TryFromJSON(obj);
 			if (error.empty()) {
 				has_assert_view_uuid = true;
 				break;
@@ -46,6 +46,7 @@ public:
 	AssertViewUUID assert_view_uuid;
 
 public:
+	bool has_assert_view_uuid = false;
 };
 
 } // namespace rest_api_objects

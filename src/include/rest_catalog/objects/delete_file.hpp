@@ -32,12 +32,12 @@ public:
 	string TryFromJSON(yyjson_val *obj) {
 		string error;
 		do {
-			error = base_position_delete_file.TryFromJSON(obj);
+			error = position_delete_file.TryFromJSON(obj);
 			if (error.empty()) {
 				has_position_delete_file = true;
 				break;
 			}
-			error = base_equality_delete_file.TryFromJSON(obj);
+			error = equality_delete_file.TryFromJSON(obj);
 			if (error.empty()) {
 				has_equality_delete_file = true;
 				break;
@@ -49,10 +49,12 @@ public:
 	}
 
 public:
-	PositionDeleteFile position_delete_file;
 	EqualityDeleteFile equality_delete_file;
+	PositionDeleteFile position_delete_file;
 
 public:
+	bool has_position_delete_file = false;
+	bool has_equality_delete_file = false;
 };
 
 } // namespace rest_api_objects
