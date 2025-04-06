@@ -60,6 +60,8 @@ public:
 	SnapshotReference snapshot_reference;
 
 public:
+	string action;
+	string ref_name;
 };
 
 } // namespace rest_api_objects

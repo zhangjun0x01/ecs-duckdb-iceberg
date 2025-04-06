@@ -61,8 +61,8 @@ public:
 	}
 
 public:
-	ListType list_type;
 	PrimitiveType primitive_type;
+	ListType list_type;
 	StructType struct_type;
 	MapType map_type;
 

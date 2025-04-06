@@ -53,6 +53,8 @@ public:
 	TableRequirement table_requirement;
 
 public:
+	string type;
+	int64_t last_assigned_partition_id;
 };
 
 } // namespace rest_api_objects

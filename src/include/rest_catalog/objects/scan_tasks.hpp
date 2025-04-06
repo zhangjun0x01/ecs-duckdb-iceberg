@@ -64,6 +64,9 @@ public:
 
 public:
 public:
+	vector<DeleteFile> delete_files;
+	vector<FileScanTask> file_scan_tasks;
+	vector<PlanTask> plan_tasks;
 };
 
 } // namespace rest_api_objects

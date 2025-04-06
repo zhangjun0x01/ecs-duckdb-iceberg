@@ -59,6 +59,9 @@ public:
 	BaseUpdate base_update;
 
 public:
+	string action;
+	Schema schema;
+	int64_t last_column_id;
 };
 
 } // namespace rest_api_objects

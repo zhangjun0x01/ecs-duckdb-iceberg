@@ -55,6 +55,8 @@ public:
 
 	public:
 	public:
+		int64_t schema_id;
+		vector<int64_t> identifier_field_ids;
 	};
 
 public:
@@ -84,8 +86,8 @@ public:
 	}
 
 public:
-	StructType struct_type;
 	Object1 object_1;
+	StructType struct_type;
 
 public:
 };

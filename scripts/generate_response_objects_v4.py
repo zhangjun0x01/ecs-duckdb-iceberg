@@ -494,6 +494,40 @@ if (!{variable_name}_val) {{
             )
         return '\n'.join(res)
 
+    def generate_variable_type(self, schema: Property) -> str:
+        if schema.type == Property.Type.OBJECT:
+            object_property = cast(ObjectProperty, schema)
+            assert not object_property.properties
+            return 'yyjson_val *'
+        elif schema.type == Property.Type.ARRAY:
+            array_property = cast(ArrayProperty, schema)
+            item_type = self.generate_variable_type(array_property.item_type)
+            return f'vector<{item_type}>'
+        elif schema.type == Property.Type.PRIMITIVE:
+            PRIMITIVE_TYPE_MAPPING = {
+                'string': 'string',
+                'integer': 'int64_t',
+                'boolean': 'bool',
+            }
+            primitive_property = cast(PrimitiveProperty, schema)
+            primitive_type = primitive_property.primitive_type
+            if primitive_type in PRIMITIVE_TYPE_MAPPING:
+                return PRIMITIVE_TYPE_MAPPING[primitive_type]
+            elif primitive_type == 'number':
+                if not primitive_property.format:
+                    print(f"'number' without a 'format' property in the spec!")
+                    exit(1)
+                return primitive_property.format
+            else:
+                print(f"Unrecognized primitive type '{primitive_type}' in 'generate_variable_type'")
+                exit(1)
+        elif schema.type == Property.Type.SCHEMA_REFERENCE:
+            schema_property = cast(SchemaReferenceProperty, schema)
+            return schema_property.ref
+        else:
+            print(f"Unrecognized 'generate_variable_type' type {schema.type}")
+            exit(1)
+
     def generate_array_class(self, schema: Property, name: str, referenced_schemas: set):
         assert schema.type == Property.Type.ARRAY
         array_property = cast(ArrayProperty, schema)
@@ -528,6 +562,10 @@ if (!{variable_name}_val) {{
         assert not schema.any_of
 
         # TODO: implement this
+
+        variable_type = self.generate_variable_type(schema)
+        variable_definition = f'\t{variable_type} value;'
+
         class_definition = CLASS_FORMAT.format(
             CLASS_NAME=name,
             NESTED_CLASSES='',
@@ -535,7 +573,7 @@ if (!{variable_name}_val) {{
             REQUIRED_PROPERTIES='',
             OPTIONAL_PROPERTIES='',
             BASE_CLASS_VARIABLES='',
-            PROPERTY_VARIABLES='',
+            PROPERTY_VARIABLES=variable_definition,
         )
         return class_definition
 
@@ -600,6 +638,12 @@ if (!{variable_name}_val) {{
         else:
             nested_classes = ''
 
+        variable_definitions = []
+        for item in object_property.properties:
+            variable = object_property.properties[item]
+            variable_type = self.generate_variable_type(variable)
+            variable_definitions.append(f'\t{variable_type} {safe_cpp_name(item)};')
+
         class_definition = CLASS_FORMAT.format(
             CLASS_NAME=name,
             NESTED_CLASSES=nested_classes,
@@ -607,7 +651,7 @@ if (!{variable_name}_val) {{
             REQUIRED_PROPERTIES=required_property_parsing,
             OPTIONAL_PROPERTIES=optional_property_parsing,
             BASE_CLASS_VARIABLES='\n'.join(base_class_variables),
-            PROPERTY_VARIABLES='',
+            PROPERTY_VARIABLES='\n'.join(variable_definitions),
         )
         return class_definition
 

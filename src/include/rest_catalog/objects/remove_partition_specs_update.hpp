@@ -57,6 +57,8 @@ public:
 	BaseUpdate base_update;
 
 public:
+	string action;
+	vector<int64_t> spec_ids;
 };
 
 } // namespace rest_api_objects

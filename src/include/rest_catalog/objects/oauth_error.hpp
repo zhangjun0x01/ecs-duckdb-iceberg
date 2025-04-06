@@ -50,6 +50,9 @@ public:
 
 public:
 public:
+	string error;
+	string error_description;
+	string error_uri;
 };
 
 } // namespace rest_api_objects

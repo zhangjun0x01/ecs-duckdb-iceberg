@@ -62,6 +62,9 @@ public:
 
 public:
 public:
+	TableIdentifier identifier;
+	vector<TableRequirement> requirements;
+	vector<TableUpdate> updates;
 };
 
 } // namespace rest_api_objects

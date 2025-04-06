@@ -53,6 +53,8 @@ public:
 	BaseUpdate base_update;
 
 public:
+	string action;
+	yyjson_val *updates;
 };
 
 } // namespace rest_api_objects

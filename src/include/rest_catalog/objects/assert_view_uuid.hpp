@@ -47,6 +47,8 @@ public:
 
 public:
 public:
+	string type;
+	string uuid;
 };
 
 } // namespace rest_api_objects

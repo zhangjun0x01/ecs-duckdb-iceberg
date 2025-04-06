@@ -73,6 +73,13 @@ public:
 
 public:
 public:
+	string grant_type;
+	string scope;
+	TokenType requested_token_type;
+	string subject_token;
+	TokenType subject_token_type;
+	string actor_token;
+	TokenType actor_token_type;
 };
 
 } // namespace rest_api_objects

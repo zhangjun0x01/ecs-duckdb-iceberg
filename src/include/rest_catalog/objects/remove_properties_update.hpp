@@ -57,6 +57,8 @@ public:
 	BaseUpdate base_update;
 
 public:
+	string action;
+	vector<string> removals;
 };
 
 } // namespace rest_api_objects

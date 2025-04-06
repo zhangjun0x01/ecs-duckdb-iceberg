@@ -70,6 +70,12 @@ public:
 
 public:
 public:
+	string table_name;
+	int64_t snapshot_id;
+	int64_t sequence_number;
+	string operation;
+	Metrics metrics;
+	yyjson_val *metadata;
 };
 
 } // namespace rest_api_objects

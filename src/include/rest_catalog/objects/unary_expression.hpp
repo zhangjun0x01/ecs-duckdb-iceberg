@@ -55,6 +55,9 @@ public:
 
 public:
 public:
+	ExpressionType type;
+	Term term;
+	yyjson_val *value;
 };
 
 } // namespace rest_api_objects

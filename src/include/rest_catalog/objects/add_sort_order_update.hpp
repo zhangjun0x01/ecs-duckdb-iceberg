@@ -54,6 +54,8 @@ public:
 	BaseUpdate base_update;
 
 public:
+	string action;
+	SortOrder sort_order;
 };
 
 } // namespace rest_api_objects

@@ -49,6 +49,7 @@ public:
 
 	public:
 	public:
+		PlanStatus status;
 	};
 
 public:

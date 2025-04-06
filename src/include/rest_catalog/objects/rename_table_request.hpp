@@ -48,6 +48,8 @@ public:
 
 public:
 public:
+	TableIdentifier source;
+	TableIdentifier destination;
 };
 
 } // namespace rest_api_objects

@@ -54,6 +54,8 @@ public:
 	BaseUpdate base_update;
 
 public:
+	string action;
+	PartitionSpec spec;
 };
 
 } // namespace rest_api_objects

@@ -48,6 +48,8 @@ public:
 
 public:
 public:
+	vector<string> removals;
+	yyjson_val *updates;
 };
 
 } // namespace rest_api_objects

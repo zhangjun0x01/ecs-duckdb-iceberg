@@ -35,6 +35,7 @@ public:
 
 public:
 public:
+	bool value;
 };
 
 } // namespace rest_api_objects

@@ -57,6 +57,10 @@ public:
 
 public:
 public:
+	string grant_type;
+	string scope;
+	string client_id;
+	string client_secret;
 };
 
 } // namespace rest_api_objects

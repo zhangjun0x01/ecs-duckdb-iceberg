@@ -49,6 +49,7 @@ public:
 	TableRequirement table_requirement;
 
 public:
+	string type;
 };
 
 } // namespace rest_api_objects

@@ -53,6 +53,8 @@ public:
 	BaseUpdate base_update;
 
 public:
+	string action;
+	string uuid;
 };
 
 } // namespace rest_api_objects

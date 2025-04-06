@@ -49,6 +49,8 @@ public:
 
 public:
 public:
+	ExpressionType type;
+	Expression child;
 };
 
 } // namespace rest_api_objects

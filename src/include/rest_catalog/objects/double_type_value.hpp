@@ -35,6 +35,7 @@ public:
 
 public:
 public:
+	double value;
 };
 
 } // namespace rest_api_objects

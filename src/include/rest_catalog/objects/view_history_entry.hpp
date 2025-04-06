@@ -47,6 +47,8 @@ public:
 
 public:
 public:
+	int64_t version_id;
+	int64_t timestamp_ms;
 };
 
 } // namespace rest_api_objects

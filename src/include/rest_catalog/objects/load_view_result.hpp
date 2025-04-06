@@ -52,6 +52,9 @@ public:
 
 public:
 public:
+	string metadata_location;
+	ViewMetadata metadata;
+	yyjson_val *config;
 };
 
 } // namespace rest_api_objects

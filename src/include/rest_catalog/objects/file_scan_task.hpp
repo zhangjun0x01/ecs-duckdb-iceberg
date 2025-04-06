@@ -55,6 +55,9 @@ public:
 
 public:
 public:
+	DataFile data_file;
+	vector<int64_t> delete_file_references;
+	yyjson_val *residual_filter;
 };
 
 } // namespace rest_api_objects

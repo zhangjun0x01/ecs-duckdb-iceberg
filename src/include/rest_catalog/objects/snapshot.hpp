@@ -47,6 +47,7 @@ public:
 
 	public:
 	public:
+		string operation;
 	};
 
 public:
@@ -105,6 +106,13 @@ public:
 
 public:
 public:
+	int64_t snapshot_id;
+	int64_t parent_snapshot_id;
+	int64_t sequence_number;
+	int64_t timestamp_ms;
+	string manifest_list;
+	Object2 summary;
+	int64_t schema_id;
 };
 
 } // namespace rest_api_objects

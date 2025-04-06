@@ -47,6 +47,8 @@ public:
 
 public:
 public:
+	string unit;
+	int64_t value;
 };
 
 } // namespace rest_api_objects

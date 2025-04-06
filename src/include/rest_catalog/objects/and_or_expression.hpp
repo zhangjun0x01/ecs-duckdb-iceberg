@@ -55,6 +55,9 @@ public:
 
 public:
 public:
+	ExpressionType type;
+	Expression left;
+	Expression right;
 };
 
 } // namespace rest_api_objects

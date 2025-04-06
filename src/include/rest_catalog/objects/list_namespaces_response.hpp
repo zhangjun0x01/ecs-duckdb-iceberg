@@ -50,6 +50,8 @@ public:
 
 public:
 public:
+	PageToken next_page_token;
+	vector<Namespace> namespaces;
 };
 
 } // namespace rest_api_objects

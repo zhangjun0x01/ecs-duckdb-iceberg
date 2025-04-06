@@ -54,6 +54,8 @@ public:
 
 public:
 public:
+	vector<IntegerTypeValue> keys;
+	vector<PrimitiveTypeValue> values;
 };
 
 } // namespace rest_api_objects

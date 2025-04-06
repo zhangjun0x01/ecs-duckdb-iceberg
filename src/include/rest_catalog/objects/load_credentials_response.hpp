@@ -46,6 +46,7 @@ public:
 
 public:
 public:
+	vector<StorageCredential> storage_credentials;
 };
 
 } // namespace rest_api_objects

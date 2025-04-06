@@ -55,6 +55,9 @@ public:
 
 public:
 public:
+	yyjson_val *overrides;
+	yyjson_val *defaults;
+	vector<string> endpoints;
 };
 
 } // namespace rest_api_objects

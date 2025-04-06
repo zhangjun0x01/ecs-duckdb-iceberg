@@ -54,6 +54,8 @@ public:
 	BaseUpdate base_update;
 
 public:
+	string action;
+	ViewVersion view_version;
 };
 
 } // namespace rest_api_objects

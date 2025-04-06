@@ -96,6 +96,14 @@ public:
 
 public:
 public:
+	string view_uuid;
+	int64_t format_version;
+	string location;
+	int64_t current_version_id;
+	vector<ViewVersion> versions;
+	vector<ViewHistoryEntry> version_log;
+	vector<Schema> schemas;
+	yyjson_val *properties;
 };
 
 } // namespace rest_api_objects

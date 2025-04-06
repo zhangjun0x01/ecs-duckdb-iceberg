@@ -53,6 +53,8 @@ public:
 	TableRequirement table_requirement;
 
 public:
+	string type;
+	int64_t default_sort_order_id;
 };
 
 } // namespace rest_api_objects

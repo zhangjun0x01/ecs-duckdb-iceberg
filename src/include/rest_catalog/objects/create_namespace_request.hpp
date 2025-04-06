@@ -46,6 +46,8 @@ public:
 
 public:
 public:
+	Namespace _namespace;
+	yyjson_val *properties;
 };
 
 } // namespace rest_api_objects

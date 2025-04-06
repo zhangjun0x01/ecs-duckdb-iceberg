@@ -48,6 +48,8 @@ public:
 
 public:
 public:
+	string metadata_location;
+	TableMetadata metadata;
 };
 
 } // namespace rest_api_objects

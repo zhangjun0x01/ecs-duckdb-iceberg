@@ -72,6 +72,12 @@ public:
 
 public:
 public:
+	string type;
+	int64_t key_id;
+	Type key;
+	int64_t value_id;
+	Type value;
+	bool value_required;
 };
 
 } // namespace rest_api_objects

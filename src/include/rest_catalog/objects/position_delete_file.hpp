@@ -58,6 +58,9 @@ public:
 	ContentFile content_file;
 
 public:
+	string content;
+	int64_t content_offset;
+	int64_t content_size_in_bytes;
 };
 
 } // namespace rest_api_objects

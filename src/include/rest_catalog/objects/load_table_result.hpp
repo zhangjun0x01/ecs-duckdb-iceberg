@@ -61,6 +61,10 @@ public:
 
 public:
 public:
+	string metadata_location;
+	TableMetadata metadata;
+	yyjson_val *config;
+	vector<StorageCredential> storage_credentials;
 };
 
 } // namespace rest_api_objects

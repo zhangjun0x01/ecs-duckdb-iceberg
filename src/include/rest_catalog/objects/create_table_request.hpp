@@ -74,6 +74,13 @@ public:
 
 public:
 public:
+	string name;
+	string location;
+	Schema schema;
+	PartitionSpec partition_spec;
+	SortOrder write_order;
+	bool stage_create;
+	yyjson_val *properties;
 };
 
 } // namespace rest_api_objects

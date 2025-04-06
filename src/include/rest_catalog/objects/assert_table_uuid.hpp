@@ -55,6 +55,8 @@ public:
 	TableRequirement table_requirement;
 
 public:
+	string type;
+	string uuid;
 };
 
 } // namespace rest_api_objects

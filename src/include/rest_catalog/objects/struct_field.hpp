@@ -75,6 +75,13 @@ public:
 
 public:
 public:
+	int64_t id;
+	string name;
+	Type type;
+	bool required;
+	string doc;
+	PrimitiveTypeValue initial_default;
+	PrimitiveTypeValue write_default;
 };
 
 } // namespace rest_api_objects

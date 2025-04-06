@@ -54,6 +54,8 @@ public:
 	BaseUpdate base_update;
 
 public:
+	string action;
+	PartitionStatisticsFile partition_statistics;
 };
 
 } // namespace rest_api_objects

@@ -51,6 +51,9 @@ public:
 
 public:
 public:
+	string name;
+	string metadata_location;
+	bool overwrite;
 };
 
 } // namespace rest_api_objects

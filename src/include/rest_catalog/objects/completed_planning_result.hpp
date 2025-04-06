@@ -49,6 +49,7 @@ public:
 
 	public:
 	public:
+		PlanStatus status;
 	};
 
 public:
@@ -78,8 +79,8 @@ public:
 	}
 
 public:
-	Object5 object_5;
 	ScanTasks scan_tasks;
+	Object5 object_5;
 
 public:
 };

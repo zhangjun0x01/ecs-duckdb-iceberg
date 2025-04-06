@@ -46,6 +46,7 @@ public:
 
 	public:
 	public:
+		string plan_id;
 	};
 
 public:
@@ -75,8 +76,8 @@ public:
 	}
 
 public:
-	Object6 object_6;
 	CompletedPlanningResult completed_planning_result;
+	Object6 object_6;
 
 public:
 };

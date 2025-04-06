@@ -41,6 +41,7 @@ public:
 
 public:
 public:
+	string action;
 };
 
 } // namespace rest_api_objects

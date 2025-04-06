@@ -101,6 +101,16 @@ public:
 
 public:
 public:
+	string content;
+	string file_path;
+	FileFormat file_format;
+	int64_t spec_id;
+	vector<PrimitiveTypeValue> partition;
+	int64_t file_size_in_bytes;
+	int64_t record_count;
+	yyjson_val *key_metadata;
+	vector<int64_t> split_offsets;
+	int64_t sort_order_id;
 };
 
 } // namespace rest_api_objects

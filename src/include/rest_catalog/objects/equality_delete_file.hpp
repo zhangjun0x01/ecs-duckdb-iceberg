@@ -57,6 +57,8 @@ public:
 	ContentFile content_file;
 
 public:
+	string content;
+	vector<int64_t> equality_ids;
 };
 
 } // namespace rest_api_objects

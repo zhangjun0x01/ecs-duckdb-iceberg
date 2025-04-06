@@ -42,6 +42,7 @@ public:
 
 public:
 public:
+	ErrorModel error;
 };
 
 } // namespace rest_api_objects

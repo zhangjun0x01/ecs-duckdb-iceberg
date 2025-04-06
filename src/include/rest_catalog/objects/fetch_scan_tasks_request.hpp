@@ -42,6 +42,7 @@ public:
 
 public:
 public:
+	PlanTask plan_task;
 };
 
 } // namespace rest_api_objects

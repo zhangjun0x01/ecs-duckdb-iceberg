@@ -78,6 +78,13 @@ public:
 	ContentFile content_file;
 
 public:
+	string content;
+	yyjson_val *column_sizes;
+	yyjson_val *value_counts;
+	yyjson_val *null_value_counts;
+	yyjson_val *nan_value_counts;
+	yyjson_val *lower_bounds;
+	yyjson_val *upper_bounds;
 };
 
 } // namespace rest_api_objects

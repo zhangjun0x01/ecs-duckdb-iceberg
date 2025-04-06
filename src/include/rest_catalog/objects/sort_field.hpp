@@ -62,6 +62,10 @@ public:
 
 public:
 public:
+	int64_t source_id;
+	Transform transform;
+	SortDirection direction;
+	NullOrder null_order;
 };
 
 } // namespace rest_api_objects

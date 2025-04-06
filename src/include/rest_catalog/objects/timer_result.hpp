@@ -53,6 +53,9 @@ public:
 
 public:
 public:
+	string time_unit;
+	int64_t count;
+	int64_t total_duration;
 };
 
 } // namespace rest_api_objects

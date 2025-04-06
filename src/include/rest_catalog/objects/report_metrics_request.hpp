@@ -60,6 +60,7 @@ public:
 	ScanReport scan_report;
 
 public:
+	string report_type;
 };
 
 } // namespace rest_api_objects

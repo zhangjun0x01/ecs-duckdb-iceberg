@@ -46,6 +46,8 @@ public:
 
 public:
 public:
+	PlanStatus status;
+	string plan_id;
 };
 
 } // namespace rest_api_objects

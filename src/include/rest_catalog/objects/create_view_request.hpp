@@ -65,6 +65,11 @@ public:
 
 public:
 public:
+	string name;
+	string location;
+	Schema schema;
+	ViewVersion view_version;
+	yyjson_val *properties;
 };
 
 } // namespace rest_api_objects

@@ -60,6 +60,10 @@ public:
 
 public:
 public:
+	string type;
+	int64_t element_id;
+	Type element;
+	bool element_required;
 };
 
 } // namespace rest_api_objects

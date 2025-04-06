@@ -91,6 +91,14 @@ public:
 
 public:
 public:
+	string table_name;
+	int64_t snapshot_id;
+	Expression filter;
+	int64_t schema_id;
+	vector<int64_t> projected_field_ids;
+	vector<string> projected_field_names;
+	Metrics metrics;
+	yyjson_val *metadata;
 };
 
 } // namespace rest_api_objects

@@ -42,6 +42,7 @@ public:
 
 public:
 public:
+	PlanStatus status;
 };
 
 } // namespace rest_api_objects

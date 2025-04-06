@@ -47,6 +47,8 @@ public:
 
 public:
 public:
+	string prefix;
+	yyjson_val *config;
 };
 
 } // namespace rest_api_objects
