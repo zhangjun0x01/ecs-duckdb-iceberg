@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class ViewRepresentation {
 public:
 	ViewRepresentation();
+	ViewRepresentation(const ViewRepresentation &) = delete;
+	ViewRepresentation &operator=(const ViewRepresentation &) = delete;
+	ViewRepresentation(ViewRepresentation &&) = default;
+	ViewRepresentation &operator=(ViewRepresentation &&) = default;
 
 public:
 	static ViewRepresentation FromJSON(yyjson_val *obj);

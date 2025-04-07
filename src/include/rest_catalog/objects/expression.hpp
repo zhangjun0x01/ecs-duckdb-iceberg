@@ -22,6 +22,10 @@ namespace rest_api_objects {
 class Expression {
 public:
 	Expression();
+	Expression(const Expression &) = delete;
+	Expression &operator=(const Expression &) = delete;
+	Expression(Expression &&) = default;
+	Expression &operator=(Expression &&) = default;
 
 public:
 	static Expression FromJSON(yyjson_val *obj);

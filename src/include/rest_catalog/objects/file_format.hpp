@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class FileFormat {
 public:
 	FileFormat();
+	FileFormat(const FileFormat &) = delete;
+	FileFormat &operator=(const FileFormat &) = delete;
+	FileFormat(FileFormat &&) = default;
+	FileFormat &operator=(FileFormat &&) = default;
 
 public:
 	static FileFormat FromJSON(yyjson_val *obj);

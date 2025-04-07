@@ -36,7 +36,7 @@ string SnapshotReferences::TryFromJSON(yyjson_val *obj) {
 		if (!error.empty()) {
 			return error;
 		}
-		additional_properties[key_str] = tmp;
+		additional_properties.emplace(key_str, std::move(tmp));
 	}
 	return string();
 }

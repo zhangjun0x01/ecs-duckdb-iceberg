@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class RemoveSchemasUpdate {
 public:
 	RemoveSchemasUpdate();
+	RemoveSchemasUpdate(const RemoveSchemasUpdate &) = delete;
+	RemoveSchemasUpdate &operator=(const RemoveSchemasUpdate &) = delete;
+	RemoveSchemasUpdate(RemoveSchemasUpdate &&) = default;
+	RemoveSchemasUpdate &operator=(RemoveSchemasUpdate &&) = default;
 
 public:
 	static RemoveSchemasUpdate FromJSON(yyjson_val *obj);

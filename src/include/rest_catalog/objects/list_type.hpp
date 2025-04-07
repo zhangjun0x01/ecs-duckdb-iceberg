@@ -17,6 +17,10 @@ class Type;
 class ListType {
 public:
 	ListType();
+	ListType(const ListType &) = delete;
+	ListType &operator=(const ListType &) = delete;
+	ListType(ListType &&) = default;
+	ListType &operator=(ListType &&) = default;
 
 public:
 	static ListType FromJSON(yyjson_val *obj);

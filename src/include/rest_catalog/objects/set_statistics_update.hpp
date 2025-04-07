@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class SetStatisticsUpdate {
 public:
 	SetStatisticsUpdate();
+	SetStatisticsUpdate(const SetStatisticsUpdate &) = delete;
+	SetStatisticsUpdate &operator=(const SetStatisticsUpdate &) = delete;
+	SetStatisticsUpdate(SetStatisticsUpdate &&) = default;
+	SetStatisticsUpdate &operator=(SetStatisticsUpdate &&) = default;
 
 public:
 	static SetStatisticsUpdate FromJSON(yyjson_val *obj);

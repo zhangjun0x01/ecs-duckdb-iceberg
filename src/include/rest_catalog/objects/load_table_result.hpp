@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class LoadTableResult {
 public:
 	LoadTableResult();
+	LoadTableResult(const LoadTableResult &) = delete;
+	LoadTableResult &operator=(const LoadTableResult &) = delete;
+	LoadTableResult(LoadTableResult &&) = default;
+	LoadTableResult &operator=(LoadTableResult &&) = default;
 
 public:
 	static LoadTableResult FromJSON(yyjson_val *obj);

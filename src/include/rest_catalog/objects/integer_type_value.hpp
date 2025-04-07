@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class IntegerTypeValue {
 public:
 	IntegerTypeValue();
+	IntegerTypeValue(const IntegerTypeValue &) = delete;
+	IntegerTypeValue &operator=(const IntegerTypeValue &) = delete;
+	IntegerTypeValue(IntegerTypeValue &&) = default;
+	IntegerTypeValue &operator=(IntegerTypeValue &&) = default;
 
 public:
 	static IntegerTypeValue FromJSON(yyjson_val *obj);

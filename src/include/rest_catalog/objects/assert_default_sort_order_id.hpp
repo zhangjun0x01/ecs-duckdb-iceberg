@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class AssertDefaultSortOrderId {
 public:
 	AssertDefaultSortOrderId();
+	AssertDefaultSortOrderId(const AssertDefaultSortOrderId &) = delete;
+	AssertDefaultSortOrderId &operator=(const AssertDefaultSortOrderId &) = delete;
+	AssertDefaultSortOrderId(AssertDefaultSortOrderId &&) = default;
+	AssertDefaultSortOrderId &operator=(AssertDefaultSortOrderId &&) = default;
 
 public:
 	static AssertDefaultSortOrderId FromJSON(yyjson_val *obj);

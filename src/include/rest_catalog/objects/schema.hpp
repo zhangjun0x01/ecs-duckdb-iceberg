@@ -16,9 +16,17 @@ namespace rest_api_objects {
 class Schema {
 public:
 	Schema();
+	Schema(const Schema &) = delete;
+	Schema &operator=(const Schema &) = delete;
+	Schema(Schema &&) = default;
+	Schema &operator=(Schema &&) = default;
 	class Object1 {
 	public:
 		Object1();
+		Object1(const Object1 &) = delete;
+		Object1 &operator=(const Object1 &) = delete;
+		Object1(Object1 &&) = default;
+		Object1 &operator=(Object1 &&) = default;
 
 	public:
 		static Object1 FromJSON(yyjson_val *obj);

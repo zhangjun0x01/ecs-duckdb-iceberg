@@ -18,6 +18,10 @@ namespace rest_api_objects {
 class SortField {
 public:
 	SortField();
+	SortField(const SortField &) = delete;
+	SortField &operator=(const SortField &) = delete;
+	SortField(SortField &&) = default;
+	SortField &operator=(SortField &&) = default;
 
 public:
 	static SortField FromJSON(yyjson_val *obj);

@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class SortOrder {
 public:
 	SortOrder();
+	SortOrder(const SortOrder &) = delete;
+	SortOrder &operator=(const SortOrder &) = delete;
+	SortOrder(SortOrder &&) = default;
+	SortOrder &operator=(SortOrder &&) = default;
 
 public:
 	static SortOrder FromJSON(yyjson_val *obj);

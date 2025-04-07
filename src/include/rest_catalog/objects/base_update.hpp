@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class BaseUpdate {
 public:
 	BaseUpdate();
+	BaseUpdate(const BaseUpdate &) = delete;
+	BaseUpdate &operator=(const BaseUpdate &) = delete;
+	BaseUpdate(BaseUpdate &&) = default;
+	BaseUpdate &operator=(BaseUpdate &&) = default;
 
 public:
 	static BaseUpdate FromJSON(yyjson_val *obj);

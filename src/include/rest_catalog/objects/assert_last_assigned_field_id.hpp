@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class AssertLastAssignedFieldId {
 public:
 	AssertLastAssignedFieldId();
+	AssertLastAssignedFieldId(const AssertLastAssignedFieldId &) = delete;
+	AssertLastAssignedFieldId &operator=(const AssertLastAssignedFieldId &) = delete;
+	AssertLastAssignedFieldId(AssertLastAssignedFieldId &&) = default;
+	AssertLastAssignedFieldId &operator=(AssertLastAssignedFieldId &&) = default;
 
 public:
 	static AssertLastAssignedFieldId FromJSON(yyjson_val *obj);

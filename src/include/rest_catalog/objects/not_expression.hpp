@@ -18,6 +18,10 @@ class Expression;
 class NotExpression {
 public:
 	NotExpression();
+	NotExpression(const NotExpression &) = delete;
+	NotExpression &operator=(const NotExpression &) = delete;
+	NotExpression(NotExpression &&) = default;
+	NotExpression &operator=(NotExpression &&) = default;
 
 public:
 	static NotExpression FromJSON(yyjson_val *obj);

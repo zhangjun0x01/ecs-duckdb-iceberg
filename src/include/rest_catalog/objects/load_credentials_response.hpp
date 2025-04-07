@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class LoadCredentialsResponse {
 public:
 	LoadCredentialsResponse();
+	LoadCredentialsResponse(const LoadCredentialsResponse &) = delete;
+	LoadCredentialsResponse &operator=(const LoadCredentialsResponse &) = delete;
+	LoadCredentialsResponse(LoadCredentialsResponse &&) = default;
+	LoadCredentialsResponse &operator=(LoadCredentialsResponse &&) = default;
 
 public:
 	static LoadCredentialsResponse FromJSON(yyjson_val *obj);

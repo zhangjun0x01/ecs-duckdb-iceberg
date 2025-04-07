@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class FixedTypeValue {
 public:
 	FixedTypeValue();
+	FixedTypeValue(const FixedTypeValue &) = delete;
+	FixedTypeValue &operator=(const FixedTypeValue &) = delete;
+	FixedTypeValue(FixedTypeValue &&) = default;
+	FixedTypeValue &operator=(FixedTypeValue &&) = default;
 
 public:
 	static FixedTypeValue FromJSON(yyjson_val *obj);

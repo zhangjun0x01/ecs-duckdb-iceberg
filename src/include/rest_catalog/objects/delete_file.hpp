@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class DeleteFile {
 public:
 	DeleteFile();
+	DeleteFile(const DeleteFile &) = delete;
+	DeleteFile &operator=(const DeleteFile &) = delete;
+	DeleteFile(DeleteFile &&) = default;
+	DeleteFile &operator=(DeleteFile &&) = default;
 
 public:
 	static DeleteFile FromJSON(yyjson_val *obj);

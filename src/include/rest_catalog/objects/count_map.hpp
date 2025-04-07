@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class CountMap {
 public:
 	CountMap();
+	CountMap(const CountMap &) = delete;
+	CountMap &operator=(const CountMap &) = delete;
+	CountMap(CountMap &&) = default;
+	CountMap &operator=(CountMap &&) = default;
 
 public:
 	static CountMap FromJSON(yyjson_val *obj);

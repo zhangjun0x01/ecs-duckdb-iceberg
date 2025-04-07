@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class ErrorModel {
 public:
 	ErrorModel();
+	ErrorModel(const ErrorModel &) = delete;
+	ErrorModel &operator=(const ErrorModel &) = delete;
+	ErrorModel(ErrorModel &&) = default;
+	ErrorModel &operator=(ErrorModel &&) = default;
 
 public:
 	static ErrorModel FromJSON(yyjson_val *obj);

@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class AsyncPlanningResult {
 public:
 	AsyncPlanningResult();
+	AsyncPlanningResult(const AsyncPlanningResult &) = delete;
+	AsyncPlanningResult &operator=(const AsyncPlanningResult &) = delete;
+	AsyncPlanningResult(AsyncPlanningResult &&) = default;
+	AsyncPlanningResult &operator=(AsyncPlanningResult &&) = default;
 
 public:
 	static AsyncPlanningResult FromJSON(yyjson_val *obj);

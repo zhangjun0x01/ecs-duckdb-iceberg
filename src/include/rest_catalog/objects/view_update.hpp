@@ -23,6 +23,10 @@ namespace rest_api_objects {
 class ViewUpdate {
 public:
 	ViewUpdate();
+	ViewUpdate(const ViewUpdate &) = delete;
+	ViewUpdate &operator=(const ViewUpdate &) = delete;
+	ViewUpdate(ViewUpdate &&) = default;
+	ViewUpdate &operator=(ViewUpdate &&) = default;
 
 public:
 	static ViewUpdate FromJSON(yyjson_val *obj);

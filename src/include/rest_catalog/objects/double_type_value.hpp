@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class DoubleTypeValue {
 public:
 	DoubleTypeValue();
+	DoubleTypeValue(const DoubleTypeValue &) = delete;
+	DoubleTypeValue &operator=(const DoubleTypeValue &) = delete;
+	DoubleTypeValue(DoubleTypeValue &&) = default;
+	DoubleTypeValue &operator=(DoubleTypeValue &&) = default;
 
 public:
 	static DoubleTypeValue FromJSON(yyjson_val *obj);

@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class RemoveSnapshotRefUpdate {
 public:
 	RemoveSnapshotRefUpdate();
+	RemoveSnapshotRefUpdate(const RemoveSnapshotRefUpdate &) = delete;
+	RemoveSnapshotRefUpdate &operator=(const RemoveSnapshotRefUpdate &) = delete;
+	RemoveSnapshotRefUpdate(RemoveSnapshotRefUpdate &&) = default;
+	RemoveSnapshotRefUpdate &operator=(RemoveSnapshotRefUpdate &&) = default;
 
 public:
 	static RemoveSnapshotRefUpdate FromJSON(yyjson_val *obj);

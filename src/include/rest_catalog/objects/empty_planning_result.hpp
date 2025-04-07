@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class EmptyPlanningResult {
 public:
 	EmptyPlanningResult();
+	EmptyPlanningResult(const EmptyPlanningResult &) = delete;
+	EmptyPlanningResult &operator=(const EmptyPlanningResult &) = delete;
+	EmptyPlanningResult(EmptyPlanningResult &&) = default;
+	EmptyPlanningResult &operator=(EmptyPlanningResult &&) = default;
 
 public:
 	static EmptyPlanningResult FromJSON(yyjson_val *obj);

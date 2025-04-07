@@ -19,6 +19,10 @@ namespace rest_api_objects {
 class Type {
 public:
 	Type();
+	Type(const Type &) = delete;
+	Type &operator=(const Type &) = delete;
+	Type(Type &&) = default;
+	Type &operator=(Type &&) = default;
 
 public:
 	static Type FromJSON(yyjson_val *obj);

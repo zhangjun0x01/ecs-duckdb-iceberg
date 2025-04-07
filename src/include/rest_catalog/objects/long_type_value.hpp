@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class LongTypeValue {
 public:
 	LongTypeValue();
+	LongTypeValue(const LongTypeValue &) = delete;
+	LongTypeValue &operator=(const LongTypeValue &) = delete;
+	LongTypeValue(LongTypeValue &&) = default;
+	LongTypeValue &operator=(LongTypeValue &&) = default;
 
 public:
 	static LongTypeValue FromJSON(yyjson_val *obj);

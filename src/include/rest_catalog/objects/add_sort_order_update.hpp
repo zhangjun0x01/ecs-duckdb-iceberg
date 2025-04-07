@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class AddSortOrderUpdate {
 public:
 	AddSortOrderUpdate();
+	AddSortOrderUpdate(const AddSortOrderUpdate &) = delete;
+	AddSortOrderUpdate &operator=(const AddSortOrderUpdate &) = delete;
+	AddSortOrderUpdate(AddSortOrderUpdate &&) = default;
+	AddSortOrderUpdate &operator=(AddSortOrderUpdate &&) = default;
 
 public:
 	static AddSortOrderUpdate FromJSON(yyjson_val *obj);

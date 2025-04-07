@@ -18,6 +18,10 @@ namespace rest_api_objects {
 class ContentFile {
 public:
 	ContentFile();
+	ContentFile(const ContentFile &) = delete;
+	ContentFile &operator=(const ContentFile &) = delete;
+	ContentFile(ContentFile &&) = default;
+	ContentFile &operator=(ContentFile &&) = default;
 
 public:
 	static ContentFile FromJSON(yyjson_val *obj);

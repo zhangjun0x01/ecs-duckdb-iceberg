@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class ViewRequirement {
 public:
 	ViewRequirement();
+	ViewRequirement(const ViewRequirement &) = delete;
+	ViewRequirement &operator=(const ViewRequirement &) = delete;
+	ViewRequirement(ViewRequirement &&) = default;
+	ViewRequirement &operator=(ViewRequirement &&) = default;
 
 public:
 	static ViewRequirement FromJSON(yyjson_val *obj);

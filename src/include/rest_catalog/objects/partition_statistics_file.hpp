@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class PartitionStatisticsFile {
 public:
 	PartitionStatisticsFile();
+	PartitionStatisticsFile(const PartitionStatisticsFile &) = delete;
+	PartitionStatisticsFile &operator=(const PartitionStatisticsFile &) = delete;
+	PartitionStatisticsFile(PartitionStatisticsFile &&) = default;
+	PartitionStatisticsFile &operator=(PartitionStatisticsFile &&) = default;
 
 public:
 	static PartitionStatisticsFile FromJSON(yyjson_val *obj);

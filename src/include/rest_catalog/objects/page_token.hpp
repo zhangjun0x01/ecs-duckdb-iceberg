@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class PageToken {
 public:
 	PageToken();
+	PageToken(const PageToken &) = delete;
+	PageToken &operator=(const PageToken &) = delete;
+	PageToken(PageToken &&) = default;
+	PageToken &operator=(PageToken &&) = default;
 
 public:
 	static PageToken FromJSON(yyjson_val *obj);

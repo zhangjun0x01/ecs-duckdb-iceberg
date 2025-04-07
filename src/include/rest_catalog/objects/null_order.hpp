@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class NullOrder {
 public:
 	NullOrder();
+	NullOrder(const NullOrder &) = delete;
+	NullOrder &operator=(const NullOrder &) = delete;
+	NullOrder(NullOrder &&) = default;
+	NullOrder &operator=(NullOrder &&) = default;
 
 public:
 	static NullOrder FromJSON(yyjson_val *obj);

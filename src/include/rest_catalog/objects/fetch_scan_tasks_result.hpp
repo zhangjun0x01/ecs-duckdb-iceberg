@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class FetchScanTasksResult {
 public:
 	FetchScanTasksResult();
+	FetchScanTasksResult(const FetchScanTasksResult &) = delete;
+	FetchScanTasksResult &operator=(const FetchScanTasksResult &) = delete;
+	FetchScanTasksResult(FetchScanTasksResult &&) = default;
+	FetchScanTasksResult &operator=(FetchScanTasksResult &&) = default;
 
 public:
 	static FetchScanTasksResult FromJSON(yyjson_val *obj);

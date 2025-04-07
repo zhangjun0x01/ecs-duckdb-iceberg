@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class Term {
 public:
 	Term();
+	Term(const Term &) = delete;
+	Term &operator=(const Term &) = delete;
+	Term(Term &&) = default;
+	Term &operator=(Term &&) = default;
 
 public:
 	static Term FromJSON(yyjson_val *obj);

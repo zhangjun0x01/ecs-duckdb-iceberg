@@ -18,6 +18,10 @@ namespace rest_api_objects {
 class CreateTableRequest {
 public:
 	CreateTableRequest();
+	CreateTableRequest(const CreateTableRequest &) = delete;
+	CreateTableRequest &operator=(const CreateTableRequest &) = delete;
+	CreateTableRequest(CreateTableRequest &&) = default;
+	CreateTableRequest &operator=(CreateTableRequest &&) = default;
 
 public:
 	static CreateTableRequest FromJSON(yyjson_val *obj);

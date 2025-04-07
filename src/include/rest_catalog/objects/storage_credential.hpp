@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class StorageCredential {
 public:
 	StorageCredential();
+	StorageCredential(const StorageCredential &) = delete;
+	StorageCredential &operator=(const StorageCredential &) = delete;
+	StorageCredential(StorageCredential &&) = default;
+	StorageCredential &operator=(StorageCredential &&) = default;
 
 public:
 	static StorageCredential FromJSON(yyjson_val *obj);

@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class ListNamespacesResponse {
 public:
 	ListNamespacesResponse();
+	ListNamespacesResponse(const ListNamespacesResponse &) = delete;
+	ListNamespacesResponse &operator=(const ListNamespacesResponse &) = delete;
+	ListNamespacesResponse(ListNamespacesResponse &&) = default;
+	ListNamespacesResponse &operator=(ListNamespacesResponse &&) = default;
 
 public:
 	static ListNamespacesResponse FromJSON(yyjson_val *obj);

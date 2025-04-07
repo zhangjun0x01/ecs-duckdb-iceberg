@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class FieldName {
 public:
 	FieldName();
+	FieldName(const FieldName &) = delete;
+	FieldName &operator=(const FieldName &) = delete;
+	FieldName(FieldName &&) = default;
+	FieldName &operator=(FieldName &&) = default;
 
 public:
 	static FieldName FromJSON(yyjson_val *obj);

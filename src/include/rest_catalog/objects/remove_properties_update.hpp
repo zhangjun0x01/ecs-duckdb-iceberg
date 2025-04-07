@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class RemovePropertiesUpdate {
 public:
 	RemovePropertiesUpdate();
+	RemovePropertiesUpdate(const RemovePropertiesUpdate &) = delete;
+	RemovePropertiesUpdate &operator=(const RemovePropertiesUpdate &) = delete;
+	RemovePropertiesUpdate(RemovePropertiesUpdate &&) = default;
+	RemovePropertiesUpdate &operator=(RemovePropertiesUpdate &&) = default;
 
 public:
 	static RemovePropertiesUpdate FromJSON(yyjson_val *obj);

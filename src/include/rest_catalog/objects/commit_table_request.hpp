@@ -18,6 +18,10 @@ namespace rest_api_objects {
 class CommitTableRequest {
 public:
 	CommitTableRequest();
+	CommitTableRequest(const CommitTableRequest &) = delete;
+	CommitTableRequest &operator=(const CommitTableRequest &) = delete;
+	CommitTableRequest(CommitTableRequest &&) = default;
+	CommitTableRequest &operator=(CommitTableRequest &&) = default;
 
 public:
 	static CommitTableRequest FromJSON(yyjson_val *obj);

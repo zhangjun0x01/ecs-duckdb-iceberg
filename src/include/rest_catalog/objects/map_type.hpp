@@ -17,6 +17,10 @@ class Type;
 class MapType {
 public:
 	MapType();
+	MapType(const MapType &) = delete;
+	MapType &operator=(const MapType &) = delete;
+	MapType(MapType &&) = default;
+	MapType &operator=(MapType &&) = default;
 
 public:
 	static MapType FromJSON(yyjson_val *obj);

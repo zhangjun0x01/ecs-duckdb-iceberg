@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class TransformTerm {
 public:
 	TransformTerm();
+	TransformTerm(const TransformTerm &) = delete;
+	TransformTerm &operator=(const TransformTerm &) = delete;
+	TransformTerm(TransformTerm &&) = default;
+	TransformTerm &operator=(TransformTerm &&) = default;
 
 public:
 	static TransformTerm FromJSON(yyjson_val *obj);

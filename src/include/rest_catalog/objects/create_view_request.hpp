@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class CreateViewRequest {
 public:
 	CreateViewRequest();
+	CreateViewRequest(const CreateViewRequest &) = delete;
+	CreateViewRequest &operator=(const CreateViewRequest &) = delete;
+	CreateViewRequest(CreateViewRequest &&) = default;
+	CreateViewRequest &operator=(CreateViewRequest &&) = default;
 
 public:
 	static CreateViewRequest FromJSON(yyjson_val *obj);

@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class ReportMetricsRequest {
 public:
 	ReportMetricsRequest();
+	ReportMetricsRequest(const ReportMetricsRequest &) = delete;
+	ReportMetricsRequest &operator=(const ReportMetricsRequest &) = delete;
+	ReportMetricsRequest(ReportMetricsRequest &&) = default;
+	ReportMetricsRequest &operator=(ReportMetricsRequest &&) = default;
 
 public:
 	static ReportMetricsRequest FromJSON(yyjson_val *obj);

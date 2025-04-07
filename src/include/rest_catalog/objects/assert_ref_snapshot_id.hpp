@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class AssertRefSnapshotId {
 public:
 	AssertRefSnapshotId();
+	AssertRefSnapshotId(const AssertRefSnapshotId &) = delete;
+	AssertRefSnapshotId &operator=(const AssertRefSnapshotId &) = delete;
+	AssertRefSnapshotId(AssertRefSnapshotId &&) = default;
+	AssertRefSnapshotId &operator=(AssertRefSnapshotId &&) = default;
 
 public:
 	static AssertRefSnapshotId FromJSON(yyjson_val *obj);

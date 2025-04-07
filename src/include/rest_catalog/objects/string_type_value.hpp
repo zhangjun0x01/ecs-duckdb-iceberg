@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class StringTypeValue {
 public:
 	StringTypeValue();
+	StringTypeValue(const StringTypeValue &) = delete;
+	StringTypeValue &operator=(const StringTypeValue &) = delete;
+	StringTypeValue(StringTypeValue &&) = default;
+	StringTypeValue &operator=(StringTypeValue &&) = default;
 
 public:
 	static StringTypeValue FromJSON(yyjson_val *obj);

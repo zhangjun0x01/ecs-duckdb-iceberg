@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class UpgradeFormatVersionUpdate {
 public:
 	UpgradeFormatVersionUpdate();
+	UpgradeFormatVersionUpdate(const UpgradeFormatVersionUpdate &) = delete;
+	UpgradeFormatVersionUpdate &operator=(const UpgradeFormatVersionUpdate &) = delete;
+	UpgradeFormatVersionUpdate(UpgradeFormatVersionUpdate &&) = default;
+	UpgradeFormatVersionUpdate &operator=(UpgradeFormatVersionUpdate &&) = default;
 
 public:
 	static UpgradeFormatVersionUpdate FromJSON(yyjson_val *obj);

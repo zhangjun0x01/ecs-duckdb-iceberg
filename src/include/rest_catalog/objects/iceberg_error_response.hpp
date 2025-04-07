@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class IcebergErrorResponse {
 public:
 	IcebergErrorResponse();
+	IcebergErrorResponse(const IcebergErrorResponse &) = delete;
+	IcebergErrorResponse &operator=(const IcebergErrorResponse &) = delete;
+	IcebergErrorResponse(IcebergErrorResponse &&) = default;
+	IcebergErrorResponse &operator=(IcebergErrorResponse &&) = default;
 
 public:
 	static IcebergErrorResponse FromJSON(yyjson_val *obj);

@@ -44,7 +44,7 @@ string Snapshot::Object2::TryFromJSON(yyjson_val *obj) {
 			continue;
 		}
 		auto tmp = yyjson_get_str(val);
-		additional_properties[key_str] = tmp;
+		additional_properties.emplace(key_str, std::move(tmp));
 	}
 	return string();
 }

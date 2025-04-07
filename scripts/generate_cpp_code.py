@@ -323,7 +323,7 @@ class CPPClass:
         res.extend(self.additional_properties.body)
         res.extend(
             [
-                '\tadditional_properties[key_str] = tmp;',
+                '\tadditional_properties.emplace(key_str, std::move(tmp));',
                 '}',
             ]
         )
@@ -425,6 +425,7 @@ class CPPClass:
         base = ''
         if base_class:
             base = '::'.join(base_class) + '::'
+
         res.extend([f'{base}{self.name}::{self.name}() {{}}'])
         res.extend(self.write_nested_classes_source(base_class))
         res.extend(
@@ -452,7 +453,17 @@ class CPPClass:
 
     def write_header(self) -> List[str]:
         res = []
-        res.extend([f'class {self.name} {{', 'public:', f'\t{self.name}();'])
+        res.extend(
+            [
+                f'class {self.name} {{',
+                'public:',
+                f'\t{self.name}();',
+                f'\t{self.name}(const {self.name}&) = delete;',
+                f'\t{self.name}& operator=(const {self.name}&) = delete;',
+                f'\t{self.name}({self.name}&&) = default;',
+                f'\t{self.name} &operator=({self.name}&&) = default;',
+            ]
+        )
         res.extend(self.write_nested_classes_header())
         res.extend(
             [

@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class Namespace {
 public:
 	Namespace();
+	Namespace(const Namespace &) = delete;
+	Namespace &operator=(const Namespace &) = delete;
+	Namespace(Namespace &&) = default;
+	Namespace &operator=(Namespace &&) = default;
 
 public:
 	static Namespace FromJSON(yyjson_val *obj);

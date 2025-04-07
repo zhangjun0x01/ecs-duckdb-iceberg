@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class TimerResult {
 public:
 	TimerResult();
+	TimerResult(const TimerResult &) = delete;
+	TimerResult &operator=(const TimerResult &) = delete;
+	TimerResult(TimerResult &&) = default;
+	TimerResult &operator=(TimerResult &&) = default;
 
 public:
 	static TimerResult FromJSON(yyjson_val *obj);

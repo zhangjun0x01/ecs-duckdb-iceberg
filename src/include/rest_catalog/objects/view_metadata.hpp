@@ -18,6 +18,10 @@ namespace rest_api_objects {
 class ViewMetadata {
 public:
 	ViewMetadata();
+	ViewMetadata(const ViewMetadata &) = delete;
+	ViewMetadata &operator=(const ViewMetadata &) = delete;
+	ViewMetadata(ViewMetadata &&) = default;
+	ViewMetadata &operator=(ViewMetadata &&) = default;
 
 public:
 	static ViewMetadata FromJSON(yyjson_val *obj);

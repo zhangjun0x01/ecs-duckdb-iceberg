@@ -18,6 +18,10 @@ class Expression;
 class ScanReport {
 public:
 	ScanReport();
+	ScanReport(const ScanReport &) = delete;
+	ScanReport &operator=(const ScanReport &) = delete;
+	ScanReport(ScanReport &&) = default;
+	ScanReport &operator=(ScanReport &&) = default;
 
 public:
 	static ScanReport FromJSON(yyjson_val *obj);

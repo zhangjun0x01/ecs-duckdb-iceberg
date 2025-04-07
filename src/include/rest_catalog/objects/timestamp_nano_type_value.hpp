@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class TimestampNanoTypeValue {
 public:
 	TimestampNanoTypeValue();
+	TimestampNanoTypeValue(const TimestampNanoTypeValue &) = delete;
+	TimestampNanoTypeValue &operator=(const TimestampNanoTypeValue &) = delete;
+	TimestampNanoTypeValue(TimestampNanoTypeValue &&) = default;
+	TimestampNanoTypeValue &operator=(TimestampNanoTypeValue &&) = default;
 
 public:
 	static TimestampNanoTypeValue FromJSON(yyjson_val *obj);

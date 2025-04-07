@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class EnableRowLineageUpdate {
 public:
 	EnableRowLineageUpdate();
+	EnableRowLineageUpdate(const EnableRowLineageUpdate &) = delete;
+	EnableRowLineageUpdate &operator=(const EnableRowLineageUpdate &) = delete;
+	EnableRowLineageUpdate(EnableRowLineageUpdate &&) = default;
+	EnableRowLineageUpdate &operator=(EnableRowLineageUpdate &&) = default;
 
 public:
 	static EnableRowLineageUpdate FromJSON(yyjson_val *obj);

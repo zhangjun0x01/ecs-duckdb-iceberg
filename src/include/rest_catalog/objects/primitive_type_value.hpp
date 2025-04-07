@@ -31,6 +31,10 @@ namespace rest_api_objects {
 class PrimitiveTypeValue {
 public:
 	PrimitiveTypeValue();
+	PrimitiveTypeValue(const PrimitiveTypeValue &) = delete;
+	PrimitiveTypeValue &operator=(const PrimitiveTypeValue &) = delete;
+	PrimitiveTypeValue(PrimitiveTypeValue &&) = default;
+	PrimitiveTypeValue &operator=(PrimitiveTypeValue &&) = default;
 
 public:
 	static PrimitiveTypeValue FromJSON(yyjson_val *obj);

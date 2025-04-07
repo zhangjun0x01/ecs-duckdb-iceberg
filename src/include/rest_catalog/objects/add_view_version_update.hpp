@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class AddViewVersionUpdate {
 public:
 	AddViewVersionUpdate();
+	AddViewVersionUpdate(const AddViewVersionUpdate &) = delete;
+	AddViewVersionUpdate &operator=(const AddViewVersionUpdate &) = delete;
+	AddViewVersionUpdate(AddViewVersionUpdate &&) = default;
+	AddViewVersionUpdate &operator=(AddViewVersionUpdate &&) = default;
 
 public:
 	static AddViewVersionUpdate FromJSON(yyjson_val *obj);

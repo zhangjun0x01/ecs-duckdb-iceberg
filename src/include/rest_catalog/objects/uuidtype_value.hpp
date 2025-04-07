@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class UUIDTypeValue {
 public:
 	UUIDTypeValue();
+	UUIDTypeValue(const UUIDTypeValue &) = delete;
+	UUIDTypeValue &operator=(const UUIDTypeValue &) = delete;
+	UUIDTypeValue(UUIDTypeValue &&) = default;
+	UUIDTypeValue &operator=(UUIDTypeValue &&) = default;
 
 public:
 	static UUIDTypeValue FromJSON(yyjson_val *obj);

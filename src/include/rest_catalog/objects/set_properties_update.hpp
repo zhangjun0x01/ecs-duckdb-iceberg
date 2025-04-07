@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class SetPropertiesUpdate {
 public:
 	SetPropertiesUpdate();
+	SetPropertiesUpdate(const SetPropertiesUpdate &) = delete;
+	SetPropertiesUpdate &operator=(const SetPropertiesUpdate &) = delete;
+	SetPropertiesUpdate(SetPropertiesUpdate &&) = default;
+	SetPropertiesUpdate &operator=(SetPropertiesUpdate &&) = default;
 
 public:
 	static SetPropertiesUpdate FromJSON(yyjson_val *obj);

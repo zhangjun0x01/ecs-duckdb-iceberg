@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class SetSnapshotRefUpdate {
 public:
 	SetSnapshotRefUpdate();
+	SetSnapshotRefUpdate(const SetSnapshotRefUpdate &) = delete;
+	SetSnapshotRefUpdate &operator=(const SetSnapshotRefUpdate &) = delete;
+	SetSnapshotRefUpdate(SetSnapshotRefUpdate &&) = default;
+	SetSnapshotRefUpdate &operator=(SetSnapshotRefUpdate &&) = default;
 
 public:
 	static SetSnapshotRefUpdate FromJSON(yyjson_val *obj);

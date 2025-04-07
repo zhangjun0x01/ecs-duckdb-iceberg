@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class Metrics {
 public:
 	Metrics();
+	Metrics(const Metrics &) = delete;
+	Metrics &operator=(const Metrics &) = delete;
+	Metrics(Metrics &&) = default;
+	Metrics &operator=(Metrics &&) = default;
 
 public:
 	static Metrics FromJSON(yyjson_val *obj);

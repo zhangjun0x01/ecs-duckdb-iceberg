@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class AddPartitionSpecUpdate {
 public:
 	AddPartitionSpecUpdate();
+	AddPartitionSpecUpdate(const AddPartitionSpecUpdate &) = delete;
+	AddPartitionSpecUpdate &operator=(const AddPartitionSpecUpdate &) = delete;
+	AddPartitionSpecUpdate(AddPartitionSpecUpdate &&) = default;
+	AddPartitionSpecUpdate &operator=(AddPartitionSpecUpdate &&) = default;
 
 public:
 	static AddPartitionSpecUpdate FromJSON(yyjson_val *obj);

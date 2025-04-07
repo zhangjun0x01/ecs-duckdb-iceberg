@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class ViewHistoryEntry {
 public:
 	ViewHistoryEntry();
+	ViewHistoryEntry(const ViewHistoryEntry &) = delete;
+	ViewHistoryEntry &operator=(const ViewHistoryEntry &) = delete;
+	ViewHistoryEntry(ViewHistoryEntry &&) = default;
+	ViewHistoryEntry &operator=(ViewHistoryEntry &&) = default;
 
 public:
 	static ViewHistoryEntry FromJSON(yyjson_val *obj);

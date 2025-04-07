@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class SQLViewRepresentation {
 public:
 	SQLViewRepresentation();
+	SQLViewRepresentation(const SQLViewRepresentation &) = delete;
+	SQLViewRepresentation &operator=(const SQLViewRepresentation &) = delete;
+	SQLViewRepresentation(SQLViewRepresentation &&) = default;
+	SQLViewRepresentation &operator=(SQLViewRepresentation &&) = default;
 
 public:
 	static SQLViewRepresentation FromJSON(yyjson_val *obj);

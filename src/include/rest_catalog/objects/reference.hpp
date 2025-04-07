@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class Reference {
 public:
 	Reference();
+	Reference(const Reference &) = delete;
+	Reference &operator=(const Reference &) = delete;
+	Reference(Reference &&) = default;
+	Reference &operator=(Reference &&) = default;
 
 public:
 	static Reference FromJSON(yyjson_val *obj);

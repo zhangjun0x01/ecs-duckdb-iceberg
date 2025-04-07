@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class CommitTableResponse {
 public:
 	CommitTableResponse();
+	CommitTableResponse(const CommitTableResponse &) = delete;
+	CommitTableResponse &operator=(const CommitTableResponse &) = delete;
+	CommitTableResponse(CommitTableResponse &&) = default;
+	CommitTableResponse &operator=(CommitTableResponse &&) = default;
 
 public:
 	static CommitTableResponse FromJSON(yyjson_val *obj);
