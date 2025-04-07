@@ -19,7 +19,7 @@ attach 'arn:aws:s3tables:us-east-2:840140254803:bucket/iceberg-testing' as s3tab
     SECRET 's3table_secret'
 );
 ----
-IO Error
+Invalid Input Error
 
 statement error
 attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as glue_catalog (
@@ -28,7 +28,7 @@ attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as glue_catalog (
     SECRET 'glue_secret'
 );
 ----
-IO Error
+Invalid Input Error
 
 
 statement error
@@ -37,7 +37,7 @@ attach 'arn:aws:s3tables:us-east-2:840140254803:bucket/iceberg-testing' as s3tab
     ENDPOINT_TYPE 'S3_TABLES_XX'
 );
 ----
-IO Error
+Invalid Configuration Error
 
 
 statement error
@@ -46,7 +46,7 @@ attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as glue_catalog (
     ENDPOINT_TYPE 'GLUE_XXX'
 );
 ----
-IO Error
+Invalid Configuration Error
 
 statement ok
 CREATE SECRET (
@@ -60,6 +60,6 @@ attach 'quickstart_catalog' as my_datalake (
     ENDPOINT 'http://does_not_exist.com/api/catalog'
 )
 ----
-IO Error
+HTTP Error
 
 

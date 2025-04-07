@@ -124,7 +124,7 @@ class IcebergPolarisRest:
 
     def GenerateTables(self, con):
         # Generate the tpch tables
-        # self.GenerateTPCH(con)
+        self.GenerateTPCH(con)
         for table_dir in self.GetTableDirs():
             full_table_dir = f"./scripts/data_generators/generate_polaris_rest/{table_dir}"
             setup_script = self.GetSetupFile(full_table_dir)
