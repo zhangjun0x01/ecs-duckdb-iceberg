@@ -26,7 +26,9 @@ public:
 
 public:
 	PageToken next_page_token;
+	bool has_next_page_token = false;
 	vector<TableIdentifier> identifiers;
+	bool has_identifiers = false;
 };
 
 } // namespace rest_api_objects

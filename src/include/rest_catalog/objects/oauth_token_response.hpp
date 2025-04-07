@@ -27,9 +27,13 @@ public:
 	string access_token;
 	string token_type;
 	int64_t expires_in;
+	bool has_expires_in = false;
 	TokenType issued_token_type;
+	bool has_issued_token_type = false;
 	string refresh_token;
+	bool has_refresh_token = false;
 	string scope;
+	bool has_scope = false;
 };
 
 } // namespace rest_api_objects

@@ -28,6 +28,7 @@ public:
 
 	public:
 		string plan_id;
+		bool has_plan_id = false;
 	};
 
 public:

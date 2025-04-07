@@ -28,7 +28,9 @@ public:
 	BaseUpdate base_update;
 	StatisticsFile statistics;
 	string action;
+	bool has_action = false;
 	int64_t snapshot_id;
+	bool has_snapshot_id = false;
 };
 
 } // namespace rest_api_objects

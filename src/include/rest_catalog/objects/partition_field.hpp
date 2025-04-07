@@ -28,6 +28,7 @@ public:
 	Transform transform;
 	string name;
 	int64_t field_id;
+	bool has_field_id = false;
 };
 
 } // namespace rest_api_objects

@@ -34,6 +34,7 @@ public:
 	vector<ViewHistoryEntry> version_log;
 	vector<Schema> schemas;
 	case_insensitive_map_t<string> properties;
+	bool has_properties = false;
 };
 
 } // namespace rest_api_objects

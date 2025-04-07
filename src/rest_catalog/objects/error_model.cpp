@@ -47,6 +47,7 @@ string ErrorModel::TryFromJSON(yyjson_val *obj) {
 	}
 	auto stack_val = yyjson_obj_get(obj, "stack");
 	if (stack_val) {
+		has_stack = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(stack_val, idx, max, val) {

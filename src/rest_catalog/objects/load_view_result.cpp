@@ -44,6 +44,7 @@ string LoadViewResult::TryFromJSON(yyjson_val *obj) {
 	}
 	auto config_val = yyjson_obj_get(obj, "config");
 	if (config_val) {
+		has_config = true;
 		config = parse_object_of_strings(config_val);
 	}
 	return string();

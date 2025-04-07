@@ -28,6 +28,7 @@ public:
 	int64_t sequence_number;
 	vector<int64_t> fields;
 	case_insensitive_map_t<string> properties;
+	bool has_properties = false;
 };
 
 } // namespace rest_api_objects

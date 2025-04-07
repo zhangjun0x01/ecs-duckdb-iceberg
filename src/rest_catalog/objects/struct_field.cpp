@@ -57,10 +57,12 @@ string StructField::TryFromJSON(yyjson_val *obj) {
 	}
 	auto doc_val = yyjson_obj_get(obj, "doc");
 	if (doc_val) {
+		has_doc = true;
 		doc = yyjson_get_str(doc_val);
 	}
 	auto initial_default_val = yyjson_obj_get(obj, "initial-default");
 	if (initial_default_val) {
+		has_initial_default = true;
 		error = initial_default.TryFromJSON(initial_default_val);
 		if (!error.empty()) {
 			return error;
@@ -68,6 +70,7 @@ string StructField::TryFromJSON(yyjson_val *obj) {
 	}
 	auto write_default_val = yyjson_obj_get(obj, "write-default");
 	if (write_default_val) {
+		has_write_default = true;
 		error = write_default.TryFromJSON(write_default_val);
 		if (!error.empty()) {
 			return error;

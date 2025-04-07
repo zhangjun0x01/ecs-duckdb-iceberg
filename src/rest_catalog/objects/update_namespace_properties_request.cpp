@@ -29,6 +29,7 @@ string UpdateNamespacePropertiesRequest::TryFromJSON(yyjson_val *obj) {
 	string error;
 	auto removals_val = yyjson_obj_get(obj, "removals");
 	if (removals_val) {
+		has_removals = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(removals_val, idx, max, val) {
@@ -38,6 +39,7 @@ string UpdateNamespacePropertiesRequest::TryFromJSON(yyjson_val *obj) {
 	}
 	auto updates_val = yyjson_obj_get(obj, "updates");
 	if (updates_val) {
+		has_updates = true;
 		updates = parse_object_of_strings(updates_val);
 	}
 	return string();

@@ -50,10 +50,12 @@ string OAuthTokenExchangeRequest::TryFromJSON(yyjson_val *obj) {
 	}
 	auto scope_val = yyjson_obj_get(obj, "scope");
 	if (scope_val) {
+		has_scope = true;
 		scope = yyjson_get_str(scope_val);
 	}
 	auto requested_token_type_val = yyjson_obj_get(obj, "requested_token_type");
 	if (requested_token_type_val) {
+		has_requested_token_type = true;
 		error = requested_token_type.TryFromJSON(requested_token_type_val);
 		if (!error.empty()) {
 			return error;
@@ -61,10 +63,12 @@ string OAuthTokenExchangeRequest::TryFromJSON(yyjson_val *obj) {
 	}
 	auto actor_token_val = yyjson_obj_get(obj, "actor_token");
 	if (actor_token_val) {
+		has_actor_token = true;
 		actor_token = yyjson_get_str(actor_token_val);
 	}
 	auto actor_token_type_val = yyjson_obj_get(obj, "actor_token_type");
 	if (actor_token_type_val) {
+		has_actor_token_type = true;
 		error = actor_token_type.TryFromJSON(actor_token_type_val);
 		if (!error.empty()) {
 			return error;

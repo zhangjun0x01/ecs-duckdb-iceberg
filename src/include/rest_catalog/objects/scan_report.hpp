@@ -34,6 +34,7 @@ public:
 	vector<string> projected_field_names;
 	Metrics metrics;
 	case_insensitive_map_t<string> metadata;
+	bool has_metadata = false;
 };
 
 } // namespace rest_api_objects

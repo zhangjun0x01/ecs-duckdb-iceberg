@@ -26,8 +26,11 @@ public:
 	string type;
 	int64_t snapshot_id;
 	int64_t max_ref_age_ms;
+	bool has_max_ref_age_ms = false;
 	int64_t max_snapshot_age_ms;
+	bool has_max_snapshot_age_ms = false;
 	int64_t min_snapshots_to_keep;
+	bool has_min_snapshots_to_keep = false;
 };
 
 } // namespace rest_api_objects

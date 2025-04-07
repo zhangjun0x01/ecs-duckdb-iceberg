@@ -47,6 +47,7 @@ string OAuthClientCredentialsRequest::TryFromJSON(yyjson_val *obj) {
 	}
 	auto scope_val = yyjson_obj_get(obj, "scope");
 	if (scope_val) {
+		has_scope = true;
 		scope = yyjson_get_str(scope_val);
 	}
 	return string();

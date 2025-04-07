@@ -27,7 +27,9 @@ public:
 	ContentFile content_file;
 	string content;
 	int64_t content_offset;
+	bool has_content_offset = false;
 	int64_t content_size_in_bytes;
+	bool has_content_size_in_bytes = false;
 };
 
 } // namespace rest_api_objects

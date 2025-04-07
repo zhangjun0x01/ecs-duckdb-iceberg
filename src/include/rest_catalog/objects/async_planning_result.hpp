@@ -26,6 +26,7 @@ public:
 public:
 	PlanStatus status;
 	string plan_id;
+	bool has_plan_id = false;
 };
 
 } // namespace rest_api_objects

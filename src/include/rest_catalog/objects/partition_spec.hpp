@@ -26,6 +26,7 @@ public:
 public:
 	vector<PartitionField> fields;
 	int64_t spec_id;
+	bool has_spec_id = false;
 };
 
 } // namespace rest_api_objects

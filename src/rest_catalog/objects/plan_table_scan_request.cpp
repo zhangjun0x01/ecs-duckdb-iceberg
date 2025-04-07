@@ -29,10 +29,12 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 	string error;
 	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (snapshot_id_val) {
+		has_snapshot_id = true;
 		snapshot_id = yyjson_get_sint(snapshot_id_val);
 	}
 	auto select_val = yyjson_obj_get(obj, "select");
 	if (select_val) {
+		has_select = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(select_val, idx, max, val) {
@@ -46,6 +48,7 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 	}
 	auto filter_val = yyjson_obj_get(obj, "filter");
 	if (filter_val) {
+		has_filter = true;
 		filter = make_uniq<Expression>();
 		error = filter->TryFromJSON(filter_val);
 		if (!error.empty()) {
@@ -54,22 +57,27 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 	}
 	auto case_sensitive_val = yyjson_obj_get(obj, "case-sensitive");
 	if (case_sensitive_val) {
+		has_case_sensitive = true;
 		case_sensitive = yyjson_get_bool(case_sensitive_val);
 	}
 	auto use_snapshot_schema_val = yyjson_obj_get(obj, "use-snapshot-schema");
 	if (use_snapshot_schema_val) {
+		has_use_snapshot_schema = true;
 		use_snapshot_schema = yyjson_get_bool(use_snapshot_schema_val);
 	}
 	auto start_snapshot_id_val = yyjson_obj_get(obj, "start-snapshot-id");
 	if (start_snapshot_id_val) {
+		has_start_snapshot_id = true;
 		start_snapshot_id = yyjson_get_sint(start_snapshot_id_val);
 	}
 	auto end_snapshot_id_val = yyjson_obj_get(obj, "end-snapshot-id");
 	if (end_snapshot_id_val) {
+		has_end_snapshot_id = true;
 		end_snapshot_id = yyjson_get_sint(end_snapshot_id_val);
 	}
 	auto stats_fields_val = yyjson_obj_get(obj, "stats-fields");
 	if (stats_fields_val) {
+		has_stats_fields = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(stats_fields_val, idx, max, val) {

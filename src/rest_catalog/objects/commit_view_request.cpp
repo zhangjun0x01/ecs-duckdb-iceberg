@@ -44,6 +44,7 @@ string CommitViewRequest::TryFromJSON(yyjson_val *obj) {
 	}
 	auto identifier_val = yyjson_obj_get(obj, "identifier");
 	if (identifier_val) {
+		has_identifier = true;
 		error = identifier.TryFromJSON(identifier_val);
 		if (!error.empty()) {
 			return error;
@@ -51,6 +52,7 @@ string CommitViewRequest::TryFromJSON(yyjson_val *obj) {
 	}
 	auto requirements_val = yyjson_obj_get(obj, "requirements");
 	if (requirements_val) {
+		has_requirements = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(requirements_val, idx, max, val) {

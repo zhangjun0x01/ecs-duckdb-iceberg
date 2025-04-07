@@ -41,10 +41,12 @@ string OAuthTokenResponse::TryFromJSON(yyjson_val *obj) {
 	}
 	auto expires_in_val = yyjson_obj_get(obj, "expires_in");
 	if (expires_in_val) {
+		has_expires_in = true;
 		expires_in = yyjson_get_sint(expires_in_val);
 	}
 	auto issued_token_type_val = yyjson_obj_get(obj, "issued_token_type");
 	if (issued_token_type_val) {
+		has_issued_token_type = true;
 		error = issued_token_type.TryFromJSON(issued_token_type_val);
 		if (!error.empty()) {
 			return error;
@@ -52,10 +54,12 @@ string OAuthTokenResponse::TryFromJSON(yyjson_val *obj) {
 	}
 	auto refresh_token_val = yyjson_obj_get(obj, "refresh_token");
 	if (refresh_token_val) {
+		has_refresh_token = true;
 		refresh_token = yyjson_get_str(refresh_token_val);
 	}
 	auto scope_val = yyjson_obj_get(obj, "scope");
 	if (scope_val) {
+		has_scope = true;
 		scope = yyjson_get_str(scope_val);
 	}
 	return string();

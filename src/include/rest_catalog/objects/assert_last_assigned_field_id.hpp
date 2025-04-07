@@ -27,6 +27,7 @@ public:
 	TableRequirement table_requirement;
 	int64_t last_assigned_field_id;
 	string type;
+	bool has_type = false;
 };
 
 } // namespace rest_api_objects

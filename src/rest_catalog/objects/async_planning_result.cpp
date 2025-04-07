@@ -38,6 +38,7 @@ string AsyncPlanningResult::TryFromJSON(yyjson_val *obj) {
 	}
 	auto plan_id_val = yyjson_obj_get(obj, "plan-id");
 	if (plan_id_val) {
+		has_plan_id = true;
 		plan_id = yyjson_get_str(plan_id_val);
 	}
 	return string();

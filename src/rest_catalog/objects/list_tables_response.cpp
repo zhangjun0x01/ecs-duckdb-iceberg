@@ -29,6 +29,7 @@ string ListTablesResponse::TryFromJSON(yyjson_val *obj) {
 	string error;
 	auto next_page_token_val = yyjson_obj_get(obj, "next-page-token");
 	if (next_page_token_val) {
+		has_next_page_token = true;
 		error = next_page_token.TryFromJSON(next_page_token_val);
 		if (!error.empty()) {
 			return error;
@@ -36,6 +37,7 @@ string ListTablesResponse::TryFromJSON(yyjson_val *obj) {
 	}
 	auto identifiers_val = yyjson_obj_get(obj, "identifiers");
 	if (identifiers_val) {
+		has_identifiers = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(identifiers_val, idx, max, val) {

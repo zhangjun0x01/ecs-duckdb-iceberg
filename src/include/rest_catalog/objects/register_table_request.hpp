@@ -26,6 +26,7 @@ public:
 	string name;
 	string metadata_location;
 	bool overwrite;
+	bool has_overwrite = false;
 };
 
 } // namespace rest_api_objects

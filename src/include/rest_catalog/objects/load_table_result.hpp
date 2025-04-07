@@ -27,8 +27,11 @@ public:
 public:
 	TableMetadata metadata;
 	string metadata_location;
+	bool has_metadata_location = false;
 	case_insensitive_map_t<string> config;
+	bool has_config = false;
 	vector<StorageCredential> storage_credentials;
+	bool has_storage_credentials = false;
 };
 
 } // namespace rest_api_objects

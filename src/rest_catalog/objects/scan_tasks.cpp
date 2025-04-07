@@ -29,6 +29,7 @@ string ScanTasks::TryFromJSON(yyjson_val *obj) {
 	string error;
 	auto delete_files_val = yyjson_obj_get(obj, "delete-files");
 	if (delete_files_val) {
+		has_delete_files = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(delete_files_val, idx, max, val) {
@@ -42,6 +43,7 @@ string ScanTasks::TryFromJSON(yyjson_val *obj) {
 	}
 	auto file_scan_tasks_val = yyjson_obj_get(obj, "file-scan-tasks");
 	if (file_scan_tasks_val) {
+		has_file_scan_tasks = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(file_scan_tasks_val, idx, max, val) {
@@ -55,6 +57,7 @@ string ScanTasks::TryFromJSON(yyjson_val *obj) {
 	}
 	auto plan_tasks_val = yyjson_obj_get(obj, "plan-tasks");
 	if (plan_tasks_val) {
+		has_plan_tasks = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(plan_tasks_val, idx, max, val) {

@@ -27,6 +27,7 @@ public:
 	BaseUpdate base_update;
 	vector<int64_t> snapshot_ids;
 	string action;
+	bool has_action = false;
 };
 
 } // namespace rest_api_objects

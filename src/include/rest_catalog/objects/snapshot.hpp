@@ -42,8 +42,11 @@ public:
 	string manifest_list;
 	Object2 summary;
 	int64_t parent_snapshot_id;
+	bool has_parent_snapshot_id = false;
 	int64_t sequence_number;
+	bool has_sequence_number = false;
 	int64_t schema_id;
+	bool has_schema_id = false;
 };
 
 } // namespace rest_api_objects

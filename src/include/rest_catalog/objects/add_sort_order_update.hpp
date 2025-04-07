@@ -28,6 +28,7 @@ public:
 	BaseUpdate base_update;
 	SortOrder sort_order;
 	string action;
+	bool has_action = false;
 };
 
 } // namespace rest_api_objects

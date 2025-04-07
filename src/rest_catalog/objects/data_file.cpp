@@ -39,6 +39,7 @@ string DataFile::TryFromJSON(yyjson_val *obj) {
 	}
 	auto column_sizes_val = yyjson_obj_get(obj, "column-sizes");
 	if (column_sizes_val) {
+		has_column_sizes = true;
 		error = column_sizes.TryFromJSON(column_sizes_val);
 		if (!error.empty()) {
 			return error;
@@ -46,6 +47,7 @@ string DataFile::TryFromJSON(yyjson_val *obj) {
 	}
 	auto value_counts_val = yyjson_obj_get(obj, "value-counts");
 	if (value_counts_val) {
+		has_value_counts = true;
 		error = value_counts.TryFromJSON(value_counts_val);
 		if (!error.empty()) {
 			return error;
@@ -53,6 +55,7 @@ string DataFile::TryFromJSON(yyjson_val *obj) {
 	}
 	auto null_value_counts_val = yyjson_obj_get(obj, "null-value-counts");
 	if (null_value_counts_val) {
+		has_null_value_counts = true;
 		error = null_value_counts.TryFromJSON(null_value_counts_val);
 		if (!error.empty()) {
 			return error;
@@ -60,6 +63,7 @@ string DataFile::TryFromJSON(yyjson_val *obj) {
 	}
 	auto nan_value_counts_val = yyjson_obj_get(obj, "nan-value-counts");
 	if (nan_value_counts_val) {
+		has_nan_value_counts = true;
 		error = nan_value_counts.TryFromJSON(nan_value_counts_val);
 		if (!error.empty()) {
 			return error;
@@ -67,6 +71,7 @@ string DataFile::TryFromJSON(yyjson_val *obj) {
 	}
 	auto lower_bounds_val = yyjson_obj_get(obj, "lower-bounds");
 	if (lower_bounds_val) {
+		has_lower_bounds = true;
 		error = lower_bounds.TryFromJSON(lower_bounds_val);
 		if (!error.empty()) {
 			return error;
@@ -74,6 +79,7 @@ string DataFile::TryFromJSON(yyjson_val *obj) {
 	}
 	auto upper_bounds_val = yyjson_obj_get(obj, "upper-bounds");
 	if (upper_bounds_val) {
+		has_upper_bounds = true;
 		error = upper_bounds.TryFromJSON(upper_bounds_val);
 		if (!error.empty()) {
 			return error;

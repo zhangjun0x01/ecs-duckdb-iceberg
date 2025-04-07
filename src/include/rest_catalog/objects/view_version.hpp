@@ -32,6 +32,7 @@ public:
 	vector<ViewRepresentation> representations;
 	Namespace default_namespace;
 	string default_catalog;
+	bool has_default_catalog = false;
 };
 
 } // namespace rest_api_objects

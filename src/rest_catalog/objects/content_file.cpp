@@ -83,6 +83,7 @@ string ContentFile::TryFromJSON(yyjson_val *obj) {
 	}
 	auto key_metadata_val = yyjson_obj_get(obj, "key-metadata");
 	if (key_metadata_val) {
+		has_key_metadata = true;
 		error = key_metadata.TryFromJSON(key_metadata_val);
 		if (!error.empty()) {
 			return error;
@@ -90,6 +91,7 @@ string ContentFile::TryFromJSON(yyjson_val *obj) {
 	}
 	auto split_offsets_val = yyjson_obj_get(obj, "split-offsets");
 	if (split_offsets_val) {
+		has_split_offsets = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(split_offsets_val, idx, max, val) {
@@ -99,6 +101,7 @@ string ContentFile::TryFromJSON(yyjson_val *obj) {
 	}
 	auto sort_order_id_val = yyjson_obj_get(obj, "sort-order-id");
 	if (sort_order_id_val) {
+		has_sort_order_id = true;
 		sort_order_id = yyjson_get_sint(sort_order_id_val);
 	}
 	return string();

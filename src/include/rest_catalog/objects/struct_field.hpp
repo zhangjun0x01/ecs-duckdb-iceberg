@@ -31,8 +31,11 @@ public:
 	unique_ptr<Type> type;
 	bool required;
 	string doc;
+	bool has_doc = false;
 	PrimitiveTypeValue initial_default;
+	bool has_initial_default = false;
 	PrimitiveTypeValue write_default;
+	bool has_write_default = false;
 };
 
 } // namespace rest_api_objects

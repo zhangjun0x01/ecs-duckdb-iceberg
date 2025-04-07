@@ -26,7 +26,9 @@ public:
 
 public:
 	vector<IntegerTypeValue> keys;
+	bool has_keys = false;
 	vector<LongTypeValue> values;
+	bool has_values = false;
 };
 
 } // namespace rest_api_objects

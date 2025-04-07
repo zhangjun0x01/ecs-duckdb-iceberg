@@ -38,14 +38,17 @@ string LoadTableResult::TryFromJSON(yyjson_val *obj) {
 	}
 	auto metadata_location_val = yyjson_obj_get(obj, "metadata-location");
 	if (metadata_location_val) {
+		has_metadata_location = true;
 		metadata_location = yyjson_get_str(metadata_location_val);
 	}
 	auto config_val = yyjson_obj_get(obj, "config");
 	if (config_val) {
+		has_config = true;
 		config = parse_object_of_strings(config_val);
 	}
 	auto storage_credentials_val = yyjson_obj_get(obj, "storage-credentials");
 	if (storage_credentials_val) {
+		has_storage_credentials = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(storage_credentials_val, idx, max, val) {

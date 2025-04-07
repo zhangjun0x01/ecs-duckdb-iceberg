@@ -29,6 +29,7 @@ public:
 	SnapshotReference snapshot_reference;
 	string ref_name;
 	string action;
+	bool has_action = false;
 };
 
 } // namespace rest_api_objects

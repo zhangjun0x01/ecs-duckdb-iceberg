@@ -51,6 +51,7 @@ string UpdateNamespacePropertiesResponse::TryFromJSON(yyjson_val *obj) {
 	}
 	auto missing_val = yyjson_obj_get(obj, "missing");
 	if (missing_val) {
+		has_missing = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(missing_val, idx, max, val) {

@@ -29,6 +29,7 @@ string ListNamespacesResponse::TryFromJSON(yyjson_val *obj) {
 	string error;
 	auto next_page_token_val = yyjson_obj_get(obj, "next-page-token");
 	if (next_page_token_val) {
+		has_next_page_token = true;
 		error = next_page_token.TryFromJSON(next_page_token_val);
 		if (!error.empty()) {
 			return error;
@@ -36,6 +37,7 @@ string ListNamespacesResponse::TryFromJSON(yyjson_val *obj) {
 	}
 	auto namespaces_val = yyjson_obj_get(obj, "namespaces");
 	if (namespaces_val) {
+		has_namespaces = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(namespaces_val, idx, max, val) {

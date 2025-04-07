@@ -27,8 +27,11 @@ public:
 
 public:
 	vector<DeleteFile> delete_files;
+	bool has_delete_files = false;
 	vector<FileScanTask> file_scan_tasks;
+	bool has_file_scan_tasks = false;
 	vector<PlanTask> plan_tasks;
+	bool has_plan_tasks = false;
 };
 
 } // namespace rest_api_objects

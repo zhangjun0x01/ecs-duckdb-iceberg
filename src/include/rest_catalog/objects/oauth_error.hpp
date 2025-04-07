@@ -25,7 +25,9 @@ public:
 public:
 	string _error;
 	string error_description;
+	bool has_error_description = false;
 	string error_uri;
+	bool has_error_uri = false;
 };
 
 } // namespace rest_api_objects

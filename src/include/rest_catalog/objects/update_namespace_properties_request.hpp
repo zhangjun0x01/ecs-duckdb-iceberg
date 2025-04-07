@@ -24,7 +24,9 @@ public:
 
 public:
 	vector<string> removals;
+	bool has_removals = false;
 	case_insensitive_map_t<string> updates;
+	bool has_updates = false;
 };
 
 } // namespace rest_api_objects

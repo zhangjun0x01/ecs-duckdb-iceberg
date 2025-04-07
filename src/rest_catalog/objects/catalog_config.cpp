@@ -41,6 +41,7 @@ string CatalogConfig::TryFromJSON(yyjson_val *obj) {
 	}
 	auto endpoints_val = yyjson_obj_get(obj, "endpoints");
 	if (endpoints_val) {
+		has_endpoints = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(endpoints_val, idx, max, val) {

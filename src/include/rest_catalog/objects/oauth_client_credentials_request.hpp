@@ -27,6 +27,7 @@ public:
 	string client_id;
 	string client_secret;
 	string scope;
+	bool has_scope = false;
 };
 
 } // namespace rest_api_objects

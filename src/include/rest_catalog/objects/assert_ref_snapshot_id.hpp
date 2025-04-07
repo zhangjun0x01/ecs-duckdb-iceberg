@@ -28,6 +28,7 @@ public:
 	string ref;
 	int64_t snapshot_id;
 	string type;
+	bool has_type = false;
 };
 
 } // namespace rest_api_objects

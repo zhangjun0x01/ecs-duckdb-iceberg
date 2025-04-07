@@ -26,6 +26,7 @@ public:
 public:
 	Namespace _namespace;
 	case_insensitive_map_t<string> properties;
+	bool has_properties = false;
 };
 
 } // namespace rest_api_objects

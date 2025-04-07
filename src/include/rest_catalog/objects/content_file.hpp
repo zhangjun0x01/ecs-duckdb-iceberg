@@ -34,8 +34,11 @@ public:
 	int64_t file_size_in_bytes;
 	int64_t record_count;
 	BinaryTypeValue key_metadata;
+	bool has_key_metadata = false;
 	vector<int64_t> split_offsets;
+	bool has_split_offsets = false;
 	int64_t sort_order_id;
+	bool has_sort_order_id = false;
 };
 
 } // namespace rest_api_objects

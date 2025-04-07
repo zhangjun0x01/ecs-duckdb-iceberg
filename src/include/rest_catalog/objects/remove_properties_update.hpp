@@ -27,6 +27,7 @@ public:
 	BaseUpdate base_update;
 	vector<string> removals;
 	string action;
+	bool has_action = false;
 };
 
 } // namespace rest_api_objects

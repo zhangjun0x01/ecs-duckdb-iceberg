@@ -30,6 +30,7 @@ public:
 	ViewVersion view_version;
 	case_insensitive_map_t<string> properties;
 	string location;
+	bool has_location = false;
 };
 
 } // namespace rest_api_objects

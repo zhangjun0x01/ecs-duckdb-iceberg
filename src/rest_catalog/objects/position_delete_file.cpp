@@ -39,10 +39,12 @@ string PositionDeleteFile::TryFromJSON(yyjson_val *obj) {
 	}
 	auto content_offset_val = yyjson_obj_get(obj, "content-offset");
 	if (content_offset_val) {
+		has_content_offset = true;
 		content_offset = yyjson_get_sint(content_offset_val);
 	}
 	auto content_size_in_bytes_val = yyjson_obj_get(obj, "content-size-in-bytes");
 	if (content_size_in_bytes_val) {
+		has_content_size_in_bytes = true;
 		content_size_in_bytes = yyjson_get_sint(content_size_in_bytes_val);
 	}
 	return string();

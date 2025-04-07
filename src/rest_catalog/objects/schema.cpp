@@ -31,10 +31,12 @@ string Schema::Object1::TryFromJSON(yyjson_val *obj) {
 	string error;
 	auto schema_id_val = yyjson_obj_get(obj, "schema-id");
 	if (schema_id_val) {
+		has_schema_id = true;
 		schema_id = yyjson_get_sint(schema_id_val);
 	}
 	auto identifier_field_ids_val = yyjson_obj_get(obj, "identifier-field-ids");
 	if (identifier_field_ids_val) {
+		has_identifier_field_ids = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(identifier_field_ids_val, idx, max, val) {

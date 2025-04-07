@@ -29,6 +29,7 @@ string CountMap::TryFromJSON(yyjson_val *obj) {
 	string error;
 	auto keys_val = yyjson_obj_get(obj, "keys");
 	if (keys_val) {
+		has_keys = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(keys_val, idx, max, val) {
@@ -42,6 +43,7 @@ string CountMap::TryFromJSON(yyjson_val *obj) {
 	}
 	auto values_val = yyjson_obj_get(obj, "values");
 	if (values_val) {
+		has_values = true;
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(values_val, idx, max, val) {

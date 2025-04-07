@@ -297,6 +297,7 @@ class CPPClass:
             [
                 f'auto {optional_property.variable_name}_val = yyjson_obj_get(obj, "{optional_property.property_name}");',
                 f'if ({optional_property.variable_name}_val) {{',
+                f'\thas_{optional_property.variable_name} = true;',
             ]
         )
         res.extend([f'\t{x}' for x in optional_property.body])
@@ -316,6 +317,7 @@ class CPPClass:
                 'yyjson_obj_foreach(obj, idx, max, key, val) {',
             ]
         )
+        # FIXME: check for null in returned char*?
         res.append('\tauto key_str = yyjson_get_str(key);')
         res.extend(self.additional_properties.skip_if_excluded)
         res.extend(self.additional_properties.body)
@@ -541,6 +543,8 @@ class CPPClass:
             print(f'Nested arrays are not supported, hopefully we dont have to!')
             exit(1)
         elif property.type == Property.Type.PRIMITIVE:
+            # FIXME: add a check to see that the yyjson_val* is of the right type
+            # FIXME: check for null in returned char* for 'yyjson_get_str?
             PRIMITIVE_PARSE_FUNCTIONS = {
                 'string': 'yyjson_get_str',
                 'integer': 'yyjson_get_sint',
@@ -609,6 +613,7 @@ class CPPClass:
             )
             variable_type = self.generate_variable_type(optional_property)
             self.variables.append(f'\t{variable_type} {variable_name};')
+            self.variables.append(f'\tbool has_{variable_name} = false;')
 
     def generate_required_properties(self, name: str, properties: Dict[str, Property]):
         if not properties:

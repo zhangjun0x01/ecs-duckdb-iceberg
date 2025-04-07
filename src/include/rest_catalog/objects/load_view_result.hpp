@@ -27,6 +27,7 @@ public:
 	string metadata_location;
 	ViewMetadata metadata;
 	case_insensitive_map_t<string> config;
+	bool has_config = false;
 };
 
 } // namespace rest_api_objects

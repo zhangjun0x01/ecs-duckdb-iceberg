@@ -26,6 +26,7 @@ public:
 public:
 	BaseUpdate base_update;
 	string action;
+	bool has_action = false;
 };
 
 } // namespace rest_api_objects

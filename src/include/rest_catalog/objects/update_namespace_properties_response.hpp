@@ -26,6 +26,7 @@ public:
 	vector<string> updated;
 	vector<string> removed;
 	vector<string> missing;
+	bool has_missing = false;
 };
 
 } // namespace rest_api_objects

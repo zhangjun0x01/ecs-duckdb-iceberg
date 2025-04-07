@@ -28,9 +28,13 @@ public:
 	string subject_token;
 	TokenType subject_token_type;
 	string scope;
+	bool has_scope = false;
 	TokenType requested_token_type;
+	bool has_requested_token_type = false;
 	string actor_token;
+	bool has_actor_token = false;
 	TokenType actor_token_type;
+	bool has_actor_token_type = false;
 };
 
 } // namespace rest_api_objects

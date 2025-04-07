@@ -28,6 +28,7 @@ public:
 	BaseUpdate base_update;
 	Snapshot snapshot;
 	string action;
+	bool has_action = false;
 };
 
 } // namespace rest_api_objects

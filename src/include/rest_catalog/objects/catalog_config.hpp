@@ -26,6 +26,7 @@ public:
 	case_insensitive_map_t<string> defaults;
 	case_insensitive_map_t<string> overrides;
 	vector<string> endpoints;
+	bool has_endpoints = false;
 };
 
 } // namespace rest_api_objects

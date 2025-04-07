@@ -27,6 +27,7 @@ public:
 	BaseUpdate base_update;
 	case_insensitive_map_t<string> updates;
 	string action;
+	bool has_action = false;
 };
 
 } // namespace rest_api_objects

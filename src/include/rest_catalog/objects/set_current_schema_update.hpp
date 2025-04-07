@@ -27,6 +27,7 @@ public:
 	BaseUpdate base_update;
 	int64_t schema_id;
 	string action;
+	bool has_action = false;
 };
 
 } // namespace rest_api_objects

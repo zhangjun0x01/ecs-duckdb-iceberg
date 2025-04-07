@@ -39,6 +39,7 @@ string AssertDefaultSpecId::TryFromJSON(yyjson_val *obj) {
 	}
 	auto type_val = yyjson_obj_get(obj, "type");
 	if (type_val) {
+		has_type = true;
 		type = yyjson_get_str(type_val);
 	}
 	return string();

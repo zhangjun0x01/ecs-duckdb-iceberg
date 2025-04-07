@@ -50,6 +50,7 @@ string PartitionField::TryFromJSON(yyjson_val *obj) {
 	}
 	auto field_id_val = yyjson_obj_get(obj, "field-id");
 	if (field_id_val) {
+		has_field_id = true;
 		field_id = yyjson_get_sint(field_id_val);
 	}
 	return string();

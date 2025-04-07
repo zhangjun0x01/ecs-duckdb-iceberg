@@ -27,6 +27,7 @@ public:
 	ContentFile content_file;
 	string content;
 	vector<int64_t> equality_ids;
+	bool has_equality_ids = false;
 };
 
 } // namespace rest_api_objects
