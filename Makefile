@@ -38,6 +38,9 @@ format-fix:
 	rm -rf src/amalgamation/*
 	python3 scripts/format.py --all --fix --noconfirm
 
+format:
+	python3 scripts/format.py --all --fix --noconfirm
+
 format-check:
 	python3 scripts/format.py --all --check
 
