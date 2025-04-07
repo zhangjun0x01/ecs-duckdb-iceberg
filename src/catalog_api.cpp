@@ -147,14 +147,15 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	}
 
 	if (load_table_result.has_storage_credentials && !load_table_result.storage_credentials.empty()) {
-		for (auto &credentials : load_table_result.storage_credentials) {
+		for (idx_t i = 0; i < load_table_result.storage_credentials.size(); i++) {
+			auto &credentials = load_table_result.storage_credentials[i];
 			CreateSecretInfo create_secret_info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
 			auto &prefix_string = credentials.prefix;
 			if (prefix_string.empty()) {
 				throw InvalidInputException("property 'prefix' of StorageCredential is empty");
 			}
 			create_secret_info.scope.push_back(prefix_string);
-			create_secret_info.name = StringUtil::Format("%s_%d_%s", secret_base_name, index, prefix_string);
+			create_secret_info.name = StringUtil::Format("%s_%d_%s", secret_base_name, i, prefix_string);
 			create_secret_info.type = "s3";
 			create_secret_info.provider = "config";
 			create_secret_info.storage_type = "memory";
