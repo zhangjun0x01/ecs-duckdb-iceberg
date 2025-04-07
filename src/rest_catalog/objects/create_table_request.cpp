@@ -46,21 +46,21 @@ string CreateTableRequest::TryFromJSON(yyjson_val *obj) {
 	if (location_val) {
 		location = yyjson_get_str(location_val);
 	}
-	auto partition_spec_val = yyjson_obj_get(obj, "partition_spec");
+	auto partition_spec_val = yyjson_obj_get(obj, "partition-spec");
 	if (partition_spec_val) {
 		error = partition_spec.TryFromJSON(partition_spec_val);
 		if (!error.empty()) {
 			return error;
 		}
 	}
-	auto write_order_val = yyjson_obj_get(obj, "write_order");
+	auto write_order_val = yyjson_obj_get(obj, "write-order");
 	if (write_order_val) {
 		error = write_order.TryFromJSON(write_order_val);
 		if (!error.empty()) {
 			return error;
 		}
 	}
-	auto stage_create_val = yyjson_obj_get(obj, "stage_create");
+	auto stage_create_val = yyjson_obj_get(obj, "stage-create");
 	if (stage_create_val) {
 		stage_create = yyjson_get_bool(stage_create_val);
 	}

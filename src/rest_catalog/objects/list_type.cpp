@@ -33,9 +33,9 @@ string ListType::TryFromJSON(yyjson_val *obj) {
 	} else {
 		type = yyjson_get_str(type_val);
 	}
-	auto element_id_val = yyjson_obj_get(obj, "element_id");
+	auto element_id_val = yyjson_obj_get(obj, "element-id");
 	if (!element_id_val) {
-		return "ListType required property 'element_id' is missing";
+		return "ListType required property 'element-id' is missing";
 	} else {
 		element_id = yyjson_get_sint(element_id_val);
 	}
@@ -49,9 +49,9 @@ string ListType::TryFromJSON(yyjson_val *obj) {
 			return error;
 		}
 	}
-	auto element_required_val = yyjson_obj_get(obj, "element_required");
+	auto element_required_val = yyjson_obj_get(obj, "element-required");
 	if (!element_required_val) {
-		return "ListType required property 'element_required' is missing";
+		return "ListType required property 'element-required' is missing";
 	} else {
 		element_required = yyjson_get_bool(element_required_val);
 	}

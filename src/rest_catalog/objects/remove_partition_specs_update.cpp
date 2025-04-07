@@ -31,9 +31,9 @@ string RemovePartitionSpecsUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto spec_ids_val = yyjson_obj_get(obj, "spec_ids");
+	auto spec_ids_val = yyjson_obj_get(obj, "spec-ids");
 	if (!spec_ids_val) {
-		return "RemovePartitionSpecsUpdate required property 'spec_ids' is missing";
+		return "RemovePartitionSpecsUpdate required property 'spec-ids' is missing";
 	} else {
 		size_t idx, max;
 		yyjson_val *val;

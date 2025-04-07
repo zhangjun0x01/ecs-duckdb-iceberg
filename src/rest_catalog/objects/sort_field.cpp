@@ -27,9 +27,9 @@ SortField SortField::FromJSON(yyjson_val *obj) {
 
 string SortField::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto source_id_val = yyjson_obj_get(obj, "source_id");
+	auto source_id_val = yyjson_obj_get(obj, "source-id");
 	if (!source_id_val) {
-		return "SortField required property 'source_id' is missing";
+		return "SortField required property 'source-id' is missing";
 	} else {
 		source_id = yyjson_get_sint(source_id_val);
 	}
@@ -51,9 +51,9 @@ string SortField::TryFromJSON(yyjson_val *obj) {
 			return error;
 		}
 	}
-	auto null_order_val = yyjson_obj_get(obj, "null_order");
+	auto null_order_val = yyjson_obj_get(obj, "null-order");
 	if (!null_order_val) {
-		return "SortField required property 'null_order' is missing";
+		return "SortField required property 'null-order' is missing";
 	} else {
 		error = null_order.TryFromJSON(null_order_val);
 		if (!error.empty()) {

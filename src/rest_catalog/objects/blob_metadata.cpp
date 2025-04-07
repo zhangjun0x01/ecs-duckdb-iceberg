@@ -33,15 +33,15 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 	} else {
 		type = yyjson_get_str(type_val);
 	}
-	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
+	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (!snapshot_id_val) {
-		return "BlobMetadata required property 'snapshot_id' is missing";
+		return "BlobMetadata required property 'snapshot-id' is missing";
 	} else {
 		snapshot_id = yyjson_get_sint(snapshot_id_val);
 	}
-	auto sequence_number_val = yyjson_obj_get(obj, "sequence_number");
+	auto sequence_number_val = yyjson_obj_get(obj, "sequence-number");
 	if (!sequence_number_val) {
-		return "BlobMetadata required property 'sequence_number' is missing";
+		return "BlobMetadata required property 'sequence-number' is missing";
 	} else {
 		sequence_number = yyjson_get_sint(sequence_number_val);
 	}

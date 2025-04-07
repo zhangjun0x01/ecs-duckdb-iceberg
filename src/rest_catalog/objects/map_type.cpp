@@ -33,9 +33,9 @@ string MapType::TryFromJSON(yyjson_val *obj) {
 	} else {
 		type = yyjson_get_str(type_val);
 	}
-	auto key_id_val = yyjson_obj_get(obj, "key_id");
+	auto key_id_val = yyjson_obj_get(obj, "key-id");
 	if (!key_id_val) {
-		return "MapType required property 'key_id' is missing";
+		return "MapType required property 'key-id' is missing";
 	} else {
 		key_id = yyjson_get_sint(key_id_val);
 	}
@@ -49,9 +49,9 @@ string MapType::TryFromJSON(yyjson_val *obj) {
 			return error;
 		}
 	}
-	auto value_id_val = yyjson_obj_get(obj, "value_id");
+	auto value_id_val = yyjson_obj_get(obj, "value-id");
 	if (!value_id_val) {
-		return "MapType required property 'value_id' is missing";
+		return "MapType required property 'value-id' is missing";
 	} else {
 		value_id = yyjson_get_sint(value_id_val);
 	}
@@ -65,9 +65,9 @@ string MapType::TryFromJSON(yyjson_val *obj) {
 			return error;
 		}
 	}
-	auto value_required_val = yyjson_obj_get(obj, "value_required");
+	auto value_required_val = yyjson_obj_get(obj, "value-required");
 	if (!value_required_val) {
-		return "MapType required property 'value_required' is missing";
+		return "MapType required property 'value-required' is missing";
 	} else {
 		value_required = yyjson_get_bool(value_required_val);
 	}

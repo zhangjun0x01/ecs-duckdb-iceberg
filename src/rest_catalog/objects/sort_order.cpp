@@ -27,9 +27,9 @@ SortOrder SortOrder::FromJSON(yyjson_val *obj) {
 
 string SortOrder::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto order_id_val = yyjson_obj_get(obj, "order_id");
+	auto order_id_val = yyjson_obj_get(obj, "order-id");
 	if (!order_id_val) {
-		return "SortOrder required property 'order_id' is missing";
+		return "SortOrder required property 'order-id' is missing";
 	} else {
 		order_id = yyjson_get_sint(order_id_val);
 	}

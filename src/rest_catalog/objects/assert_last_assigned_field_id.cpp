@@ -31,9 +31,9 @@ string AssertLastAssignedFieldId::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto last_assigned_field_id_val = yyjson_obj_get(obj, "last_assigned_field_id");
+	auto last_assigned_field_id_val = yyjson_obj_get(obj, "last-assigned-field-id");
 	if (!last_assigned_field_id_val) {
-		return "AssertLastAssignedFieldId required property 'last_assigned_field_id' is missing";
+		return "AssertLastAssignedFieldId required property 'last-assigned-field-id' is missing";
 	} else {
 		last_assigned_field_id = yyjson_get_sint(last_assigned_field_id_val);
 	}

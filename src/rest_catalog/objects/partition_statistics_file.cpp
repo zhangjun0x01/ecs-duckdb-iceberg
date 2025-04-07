@@ -27,21 +27,21 @@ PartitionStatisticsFile PartitionStatisticsFile::FromJSON(yyjson_val *obj) {
 
 string PartitionStatisticsFile::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
+	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (!snapshot_id_val) {
-		return "PartitionStatisticsFile required property 'snapshot_id' is missing";
+		return "PartitionStatisticsFile required property 'snapshot-id' is missing";
 	} else {
 		snapshot_id = yyjson_get_sint(snapshot_id_val);
 	}
-	auto statistics_path_val = yyjson_obj_get(obj, "statistics_path");
+	auto statistics_path_val = yyjson_obj_get(obj, "statistics-path");
 	if (!statistics_path_val) {
-		return "PartitionStatisticsFile required property 'statistics_path' is missing";
+		return "PartitionStatisticsFile required property 'statistics-path' is missing";
 	} else {
 		statistics_path = yyjson_get_str(statistics_path_val);
 	}
-	auto file_size_in_bytes_val = yyjson_obj_get(obj, "file_size_in_bytes");
+	auto file_size_in_bytes_val = yyjson_obj_get(obj, "file-size-in-bytes");
 	if (!file_size_in_bytes_val) {
-		return "PartitionStatisticsFile required property 'file_size_in_bytes' is missing";
+		return "PartitionStatisticsFile required property 'file-size-in-bytes' is missing";
 	} else {
 		file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
 	}

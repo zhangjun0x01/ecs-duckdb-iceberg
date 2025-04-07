@@ -27,9 +27,9 @@ CreateNamespaceResponse CreateNamespaceResponse::FromJSON(yyjson_val *obj) {
 
 string CreateNamespaceResponse::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto _namespace_val = yyjson_obj_get(obj, "_namespace");
+	auto _namespace_val = yyjson_obj_get(obj, "namespace");
 	if (!_namespace_val) {
-		return "CreateNamespaceResponse required property '_namespace' is missing";
+		return "CreateNamespaceResponse required property 'namespace' is missing";
 	} else {
 		error = _namespace.TryFromJSON(_namespace_val);
 		if (!error.empty()) {

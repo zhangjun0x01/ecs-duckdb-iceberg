@@ -27,7 +27,7 @@ PlanTableScanRequest PlanTableScanRequest::FromJSON(yyjson_val *obj) {
 
 string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
+	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (snapshot_id_val) {
 		snapshot_id = yyjson_get_sint(snapshot_id_val);
 	}
@@ -52,23 +52,23 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 			return error;
 		}
 	}
-	auto case_sensitive_val = yyjson_obj_get(obj, "case_sensitive");
+	auto case_sensitive_val = yyjson_obj_get(obj, "case-sensitive");
 	if (case_sensitive_val) {
 		case_sensitive = yyjson_get_bool(case_sensitive_val);
 	}
-	auto use_snapshot_schema_val = yyjson_obj_get(obj, "use_snapshot_schema");
+	auto use_snapshot_schema_val = yyjson_obj_get(obj, "use-snapshot-schema");
 	if (use_snapshot_schema_val) {
 		use_snapshot_schema = yyjson_get_bool(use_snapshot_schema_val);
 	}
-	auto start_snapshot_id_val = yyjson_obj_get(obj, "start_snapshot_id");
+	auto start_snapshot_id_val = yyjson_obj_get(obj, "start-snapshot-id");
 	if (start_snapshot_id_val) {
 		start_snapshot_id = yyjson_get_sint(start_snapshot_id_val);
 	}
-	auto end_snapshot_id_val = yyjson_obj_get(obj, "end_snapshot_id");
+	auto end_snapshot_id_val = yyjson_obj_get(obj, "end-snapshot-id");
 	if (end_snapshot_id_val) {
 		end_snapshot_id = yyjson_get_sint(end_snapshot_id_val);
 	}
-	auto stats_fields_val = yyjson_obj_get(obj, "stats_fields");
+	auto stats_fields_val = yyjson_obj_get(obj, "stats-fields");
 	if (stats_fields_val) {
 		size_t idx, max;
 		yyjson_val *val;

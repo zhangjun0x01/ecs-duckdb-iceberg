@@ -31,9 +31,9 @@ string SetPartitionStatisticsUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto partition_statistics_val = yyjson_obj_get(obj, "partition_statistics");
+	auto partition_statistics_val = yyjson_obj_get(obj, "partition-statistics");
 	if (!partition_statistics_val) {
-		return "SetPartitionStatisticsUpdate required property 'partition_statistics' is missing";
+		return "SetPartitionStatisticsUpdate required property 'partition-statistics' is missing";
 	} else {
 		error = partition_statistics.TryFromJSON(partition_statistics_val);
 		if (!error.empty()) {

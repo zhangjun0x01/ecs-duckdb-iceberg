@@ -31,9 +31,9 @@ string AssertCurrentSchemaId::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto current_schema_id_val = yyjson_obj_get(obj, "current_schema_id");
+	auto current_schema_id_val = yyjson_obj_get(obj, "current-schema-id");
 	if (!current_schema_id_val) {
-		return "AssertCurrentSchemaId required property 'current_schema_id' is missing";
+		return "AssertCurrentSchemaId required property 'current-schema-id' is missing";
 	} else {
 		current_schema_id = yyjson_get_sint(current_schema_id_val);
 	}

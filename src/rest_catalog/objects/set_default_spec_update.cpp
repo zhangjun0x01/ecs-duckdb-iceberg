@@ -31,9 +31,9 @@ string SetDefaultSpecUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto spec_id_val = yyjson_obj_get(obj, "spec_id");
+	auto spec_id_val = yyjson_obj_get(obj, "spec-id");
 	if (!spec_id_val) {
-		return "SetDefaultSpecUpdate required property 'spec_id' is missing";
+		return "SetDefaultSpecUpdate required property 'spec-id' is missing";
 	} else {
 		spec_id = yyjson_get_sint(spec_id_val);
 	}

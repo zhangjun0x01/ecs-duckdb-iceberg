@@ -27,9 +27,9 @@ FetchScanTasksRequest FetchScanTasksRequest::FromJSON(yyjson_val *obj) {
 
 string FetchScanTasksRequest::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto plan_task_val = yyjson_obj_get(obj, "plan_task");
+	auto plan_task_val = yyjson_obj_get(obj, "plan-task");
 	if (!plan_task_val) {
-		return "FetchScanTasksRequest required property 'plan_task' is missing";
+		return "FetchScanTasksRequest required property 'plan-task' is missing";
 	} else {
 		error = plan_task.TryFromJSON(plan_task_val);
 		if (!error.empty()) {

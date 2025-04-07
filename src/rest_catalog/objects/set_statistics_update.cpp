@@ -44,7 +44,7 @@ string SetStatisticsUpdate::TryFromJSON(yyjson_val *obj) {
 	if (action_val) {
 		action = yyjson_get_str(action_val);
 	}
-	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
+	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (snapshot_id_val) {
 		snapshot_id = yyjson_get_sint(snapshot_id_val);
 	}

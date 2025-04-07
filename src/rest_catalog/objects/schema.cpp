@@ -29,11 +29,11 @@ Schema::Object1 Schema::Object1::FromJSON(yyjson_val *obj) {
 
 string Schema::Object1::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto schema_id_val = yyjson_obj_get(obj, "schema_id");
+	auto schema_id_val = yyjson_obj_get(obj, "schema-id");
 	if (schema_id_val) {
 		schema_id = yyjson_get_sint(schema_id_val);
 	}
-	auto identifier_field_ids_val = yyjson_obj_get(obj, "identifier_field_ids");
+	auto identifier_field_ids_val = yyjson_obj_get(obj, "identifier-field-ids");
 	if (identifier_field_ids_val) {
 		size_t idx, max;
 		yyjson_val *val;

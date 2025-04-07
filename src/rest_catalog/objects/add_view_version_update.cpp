@@ -31,9 +31,9 @@ string AddViewVersionUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto view_version_val = yyjson_obj_get(obj, "view_version");
+	auto view_version_val = yyjson_obj_get(obj, "view-version");
 	if (!view_version_val) {
-		return "AddViewVersionUpdate required property 'view_version' is missing";
+		return "AddViewVersionUpdate required property 'view-version' is missing";
 	} else {
 		error = view_version.TryFromJSON(view_version_val);
 		if (!error.empty()) {

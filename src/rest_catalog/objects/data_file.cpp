@@ -37,42 +37,42 @@ string DataFile::TryFromJSON(yyjson_val *obj) {
 	} else {
 		content = yyjson_get_str(content_val);
 	}
-	auto column_sizes_val = yyjson_obj_get(obj, "column_sizes");
+	auto column_sizes_val = yyjson_obj_get(obj, "column-sizes");
 	if (column_sizes_val) {
 		error = column_sizes.TryFromJSON(column_sizes_val);
 		if (!error.empty()) {
 			return error;
 		}
 	}
-	auto value_counts_val = yyjson_obj_get(obj, "value_counts");
+	auto value_counts_val = yyjson_obj_get(obj, "value-counts");
 	if (value_counts_val) {
 		error = value_counts.TryFromJSON(value_counts_val);
 		if (!error.empty()) {
 			return error;
 		}
 	}
-	auto null_value_counts_val = yyjson_obj_get(obj, "null_value_counts");
+	auto null_value_counts_val = yyjson_obj_get(obj, "null-value-counts");
 	if (null_value_counts_val) {
 		error = null_value_counts.TryFromJSON(null_value_counts_val);
 		if (!error.empty()) {
 			return error;
 		}
 	}
-	auto nan_value_counts_val = yyjson_obj_get(obj, "nan_value_counts");
+	auto nan_value_counts_val = yyjson_obj_get(obj, "nan-value-counts");
 	if (nan_value_counts_val) {
 		error = nan_value_counts.TryFromJSON(nan_value_counts_val);
 		if (!error.empty()) {
 			return error;
 		}
 	}
-	auto lower_bounds_val = yyjson_obj_get(obj, "lower_bounds");
+	auto lower_bounds_val = yyjson_obj_get(obj, "lower-bounds");
 	if (lower_bounds_val) {
 		error = lower_bounds.TryFromJSON(lower_bounds_val);
 		if (!error.empty()) {
 			return error;
 		}
 	}
-	auto upper_bounds_val = yyjson_obj_get(obj, "upper_bounds");
+	auto upper_bounds_val = yyjson_obj_get(obj, "upper-bounds");
 	if (upper_bounds_val) {
 		error = upper_bounds.TryFromJSON(upper_bounds_val);
 		if (!error.empty()) {

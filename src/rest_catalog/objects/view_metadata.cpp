@@ -27,15 +27,15 @@ ViewMetadata ViewMetadata::FromJSON(yyjson_val *obj) {
 
 string ViewMetadata::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto view_uuid_val = yyjson_obj_get(obj, "view_uuid");
+	auto view_uuid_val = yyjson_obj_get(obj, "view-uuid");
 	if (!view_uuid_val) {
-		return "ViewMetadata required property 'view_uuid' is missing";
+		return "ViewMetadata required property 'view-uuid' is missing";
 	} else {
 		view_uuid = yyjson_get_str(view_uuid_val);
 	}
-	auto format_version_val = yyjson_obj_get(obj, "format_version");
+	auto format_version_val = yyjson_obj_get(obj, "format-version");
 	if (!format_version_val) {
-		return "ViewMetadata required property 'format_version' is missing";
+		return "ViewMetadata required property 'format-version' is missing";
 	} else {
 		format_version = yyjson_get_sint(format_version_val);
 	}
@@ -45,9 +45,9 @@ string ViewMetadata::TryFromJSON(yyjson_val *obj) {
 	} else {
 		location = yyjson_get_str(location_val);
 	}
-	auto current_version_id_val = yyjson_obj_get(obj, "current_version_id");
+	auto current_version_id_val = yyjson_obj_get(obj, "current-version-id");
 	if (!current_version_id_val) {
-		return "ViewMetadata required property 'current_version_id' is missing";
+		return "ViewMetadata required property 'current-version-id' is missing";
 	} else {
 		current_version_id = yyjson_get_sint(current_version_id_val);
 	}
@@ -66,9 +66,9 @@ string ViewMetadata::TryFromJSON(yyjson_val *obj) {
 			versions.emplace_back(std::move(tmp));
 		}
 	}
-	auto version_log_val = yyjson_obj_get(obj, "version_log");
+	auto version_log_val = yyjson_obj_get(obj, "version-log");
 	if (!version_log_val) {
-		return "ViewMetadata required property 'version_log' is missing";
+		return "ViewMetadata required property 'version-log' is missing";
 	} else {
 		size_t idx, max;
 		yyjson_val *val;

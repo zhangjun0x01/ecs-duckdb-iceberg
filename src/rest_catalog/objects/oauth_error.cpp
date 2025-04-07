@@ -27,9 +27,9 @@ OAuthError OAuthError::FromJSON(yyjson_val *obj) {
 
 string OAuthError::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto _error_val = yyjson_obj_get(obj, "_error");
+	auto _error_val = yyjson_obj_get(obj, "error");
 	if (!_error_val) {
-		return "OAuthError required property '_error' is missing";
+		return "OAuthError required property 'error' is missing";
 	} else {
 		_error = yyjson_get_str(_error_val);
 	}

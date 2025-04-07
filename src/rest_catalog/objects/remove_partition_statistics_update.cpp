@@ -31,9 +31,9 @@ string RemovePartitionStatisticsUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
+	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (!snapshot_id_val) {
-		return "RemovePartitionStatisticsUpdate required property 'snapshot_id' is missing";
+		return "RemovePartitionStatisticsUpdate required property 'snapshot-id' is missing";
 	} else {
 		snapshot_id = yyjson_get_sint(snapshot_id_val);
 	}

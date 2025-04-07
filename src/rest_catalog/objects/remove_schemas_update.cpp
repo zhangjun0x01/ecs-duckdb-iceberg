@@ -31,9 +31,9 @@ string RemoveSchemasUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto schema_ids_val = yyjson_obj_get(obj, "schema_ids");
+	auto schema_ids_val = yyjson_obj_get(obj, "schema-ids");
 	if (!schema_ids_val) {
-		return "RemoveSchemasUpdate required property 'schema_ids' is missing";
+		return "RemoveSchemasUpdate required property 'schema-ids' is missing";
 	} else {
 		size_t idx, max;
 		yyjson_val *val;

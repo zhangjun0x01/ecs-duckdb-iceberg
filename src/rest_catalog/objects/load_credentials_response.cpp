@@ -27,9 +27,9 @@ LoadCredentialsResponse LoadCredentialsResponse::FromJSON(yyjson_val *obj) {
 
 string LoadCredentialsResponse::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto storage_credentials_val = yyjson_obj_get(obj, "storage_credentials");
+	auto storage_credentials_val = yyjson_obj_get(obj, "storage-credentials");
 	if (!storage_credentials_val) {
-		return "LoadCredentialsResponse required property 'storage_credentials' is missing";
+		return "LoadCredentialsResponse required property 'storage-credentials' is missing";
 	} else {
 		size_t idx, max;
 		yyjson_val *val;

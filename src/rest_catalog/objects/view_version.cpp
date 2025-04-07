@@ -27,21 +27,21 @@ ViewVersion ViewVersion::FromJSON(yyjson_val *obj) {
 
 string ViewVersion::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto version_id_val = yyjson_obj_get(obj, "version_id");
+	auto version_id_val = yyjson_obj_get(obj, "version-id");
 	if (!version_id_val) {
-		return "ViewVersion required property 'version_id' is missing";
+		return "ViewVersion required property 'version-id' is missing";
 	} else {
 		version_id = yyjson_get_sint(version_id_val);
 	}
-	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
+	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
 	if (!timestamp_ms_val) {
-		return "ViewVersion required property 'timestamp_ms' is missing";
+		return "ViewVersion required property 'timestamp-ms' is missing";
 	} else {
 		timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 	}
-	auto schema_id_val = yyjson_obj_get(obj, "schema_id");
+	auto schema_id_val = yyjson_obj_get(obj, "schema-id");
 	if (!schema_id_val) {
-		return "ViewVersion required property 'schema_id' is missing";
+		return "ViewVersion required property 'schema-id' is missing";
 	} else {
 		schema_id = yyjson_get_sint(schema_id_val);
 	}
@@ -66,16 +66,16 @@ string ViewVersion::TryFromJSON(yyjson_val *obj) {
 			representations.emplace_back(std::move(tmp));
 		}
 	}
-	auto default_namespace_val = yyjson_obj_get(obj, "default_namespace");
+	auto default_namespace_val = yyjson_obj_get(obj, "default-namespace");
 	if (!default_namespace_val) {
-		return "ViewVersion required property 'default_namespace' is missing";
+		return "ViewVersion required property 'default-namespace' is missing";
 	} else {
 		error = default_namespace.TryFromJSON(default_namespace_val);
 		if (!error.empty()) {
 			return error;
 		}
 	}
-	auto default_catalog_val = yyjson_obj_get(obj, "default_catalog");
+	auto default_catalog_val = yyjson_obj_get(obj, "default-catalog");
 	if (default_catalog_val) {
 		default_catalog = yyjson_get_str(default_catalog_val);
 	}

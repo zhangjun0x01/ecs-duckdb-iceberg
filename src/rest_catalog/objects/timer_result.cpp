@@ -27,9 +27,9 @@ TimerResult TimerResult::FromJSON(yyjson_val *obj) {
 
 string TimerResult::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto time_unit_val = yyjson_obj_get(obj, "time_unit");
+	auto time_unit_val = yyjson_obj_get(obj, "time-unit");
 	if (!time_unit_val) {
-		return "TimerResult required property 'time_unit' is missing";
+		return "TimerResult required property 'time-unit' is missing";
 	} else {
 		time_unit = yyjson_get_str(time_unit_val);
 	}
@@ -39,9 +39,9 @@ string TimerResult::TryFromJSON(yyjson_val *obj) {
 	} else {
 		count = yyjson_get_sint(count_val);
 	}
-	auto total_duration_val = yyjson_obj_get(obj, "total_duration");
+	auto total_duration_val = yyjson_obj_get(obj, "total-duration");
 	if (!total_duration_val) {
-		return "TimerResult required property 'total_duration' is missing";
+		return "TimerResult required property 'total-duration' is missing";
 	} else {
 		total_duration = yyjson_get_sint(total_duration_val);
 	}

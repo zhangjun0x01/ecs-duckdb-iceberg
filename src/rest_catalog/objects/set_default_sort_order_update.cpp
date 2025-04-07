@@ -31,9 +31,9 @@ string SetDefaultSortOrderUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto sort_order_id_val = yyjson_obj_get(obj, "sort_order_id");
+	auto sort_order_id_val = yyjson_obj_get(obj, "sort-order-id");
 	if (!sort_order_id_val) {
-		return "SetDefaultSortOrderUpdate required property 'sort_order_id' is missing";
+		return "SetDefaultSortOrderUpdate required property 'sort-order-id' is missing";
 	} else {
 		sort_order_id = yyjson_get_sint(sort_order_id_val);
 	}

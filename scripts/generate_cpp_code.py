@@ -164,7 +164,10 @@ class AllOf:
 class RequiredProperty:
     """A property that is required to be present in the JSON"""
 
-    name: str
+    # The variable name in the generated cpp code
+    variable_name: str
+    # The property name in the JSON code
+    property_name: str
     body: List[str]
 
 
@@ -172,7 +175,10 @@ class RequiredProperty:
 class OptionalProperty:
     """A property that is can or can't be present in the JSON"""
 
-    name: str
+    # The variable name in the generated cpp code
+    variable_name: str
+    # The property name in the JSON code
+    property_name: str
     body: List[str]
 
 
@@ -287,9 +293,9 @@ class CPPClass:
         res = []
         res.extend(
             [
-                f'auto {required_property.name}_val = yyjson_obj_get(obj, "{required_property.name}");',
-                f'if (!{required_property.name}_val) {{',
-                f"""\treturn "{self.name} required property '{required_property.name}' is missing";""",
+                f'auto {required_property.variable_name}_val = yyjson_obj_get(obj, "{required_property.property_name}");',
+                f'if (!{required_property.variable_name}_val) {{',
+                f"""\treturn "{self.name} required property '{required_property.property_name}' is missing";""",
                 '} else {',
             ]
         )
@@ -301,8 +307,8 @@ class CPPClass:
         res = []
         res.extend(
             [
-                f'auto {optional_property.name}_val = yyjson_obj_get(obj, "{optional_property.name}");',
-                f'if ({optional_property.name}_val) {{',
+                f'auto {optional_property.variable_name}_val = yyjson_obj_get(obj, "{optional_property.property_name}");',
+                f'if ({optional_property.variable_name}_val) {{',
             ]
         )
         res.extend([f'\t{x}' for x in optional_property.body])
@@ -610,7 +616,9 @@ class CPPClass:
         for item, optional_property in properties.items():
             variable_name = safe_cpp_name(item)
             body = self.generate_assignment(optional_property, variable_name, f'{variable_name}_val')
-            self.optional_properties[item] = OptionalProperty(name=variable_name, body=body)
+            self.optional_properties[item] = OptionalProperty(
+                property_name=item, variable_name=variable_name, body=body
+            )
             variable_type = self.generate_variable_type(optional_property)
             self.variables.append(f'\t{variable_type} {variable_name};')
 
@@ -621,7 +629,9 @@ class CPPClass:
         for item, required_property in properties.items():
             variable_name = safe_cpp_name(item)
             body = self.generate_assignment(required_property, variable_name, f'{variable_name}_val')
-            self.required_properties[item] = RequiredProperty(name=variable_name, body=body)
+            self.required_properties[item] = RequiredProperty(
+                property_name=item, variable_name=variable_name, body=body
+            )
             variable_type = self.generate_variable_type(required_property)
             self.variables.append(f'\t{variable_type} {variable_name};')
 

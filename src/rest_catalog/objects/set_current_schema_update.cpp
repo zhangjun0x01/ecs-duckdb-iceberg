@@ -31,9 +31,9 @@ string SetCurrentSchemaUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto schema_id_val = yyjson_obj_get(obj, "schema_id");
+	auto schema_id_val = yyjson_obj_get(obj, "schema-id");
 	if (!schema_id_val) {
-		return "SetCurrentSchemaUpdate required property 'schema_id' is missing";
+		return "SetCurrentSchemaUpdate required property 'schema-id' is missing";
 	} else {
 		schema_id = yyjson_get_sint(schema_id_val);
 	}

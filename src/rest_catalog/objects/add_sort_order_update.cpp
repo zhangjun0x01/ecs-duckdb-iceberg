@@ -31,9 +31,9 @@ string AddSortOrderUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto sort_order_val = yyjson_obj_get(obj, "sort_order");
+	auto sort_order_val = yyjson_obj_get(obj, "sort-order");
 	if (!sort_order_val) {
-		return "AddSortOrderUpdate required property 'sort_order' is missing";
+		return "AddSortOrderUpdate required property 'sort-order' is missing";
 	} else {
 		error = sort_order.TryFromJSON(sort_order_val);
 		if (!error.empty()) {

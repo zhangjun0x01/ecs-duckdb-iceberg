@@ -27,9 +27,9 @@ CommitTableResponse CommitTableResponse::FromJSON(yyjson_val *obj) {
 
 string CommitTableResponse::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto metadata_location_val = yyjson_obj_get(obj, "metadata_location");
+	auto metadata_location_val = yyjson_obj_get(obj, "metadata-location");
 	if (!metadata_location_val) {
-		return "CommitTableResponse required property 'metadata_location' is missing";
+		return "CommitTableResponse required property 'metadata-location' is missing";
 	} else {
 		metadata_location = yyjson_get_str(metadata_location_val);
 	}

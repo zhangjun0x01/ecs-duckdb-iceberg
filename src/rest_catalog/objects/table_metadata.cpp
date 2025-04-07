@@ -27,15 +27,15 @@ TableMetadata TableMetadata::FromJSON(yyjson_val *obj) {
 
 string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto format_version_val = yyjson_obj_get(obj, "format_version");
+	auto format_version_val = yyjson_obj_get(obj, "format-version");
 	if (!format_version_val) {
-		return "TableMetadata required property 'format_version' is missing";
+		return "TableMetadata required property 'format-version' is missing";
 	} else {
 		format_version = yyjson_get_sint(format_version_val);
 	}
-	auto table_uuid_val = yyjson_obj_get(obj, "table_uuid");
+	auto table_uuid_val = yyjson_obj_get(obj, "table-uuid");
 	if (!table_uuid_val) {
-		return "TableMetadata required property 'table_uuid' is missing";
+		return "TableMetadata required property 'table-uuid' is missing";
 	} else {
 		table_uuid = yyjson_get_str(table_uuid_val);
 	}
@@ -43,7 +43,7 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	if (location_val) {
 		location = yyjson_get_str(location_val);
 	}
-	auto last_updated_ms_val = yyjson_obj_get(obj, "last_updated_ms");
+	auto last_updated_ms_val = yyjson_obj_get(obj, "last-updated-ms");
 	if (last_updated_ms_val) {
 		last_updated_ms = yyjson_get_sint(last_updated_ms_val);
 	}
@@ -64,15 +64,15 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 			schemas.emplace_back(std::move(tmp));
 		}
 	}
-	auto current_schema_id_val = yyjson_obj_get(obj, "current_schema_id");
+	auto current_schema_id_val = yyjson_obj_get(obj, "current-schema-id");
 	if (current_schema_id_val) {
 		current_schema_id = yyjson_get_sint(current_schema_id_val);
 	}
-	auto last_column_id_val = yyjson_obj_get(obj, "last_column_id");
+	auto last_column_id_val = yyjson_obj_get(obj, "last-column-id");
 	if (last_column_id_val) {
 		last_column_id = yyjson_get_sint(last_column_id_val);
 	}
-	auto partition_specs_val = yyjson_obj_get(obj, "partition_specs");
+	auto partition_specs_val = yyjson_obj_get(obj, "partition-specs");
 	if (partition_specs_val) {
 		size_t idx, max;
 		yyjson_val *val;
@@ -85,15 +85,15 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 			partition_specs.emplace_back(std::move(tmp));
 		}
 	}
-	auto default_spec_id_val = yyjson_obj_get(obj, "default_spec_id");
+	auto default_spec_id_val = yyjson_obj_get(obj, "default-spec-id");
 	if (default_spec_id_val) {
 		default_spec_id = yyjson_get_sint(default_spec_id_val);
 	}
-	auto last_partition_id_val = yyjson_obj_get(obj, "last_partition_id");
+	auto last_partition_id_val = yyjson_obj_get(obj, "last-partition-id");
 	if (last_partition_id_val) {
 		last_partition_id = yyjson_get_sint(last_partition_id_val);
 	}
-	auto sort_orders_val = yyjson_obj_get(obj, "sort_orders");
+	auto sort_orders_val = yyjson_obj_get(obj, "sort-orders");
 	if (sort_orders_val) {
 		size_t idx, max;
 		yyjson_val *val;
@@ -106,7 +106,7 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 			sort_orders.emplace_back(std::move(tmp));
 		}
 	}
-	auto default_sort_order_id_val = yyjson_obj_get(obj, "default_sort_order_id");
+	auto default_sort_order_id_val = yyjson_obj_get(obj, "default-sort-order-id");
 	if (default_sort_order_id_val) {
 		default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
 	}
@@ -130,22 +130,22 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 			return error;
 		}
 	}
-	auto current_snapshot_id_val = yyjson_obj_get(obj, "current_snapshot_id");
+	auto current_snapshot_id_val = yyjson_obj_get(obj, "current-snapshot-id");
 	if (current_snapshot_id_val) {
 		current_snapshot_id = yyjson_get_sint(current_snapshot_id_val);
 	}
-	auto last_sequence_number_val = yyjson_obj_get(obj, "last_sequence_number");
+	auto last_sequence_number_val = yyjson_obj_get(obj, "last-sequence-number");
 	if (last_sequence_number_val) {
 		last_sequence_number = yyjson_get_sint(last_sequence_number_val);
 	}
-	auto snapshot_log_val = yyjson_obj_get(obj, "snapshot_log");
+	auto snapshot_log_val = yyjson_obj_get(obj, "snapshot-log");
 	if (snapshot_log_val) {
 		error = snapshot_log.TryFromJSON(snapshot_log_val);
 		if (!error.empty()) {
 			return error;
 		}
 	}
-	auto metadata_log_val = yyjson_obj_get(obj, "metadata_log");
+	auto metadata_log_val = yyjson_obj_get(obj, "metadata-log");
 	if (metadata_log_val) {
 		error = metadata_log.TryFromJSON(metadata_log_val);
 		if (!error.empty()) {
@@ -165,7 +165,7 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 			statistics.emplace_back(std::move(tmp));
 		}
 	}
-	auto partition_statistics_val = yyjson_obj_get(obj, "partition_statistics");
+	auto partition_statistics_val = yyjson_obj_get(obj, "partition-statistics");
 	if (partition_statistics_val) {
 		size_t idx, max;
 		yyjson_val *val;

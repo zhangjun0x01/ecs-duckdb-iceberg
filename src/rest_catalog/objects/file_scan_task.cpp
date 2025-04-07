@@ -27,16 +27,16 @@ FileScanTask FileScanTask::FromJSON(yyjson_val *obj) {
 
 string FileScanTask::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto data_file_val = yyjson_obj_get(obj, "data_file");
+	auto data_file_val = yyjson_obj_get(obj, "data-file");
 	if (!data_file_val) {
-		return "FileScanTask required property 'data_file' is missing";
+		return "FileScanTask required property 'data-file' is missing";
 	} else {
 		error = data_file.TryFromJSON(data_file_val);
 		if (!error.empty()) {
 			return error;
 		}
 	}
-	auto delete_file_references_val = yyjson_obj_get(obj, "delete_file_references");
+	auto delete_file_references_val = yyjson_obj_get(obj, "delete-file-references");
 	if (delete_file_references_val) {
 		size_t idx, max;
 		yyjson_val *val;
@@ -45,7 +45,7 @@ string FileScanTask::TryFromJSON(yyjson_val *obj) {
 			delete_file_references.emplace_back(std::move(tmp));
 		}
 	}
-	auto residual_filter_val = yyjson_obj_get(obj, "residual_filter");
+	auto residual_filter_val = yyjson_obj_get(obj, "residual-filter");
 	if (residual_filter_val) {
 		residual_filter = make_uniq<Expression>();
 		error = residual_filter->TryFromJSON(residual_filter_val);

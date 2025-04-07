@@ -29,15 +29,15 @@ MetadataLog::Object4 MetadataLog::Object4::FromJSON(yyjson_val *obj) {
 
 string MetadataLog::Object4::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto metadata_file_val = yyjson_obj_get(obj, "metadata_file");
+	auto metadata_file_val = yyjson_obj_get(obj, "metadata-file");
 	if (!metadata_file_val) {
-		return "Object4 required property 'metadata_file' is missing";
+		return "Object4 required property 'metadata-file' is missing";
 	} else {
 		metadata_file = yyjson_get_str(metadata_file_val);
 	}
-	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
+	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
 	if (!timestamp_ms_val) {
-		return "Object4 required property 'timestamp_ms' is missing";
+		return "Object4 required property 'timestamp-ms' is missing";
 	} else {
 		timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 	}

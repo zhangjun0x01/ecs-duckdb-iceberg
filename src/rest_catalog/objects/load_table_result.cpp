@@ -36,7 +36,7 @@ string LoadTableResult::TryFromJSON(yyjson_val *obj) {
 			return error;
 		}
 	}
-	auto metadata_location_val = yyjson_obj_get(obj, "metadata_location");
+	auto metadata_location_val = yyjson_obj_get(obj, "metadata-location");
 	if (metadata_location_val) {
 		metadata_location = yyjson_get_str(metadata_location_val);
 	}
@@ -44,7 +44,7 @@ string LoadTableResult::TryFromJSON(yyjson_val *obj) {
 	if (config_val) {
 		config = parse_object_of_strings(config_val);
 	}
-	auto storage_credentials_val = yyjson_obj_get(obj, "storage_credentials");
+	auto storage_credentials_val = yyjson_obj_get(obj, "storage-credentials");
 	if (storage_credentials_val) {
 		size_t idx, max;
 		yyjson_val *val;

@@ -31,9 +31,9 @@ string UpgradeFormatVersionUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto format_version_val = yyjson_obj_get(obj, "format_version");
+	auto format_version_val = yyjson_obj_get(obj, "format-version");
 	if (!format_version_val) {
-		return "UpgradeFormatVersionUpdate required property 'format_version' is missing";
+		return "UpgradeFormatVersionUpdate required property 'format-version' is missing";
 	} else {
 		format_version = yyjson_get_sint(format_version_val);
 	}

@@ -31,9 +31,9 @@ string AssertDefaultSortOrderId::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto default_sort_order_id_val = yyjson_obj_get(obj, "default_sort_order_id");
+	auto default_sort_order_id_val = yyjson_obj_get(obj, "default-sort-order-id");
 	if (!default_sort_order_id_val) {
-		return "AssertDefaultSortOrderId required property 'default_sort_order_id' is missing";
+		return "AssertDefaultSortOrderId required property 'default-sort-order-id' is missing";
 	} else {
 		default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
 	}

@@ -38,9 +38,9 @@ string ReportMetricsRequest::TryFromJSON(yyjson_val *obj) {
 	if (!has_commit_report && !has_scan_report) {
 		return "ReportMetricsRequest failed to parse, none of the anyOf candidates matched";
 	}
-	auto report_type_val = yyjson_obj_get(obj, "report_type");
+	auto report_type_val = yyjson_obj_get(obj, "report-type");
 	if (!report_type_val) {
-		return "ReportMetricsRequest required property 'report_type' is missing";
+		return "ReportMetricsRequest required property 'report-type' is missing";
 	} else {
 		report_type = yyjson_get_str(report_type_val);
 	}

@@ -27,33 +27,33 @@ StatisticsFile StatisticsFile::FromJSON(yyjson_val *obj) {
 
 string StatisticsFile::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
+	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (!snapshot_id_val) {
-		return "StatisticsFile required property 'snapshot_id' is missing";
+		return "StatisticsFile required property 'snapshot-id' is missing";
 	} else {
 		snapshot_id = yyjson_get_sint(snapshot_id_val);
 	}
-	auto statistics_path_val = yyjson_obj_get(obj, "statistics_path");
+	auto statistics_path_val = yyjson_obj_get(obj, "statistics-path");
 	if (!statistics_path_val) {
-		return "StatisticsFile required property 'statistics_path' is missing";
+		return "StatisticsFile required property 'statistics-path' is missing";
 	} else {
 		statistics_path = yyjson_get_str(statistics_path_val);
 	}
-	auto file_size_in_bytes_val = yyjson_obj_get(obj, "file_size_in_bytes");
+	auto file_size_in_bytes_val = yyjson_obj_get(obj, "file-size-in-bytes");
 	if (!file_size_in_bytes_val) {
-		return "StatisticsFile required property 'file_size_in_bytes' is missing";
+		return "StatisticsFile required property 'file-size-in-bytes' is missing";
 	} else {
 		file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
 	}
-	auto file_footer_size_in_bytes_val = yyjson_obj_get(obj, "file_footer_size_in_bytes");
+	auto file_footer_size_in_bytes_val = yyjson_obj_get(obj, "file-footer-size-in-bytes");
 	if (!file_footer_size_in_bytes_val) {
-		return "StatisticsFile required property 'file_footer_size_in_bytes' is missing";
+		return "StatisticsFile required property 'file-footer-size-in-bytes' is missing";
 	} else {
 		file_footer_size_in_bytes = yyjson_get_sint(file_footer_size_in_bytes_val);
 	}
-	auto blob_metadata_val = yyjson_obj_get(obj, "blob_metadata");
+	auto blob_metadata_val = yyjson_obj_get(obj, "blob-metadata");
 	if (!blob_metadata_val) {
-		return "StatisticsFile required property 'blob_metadata' is missing";
+		return "StatisticsFile required property 'blob-metadata' is missing";
 	} else {
 		size_t idx, max;
 		yyjson_val *val;

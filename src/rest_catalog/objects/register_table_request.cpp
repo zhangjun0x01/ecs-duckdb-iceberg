@@ -33,9 +33,9 @@ string RegisterTableRequest::TryFromJSON(yyjson_val *obj) {
 	} else {
 		name = yyjson_get_str(name_val);
 	}
-	auto metadata_location_val = yyjson_obj_get(obj, "metadata_location");
+	auto metadata_location_val = yyjson_obj_get(obj, "metadata-location");
 	if (!metadata_location_val) {
-		return "RegisterTableRequest required property 'metadata_location' is missing";
+		return "RegisterTableRequest required property 'metadata-location' is missing";
 	} else {
 		metadata_location = yyjson_get_str(metadata_location_val);
 	}

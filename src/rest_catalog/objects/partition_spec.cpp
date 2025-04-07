@@ -42,7 +42,7 @@ string PartitionSpec::TryFromJSON(yyjson_val *obj) {
 			fields.emplace_back(std::move(tmp));
 		}
 	}
-	auto spec_id_val = yyjson_obj_get(obj, "spec_id");
+	auto spec_id_val = yyjson_obj_get(obj, "spec-id");
 	if (spec_id_val) {
 		spec_id = yyjson_get_sint(spec_id_val);
 	}

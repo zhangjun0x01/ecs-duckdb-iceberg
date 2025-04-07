@@ -27,9 +27,9 @@ IcebergErrorResponse IcebergErrorResponse::FromJSON(yyjson_val *obj) {
 
 string IcebergErrorResponse::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto _error_val = yyjson_obj_get(obj, "_error");
+	auto _error_val = yyjson_obj_get(obj, "error");
 	if (!_error_val) {
-		return "IcebergErrorResponse required property '_error' is missing";
+		return "IcebergErrorResponse required property 'error' is missing";
 	} else {
 		error = _error.TryFromJSON(_error_val);
 		if (!error.empty()) {

@@ -27,15 +27,15 @@ ViewHistoryEntry ViewHistoryEntry::FromJSON(yyjson_val *obj) {
 
 string ViewHistoryEntry::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto version_id_val = yyjson_obj_get(obj, "version_id");
+	auto version_id_val = yyjson_obj_get(obj, "version-id");
 	if (!version_id_val) {
-		return "ViewHistoryEntry required property 'version_id' is missing";
+		return "ViewHistoryEntry required property 'version-id' is missing";
 	} else {
 		version_id = yyjson_get_sint(version_id_val);
 	}
-	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
+	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
 	if (!timestamp_ms_val) {
-		return "ViewHistoryEntry required property 'timestamp_ms' is missing";
+		return "ViewHistoryEntry required property 'timestamp-ms' is missing";
 	} else {
 		timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 	}

@@ -27,9 +27,9 @@ PartitionField PartitionField::FromJSON(yyjson_val *obj) {
 
 string PartitionField::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto source_id_val = yyjson_obj_get(obj, "source_id");
+	auto source_id_val = yyjson_obj_get(obj, "source-id");
 	if (!source_id_val) {
-		return "PartitionField required property 'source_id' is missing";
+		return "PartitionField required property 'source-id' is missing";
 	} else {
 		source_id = yyjson_get_sint(source_id_val);
 	}
@@ -48,7 +48,7 @@ string PartitionField::TryFromJSON(yyjson_val *obj) {
 	} else {
 		name = yyjson_get_str(name_val);
 	}
-	auto field_id_val = yyjson_obj_get(obj, "field_id");
+	auto field_id_val = yyjson_obj_get(obj, "field-id");
 	if (field_id_val) {
 		field_id = yyjson_get_sint(field_id_val);
 	}

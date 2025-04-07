@@ -29,15 +29,15 @@ SnapshotLog::Object3 SnapshotLog::Object3::FromJSON(yyjson_val *obj) {
 
 string SnapshotLog::Object3::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
+	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (!snapshot_id_val) {
-		return "Object3 required property 'snapshot_id' is missing";
+		return "Object3 required property 'snapshot-id' is missing";
 	} else {
 		snapshot_id = yyjson_get_sint(snapshot_id_val);
 	}
-	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
+	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
 	if (!timestamp_ms_val) {
-		return "Object3 required property 'timestamp_ms' is missing";
+		return "Object3 required property 'timestamp-ms' is missing";
 	} else {
 		timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 	}

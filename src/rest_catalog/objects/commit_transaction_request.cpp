@@ -27,9 +27,9 @@ CommitTransactionRequest CommitTransactionRequest::FromJSON(yyjson_val *obj) {
 
 string CommitTransactionRequest::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto table_changes_val = yyjson_obj_get(obj, "table_changes");
+	auto table_changes_val = yyjson_obj_get(obj, "table-changes");
 	if (!table_changes_val) {
-		return "CommitTransactionRequest required property 'table_changes' is missing";
+		return "CommitTransactionRequest required property 'table-changes' is missing";
 	} else {
 		size_t idx, max;
 		yyjson_val *val;

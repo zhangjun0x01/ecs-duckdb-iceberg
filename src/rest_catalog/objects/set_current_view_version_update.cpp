@@ -31,9 +31,9 @@ string SetCurrentViewVersionUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto view_version_id_val = yyjson_obj_get(obj, "view_version_id");
+	auto view_version_id_val = yyjson_obj_get(obj, "view-version-id");
 	if (!view_version_id_val) {
-		return "SetCurrentViewVersionUpdate required property 'view_version_id' is missing";
+		return "SetCurrentViewVersionUpdate required property 'view-version-id' is missing";
 	} else {
 		view_version_id = yyjson_get_sint(view_version_id_val);
 	}

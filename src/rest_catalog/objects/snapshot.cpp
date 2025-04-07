@@ -60,21 +60,21 @@ Snapshot Snapshot::FromJSON(yyjson_val *obj) {
 
 string Snapshot::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
+	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (!snapshot_id_val) {
-		return "Snapshot required property 'snapshot_id' is missing";
+		return "Snapshot required property 'snapshot-id' is missing";
 	} else {
 		snapshot_id = yyjson_get_sint(snapshot_id_val);
 	}
-	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp_ms");
+	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
 	if (!timestamp_ms_val) {
-		return "Snapshot required property 'timestamp_ms' is missing";
+		return "Snapshot required property 'timestamp-ms' is missing";
 	} else {
 		timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 	}
-	auto manifest_list_val = yyjson_obj_get(obj, "manifest_list");
+	auto manifest_list_val = yyjson_obj_get(obj, "manifest-list");
 	if (!manifest_list_val) {
-		return "Snapshot required property 'manifest_list' is missing";
+		return "Snapshot required property 'manifest-list' is missing";
 	} else {
 		manifest_list = yyjson_get_str(manifest_list_val);
 	}
@@ -87,15 +87,15 @@ string Snapshot::TryFromJSON(yyjson_val *obj) {
 			return error;
 		}
 	}
-	auto parent_snapshot_id_val = yyjson_obj_get(obj, "parent_snapshot_id");
+	auto parent_snapshot_id_val = yyjson_obj_get(obj, "parent-snapshot-id");
 	if (parent_snapshot_id_val) {
 		parent_snapshot_id = yyjson_get_sint(parent_snapshot_id_val);
 	}
-	auto sequence_number_val = yyjson_obj_get(obj, "sequence_number");
+	auto sequence_number_val = yyjson_obj_get(obj, "sequence-number");
 	if (sequence_number_val) {
 		sequence_number = yyjson_get_sint(sequence_number_val);
 	}
-	auto schema_id_val = yyjson_obj_get(obj, "schema_id");
+	auto schema_id_val = yyjson_obj_get(obj, "schema-id");
 	if (schema_id_val) {
 		schema_id = yyjson_get_sint(schema_id_val);
 	}

@@ -27,15 +27,15 @@ ScanReport ScanReport::FromJSON(yyjson_val *obj) {
 
 string ScanReport::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto table_name_val = yyjson_obj_get(obj, "table_name");
+	auto table_name_val = yyjson_obj_get(obj, "table-name");
 	if (!table_name_val) {
-		return "ScanReport required property 'table_name' is missing";
+		return "ScanReport required property 'table-name' is missing";
 	} else {
 		table_name = yyjson_get_str(table_name_val);
 	}
-	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot_id");
+	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (!snapshot_id_val) {
-		return "ScanReport required property 'snapshot_id' is missing";
+		return "ScanReport required property 'snapshot-id' is missing";
 	} else {
 		snapshot_id = yyjson_get_sint(snapshot_id_val);
 	}
@@ -49,15 +49,15 @@ string ScanReport::TryFromJSON(yyjson_val *obj) {
 			return error;
 		}
 	}
-	auto schema_id_val = yyjson_obj_get(obj, "schema_id");
+	auto schema_id_val = yyjson_obj_get(obj, "schema-id");
 	if (!schema_id_val) {
-		return "ScanReport required property 'schema_id' is missing";
+		return "ScanReport required property 'schema-id' is missing";
 	} else {
 		schema_id = yyjson_get_sint(schema_id_val);
 	}
-	auto projected_field_ids_val = yyjson_obj_get(obj, "projected_field_ids");
+	auto projected_field_ids_val = yyjson_obj_get(obj, "projected-field-ids");
 	if (!projected_field_ids_val) {
-		return "ScanReport required property 'projected_field_ids' is missing";
+		return "ScanReport required property 'projected-field-ids' is missing";
 	} else {
 		size_t idx, max;
 		yyjson_val *val;
@@ -66,9 +66,9 @@ string ScanReport::TryFromJSON(yyjson_val *obj) {
 			projected_field_ids.emplace_back(std::move(tmp));
 		}
 	}
-	auto projected_field_names_val = yyjson_obj_get(obj, "projected_field_names");
+	auto projected_field_names_val = yyjson_obj_get(obj, "projected-field-names");
 	if (!projected_field_names_val) {
-		return "ScanReport required property 'projected_field_names' is missing";
+		return "ScanReport required property 'projected-field-names' is missing";
 	} else {
 		size_t idx, max;
 		yyjson_val *val;

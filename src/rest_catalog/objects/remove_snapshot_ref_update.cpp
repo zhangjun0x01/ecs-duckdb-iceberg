@@ -31,9 +31,9 @@ string RemoveSnapshotRefUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto ref_name_val = yyjson_obj_get(obj, "ref_name");
+	auto ref_name_val = yyjson_obj_get(obj, "ref-name");
 	if (!ref_name_val) {
-		return "RemoveSnapshotRefUpdate required property 'ref_name' is missing";
+		return "RemoveSnapshotRefUpdate required property 'ref-name' is missing";
 	} else {
 		ref_name = yyjson_get_str(ref_name_val);
 	}

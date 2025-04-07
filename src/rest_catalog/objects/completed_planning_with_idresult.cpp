@@ -29,7 +29,7 @@ CompletedPlanningWithIDResult::Object6 CompletedPlanningWithIDResult::Object6::F
 
 string CompletedPlanningWithIDResult::Object6::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto plan_id_val = yyjson_obj_get(obj, "plan_id");
+	auto plan_id_val = yyjson_obj_get(obj, "plan-id");
 	if (plan_id_val) {
 		plan_id = yyjson_get_str(plan_id_val);
 	}

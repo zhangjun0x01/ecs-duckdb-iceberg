@@ -31,9 +31,9 @@ string RemoveSnapshotsUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!error.empty()) {
 		return error;
 	}
-	auto snapshot_ids_val = yyjson_obj_get(obj, "snapshot_ids");
+	auto snapshot_ids_val = yyjson_obj_get(obj, "snapshot-ids");
 	if (!snapshot_ids_val) {
-		return "RemoveSnapshotsUpdate required property 'snapshot_ids' is missing";
+		return "RemoveSnapshotsUpdate required property 'snapshot-ids' is missing";
 	} else {
 		size_t idx, max;
 		yyjson_val *val;
