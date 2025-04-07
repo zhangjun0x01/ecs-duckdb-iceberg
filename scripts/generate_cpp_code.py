@@ -32,18 +32,6 @@ CPP_KEYWORDS = {
     'error',  # add 'error' to avoid conflicts with the 'error' variable in TryFromJSON
 }
 
-"""
-TODO:
-We have to write a method to check for each schema if it's recursive
-(follow the references until we've hit ourselves or we run out of references to follow)
-
-We need to split declaration (header) and definition (source), because some schemas are recursive
-and if we don't, then we run into a cyclic dependency in the includes
-
-We probably want to split off the 'generate_*' methods into a new class
-there's too much state that we need and scoping that we want to justify jamming it all into a single class
-"""
-
 
 def to_snake_case(name: str):
     res = ''

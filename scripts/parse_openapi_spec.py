@@ -71,7 +71,6 @@ class ObjectProperty(Property):
         super().__init__(Property.Type.OBJECT)
         self.required = []
         self.properties: Dict[str, Property] = {}
-        # TODO: if present, we should collect these in a 'case_insensitive_map_t'
         self.additional_properties: Optional[Property] = None
         # TODO: do we need this? the schema validation shouldn't need it
         self.discriminator = None
