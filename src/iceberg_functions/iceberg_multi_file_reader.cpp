@@ -556,8 +556,10 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 
 	// Get the metadata for this file
 	const auto &multi_file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state->file_list);
-	auto file_id = reader_data.file_list_idx.GetIndex();
-	auto &data_file = multi_file_list.data_files[file_id];
+	//! FIXME: we have no way of getting the 'file_list_idx' here currently??
+	// auto file_id = reader_data.file_list_idx.GetIndex();
+	// auto &data_file = multi_file_list.data_files[file_id];
+	auto &data_file = multi_file_list.data_files[42];
 
 	// The path of the data file where this chunk was read from
 	auto &file_path = data_file.file_path;
