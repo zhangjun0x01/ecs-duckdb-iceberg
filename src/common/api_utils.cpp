@@ -35,7 +35,8 @@ string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &en
 
 		// Set the user Agent.
 		auto &config = DBConfig::GetConfig(context);
-		extra_headers = curl_slist_append(extra_headers, StringUtil::Format("User-Agent: %s", config.UserAgent()).c_str());
+		extra_headers =
+		    curl_slist_append(extra_headers, StringUtil::Format("User-Agent: %s", config.UserAgent()).c_str());
 		if (extra_headers) {
 			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, extra_headers);
 		}
