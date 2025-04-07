@@ -34,7 +34,10 @@ static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const
 	extra_headers = curl_slist_append(extra_headers, "X-Iceberg-Access-Delegation: vended-credentials");
 	string api_result = APIUtils::GetRequest(context, url, secret_name, catalog.credentials.token, extra_headers);
 
-	catalog.SetCachedValue(url.GetURL(), api_result);
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
+	auto *root = yyjson_doc_get_root(doc.get());
+	auto load_table_result = rest_api_objects::LoadTableResult::FromJSON(root);
+	catalog.SetCachedValue(url.GetURL(), api_result, load_table_result);
 	curl_slist_free_all(extra_headers);
 	return api_result;
 }
@@ -61,14 +64,23 @@ vector<string> IRCAPI::GetCatalogs(ClientContext &context, IRCatalog &catalog, I
 	throw NotImplementedException("ICAPI::GetCatalogs");
 }
 
-static IRCAPIColumnDefinition ParseColumnDefinition(yyjson_val *column_def) {
+static IRCAPIColumnDefinition ParseColumnDefinition(const rest_api_objects::StructField &column_def) {
 	IRCAPIColumnDefinition result;
-	result.name = IcebergUtils::TryGetStrFromObject(column_def, "name");
-	result.type_text = IcebergUtils::TryGetStrFromObject(column_def, "type");
-	result.precision =
-	    (result.type_text == "decimal") ? IcebergUtils::TryGetNumFromObject(column_def, "type_precision") : -1;
-	result.scale = (result.type_text == "decimal") ? IcebergUtils::TryGetNumFromObject(column_def, "type_scale") : -1;
-	result.position = IcebergUtils::TryGetNumFromObject(column_def, "id") - 1;
+	result.name = column_def.name;
+	auto &type = column_def.type;
+
+	result.precision = -1;
+	result.scale = -1;
+	if (type->has_primitive_type && StringUtil::StartsWith(type->primitive_type.value, "decimal")) {
+		auto &decimal_type = type->primitive_type.value;
+		//! FIXME: This was 'type_precision' and 'type_scale', but 'type-precision' or 'type_precision' are not valid
+		//! fields of the spec?
+		// instead, the PrimitiveType can contain a 'value' property that can have 'decimal(10,2)' as its value)
+		if (sscanf(decimal_type.c_str(), "decimal(%lld,%lld)", &result.precision, &result.scale) != 2) {
+			throw InvalidInputException("Expected format: 'decimal(%d,%d)', got '%s'", decimal_type);
+		}
+	}
+	result.position = column_def.id;
 	return result;
 }
 
@@ -194,42 +206,49 @@ string IRCAPI::GetToken(ClientContext &context, const string &uri, const string 
 	// { 'access_token', 'token_type', 'expires_in', <issued_token_type>, 'refresh_token', 'scope'}
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
-	auto access_token_val = yyjson_obj_get(root, "access_token");
-	auto token_type_val = yyjson_obj_get(root, "token_type");
-	if (!access_token_val) {
-		throw IOException("OAuthTokenResponse is missing required property 'access_token'");
-	}
-	if (!token_type_val) {
-		throw IOException("OAuthTokenResponse is missing required property 'token_type'");
-	}
-	string token_type = yyjson_get_str(token_type_val);
+	auto oauth_token_response = rest_api_objects::OAuthTokenResponse::FromJSON(root);
+	auto &access_token = oauth_token_response.access_token;
+	auto &token_type = oauth_token_response.token_type;
 	if (!StringUtil::CIEquals(token_type, "bearer")) {
 		throw NotImplementedException(
 		    "token_type return value '%s' is not supported, only supports 'bearer' currently.", token_type);
 	}
-	string access_token = yyjson_get_str(access_token_val);
 	return access_token;
 }
 
-static void populateTableMetadata(IRCAPITable &table, yyjson_val *metadata_root) {
-	table.storage_location = IcebergUtils::TryGetStrFromObject(metadata_root, "metadata-location");
-	auto *metadata = yyjson_obj_get(metadata_root, "metadata");
+static void populateTableMetadata(IRCAPITable &table, const rest_api_objects::LoadTableResult &load_table_result) {
+	if (load_table_result.has_metadata_location) {
+		table.storage_location = load_table_result.metadata_location;
+	}
+
+	auto &metadata = load_table_result.metadata;
 	// table_result.table_id = IcebergUtils::TryGetStrFromObject(metadata, "table-uuid");
 
-	uint64_t current_schema_id = IcebergUtils::TryGetNumFromObject(metadata, "current-schema-id");
-	auto *schemas = yyjson_obj_get(metadata, "schemas");
-	yyjson_val *schema;
-	size_t schema_idx, schema_max;
+	//! NOTE: these (schema-id and current-schema-id) are saved as int64_t in the parsed structure,
+	//! the spec lists them as 'int', so I think they are really int32_t. (?)
+	//! We parsed them as uint64_t before using the generated JSON->CPP parsing logic.
 	bool found = false;
-	yyjson_arr_foreach(schemas, schema_idx, schema_max, schema) {
-		uint64_t schema_id = IcebergUtils::TryGetNumFromObject(schema, "schema-id");
+	if (!metadata.has_current_schema_id) {
+		//! It's required since v2, but we want to support reading v1 as well, no?
+		throw NotImplementedException("FIXME: We require the 'current-schema-id' always, the spec says it's optional?");
+		//! FIXME: for v1 we should check if `schema` is set and use that instead
+	}
+	int64_t current_schema_id = metadata.current_schema_id;
+	if (!metadata.has_schemas) {
+		throw NotImplementedException("'schemas' is not present! V1 not supported currently");
+		//! FIXME: for v1 we should check if `schema` is set and use that instead (see above)
+	}
+	for (auto &schema : metadata.schemas) {
+		auto &schema_internals = schema.object_1;
+		if (!schema_internals.has_schema_id) {
+			throw NotImplementedException("'schema-id' not present! V1 not supported currently!");
+		}
+		int64_t schema_id = schema_internals.schema_id;
 		if (schema_id == current_schema_id) {
 			found = true;
-			auto *columns = yyjson_obj_get(schema, "fields");
-			yyjson_val *col;
-			size_t col_idx, col_max;
-			yyjson_arr_foreach(columns, col_idx, col_max, col) {
-				auto column_definition = ParseColumnDefinition(col);
+			auto &columns = schema.struct_type.fields;
+			for (auto &col : columns) {
+				auto column_definition = ParseColumnDefinition(*col);
 				table.columns.push_back(column_definition);
 			}
 		}
@@ -258,7 +277,8 @@ IRCAPITable IRCAPI::GetTable(ClientContext &context, IRCatalog &catalog, const s
 		string result = GetTableMetadata(context, catalog, schema, table_result.name, catalog.secret_name);
 		std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(result));
 		auto *metadata_root = yyjson_doc_get_root(doc.get());
-		populateTableMetadata(table_result, metadata_root);
+		auto load_table_result = rest_api_objects::LoadTableResult::FromJSON(metadata_root);
+		populateTableMetadata(table_result, load_table_result);
 	} else {
 		// Skip fetching metadata, we'll do it later when we access the table
 		IRCAPIColumnDefinition col;
@@ -284,15 +304,18 @@ vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog
 	string api_result = APIUtils::GetRequest(context, url, catalog.secret_name, catalog.credentials.token);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
-	auto *tables = yyjson_obj_get(root, "identifiers");
-	size_t idx, max;
-	yyjson_val *table;
-	yyjson_arr_foreach(tables, idx, max, table) {
-		auto table_result =
-		    GetTable(context, catalog, schema, IcebergUtils::TryGetStrFromObject(table, "name"), nullptr);
-		result.push_back(table_result);
+	auto list_tables_response = rest_api_objects::ListTablesResponse::FromJSON(root);
+
+	if (!list_tables_response.has_identifiers) {
+		//! FIXME: previous logic expected this field to always be present, but it's not a required field
+		return result;
 	}
 
+	auto &tables = list_tables_response.identifiers;
+	for (auto &table : tables) {
+		auto table_result = GetTable(context, catalog, schema, table.name, nullptr);
+		result.push_back(table_result);
+	}
 	return result;
 }
 
@@ -304,15 +327,22 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catal
 	string api_result = APIUtils::GetRequest(context, endpoint_builder, catalog.secret_name, catalog.credentials.token);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
-	//! 'ListNamespacesResponse'
-	auto *schemas = yyjson_obj_get(root, "namespaces");
-	size_t idx, max;
-	yyjson_val *schema;
-	yyjson_arr_foreach(schemas, idx, max, schema) {
+	auto list_namespaces_response = rest_api_objects::ListNamespacesResponse::FromJSON(root);
+	if (!list_namespaces_response.has_namespaces) {
+		//! FIXME: old code expected 'namespaces' to always be present, but it's not a required property
+		return result;
+	}
+	auto &schemas = list_namespaces_response.namespaces;
+	for (auto &schema : schemas) {
 		IRCAPISchema schema_result;
 		schema_result.catalog_name = catalog.GetName();
-		yyjson_val *value = yyjson_arr_get(schema, 0);
-		schema_result.schema_name = yyjson_get_str(value);
+		auto &value = schema.value;
+		if (value.size() != 1) {
+			//! FIXME: we likely want to fix this by concatenating the components with a `.` ?
+			throw NotImplementedException("Only a namespace with a single component is supported currently, found %d",
+			                              value.size());
+		}
+		schema_result.schema_name = value[0];
 		result.push_back(schema_result);
 	}
 

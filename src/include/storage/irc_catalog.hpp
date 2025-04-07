@@ -7,6 +7,7 @@
 #include "duckdb/main/secret/secret_manager.hpp"
 #include "url_utils.hpp"
 #include "storage/irc_schema_set.hpp"
+#include "rest_catalog/objects/load_table_result.hpp"
 
 namespace duckdb {
 
@@ -112,7 +113,7 @@ public:
 
 	bool HasCachedValue(string url) const;
 	string GetCachedValue(string url) const;
-	bool SetCachedValue(string url, string value);
+	bool SetCachedValue(string url, const string &value, const rest_api_objects::LoadTableResult &result);
 
 private:
 	void DropSchema(ClientContext &context, DropInfo &info) override;
@@ -122,8 +123,8 @@ private:
 	string default_schema;
 
 	// defaults and overrides provided by a catalog.
-	unordered_map<string, string> defaults;
-	unordered_map<string, string> overrides;
+	case_insensitive_map_t<string> defaults;
+	case_insensitive_map_t<string> overrides;
 
 	unordered_map<string, unique_ptr<MetadataCacheValue>> metadata_cache;
 };
