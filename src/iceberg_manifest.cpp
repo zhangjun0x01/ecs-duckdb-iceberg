@@ -195,6 +195,9 @@ idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx
 			//! Skip this entry, we don't care about deleted entries
 			continue;
 		}
+		if (entry.content == IcebergManifestEntryContentType::EQUALITY_DELETES) {
+			throw NotImplementedException("Support for equality deletes is not added yet");
+		}
 		produced++;
 		result.push_back(entry);
 	}
