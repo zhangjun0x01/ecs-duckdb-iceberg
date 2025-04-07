@@ -118,6 +118,9 @@ static void ParseConfigOptions(const case_insensitive_map_t<string> &config, cas
 	if (StringUtil::StartsWith(endpoint, "http://")) {
 		endpoint = endpoint.substr(7, std::string::npos);
 	}
+	if (StringUtil::StartsWith(endpoint, "https://")) {
+		endpoint = endpoint.substr(8, std::string::npos);
+	}
 	if (StringUtil::EndsWith(endpoint, "/")) {
 		endpoint = endpoint.substr(0, endpoint.size() - 1);
 	}
@@ -136,10 +139,17 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	// Mapping from config key to a duckdb secret option
 
 	case_insensitive_map_t<Value> config_options;
-	if (load_table_result.has_config && catalog_credentials) {
+	// start with the credentials needed for the catalog and overwrite information contained
+	// in the vended credentials. We do it this way to maintain the region info from the catalog credentials
+	if (catalog_credentials) {
 		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*catalog_credentials->secret);
 		for (auto &option : kv_secret.secret_map) {
-			config_options.emplace(option);
+			// Ignore refresh info.
+			// if the credentials are the same as for the catalog, then refreshing the catalog secret is enough
+			// otherwise the vended credentials contain their own information for refreshing.
+			if (option.first != "refresh_info" && option.first != "refresh") {
+				config_options.emplace(option);
+			}
 		}
 	}
 	if (load_table_result.has_config) {

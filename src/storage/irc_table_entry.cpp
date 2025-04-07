@@ -98,6 +98,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 			                {"region", region},
 			                {"endpoint", endpoint}};
 		}
+
 		(void)secret_manager.CreateSecret(context, info);
 	}
 

@@ -65,7 +65,7 @@ attach '84014028:s3tablescatalog/pyiceberg-blog-bucket' as bad_account_id (
     ENDPOINT_TYPE 'GLUE'
 );
 ----
-IO Error
+Invalid Configuration Error
 
 statement error
 attach '840140254803:incorrect/pyiceberg-blog-bucket' as no_s3tables (
@@ -73,6 +73,6 @@ attach '840140254803:incorrect/pyiceberg-blog-bucket' as no_s3tables (
     ENDPOINT_TYPE 'GLUE'
 );
 ----
-IO Error
+Invalid Configuration Error
 
 
