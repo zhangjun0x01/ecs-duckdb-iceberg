@@ -6,7 +6,7 @@ require-env POLARIS_CLIENT_ID
 
 require-env POLARIS_CLIENT_SECRET
 
-# require-env POLARIS_SERVER_AVAILABLE
+require-env POLARIS_SERVER_AVAILABLE
 
 require avro
 
@@ -48,7 +48,7 @@ select * from my_datalake.default.quickstart_table;
 3	yet more data
 
 query IIIIIIII
-select * from my_datalake.default.full_types_table;
+select * from my_datalake.default.all_types_table;
 ----
 1	100	1000	10000000000	1.23	123.456	12345.67890	2023-01-01
 2	200	2000	20000000000	2.34	234.567	23456.78901	2023-06-15
