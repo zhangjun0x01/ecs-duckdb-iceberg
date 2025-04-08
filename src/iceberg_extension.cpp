@@ -323,7 +323,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		token = kv_iceberg_secret.TryGetValue("token");
 	}
 	if (token.IsNull()) {
-		throw InvalidConfigurationError("Failed to generate oath token");
+		throw InvalidConfigurationException("Failed to generate oath token");
 	}
 	credentials.token = token.ToString();
 

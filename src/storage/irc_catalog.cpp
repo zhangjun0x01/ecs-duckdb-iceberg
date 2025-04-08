@@ -177,7 +177,7 @@ unique_ptr<SecretEntry> IRCatalog::GetS3Secret(ClientContext &context, const str
 	if (secret_entry) {
 		return secret_entry;
 	}
-	throw InvalidConfigurationError("Could not find valid Iceberg secret");
+	throw InvalidConfigurationException("Could not find valid Iceberg secret");
 }
 
 unique_ptr<SecretEntry> IRCatalog::GetIcebergSecret(ClientContext &context, const string &secret_name,
