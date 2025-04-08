@@ -55,7 +55,7 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 	auto iceberg_path = input.inputs[0].ToString();
 
 	IcebergOptions options;
-	
+
 	for (auto &kv : input.named_parameters) {
 		auto loption = StringUtil::Lower(kv.first);
 		auto &val = kv.second;
@@ -71,13 +71,15 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 			options.version_name_format = StringValue::Get(val);
 		} else if (loption == "snapshot_from_id") {
 			if (options.snapshot_source != SnapshotSource::LATEST) {
-				throw InvalidInputException("Can't use 'snapshot_from_id' in combination with 'snapshot_from_timestamp'");
+				throw InvalidInputException(
+				    "Can't use 'snapshot_from_id' in combination with 'snapshot_from_timestamp'");
 			}
 			options.snapshot_source = SnapshotSource::FROM_ID;
 			options.snapshot_id = val.GetValue<uint64_t>();
 		} else if (loption == "snapshot_from_timestamp") {
 			if (options.snapshot_source != SnapshotSource::LATEST) {
-				throw InvalidInputException("Can't use 'snapshot_from_id' in combination with 'snapshot_from_timestamp'");
+				throw InvalidInputException(
+				    "Can't use 'snapshot_from_id' in combination with 'snapshot_from_timestamp'");
 			}
 			options.snapshot_source = SnapshotSource::FROM_TIMESTAMP;
 			options.snapshot_timestamp = val.GetValue<timestamp_t>();
@@ -104,8 +106,7 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 		throw InternalException("SnapshotSource type not implemented");
 	}
 
-	ret->iceberg_table =
-	    make_uniq<IcebergTable>(IcebergTable::Load(iceberg_path, snapshot_to_scan, context, options));
+	ret->iceberg_table = make_uniq<IcebergTable>(IcebergTable::Load(iceberg_path, snapshot_to_scan, context, options));
 
 	auto manifest_types = IcebergManifest::Types();
 	return_types.insert(return_types.end(), manifest_types.begin(), manifest_types.end());

@@ -25,9 +25,9 @@ public:
 
 		FileSystem &fs = FileSystem::GetFileSystem(context);
 
-		auto iceberg_meta_path =
-		    IcebergSnapshot::GetMetaDataPath(context, bind_data.filename, fs, bind_data.options);
-		global_state->metadata = IcebergMetadata::Parse(iceberg_meta_path, fs, bind_data.options.metadata_compression_codec);
+		auto iceberg_meta_path = IcebergSnapshot::GetMetaDataPath(context, bind_data.filename, fs, bind_data.options);
+		global_state->metadata =
+		    IcebergMetadata::Parse(iceberg_meta_path, fs, bind_data.options.metadata_compression_codec);
 
 		auto &info = *global_state->metadata;
 		auto root = yyjson_doc_get_root(info.doc);

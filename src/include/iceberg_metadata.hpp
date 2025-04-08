@@ -20,10 +20,12 @@ namespace duckdb {
 struct IcebergColumnDefinition {
 public:
 	static IcebergColumnDefinition ParseFromJson(yyjson_val *val);
+
 public:
 	LogicalType ToDuckDBType() {
 		return type;
 	}
+
 public:
 	int32_t id;
 	string name;
@@ -35,6 +37,7 @@ public:
 struct IcebergPartitionSpecField {
 public:
 	static IcebergPartitionSpecField ParseFromJson(yyjson_val *val);
+
 public:
 	string name;
 	//! FIXME: parse this, there are a set amount of valid transforms
@@ -51,6 +54,7 @@ public:
 struct IcebergPartitionSpec {
 public:
 	static IcebergPartitionSpec ParseFromJson(yyjson_val *val);
+
 public:
 	uint64_t spec_id;
 	vector<IcebergPartitionSpecField> fields;
@@ -59,15 +63,19 @@ public:
 struct IcebergMetadata {
 private:
 	IcebergMetadata() = default;
+
 public:
-	static unique_ptr<IcebergMetadata> Parse(const string &path, FileSystem &fs, const string &metadata_compression_codec);
+	static unique_ptr<IcebergMetadata> Parse(const string &path, FileSystem &fs,
+	                                         const string &metadata_compression_codec);
 	~IcebergMetadata() {
 		if (doc) {
 			yyjson_doc_free(doc);
 		}
 	}
+
 public:
 	unordered_map<int64_t, IcebergPartitionSpec> ParsePartitionSpecs();
+
 public:
 	// Ownership of parse data
 	yyjson_doc *doc = nullptr;
@@ -93,14 +101,17 @@ public:
 	uint64_t schema_id;
 	vector<IcebergColumnDefinition> schema;
 	string metadata_compression_codec = "none";
+
 public:
 	static IcebergSnapshot GetLatestSnapshot(IcebergMetadata &info, const IcebergOptions &options);
 	static IcebergSnapshot GetSnapshotById(IcebergMetadata &info, idx_t snapshot_id, const IcebergOptions &options);
-	static IcebergSnapshot GetSnapshotByTimestamp(IcebergMetadata &info, timestamp_t timestamp, const IcebergOptions &options);
+	static IcebergSnapshot GetSnapshotByTimestamp(IcebergMetadata &info, timestamp_t timestamp,
+	                                              const IcebergOptions &options);
 
 	static IcebergSnapshot ParseSnapShot(yyjson_val *snapshot, idx_t iceberg_format_version, idx_t schema_id,
 	                                     vector<yyjson_val *> &schemas, const IcebergOptions &options);
-	static string GetMetaDataPath(ClientContext &context, const string &path, FileSystem &fs, const IcebergOptions &options);
+	static string GetMetaDataPath(ClientContext &context, const string &path, FileSystem &fs,
+	                              const IcebergOptions &options);
 
 protected:
 	//! Version extraction and identification
@@ -120,7 +131,8 @@ protected:
 struct IcebergTable {
 public:
 	//! Loads all(!) metadata of into IcebergTable object
-	static IcebergTable Load(const string &iceberg_path, IcebergSnapshot &snapshot, ClientContext &context, const IcebergOptions &options);
+	static IcebergTable Load(const string &iceberg_path, IcebergSnapshot &snapshot, ClientContext &context,
+	                         const IcebergOptions &options);
 
 public:
 	//! Returns all paths to be scanned for the IcebergManifestContentType

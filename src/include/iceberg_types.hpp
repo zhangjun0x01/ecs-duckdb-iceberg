@@ -26,6 +26,8 @@ static string IcebergManifestContentTypeToString(IcebergManifestContentType type
 		return "DATA";
 	case IcebergManifestContentType::DELETE:
 		return "DELETE";
+	default:
+		throw InvalidConfigurationException("Invalid Manifest Content Type");
 	}
 }
 
@@ -39,6 +41,8 @@ static string IcebergManifestEntryStatusTypeToString(IcebergManifestEntryStatusT
 		return "ADDED";
 	case IcebergManifestEntryStatusType::DELETED:
 		return "DELETED";
+	default:
+		throw InvalidConfigurationException("Invalid matifest entry type");
 	}
 }
 
@@ -52,6 +56,8 @@ static string IcebergManifestEntryContentTypeToString(IcebergManifestEntryConten
 		return "POSITION_DELETES";
 	case IcebergManifestEntryContentType::EQUALITY_DELETES:
 		return "EQUALITY_DELETES";
+	default:
+		throw InvalidConfigurationException("Invalid Manifest Entry Content Type");
 	}
 }
 
@@ -78,6 +84,7 @@ public:
 	IcebergManifestContentType content;
 
 	vector<FieldSummary> field_summary;
+
 public:
 	void Print() {
 		Printer::Print("  - Manifest = { content: " + IcebergManifestContentTypeToString(content) +

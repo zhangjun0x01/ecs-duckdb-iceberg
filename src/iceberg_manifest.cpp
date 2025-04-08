@@ -7,14 +7,17 @@
 
 namespace duckdb {
 
-static void ManifestNameMapping(idx_t column_id, const LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec) {
+static void ManifestNameMapping(idx_t column_id, const LogicalType &type, const string &name,
+                                case_insensitive_map_t<ColumnIndex> &name_to_vec) {
 	name_to_vec[name] = ColumnIndex(column_id);
 }
 
-idx_t IcebergManifestV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input, vector<entry_type> &result) {
+idx_t IcebergManifestV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input,
+                                        vector<entry_type> &result) {
 	auto &name_to_vec = input.name_to_vec;
 	auto manifest_path = FlatVector::GetData<string_t>(chunk.data[name_to_vec.at("manifest_path").GetPrimaryIndex()]);
-	auto partition_spec_id = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("partition_spec_id").GetPrimaryIndex()]);
+	auto partition_spec_id =
+	    FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("partition_spec_id").GetPrimaryIndex()]);
 
 	list_entry_t *field_summary;
 	bool *contains_null = nullptr;
@@ -92,17 +95,20 @@ bool IcebergManifestV1::VerifySchema(const case_insensitive_map_t<ColumnIndex> &
 	return true;
 }
 
-void IcebergManifestV1::PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec) {
+void IcebergManifestV1::PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name,
+                                            case_insensitive_map_t<ColumnIndex> &name_to_vec) {
 	ManifestNameMapping(column_id, type, name, name_to_vec);
 }
 
 idx_t IcebergManifestV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input,
-											vector<entry_type> &result) {
+                                        vector<entry_type> &result) {
 	auto &name_to_vec = input.name_to_vec;
 	auto manifest_path = FlatVector::GetData<string_t>(chunk.data[name_to_vec.at("manifest_path").GetPrimaryIndex()]);
 	auto content = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("content").GetPrimaryIndex()]);
-	auto sequence_number = FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("sequence_number").GetPrimaryIndex()]);
-	auto partition_spec_id = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("partition_spec_id").GetPrimaryIndex()]);
+	auto sequence_number =
+	    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("sequence_number").GetPrimaryIndex()]);
+	auto partition_spec_id =
+	    FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("partition_spec_id").GetPrimaryIndex()]);
 
 	list_entry_t *field_summary;
 	bool *contains_null = nullptr;
@@ -180,13 +186,15 @@ bool IcebergManifestV2::VerifySchema(const case_insensitive_map_t<ColumnIndex> &
 	return true;
 }
 
-void IcebergManifestV2::PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec) {
+void IcebergManifestV2::PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name,
+                                            case_insensitive_map_t<ColumnIndex> &name_to_vec) {
 	ManifestNameMapping(column_id, type, name, name_to_vec);
 }
 
 //! Iceberg Manifest Entry scan routines
 
-static void EntryNameMapping(idx_t column_id, const LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec) {
+static void EntryNameMapping(idx_t column_id, const LogicalType &type, const string &name,
+                             case_insensitive_map_t<ColumnIndex> &name_to_vec) {
 	auto lname = StringUtil::Lower(name);
 	if (lname != "data_file") {
 		name_to_vec[lname] = ColumnIndex(column_id);
@@ -220,8 +228,8 @@ static unordered_map<int32_t, string> GetBounds(Vector &bounds, idx_t index) {
 	return parsed_bounds;
 }
 
-idx_t IcebergManifestEntryV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input,
-													vector<entry_type> &result) {
+idx_t IcebergManifestEntryV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count,
+                                             const ManifestReaderInput &input, vector<entry_type> &result) {
 	auto &name_to_vec = input.name_to_vec;
 	auto status = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("status").GetPrimaryIndex()]);
 
@@ -232,8 +240,10 @@ idx_t IcebergManifestEntryV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx
 	D_ASSERT(name_to_vec.at("record_count").GetPrimaryIndex());
 
 	auto file_path = FlatVector::GetData<string_t>(*child_entries[file_path_idx.GetChildIndex(0).GetPrimaryIndex()]);
-	auto file_format = FlatVector::GetData<string_t>(*child_entries[name_to_vec.at("file_format").GetChildIndex(0).GetPrimaryIndex()]);
-	auto record_count = FlatVector::GetData<int64_t>(*child_entries[name_to_vec.at("record_count").GetChildIndex(0).GetPrimaryIndex()]);
+	auto file_format =
+	    FlatVector::GetData<string_t>(*child_entries[name_to_vec.at("file_format").GetChildIndex(0).GetPrimaryIndex()]);
+	auto record_count =
+	    FlatVector::GetData<int64_t>(*child_entries[name_to_vec.at("record_count").GetChildIndex(0).GetPrimaryIndex()]);
 	optional_ptr<Vector> lower_bounds;
 	optional_ptr<Vector> upper_bounds;
 
@@ -290,12 +300,13 @@ bool IcebergManifestEntryV1::VerifySchema(const case_insensitive_map_t<ColumnInd
 	return true;
 }
 
-void IcebergManifestEntryV1::PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec) {
+void IcebergManifestEntryV1::PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name,
+                                                 case_insensitive_map_t<ColumnIndex> &name_to_vec) {
 	EntryNameMapping(column_id, type, name, name_to_vec);
 }
 
-idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input,
-													vector<entry_type> &result) {
+idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count,
+                                             const ManifestReaderInput &input, vector<entry_type> &result) {
 	auto &name_to_vec = input.name_to_vec;
 	auto status = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("status").GetPrimaryIndex()]);
 
@@ -306,10 +317,13 @@ idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx
 	D_ASSERT(name_to_vec.at("record_count").GetPrimaryIndex() == data_file_idx);
 	D_ASSERT(name_to_vec.at("content").GetPrimaryIndex() == data_file_idx);
 
-	auto content = FlatVector::GetData<int32_t>(*child_entries[name_to_vec.at("content").GetChildIndex(0).GetPrimaryIndex()]);
+	auto content =
+	    FlatVector::GetData<int32_t>(*child_entries[name_to_vec.at("content").GetChildIndex(0).GetPrimaryIndex()]);
 	auto file_path = FlatVector::GetData<string_t>(*child_entries[file_path_idx.GetChildIndex(0).GetPrimaryIndex()]);
-	auto file_format = FlatVector::GetData<string_t>(*child_entries[name_to_vec.at("file_format").GetChildIndex(0).GetPrimaryIndex()]);
-	auto record_count = FlatVector::GetData<int64_t>(*child_entries[name_to_vec.at("record_count").GetChildIndex(0).GetPrimaryIndex()]);
+	auto file_format =
+	    FlatVector::GetData<string_t>(*child_entries[name_to_vec.at("file_format").GetChildIndex(0).GetPrimaryIndex()]);
+	auto record_count =
+	    FlatVector::GetData<int64_t>(*child_entries[name_to_vec.at("record_count").GetChildIndex(0).GetPrimaryIndex()]);
 	optional_ptr<Vector> lower_bounds;
 	optional_ptr<Vector> upper_bounds;
 
@@ -343,7 +357,9 @@ idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx
 			entry.lower_bounds = GetBounds(*lower_bounds, index);
 			entry.upper_bounds = GetBounds(*upper_bounds, index);
 		}
-
+		if (entry.content == IcebergManifestEntryContentType::EQUALITY_DELETES) {
+			throw NotImplementedException("Support for equality deletes is not added yet");
+		}
 		produced++;
 		result.push_back(entry);
 	}
@@ -360,7 +376,8 @@ bool IcebergManifestEntryV2::VerifySchema(const case_insensitive_map_t<ColumnInd
 	return true;
 }
 
-void IcebergManifestEntryV2::PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name, case_insensitive_map_t<ColumnIndex> &name_to_vec) {
+void IcebergManifestEntryV2::PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name,
+                                                 case_insensitive_map_t<ColumnIndex> &name_to_vec) {
 	EntryNameMapping(column_id, type, name, name_to_vec);
 }
 
