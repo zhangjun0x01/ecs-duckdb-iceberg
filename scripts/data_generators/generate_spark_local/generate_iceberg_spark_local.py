@@ -2,11 +2,9 @@
 import pyspark
 import pyspark.sql
 import sys
-import duckdb
 import os
 from pyspark import SparkContext
 from pathlib import Path
-import duckdb
 import shutil
 
 
@@ -18,7 +16,8 @@ DATA_GENERATION_DIR = f"./data/generated/iceberg/spark-local/"
 SCRIPT_DIR = f"./scripts/data_generators/"
 INTERMEDIATE_DATA = "./data/generated/intermediates/spark-local/"
 
-class IcebergSparkLocal():
+
+class IcebergSparkLocal:
     def __init__(self):
         pass
 
@@ -42,7 +41,7 @@ class IcebergSparkLocal():
 
     def GetSQLFiles(self, table_dir):
         sql_files = [f for f in os.listdir(table_dir) if f.endswith('.sql')]  # Find .sql files
-        sql_files.sort() # Order matters obviously # Store results
+        sql_files.sort()  # Order matters obviously # Store results
         return sql_files
 
     def GetTableDirs(self):
@@ -65,7 +64,9 @@ class IcebergSparkLocal():
 
             PARQUET_SRC_FILE = f"scripts/data_generators/tmp_data/tmp.parquet"
             if setup_script != "":
-                os.system(f"PARQUET_SRC_FILE='{PARQUET_SRC_FILE}' python3 {full_table_dir}/{os.path.basename(setup_script)}")
+                os.system(
+                    f"PARQUET_SRC_FILE='{PARQUET_SRC_FILE}' python3 {full_table_dir}/{os.path.basename(setup_script)}"
+                )
                 con.read.parquet(PARQUET_SRC_FILE).createOrReplaceTempView('parquet_file_view')
 
             update_files = self.GetSQLFiles(full_table_dir)
@@ -82,11 +83,15 @@ class IcebergSparkLocal():
 
                     # Create a parquet copy of table
                     df = con.read.table(f"iceberg_catalog.{table_dir}")
-                    df.write.mode("overwrite").parquet(f"{INTERMEDIATE_DATA}/{table_dir}/{file_trimmed}/data.parquet");
+                    df.write.mode("overwrite").parquet(f"{INTERMEDIATE_DATA}/{table_dir}/{file_trimmed}/data.parquet")
 
             if last_file != "":
                 ### Finally, copy the latest results to a "final" dir for easy test writing
-                shutil.copytree(f"{INTERMEDIATE_DATA}/{table_dir}/{last_file}/data.parquet", f"{INTERMEDIATE_DATA}/{table_dir}/last/data.parquet", dirs_exist_ok=True)
+                shutil.copytree(
+                    f"{INTERMEDIATE_DATA}/{table_dir}/{last_file}/data.parquet",
+                    f"{INTERMEDIATE_DATA}/{table_dir}/last/data.parquet",
+                    dirs_exist_ok=True,
+                )
 
     def CloseConnection(self, con):
         pass

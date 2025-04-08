@@ -8,7 +8,9 @@
 namespace duckdb {
 
 template <class OP>
-static void ReadManifestEntries(ClientContext &context, const vector<IcebergManifest> &manifests, bool allow_moved_paths, FileSystem &fs, const string &iceberg_path, vector<IcebergTableEntry> &result) {
+static void ReadManifestEntries(ClientContext &context, const vector<IcebergManifest> &manifests,
+                                bool allow_moved_paths, FileSystem &fs, const string &iceberg_path,
+                                vector<IcebergTableEntry> &result) {
 	for (auto &manifest : manifests) {
 		auto manifest_entry_full_path = allow_moved_paths
 		                                    ? IcebergUtils::GetFullPath(iceberg_path, manifest.manifest_path, fs)
@@ -18,7 +20,8 @@ static void ReadManifestEntries(ClientContext &context, const vector<IcebergMani
 	}
 }
 
-IcebergTable IcebergTable::Load(const string &iceberg_path, IcebergSnapshot &snapshot, ClientContext &context, const IcebergOptions &options) {
+IcebergTable IcebergTable::Load(const string &iceberg_path, IcebergSnapshot &snapshot, ClientContext &context,
+                                const IcebergOptions &options) {
 	IcebergTable ret;
 	ret.path = iceberg_path;
 	ret.snapshot = snapshot;
@@ -30,10 +33,12 @@ IcebergTable IcebergTable::Load(const string &iceberg_path, IcebergSnapshot &sna
 	vector<IcebergManifest> manifests;
 	if (snapshot.iceberg_format_version == 1) {
 		manifests = ScanAvroMetadata<IcebergManifestV1>("IcebergManifestList", context, manifest_list_full_path);
-		ReadManifestEntries<IcebergManifestEntryV1>(context, manifests, options.allow_moved_paths, fs, iceberg_path, ret.entries);
+		ReadManifestEntries<IcebergManifestEntryV1>(context, manifests, options.allow_moved_paths, fs, iceberg_path,
+		                                            ret.entries);
 	} else if (snapshot.iceberg_format_version == 2) {
 		manifests = ScanAvroMetadata<IcebergManifestV2>("IcebergManifestList", context, manifest_list_full_path);
-		ReadManifestEntries<IcebergManifestEntryV2>(context, manifests, options.allow_moved_paths, fs, iceberg_path, ret.entries);
+		ReadManifestEntries<IcebergManifestEntryV2>(context, manifests, options.allow_moved_paths, fs, iceberg_path,
+		                                            ret.entries);
 	} else {
 		throw InvalidInputException("iceberg_format_version %d not handled", snapshot.iceberg_format_version);
 	}
@@ -59,7 +64,7 @@ unique_ptr<SnapshotParseInfo> IcebergSnapshot::GetParseInfo(yyjson_doc &metadata
 	} else {
 		auto schema = yyjson_obj_get(root, "schema");
 		if (!schema) {
-			throw IOException("Neither a valid schema or schemas field was found");
+			throw InvalidConfigurationException("Neither a valid schema or schemas field was found");
 		}
 		auto found_schema_id = IcebergUtils::TryGetNumFromObject(schema, "schema-id");
 		info.schemas.push_back(schema);
@@ -69,9 +74,10 @@ unique_ptr<SnapshotParseInfo> IcebergSnapshot::GetParseInfo(yyjson_doc &metadata
 	return make_uniq<SnapshotParseInfo>(std::move(info));
 }
 
-unique_ptr<SnapshotParseInfo> IcebergSnapshot::GetParseInfo(const string &path, FileSystem &fs, const string &metadata_compression_codec) {
+unique_ptr<SnapshotParseInfo> IcebergSnapshot::GetParseInfo(const string &path, FileSystem &fs,
+                                                            const string &metadata_compression_codec) {
 	auto metadata_json = ReadMetaData(path, fs, metadata_compression_codec);
-	auto* doc = yyjson_read(metadata_json.c_str(), metadata_json.size(), 0);
+	auto *doc = yyjson_read(metadata_json.c_str(), metadata_json.size(), 0);
 	if (doc == nullptr) {
 		throw InvalidInputException("Fails to parse iceberg metadata from %s", path);
 	}
@@ -88,30 +94,29 @@ IcebergSnapshot IcebergSnapshot::GetLatestSnapshot(const string &path, FileSyste
 	auto info = GetParseInfo(path, fs, options.metadata_compression_codec);
 	auto latest_snapshot = FindLatestSnapshotInternal(info->snapshots);
 
-	if (!latest_snapshot) {
-		throw IOException("No snapshots found");
-	}
-
 	return ParseSnapShot(latest_snapshot, info->iceberg_version, info->schema_id, info->schemas, options);
 }
 
-IcebergSnapshot IcebergSnapshot::GetSnapshotById(const string &path, FileSystem &fs, idx_t snapshot_id, const IcebergOptions &options) {
+IcebergSnapshot IcebergSnapshot::GetSnapshotById(const string &path, FileSystem &fs, idx_t snapshot_id,
+                                                 const IcebergOptions &options) {
 	auto info = GetParseInfo(path, fs, options.metadata_compression_codec);
 	auto snapshot = FindSnapshotByIdInternal(info->snapshots, snapshot_id);
 
 	if (!snapshot) {
-		throw IOException("Could not find snapshot with id " + to_string(snapshot_id));
+		throw InvalidConfigurationException("Could not find snapshot with id " + to_string(snapshot_id));
 	}
 
 	return ParseSnapShot(snapshot, info->iceberg_version, info->schema_id, info->schemas, options);
 }
 
-IcebergSnapshot IcebergSnapshot::GetSnapshotByTimestamp(const string &path, FileSystem &fs, timestamp_t timestamp, const IcebergOptions &options) {
+IcebergSnapshot IcebergSnapshot::GetSnapshotByTimestamp(const string &path, FileSystem &fs, timestamp_t timestamp,
+                                                        const IcebergOptions &options) {
 	auto info = GetParseInfo(path, fs, options.metadata_compression_codec);
 	auto snapshot = FindSnapshotByIdTimestampInternal(info->snapshots, timestamp);
 
 	if (!snapshot) {
-		throw IOException("Could not find latest snapshots for timestamp " + Timestamp::ToString(timestamp));
+		throw InvalidConfigurationException("Could not find latest snapshots for timestamp " +
+		                                    Timestamp::ToString(timestamp));
 	}
 
 	return ParseSnapShot(snapshot, info->iceberg_version, info->schema_id, info->schemas, options);
@@ -119,26 +124,28 @@ IcebergSnapshot IcebergSnapshot::GetSnapshotByTimestamp(const string &path, File
 
 // Function to generate a metadata file url from version and format string
 // default format is "v%s%s.metadata.json" -> v00###-xxxxxxxxx-.gz.metadata.json"
-string GenerateMetaDataUrl(FileSystem &fs, const string &meta_path, string &table_version, const IcebergOptions &options) {
+static string GenerateMetaDataUrl(FileSystem &fs, const string &meta_path, string &table_version,
+                                  const IcebergOptions &options) {
 	// TODO: Need to URL Encode table_version
 	string compression_suffix = "";
 	string url;
 	if (options.metadata_compression_codec == "gzip") {
 		compression_suffix = ".gz";
 	}
-	for(auto try_format : StringUtil::Split(options.version_name_format, ',')) {
+	for (auto try_format : StringUtil::Split(options.version_name_format, ',')) {
 		url = fs.JoinPath(meta_path, StringUtil::Format(try_format, table_version, compression_suffix));
-		if(fs.FileExists(url)) {
+		if (fs.FileExists(url)) {
 			return url;
 		}
 	}
 
-	throw IOException(
-		"Iceberg metadata file not found for table version '%s' using '%s' compression and format(s): '%s'", table_version, options.metadata_compression_codec, options.version_name_format);
+	throw InvalidConfigurationException(
+	    "Iceberg metadata file not found for table version '%s' using '%s' compression and format(s): '%s'",
+	    table_version, options.metadata_compression_codec, options.version_name_format);
 }
 
-
-string IcebergSnapshot::GetMetaDataPath(ClientContext &context, const string &path, FileSystem &fs, const IcebergOptions &options) {
+string IcebergSnapshot::GetMetaDataPath(ClientContext &context, const string &path, FileSystem &fs,
+                                        const IcebergOptions &options) {
 	string version_hint;
 	string meta_path = fs.JoinPath(path, "metadata");
 
@@ -148,7 +155,7 @@ string IcebergSnapshot::GetMetaDataPath(ClientContext &context, const string &pa
 		// We've been given a real metadata path. Nothing else to do.
 		return path;
 	}
-	if(StringUtil::EndsWith(table_version, ".text")||StringUtil::EndsWith(table_version, ".txt")) {
+	if (StringUtil::EndsWith(table_version, ".text") || StringUtil::EndsWith(table_version, ".txt")) {
 		// We were given a hint filename
 		version_hint = GetTableVersionFromHint(meta_path, fs, table_version);
 		return GenerateMetaDataUrl(fs, meta_path, version_hint, options);
@@ -165,7 +172,11 @@ string IcebergSnapshot::GetMetaDataPath(ClientContext &context, const string &pa
 	}
 	if (!UnsafeVersionGuessingEnabled(context)) {
 		// Make sure we're allowed to guess versions
-		throw IOException("Failed to read iceberg table. No version was provided and no version-hint could be found, globbing the filesystem to locate the latest version is disabled by default as this is considered unsafe and could result in reading uncommitted data. To enable this use 'SET %s = true;'", VERSION_GUESSING_CONFIG_VARIABLE);
+		throw InvalidConfigurationException(
+		    "Failed to read iceberg table. No version was provided and no version-hint could be found, globbing the "
+		    "filesystem to locate the latest version is disabled by default as this is considered unsafe and could "
+		    "result in reading uncommitted data. To enable this use 'SET %s = true;'",
+		    VERSION_GUESSING_CONFIG_VARIABLE);
 	}
 
 	// We are allowed to guess to guess from file paths
@@ -173,28 +184,33 @@ string IcebergSnapshot::GetMetaDataPath(ClientContext &context, const string &pa
 }
 
 string IcebergSnapshot::ReadMetaData(const string &path, FileSystem &fs, const string &metadata_compression_codec) {
-	if (metadata_compression_codec == "gzip") {
+	if (metadata_compression_codec == "gzip" || StringUtil::EndsWith(path, "gz.metadata.json")) {
 		return IcebergUtils::GzFileToString(path, fs);
 	}
 	return IcebergUtils::FileToString(path, fs);
 }
 
-IcebergSnapshot IcebergSnapshot::ParseSnapShot(yyjson_val *snapshot, idx_t iceberg_format_version, idx_t schema_id, vector<yyjson_val *> &schemas, const IcebergOptions &options) {
+IcebergSnapshot IcebergSnapshot::ParseSnapShot(yyjson_val *snapshot, idx_t iceberg_format_version, idx_t schema_id,
+                                               vector<yyjson_val *> &schemas, const IcebergOptions &options) {
 	IcebergSnapshot ret;
-	auto snapshot_tag = yyjson_get_type(snapshot);
-	if (snapshot_tag != YYJSON_TYPE_OBJ) {
-		throw IOException("Invalid snapshot field found parsing iceberg metadata.json");
-	}
-	ret.metadata_compression_codec = options.metadata_compression_codec;
-	if (iceberg_format_version == 1) {
-		ret.sequence_number = 0;
-	} else if (iceberg_format_version == 2) {
-		ret.sequence_number = IcebergUtils::TryGetNumFromObject(snapshot, "sequence-number");
+	if (snapshot) {
+		auto snapshot_tag = yyjson_get_type(snapshot);
+		if (snapshot_tag != YYJSON_TYPE_OBJ) {
+			throw InvalidConfigurationException("Invalid snapshot field found parsing iceberg metadata.json");
+		}
+		ret.metadata_compression_codec = options.metadata_compression_codec;
+		if (iceberg_format_version == 1) {
+			ret.sequence_number = 0;
+		} else if (iceberg_format_version == 2) {
+			ret.sequence_number = IcebergUtils::TryGetNumFromObject(snapshot, "sequence-number");
+		}
+		ret.snapshot_id = IcebergUtils::TryGetNumFromObject(snapshot, "snapshot-id");
+		ret.timestamp_ms = Timestamp::FromEpochMs(IcebergUtils::TryGetNumFromObject(snapshot, "timestamp-ms"));
+		ret.manifest_list = IcebergUtils::TryGetStrFromObject(snapshot, "manifest-list");
+	} else {
+		ret.snapshot_id = DConstants::INVALID_INDEX;
 	}
 
-	ret.snapshot_id = IcebergUtils::TryGetNumFromObject(snapshot, "snapshot-id");
-	ret.timestamp_ms = Timestamp::FromEpochMs(IcebergUtils::TryGetNumFromObject(snapshot, "timestamp-ms"));
-	ret.manifest_list = IcebergUtils::TryGetStrFromObject(snapshot, "manifest-list");
 	ret.iceberg_format_version = iceberg_format_version;
 	ret.schema_id = schema_id;
 	if (!options.skip_schema_inference) {
@@ -203,16 +219,17 @@ IcebergSnapshot IcebergSnapshot::ParseSnapShot(yyjson_val *snapshot, idx_t icebe
 	return ret;
 }
 
-string IcebergSnapshot::GetTableVersionFromHint(const string &meta_path, FileSystem &fs, string version_file = DEFAULT_VERSION_HINT_FILE) {
+string IcebergSnapshot::GetTableVersionFromHint(const string &meta_path, FileSystem &fs,
+                                                string version_file = DEFAULT_VERSION_HINT_FILE) {
 	auto version_file_path = fs.JoinPath(meta_path, version_file);
 	auto version_file_content = IcebergUtils::FileToString(version_file_path, fs);
 
 	try {
 		return version_file_content;
 	} catch (std::invalid_argument &e) {
-		throw IOException("Iceberg version hint file contains invalid value");
+		throw InvalidConfigurationException("Iceberg version hint file contains invalid value");
 	} catch (std::out_of_range &e) {
-		throw IOException("Iceberg version hint file contains invalid value");
+		throw InvalidConfigurationException("Iceberg version hint file contains invalid value");
 	}
 }
 
@@ -221,7 +238,6 @@ bool IcebergSnapshot::UnsafeVersionGuessingEnabled(ClientContext &context) {
 	(void)context.TryGetCurrentSetting(VERSION_GUESSING_CONFIG_VARIABLE, result);
 	return !result.IsNull() && result.GetValue<bool>();
 }
-
 
 string IcebergSnapshot::GuessTableVersion(const string &meta_path, FileSystem &fs, const IcebergOptions &options) {
 	string selected_metadata;
@@ -235,27 +251,27 @@ string IcebergSnapshot::GuessTableVersion(const string &meta_path, FileSystem &f
 		compression_suffix = ".gz";
 	}
 
-	for(auto try_format : StringUtil::Split(version_format, ',')) {
+	for (auto try_format : StringUtil::Split(version_format, ',')) {
 		auto glob_pattern = StringUtil::Format(try_format, version_pattern, compression_suffix);
 
 		auto found_versions = fs.Glob(fs.JoinPath(meta_path, glob_pattern));
-		if(found_versions.size() > 0) {
+		if (found_versions.size() > 0) {
 			selected_metadata = PickTableVersion(found_versions, version_pattern, glob_pattern);
-			if(!selected_metadata.empty()) {  // Found one
+			if (!selected_metadata.empty()) { // Found one
 				return selected_metadata;
 			}
 		}
 	}
 
-	throw IOException(
-	        "Could not guess Iceberg table version using '%s' compression and format(s): '%s'",
-	        metadata_compression_codec, version_format);
+	throw InvalidConfigurationException(
+	    "Could not guess Iceberg table version using '%s' compression and format(s): '%s'", metadata_compression_codec,
+	    version_format);
 }
 
 string IcebergSnapshot::PickTableVersion(vector<string> &found_metadata, string &version_pattern, string &glob) {
 	// TODO: Different "table_version" strings could customize this
 	// For now: just sort the versions and take the largest
-	if(!found_metadata.empty()) {
+	if (!found_metadata.empty()) {
 		std::sort(found_metadata.begin(), found_metadata.end());
 		return found_metadata.back();
 	} else {

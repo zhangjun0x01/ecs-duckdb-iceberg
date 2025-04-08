@@ -5,7 +5,8 @@ PARQUET_SRC_FILE = os.getenv('PARQUET_SRC_FILE')
 
 duckdb_con = duckdb.connect()
 duckdb_con.execute("call dbgen(sf=0.001)")
-duckdb_con.query("""CREATE VIEW test_table as
+duckdb_con.query(
+    """CREATE VIEW test_table as
                     SELECT
                     (l_orderkey%2=0) as l_orderkey_bool,
                     l_partkey::INT32 as l_partkey_int,
@@ -23,6 +24,7 @@ duckdb_con.query("""CREATE VIEW test_table as
                     gen_random_uuid()::VARCHAR as uuid,
                     l_comment::BLOB as l_comment_blob
                     FROM
-                    lineitem;""")
+                    lineitem;"""
+)
 
 duckdb_con.execute(f"copy test_table to '{PARQUET_SRC_FILE}' (FORMAT PARQUET)")

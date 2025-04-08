@@ -1,0 +1,56 @@
+# name: test/sql/local/irc/test_polaris_tpch.test
+# description: test integration with iceberg catalog read
+# group: [irc]
+
+require-env POLARIS_CLIENT_ID
+
+require-env POLARIS_CLIENT_SECRET
+
+require-env POLARIS_SERVER_AVAILABLE
+
+require avro
+
+require parquet
+
+require httpfs
+
+require iceberg
+
+require aws
+
+require tpch
+
+statement ok
+create secret polaris_secret (
+  TYPE S3,
+  KEY_ID '${POLARIS_CLIENT_ID}',
+  SECRET '${POLARIS_CLIENT_SECRET}'
+);
+
+statement ok
+attach 'quickstart_catalog' as my_datalake (
+    type ICEBERG,
+    ENDPOINT 'http://0.0.0.0:8181/api/catalog'
+);
+
+statement ok
+use my_datalake.default;
+
+# FIXME: run smaller scale with full dataset
+loop i 1 9
+
+query I
+PRAGMA tpch(${i})
+----
+<FILE>:duckdb/extension/tpch/dbgen/answers/sf1/q0${i}.csv
+
+endloop
+
+loop i 10 23
+
+query I
+PRAGMA tpch(${i})
+----
+<FILE>:duckdb/extension/tpch/dbgen/answers/sf1/q${i}.csv
+
+endloop

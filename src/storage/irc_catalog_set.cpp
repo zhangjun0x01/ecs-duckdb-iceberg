@@ -29,16 +29,14 @@ void IRCCatalogSet::EraseEntryInternal(const string &name) {
 }
 
 void IRCCatalogSet::Scan(ClientContext &context, const std::function<void(CatalogEntry &)> &callback) {
-	LoadEntries(context);
-
 	lock_guard<mutex> l(entry_lock);
+	LoadEntries(context);
 	for (auto &entry : entries) {
 		callback(*entry.second);
 	}
 }
 
 optional_ptr<CatalogEntry> IRCCatalogSet::CreateEntry(unique_ptr<CatalogEntry> entry) {
-	lock_guard<mutex> l(entry_lock);
 	auto result = entry.get();
 	if (result->name.empty()) {
 		throw InternalException("ICCatalogSet::CreateEntry called with empty name");

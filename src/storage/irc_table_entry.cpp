@@ -1,7 +1,6 @@
 #include "storage/irc_catalog.hpp"
 #include "storage/irc_schema_entry.hpp"
 #include "storage/irc_table_entry.hpp"
-#include "storage/irc_transaction.hpp"
 #include "duckdb/storage/statistics/base_statistics.hpp"
 #include "duckdb/storage/table_storage_info.hpp"
 #include "duckdb/main/extension_util.hpp"
@@ -10,12 +9,9 @@
 #include "duckdb/catalog/catalog_entry/table_function_catalog_entry.hpp"
 #include "duckdb/parser/tableref/table_function_ref.hpp"
 #include "catalog_api.hpp"
-#include "../../duckdb/third_party/catch/catch.hpp"
 #include "duckdb/planner/binder.hpp"
-#include "duckdb/planner/tableref/bound_table_function.hpp"
 #include "duckdb/planner/logical_operator.hpp"
 #include "duckdb/planner/operator/logical_get.hpp"
-
 
 namespace duckdb {
 
@@ -41,7 +37,8 @@ void ICTableEntry::BindUpdateConstraints(Binder &binder, LogicalGet &, LogicalPr
 TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) {
 	auto &db = DatabaseInstance::GetDatabase(context);
 	auto &iceberg_scan_function_set = ExtensionUtil::GetTableFunction(db, "iceberg_scan");
-	auto iceberg_scan_function = iceberg_scan_function_set.functions.GetFunctionByArguments(context, {LogicalType::VARCHAR});
+	auto iceberg_scan_function =
+	    iceberg_scan_function_set.functions.GetFunctionByArguments(context, {LogicalType::VARCHAR});
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
 
 	D_ASSERT(table_data);
@@ -52,35 +49,59 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	}
 
 	auto &secret_manager = SecretManager::Get(context);
-	
-	// Get Credentials from IRC API
-	auto table_credentials = IRCAPI::GetTableCredentials(
-		ic_catalog.internal_name, table_data->schema_name, table_data->name, ic_catalog.credentials);
-	// First check if table credentials are set (possible the IC catalog does not return credentials)
-	if (!table_credentials.key_id.empty()) {
-		// Inject secret into secret manager scoped to this path
-		CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
-		info.name = "__internal_ic_" + table_data->table_id;
-		info.type = "s3";
-		info.provider = "config";
-		info.storage_type = "memory";
-		info.options = {
-			{"key_id", table_credentials.key_id},
-			{"secret", table_credentials.secret},
-			{"session_token", table_credentials.session_token},
-			{"region", ic_catalog.credentials.aws_region},
-		};
 
+	// Get Credentials from IRC API
+	auto secret_base_name =
+	    StringUtil::Format("__internal_ic_%s__%s__%s", table_data->table_id, table_data->schema_name, table_data->name);
+	auto table_credentials =
+	    IRCAPI::GetTableCredentials(context, ic_catalog, table_data->schema_name, table_data->name, secret_base_name);
+	CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
+	// First check if table credentials are set (possible the IC catalog does not return credentials)
+
+	if (table_credentials.config) {
+		auto &info = *table_credentials.config;
+		D_ASSERT(info.scope.empty());
+		//! Limit the scope to the metadata location
 		std::string lc_storage_location;
 		lc_storage_location.resize(table_data->storage_location.size());
-		std::transform(table_data->storage_location.begin(), table_data->storage_location.end(), lc_storage_location.begin(), ::tolower);
+		std::transform(table_data->storage_location.begin(), table_data->storage_location.end(),
+		               lc_storage_location.begin(), ::tolower);
 		size_t metadata_pos = lc_storage_location.find("metadata");
 		if (metadata_pos != std::string::npos) {
 			info.scope = {lc_storage_location.substr(0, metadata_pos)};
 		} else {
-			throw std::runtime_error("Substring not found");
+			throw InvalidInputException("Substring not found");
 		}
-		auto my_secret = secret_manager.CreateSecret(context, info);
+
+		if (StringUtil::StartsWith(ic_catalog.host, "glue")) {
+			//! Override the endpoint if 'glue' is the host of the catalog
+			auto secret_entry = IRCatalog::GetSecret(context, ic_catalog.secret_name);
+			auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+			auto region = kv_secret.TryGetValue("region").ToString();
+			auto endpoint = "s3." + region + ".amazonaws.com";
+			info.options["endpoint"] = endpoint;
+		} else if (StringUtil::StartsWith(ic_catalog.host, "s3tables")) {
+			//! Override all the options if 's3tables' is the host of the catalog
+			auto secret_entry = IRCatalog::GetSecret(context, ic_catalog.secret_name);
+			auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
+			auto substrings = StringUtil::Split(ic_catalog.warehouse, ":");
+			D_ASSERT(substrings.size() == 6);
+			auto region = substrings[3];
+			auto endpoint = "s3." + region + ".amazonaws.com";
+			info.options = {{"key_id", kv_secret.TryGetValue("key_id").ToString()},
+			                {"secret", kv_secret.TryGetValue("secret").ToString()},
+			                {"session_token", kv_secret.TryGetValue("session_token").IsNull()
+			                                      ? ""
+			                                      : kv_secret.TryGetValue("session_token").ToString()},
+			                {"region", region},
+			                {"endpoint", endpoint}};
+		}
+
+		(void)secret_manager.CreateSecret(context, info);
+	}
+
+	for (auto &info : table_credentials.storage_credentials) {
+		(void)secret_manager.CreateSecret(context, info);
 	}
 
 	named_parameter_map_t param_map;
@@ -91,8 +112,8 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	// Set the S3 path as input to table function
 	vector<Value> inputs = {table_data->storage_location};
 
-	TableFunctionBindInput bind_input(inputs, param_map, return_types, names, nullptr, nullptr,
-									  iceberg_scan_function, empty_ref);
+	TableFunctionBindInput bind_input(inputs, param_map, return_types, names, nullptr, nullptr, iceberg_scan_function,
+	                                  empty_ref);
 
 	auto result = iceberg_scan_function.bind(context, bind_input, return_types, names);
 	bind_data = std::move(result);
