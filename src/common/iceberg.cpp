@@ -50,7 +50,7 @@ unique_ptr<IcebergMetadata> IcebergMetadata::Parse(const string &path, FileSyste
                                                    const string &metadata_compression_codec) {
 	auto metadata = unique_ptr<IcebergMetadata>(new IcebergMetadata);
 
-	if (metadata_compression_codec == "gzip") {
+	if (metadata_compression_codec == "gzip" || StringUtil::EndsWith(path, "gz.metadata.json")) {
 		metadata->document = IcebergUtils::GzFileToString(path, fs);
 	} else {
 		metadata->document = IcebergUtils::FileToString(path, fs);
