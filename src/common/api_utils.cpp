@@ -36,6 +36,10 @@ string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &en
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, RequestWriteCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
+		// Set the user Agent.
+		auto &config = DBConfig::GetConfig(context);
+		extra_headers =
+		    curl_slist_append(extra_headers, StringUtil::Format("User-Agent: %s", config.UserAgent()).c_str());
 		if (extra_headers) {
 			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, extra_headers);
 		}
@@ -93,6 +97,10 @@ string APIUtils::GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoi
 	                                                    Aws::Utils::Stream::DefaultResponseStreamFactoryMethod);
 
 	std::shared_ptr<Aws::Http::HttpRequest> req(create_http_req);
+
+	// Set the user Agent.
+	auto &config = DBConfig::GetConfig(context);
+	req->SetUserAgent(config.UserAgent());
 
 	// will error if no secret can be found for AWS services
 	auto secret_entry = IRCatalog::GetSecret(context, secret_name);
@@ -206,6 +214,9 @@ string APIUtils::PostRequest(ClientContext &context, const string &url, const st
 	struct curl_slist *headers = NULL;
 	const string content_type_str = "Content-Type: application/" + content_type;
 	headers = curl_slist_append(headers, content_type_str.c_str());
+	// Create User-Agent header as well
+	auto &config = DBConfig::GetConfig(context);
+	headers = curl_slist_append(headers, StringUtil::Format("User-Agent: %s", config.UserAgent()).c_str());
 
 	// Append any extra headers
 	if (extra_headers) {
