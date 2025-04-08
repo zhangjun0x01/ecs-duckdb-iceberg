@@ -268,7 +268,6 @@ bool IcebergMultiFileReader::Bind(MultiFileOptions &options, MultiFileList &file
 
 		columns.push_back(column);
 	}
-	bind_data.file_row_number_idx = names.size();
 	//! FIXME: check if 'schema.name-mapping.default' is set, act on it to support "column-mapping"
 	bind_data.mapping = MultiFileColumnMappingMode::BY_FIELD_ID;
 	return true;
