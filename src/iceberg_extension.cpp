@@ -128,12 +128,12 @@ static bool SanityCheckGlueWarehouse(string warehouse) {
 	auto bucket_sep = warehouse.find_first_of('/');
 	bool bucket_sep_correct = bucket_sep == 28;
 	if (!account_id_correct) {
-		throw IOException("Invalid Glue Catalog Format: '%s'. Expect 12 digits for account_id.", warehouse);
+		throw InvalidConfigurationException("Invalid Glue Catalog Format: '%s'. Expect 12 digits for account_id.", warehouse);
 	}
 	if (bucket_sep_correct) {
 		return true;
 	}
-	throw IOException("Invalid Glue Catalog Format: '%s'. Expected '<account_id>:s3tablescatalog/<bucket>", warehouse);
+	throw InvalidConfigurationException("Invalid Glue Catalog Format: '%s'. Expected '<account_id>:s3tablescatalog/<bucket>", warehouse);
 }
 
 static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_info, ClientContext &context,
@@ -214,7 +214,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		auto region = kv_secret.TryGetValue("region");
 
 		if (region.IsNull()) {
-			throw IOException("Assumed catalog secret '%s' for catalog '%s' does not have a region",
+			throw InvalidConfigurationException("Assumed catalog secret '%s' for catalog '%s' does not have a region",
 			                  secret_entry->secret->GetName(), name);
 		}
 		switch (catalog_type) {
@@ -231,7 +231,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 			SanityCheckGlueWarehouse(warehouse);
 			break;
 		default:
-			throw IOException("Unsupported AWS catalog type");
+			throw NotImplementedException("Unsupported AWS catalog type");
 		}
 
 		auto catalog_host = StringUtil::Format("%s.%s.amazonaws.com", service, region.ToString());
@@ -244,10 +244,11 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 
 	// Check no endpoint type has been passed.
 	if (!endpoint_type.empty()) {
-		throw IOException("Unrecognized endpoint_type: %s. Expected either S3_TABLES or GLUE", endpoint_type);
+		throw InvalidConfigurationException("Unrecognized endpoint point: %s. Expected either S3_TABLES or GLUE",
+		                                    endpoint_type);
 	}
 	if (endpoint.empty()) {
-		throw IOException("No 'endpoint_type' or 'endpoint' provided");
+		throw InvalidConfigurationException("No 'endpoint_type' or 'endpoint' provided");
 	}
 
 	// Check if any of the options are given that indicate intent to provide options inline, rather than use a secret
@@ -322,7 +323,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		token = kv_iceberg_secret.TryGetValue("token");
 	}
 	if (token.IsNull()) {
-		throw IOException("Failed to generate oath token");
+		throw InvalidConfigurationError("Failed to generate oath token");
 	}
 	credentials.token = token.ToString();
 

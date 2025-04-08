@@ -18,16 +18,19 @@ install_requirements:
 
 # Custom makefile targets
 data: data_clean start-rest-catalog
-	python3 scripts/data_generators/generate_data.py
+	python3 scripts/data_generators/generate_data.py spark-rest local
 
 data_large: data data_clean
-	python3 scripts/data_generators/generate_data.py
+	python3 scripts/data_generators/generate_data.py spark-rest local
 
 data_clean:
 	rm -rf data/generated
 
 format-fix:
 	rm -rf src/amalgamation/*
+	python3 scripts/format.py --all --fix --noconfirm
+
+format:
 	python3 scripts/format.py --all --fix --noconfirm
 
 format-check:

@@ -170,14 +170,14 @@ unique_ptr<SecretEntry> IRCatalog::GetS3Secret(ClientContext &context, const str
 	if (!secret_entry) {
 		auto secret_match = context.db->GetSecretManager().LookupSecret(transaction, "s3://", "s3");
 		if (!secret_match.HasMatch()) {
-			throw IOException("Failed to find an S3 secret and no explicit secret was passed!");
+			throw InvalidInputException("Failed to find a secret and no explicit secret was passed!");
 		}
 		secret_entry = std::move(secret_match.secret_entry);
 	}
 	if (secret_entry) {
 		return secret_entry;
 	}
-	throw IOException("Could not find valid S3 secret");
+	throw InvalidConfigurationError("Could not find valid Iceberg secret");
 }
 
 unique_ptr<SecretEntry> IRCatalog::GetIcebergSecret(ClientContext &context, const string &secret_name,

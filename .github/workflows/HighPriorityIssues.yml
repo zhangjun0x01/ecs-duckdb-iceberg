@@ -10,7 +10,6 @@ env:
   # hence only one of the numbers will be filled in the TITLE_PREFIX
   TITLE_PREFIX: "[duckdb_iceberg/#${{ github.event.issue.number }}]"
   PUBLIC_ISSUE_TITLE: ${{ github.event.issue.title }}
-  CMAKE_POLICY_VERSION_MINIMUM: 3.5
 
 jobs:
   create_or_label_issue:
