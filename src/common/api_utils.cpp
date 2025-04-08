@@ -48,7 +48,7 @@ string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &en
 		res = curl_easy_perform(curl);
 		curl_easy_cleanup(curl);
 
-		DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.Curl.HTTPRequest", "GET %s, (curl code '%s')", url,
+		DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.Curl.HTTPRequest", "GET %s (curl code '%s')", url,
 		                 curl_easy_strerror(res));
 		if (res != CURLcode::CURLE_OK) {
 			string error = curl_easy_strerror(res);
