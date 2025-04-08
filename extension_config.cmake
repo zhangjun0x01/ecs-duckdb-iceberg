@@ -3,7 +3,7 @@
 duckdb_extension_load(avro
         LOAD_TESTS
         GIT_URL https://github.com/tishj/duckdb_avro
-        GIT_TAG 577feeefece40cf94e6dc56dbfde55bbf1cc29eb
+        GIT_TAG 95a1c085b4475e02689cef76126c341846a15a3a
 )
 
 # Extension from this repo
