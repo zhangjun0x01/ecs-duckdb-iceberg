@@ -13,22 +13,11 @@
 #include "iceberg_metadata.hpp"
 #include "iceberg_utils.hpp"
 #include "manifest_reader.hpp"
+#include "duckdb/common/multi_file/multi_file_data.hpp"
 
 namespace duckdb {
 
-// struct IcebergFileMetaData {
-// public:
-//    IcebergFileMetaData() {};
-//    IcebergFileMetaData (const IcebergFileMetaData&) = delete;
-//    IcebergFileMetaData& operator= (const IcebergFileMetaData&) = delete;
-// public:
-//    optional_idx iceberg_snapshot_version;
-//    optional_idx file_number;
-//    optional_idx cardinality;
-//    case_insensitive_map_t<string> partition_map;
-//};
-
-struct IcebergDeleteData {
+struct IcebergDeleteData : public DeleteFilter {
 public:
 	IcebergDeleteData() {
 	}
@@ -38,27 +27,17 @@ public:
 		temp_invalid_rows.insert(row_id);
 	}
 
-	void Apply(DataChunk &chunk, Vector &row_id_column) {
-		D_ASSERT(row_id_column.GetType() == LogicalType::BIGINT);
-
-		if (chunk.size() == 0) {
-			return;
+	idx_t Filter(row_t start_row_index, idx_t count, SelectionVector &result_sel) override {
+		if (count == 0) {
+			return 0;
 		}
-		auto count = chunk.size();
-		UnifiedVectorFormat data;
-		row_id_column.ToUnifiedFormat(count, data);
-		auto row_ids = UnifiedVectorFormat::GetData<int64_t>(data);
-
-		SelectionVector result {count};
 		idx_t selection_idx = 0;
-		for (idx_t tuple_idx = 0; tuple_idx < count; tuple_idx++) {
-			auto current_row_id = row_ids[data.sel->get_index(tuple_idx)];
-			if (temp_invalid_rows.find(current_row_id) == temp_invalid_rows.end()) {
-				result[selection_idx++] = tuple_idx;
+		for (row_t row_idx = start_row_index; row_idx < start_row_index + count; row_idx++) {
+			if (!temp_invalid_rows.count(row_idx)) {
+				result_sel.set_index(selection_idx++, row_idx);
 			}
 		}
-
-		chunk.Slice(result, selection_idx);
+		return selection_idx;
 	}
 
 public:
@@ -87,7 +66,7 @@ public:
 
 public:
 	void ScanDeleteFile(const string &delete_file_path) const;
-	optional_ptr<IcebergDeleteData> GetDeletesForFile(const string &file_path) const;
+	unique_ptr<IcebergDeleteData> GetDeletesForFile(const string &file_path) const;
 	void ProcessDeletes() const;
 
 protected:
@@ -118,7 +97,7 @@ public:
 	mutable vector<IcebergManifest>::iterator current_delete_manifest;
 
 	//! For each file that has a delete file, the state for processing that/those delete file(s)
-	mutable case_insensitive_map_t<IcebergDeleteData> delete_data;
+	mutable case_insensitive_map_t<unique_ptr<IcebergDeleteData>> delete_data;
 	mutable mutex delete_lock;
 
 	bool initialized = false;
@@ -132,10 +111,6 @@ public:
 	IcebergMultiFileReaderGlobalState(vector<LogicalType> extra_columns_p, const MultiFileList &file_list_p)
 	    : MultiFileReaderGlobalState(std::move(extra_columns_p), file_list_p) {
 	}
-
-public:
-	//! The index of the column in the chunk that relates to the file_row_number
-	optional_idx file_row_number_idx;
 };
 
 struct IcebergMultiFileReader : public MultiFileReader {
