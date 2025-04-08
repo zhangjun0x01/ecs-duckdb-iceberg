@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5...3.29)
 
 # Set extension name here
 set(TARGET_NAME iceberg)
@@ -44,6 +44,9 @@ build_loadable_extension(${TARGET_NAME} ${PARAMETERS} ${EXTENSION_SOURCES})
 find_package(CURL REQUIRED)
 find_package(AWSSDK REQUIRED COMPONENTS core sso sts)
 include_directories(${CURL_INCLUDE_DIRS})
+
+# Reset the TARGET_NAME, the AWS find_package build could bleed into our build - overriding `TARGET_NAME`
+set(TARGET_NAME iceberg)
 
 # AWS SDK FROM vcpkg
 target_include_directories(${EXTENSION_NAME}
