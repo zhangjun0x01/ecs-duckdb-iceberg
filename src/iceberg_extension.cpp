@@ -3,10 +3,10 @@
 #include "iceberg_extension.hpp"
 #include "storage/irc_catalog.hpp"
 #include "storage/irc_transaction_manager.hpp"
-
 #include "duckdb.hpp"
 #include "duckdb/main/secret/secret_manager.hpp"
 #include "duckdb/common/exception.hpp"
+#include "duckdb/common/exception/http_exception.hpp"
 #include "duckdb/common/string_util.hpp"
 #include "duckdb/function/scalar_function.hpp"
 #include "duckdb/main/extension_util.hpp"
@@ -17,8 +17,8 @@
 #include "iceberg_functions.hpp"
 #include "yyjson.hpp"
 #include "catalog_api.hpp"
-#include <aws/core/Aws.h>
-#include <aws/s3/S3Client.h>
+#include "aws/core/Aws.h"
+#include "aws/s3/S3Client.h"
 #include "duckdb/main/extension_helper.hpp"
 
 namespace duckdb {
@@ -201,7 +201,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	auto &kv_secret_new = dynamic_cast<KeyValueSecret &>(*new_secret);
 	Value token = kv_secret_new.TryGetValue("token");
 	if (token.IsNull()) {
-		throw IOException("Failed to generate oath token");
+		throw HTTPException(StringUtil::Format("Failed to retreive oath token from %s", endpoint));
 	}
 	credentials.token = token.ToString();
 	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, warehouse, endpoint, secret_name);
