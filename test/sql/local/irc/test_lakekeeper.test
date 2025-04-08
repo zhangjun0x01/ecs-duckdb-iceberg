@@ -13,17 +13,17 @@ require-env LAKEKEEPER_SERVER_AVAILABLE
 
 statement ok
 create secret my_secret (
-	TYPE s3,
+	TYPE ICEBERG,
 	KEY_ID 'spark',
 	SECRET '2OR3eRvYfSZzzZ16MlPd95jhLnOaLM52'
+	OAUTH2_SCOPE 'lakekeeper',
+	OAUTH2_SERVER_URI 'http://localhost:30080/realms/iceberg/protocol/openid-connect/token',
 )
 
 statement ok
 attach 'demo' as my_datalake (
 	type ICEBERG,
 	ENDPOINT 'http://localhost:8181/catalog',
-	OAUTH2_SCOPE 'lakekeeper',
-	OAUTH2_SERVER_URI 'http://localhost:30080/realms/iceberg/protocol/openid-connect/token',
 	SECRET 'my_secret'
 );
 
