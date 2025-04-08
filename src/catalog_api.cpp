@@ -16,6 +16,7 @@
 #include <aws/core/http/HttpRequest.h>
 #include <duckdb/main/secret/secret.hpp>
 #include <duckdb/main/secret/secret_manager.hpp>
+#include "duckdb/common/error_data.hpp"
 
 using namespace duckdb_yyjson;
 namespace duckdb {
@@ -209,10 +210,16 @@ string IRCAPI::GetToken(ClientContext &context, const string &grant_type, const 
 	parameters.push_back(StringUtil::Format("%s=%s", "scope", scope));
 
 	string post_data = StringUtil::Format("%s", StringUtil::Join(parameters, "&"));
-	string api_result = APIUtils::PostRequest(context, uri, post_data);
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc;
+	try {
+		string api_result = APIUtils::PostRequest(context, uri, post_data);
+		doc = std::unique_ptr<yyjson_doc, YyjsonDocDeleter>(ICUtils::api_result_to_doc(api_result));
+	} catch (std::exception &ex) {
+		ErrorData error(ex);
+		throw InvalidInputException("Could not get token from %s, captured error message: %s", uri, error.RawMessage());
+	}
 	//! FIXME: the oauth/tokens endpoint returns, on success;
 	// { 'access_token', 'token_type', 'expires_in', <issued_token_type>, 'refresh_token', 'scope'}
-	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto access_token_val = yyjson_obj_get(root, "access_token");
 	auto token_type_val = yyjson_obj_get(root, "token_type");

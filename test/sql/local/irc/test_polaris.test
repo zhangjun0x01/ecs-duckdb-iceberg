@@ -21,8 +21,8 @@ require aws
 statement ok
 create secret polaris_secret (
 	TYPE ICEBERG,
-	KEY_ID '${POLARIS_CLIENT_ID}',
-	SECRET '${POLARIS_CLIENT_SECRET}',
+	CLIENT_ID '${POLARIS_CLIENT_ID}',
+	CLIENT_SECRET '${POLARIS_CLIENT_SECRET}',
 	ENDPOINT 'http://0.0.0.0:8181/api/catalog'
 );
 

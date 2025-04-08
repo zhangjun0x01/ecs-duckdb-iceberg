@@ -178,6 +178,12 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 			storage_secret = StringUtil::Lower(entry.second.ToString());
 		} else if (lower_name == "endpoint_type") {
 			endpoint_type = StringUtil::Lower(entry.second.ToString());
+		} else if (lower_name == "authorization_type") {
+			auto val = entry.second.ToString();
+			if (!StringUtil::CIEquals(val, "oauth2")) {
+				throw InvalidInputException(
+				    "Unsupported option ('%s') for 'authorization_type', only supports 'oauth2' currently", val);
+			}
 		} else if (lower_name == "endpoint") {
 			endpoint = StringUtil::Lower(entry.second.ToString());
 			StringUtil::RTrim(endpoint, "/");
