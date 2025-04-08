@@ -201,7 +201,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	auto &kv_secret_new = dynamic_cast<KeyValueSecret &>(*new_secret);
 	Value token = kv_secret_new.TryGetValue("token");
 	if (token.IsNull()) {
-		throw HTTPException(StringUtil::Format("Failed to retreive oath token from %s", endpoint));
+		throw HTTPException(StringUtil::Format("Failed to retrieve oath token from %s", endpoint));
 	}
 	credentials.token = token.ToString();
 	auto catalog = make_uniq<IRCatalog>(db, access_mode, credentials, warehouse, endpoint, secret_name);
