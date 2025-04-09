@@ -3,10 +3,10 @@
 #include "iceberg_extension.hpp"
 #include "storage/irc_catalog.hpp"
 #include "storage/irc_transaction_manager.hpp"
-
 #include "duckdb.hpp"
 #include "duckdb/main/secret/secret_manager.hpp"
 #include "duckdb/common/exception.hpp"
+#include "duckdb/common/exception/http_exception.hpp"
 #include "duckdb/common/string_util.hpp"
 #include "duckdb/function/scalar_function.hpp"
 #include "duckdb/main/extension_util.hpp"
@@ -17,8 +17,8 @@
 #include "iceberg_functions.hpp"
 #include "yyjson.hpp"
 #include "catalog_api.hpp"
-#include <aws/core/Aws.h>
-#include <aws/s3/S3Client.h>
+#include "aws/core/Aws.h"
+#include "aws/s3/S3Client.h"
 #include "duckdb/main/extension_helper.hpp"
 
 namespace duckdb {
@@ -293,6 +293,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 
 		auto &kv_iceberg_secret = dynamic_cast<const KeyValueSecret &>(*iceberg_secret->secret);
 		token = kv_iceberg_secret.TryGetValue("token");
+		oauth2_server_uri = kv_iceberg_secret.TryGetValue("token").ToString();
 	} else {
 		if (!catalog_secret.empty()) {
 			throw InvalidConfigurationException("No ICEBERG secret by the name of '%s' could be found", catalog_secret);
@@ -335,7 +336,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		token = kv_iceberg_secret.TryGetValue("token");
 	}
 	if (token.IsNull()) {
-		throw InvalidConfigurationException("Failed to generate oath token");
+		throw HTTPException(StringUtil::Format("Failed to retrieve oath token from %s", oauth2_server_uri));
 	}
 	credentials.token = token.ToString();
 

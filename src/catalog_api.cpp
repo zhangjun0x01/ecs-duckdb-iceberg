@@ -216,7 +216,8 @@ string IRCAPI::GetToken(ClientContext &context, const string &grant_type, const 
 		doc = std::unique_ptr<yyjson_doc, YyjsonDocDeleter>(ICUtils::api_result_to_doc(api_result));
 	} catch (std::exception &ex) {
 		ErrorData error(ex);
-		throw InvalidInputException("Could not get token from %s, captured error message: %s", uri, error.RawMessage());
+		throw InvalidConfigurationException("Could not get token from %s, captured error message: %s", uri,
+		                                    error.RawMessage());
 	}
 	//! FIXME: the oauth/tokens endpoint returns, on success;
 	// { 'access_token', 'token_type', 'expires_in', <issued_token_type>, 'refresh_token', 'scope'}
@@ -224,10 +225,10 @@ string IRCAPI::GetToken(ClientContext &context, const string &grant_type, const 
 	auto access_token_val = yyjson_obj_get(root, "access_token");
 	auto token_type_val = yyjson_obj_get(root, "token_type");
 	if (!access_token_val) {
-		throw InvalidInputException("OAuthTokenResponse is missing required property 'access_token'");
+		throw InvalidConfigurationException("OAuthTokenResponse is missing required property 'access_token'");
 	}
 	if (!token_type_val) {
-		throw InvalidInputException("OAuthTokenResponse is missing required property 'token_type'");
+		throw InvalidConfigurationException("OAuthTokenResponse is missing required property 'token_type'");
 	}
 	string token_type = yyjson_get_str(token_type_val);
 	if (!StringUtil::CIEquals(token_type, "bearer")) {
