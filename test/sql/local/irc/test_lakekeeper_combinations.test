@@ -41,15 +41,15 @@ CREATE SECRET iceberg_secret (
 	CLIENT_ID 'spark',
 	CLIENT_SECRET '2OR3eRvYfSZzzZ16MlPd95jhLnOaLM52',
 	OAUTH2_SERVER_URI 'http://localhost:30080/realms/iceberg/protocol/openid-connect/token',
-	OAUTH2_SCOPE 'lakekeeper'
-    Authorization_type 'Oauth2'
+	OAUTH2_SCOPE 'lakekeeper',
+	Authorization_type 'Oauth2'
 );
 
 statement ok
 ATTACH '' AS my_datalake (
-    TYPE ICEBERG,
-    CATALOG_SECRET iceberg_secret,
-    ENDPOINT 'http://127.0.0.1:8181/catalog'
+	TYPE ICEBERG,
+	CATALOG_SECRET iceberg_secret,
+	ENDPOINT 'http://127.0.0.1:8181/catalog'
 );
 
 query I
@@ -76,11 +76,11 @@ DETACH my_datalake;
 
 statement ok
 ATTACH '' AS my_datalake (
-    TYPE ICEBERG,
-    CLIENT_ID 'spark',
-    CLIENT_SECRET '2OR3eRvYfSZzzZ16MlPd95jhLnOaLM52',
-    OAUTH2_SERVER_URI 'http://localhost:30080/realms/iceberg/protocol/openid-connect/token',
-    ENDPOINT 'http://localhost:8181/catalog'
+	TYPE ICEBERG,
+	CLIENT_ID 'spark',
+	CLIENT_SECRET '2OR3eRvYfSZzzZ16MlPd95jhLnOaLM52',
+	OAUTH2_SERVER_URI 'http://localhost:30080/realms/iceberg/protocol/openid-connect/token',
+	ENDPOINT 'http://localhost:8181/catalog'
 );
 
 query III
@@ -94,22 +94,22 @@ Detach my_datalake;
 # create bad storage secret to test storage secret
 statement ok
 CREATE SECRET storage_secret_2 (
-    TYPE S3,
-    KEY_ID 'wrong',
-    SECRET 'wrong',
-    ENDPOINT '127.0.0.1:9000',
-    URL_STYLE 'path',
-    USE_SSL 0
+	TYPE S3,
+	KEY_ID 'wrong',
+	SECRET 'wrong',
+	ENDPOINT '127.0.0.1:9000',
+	URL_STYLE 'path',
+	USE_SSL 0
 );
 
 statement ok
 ATTACH '' AS my_datalake (
-    TYPE ICEBERG,
-    CLIENT_ID 'spark',
-    CLIENT_SECRET '2OR3eRvYfSZzzZ16MlPd95jhLnOaLM52',
-    OAUTH2_SERVER_URI 'http://localhost:30080/realms/iceberg/protocol/openid-connect/token',
-    STORAGE_SECRET storage_secret_2,
-    ENDPOINT 'http://127.0.0.1:8181'
+	TYPE ICEBERG,
+	CLIENT_ID 'spark',
+	CLIENT_SECRET '2OR3eRvYfSZzzZ16MlPd95jhLnOaLM52',
+	OAUTH2_SERVER_URI 'http://localhost:30080/realms/iceberg/protocol/openid-connect/token',
+	STORAGE_SECRET storage_secret_2,
+	ENDPOINT 'http://127.0.0.1:8181'
 );
 
 
@@ -131,15 +131,15 @@ detach my_datalake;
 # 	CLIENT_ID 'spark',
 # 	CLIENT_SECRET '2OR3eRvYfSZzzZ16MlPd95jhLnOaLM52',
 # 	OAUTH2_SERVER_URI 'http://localhost:30080/realms/iceberg/protocol/openid-connect/token',,
-#     Authorization_type 'Oauth2'
+#	 Authorization_type 'Oauth2'
 # );
 #
 # statement ok
 # ATTACH '' AS my_datalake (
-#     TYPE ICEBERG,
-#     SECRET iceberg_secret,
-#     STORAGE_SECRET storage_secret,
-#     ENDPOINT 'http://127.0.0.1:8181'
+#	 TYPE ICEBERG,
+#	 SECRET iceberg_secret,
+#	 STORAGE_SECRET storage_secret,
+#	 ENDPOINT 'http://127.0.0.1:8181'
 # );
 
 query III
