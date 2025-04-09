@@ -124,6 +124,7 @@ public:
 	bool initialized = false;
 	ClientContext &context;
 	const IcebergOptions &options;
+	unique_ptr<IcebergMetadata> metadata;
 	IcebergSnapshot snapshot;
 };
 

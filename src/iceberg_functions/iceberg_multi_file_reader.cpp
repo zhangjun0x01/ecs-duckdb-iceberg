@@ -153,7 +153,7 @@ void IcebergMultiFileList::InitializeFiles() {
 	auto iceberg_path = GetPath();
 	auto &fs = FileSystem::GetFileSystem(context);
 	auto iceberg_meta_path = IcebergSnapshot::GetMetaDataPath(context, iceberg_path, fs, options);
-	auto metadata = IcebergMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
+	metadata = IcebergMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
 
 	switch (options.snapshot_source) {
 	case SnapshotSource::LATEST: {
@@ -295,11 +295,62 @@ void IcebergMultiFileReader::CreateColumnMapping(const string &file_name,
                                                  const MultiFileReaderBindData &bind_data, const string &initial_file,
                                                  optional_ptr<MultiFileReaderGlobalState> global_state_p) {
 
-	D_ASSERT(bind_data.mapping == MultiFileReaderColumnMappingMode::BY_FIELD_ID);
-	MultiFileReader::CreateColumnMappingByFieldId(file_name, local_columns, global_columns, global_column_ids,
-	                                              reader_data, bind_data, initial_file, global_state_p);
-
+	D_ASSERT(global_state_p);
 	auto &global_state = global_state_p->Cast<IcebergMultiFileReaderGlobalState>();
+	const auto &file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state.file_list);
+	D_ASSERT(bind_data.mapping == MultiFileReaderColumnMappingMode::BY_FIELD_ID);
+	bool needs_mapping = false;
+	for (auto &local_column : local_columns) {
+		if (local_column.name == "file_row_number") {
+			continue;
+		}
+		if (local_column.identifier.IsNull()) {
+			needs_mapping = true;
+			break;
+		}
+	}
+
+	if (needs_mapping) {
+		auto &mapping = file_list.metadata->fields;
+		vector<MultiFileReaderColumnDefinition> mapped_local_columns;
+		for (auto &local_column : local_columns) {
+			if (local_column.name == "file_row_number") {
+				continue;
+			}
+
+			auto new_column = local_column;
+			if (!local_column.identifier.IsNull()) {
+				mapped_local_columns.push_back(new_column);
+			}
+			bool found = false;
+			for (idx_t i = 0; i < mapping.size() && !found; i++) {
+				auto &field = mapping[i];
+				if (field.field_id == NumericLimits<int32_t>::Maximum()) {
+					throw NotImplementedException("Nested fields not supported for column-mapping currently!");
+				}
+				for (auto &name : field.names) {
+					if (name == local_column.name) {
+						new_column.identifier = Value::INTEGER(field.field_id);
+						found = true;
+						break;
+					}
+				}
+			}
+			if (!found) {
+				throw InvalidInputException("The data_file does not have a field-id for the column named ('%s'), and "
+				                            "we could not find a suitable field-mapping for it",
+				                            local_column.name);
+			}
+			mapped_local_columns.push_back(new_column);
+		}
+		MultiFileReader::CreateColumnMappingByFieldId(file_name, mapped_local_columns, global_columns,
+		                                              global_column_ids, reader_data, bind_data, initial_file,
+		                                              global_state_p);
+	} else {
+		MultiFileReader::CreateColumnMappingByFieldId(file_name, local_columns, global_columns, global_column_ids,
+		                                              reader_data, bind_data, initial_file, global_state_p);
+	}
+
 	// Check if the file_row_number column is an "extra_column" which is not part of the projection
 	if (!global_state.file_row_number_idx.IsValid()) {
 		return;
