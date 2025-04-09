@@ -19,7 +19,7 @@ attach 'arn:aws:s3tables:us-east-2:840140254803:bucket/iceberg-testing' as s3tab
     SECRET 's3table_secret'
 );
 ----
-Invalid Configuration Error: No secret by the name of 's3table_secret' could be found, consider changing the 'storage_secret'
+Invalid Configuration Error: No secret by the name of 's3table_secret' could be found, consider changing the 'secret'
 
 statement error
 attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as glue_catalog (
@@ -28,7 +28,7 @@ attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as glue_catalog (
     SECRET 'glue_secret'
 );
 ----
-Invalid Configuration Error: No secret by the name of 'glue_secret' could be found, consider changing the 'storage_secret'
+Invalid Configuration Error: No secret by the name of 'glue_secret' could be found, consider changing the 'secret'
 
 statement error
 attach 'arn:aws:s3tables:us-east-2:840140254803:bucket/iceberg-testing' as s3tables_catalog (
@@ -59,5 +59,5 @@ attach 'quickstart_catalog' as my_datalake (
     ENDPOINT 'http://does_not_exist.com/api/catalog'
 )
 ----
-Invalid Configuration Error: Please provide either a 'client_id' + 'client_secret' pair or the name of an ICEBERG secret as 'secret' / 'catalog_secret'
+Invalid Configuration Error: Please provide either a 'client_id' + 'client_secret' pair or the name of an ICEBERG secret as 'secret'
 

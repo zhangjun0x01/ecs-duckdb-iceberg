@@ -7,6 +7,7 @@
 #include "duckdb/main/secret/secret_manager.hpp"
 #include "url_utils.hpp"
 #include "storage/irc_schema_set.hpp"
+#include "storage/irc_authorization.hpp"
 
 namespace duckdb {
 
@@ -48,8 +49,9 @@ public:
 
 class IRCatalog : public Catalog {
 public:
-	explicit IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, IRCCredentials credentials, string warehouse,
-	                   string host, string secret_name, string version = "v1");
+	explicit IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, IRCCredentials credentials,
+	                   const string &warehouse, const string &uri, const string &secret_name,
+	                   const string &version = "v1");
 	~IRCatalog();
 
 	string internal_name;
@@ -59,16 +61,14 @@ public:
 
 	//! warehouse
 	string warehouse;
-	//! host of the endpoint, like `glue` or `polaris`
-	string host;
+	//! host of the REST catalog
+	string uri;
 	//! secret name that Iceberg catalog should use for authentication
 	string secret_name;
 	//! version
 	string version;
 	//! optional prefix
 	string prefix;
-
-	ICEBERG_CATALOG_TYPE catalog_type = ICEBERG_CATALOG_TYPE::INVALID;
 
 public:
 	void Initialize(bool load_builtin) override;
@@ -106,7 +106,7 @@ public:
 
 	IRCEndpointBuilder GetBaseUrl() const;
 
-	//! Whether or not this is an in-memory PC database
+	//! Whether or not this is an in-memory Iceberg database
 	bool InMemory() override;
 	string GetDBPath() override;
 

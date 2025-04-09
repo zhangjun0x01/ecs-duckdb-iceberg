@@ -201,45 +201,7 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	return result;
 }
 
-string IRCAPI::GetToken(ClientContext &context, const string &grant_type, const string &uri, const string &id,
-                        const string &secret, const string &scope) {
-	vector<string> parameters;
-	parameters.push_back(StringUtil::Format("%s=%s", "grant_type", grant_type));
-	parameters.push_back(StringUtil::Format("%s=%s", "client_id", id));
-	parameters.push_back(StringUtil::Format("%s=%s", "client_secret", secret));
-	parameters.push_back(StringUtil::Format("%s=%s", "scope", scope));
-
-	string post_data = StringUtil::Format("%s", StringUtil::Join(parameters, "&"));
-	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc;
-	try {
-		string api_result = APIUtils::PostRequest(context, uri, post_data);
-		doc = std::unique_ptr<yyjson_doc, YyjsonDocDeleter>(ICUtils::api_result_to_doc(api_result));
-	} catch (std::exception &ex) {
-		ErrorData error(ex);
-		throw InvalidConfigurationException("Could not get token from %s, captured error message: %s", uri,
-		                                    error.RawMessage());
-	}
-	//! FIXME: the oauth/tokens endpoint returns, on success;
-	// { 'access_token', 'token_type', 'expires_in', <issued_token_type>, 'refresh_token', 'scope'}
-	auto *root = yyjson_doc_get_root(doc.get());
-	auto access_token_val = yyjson_obj_get(root, "access_token");
-	auto token_type_val = yyjson_obj_get(root, "token_type");
-	if (!access_token_val) {
-		throw InvalidConfigurationException("OAuthTokenResponse is missing required property 'access_token'");
-	}
-	if (!token_type_val) {
-		throw InvalidConfigurationException("OAuthTokenResponse is missing required property 'token_type'");
-	}
-	string token_type = yyjson_get_str(token_type_val);
-	if (!StringUtil::CIEquals(token_type, "bearer")) {
-		throw NotImplementedException(
-		    "token_type return value '%s' is not supported, only supports 'bearer' currently.", token_type);
-	}
-	string access_token = yyjson_get_str(access_token_val);
-	return access_token;
-}
-
-static void populateTableMetadata(IRCAPITable &table, yyjson_val *metadata_root) {
+static void PopulateTableMetadata(IRCAPITable &table, yyjson_val *metadata_root) {
 	table.storage_location = IcebergUtils::TryGetStrFromObject(metadata_root, "metadata-location");
 	auto *metadata = yyjson_obj_get(metadata_root, "metadata");
 	// table_result.table_id = IcebergUtils::TryGetStrFromObject(metadata, "table-uuid");
@@ -268,7 +230,7 @@ static void populateTableMetadata(IRCAPITable &table, yyjson_val *metadata_root)
 	}
 }
 
-static IRCAPITable createTable(IRCatalog &catalog, const string &schema, const string &table_name) {
+static IRCAPITable CreateIRCTable(IRCatalog &catalog, const string &schema, const string &table_name) {
 	IRCAPITable table_result;
 	table_result.catalog_name = catalog.GetName();
 	table_result.schema_name = schema;
@@ -281,12 +243,12 @@ static IRCAPITable createTable(IRCatalog &catalog, const string &schema, const s
 
 IRCAPITable IRCAPI::GetTable(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table_name,
                              optional_ptr<IRCCredentials> credentials) {
-	IRCAPITable table_result = createTable(catalog, schema, table_name);
+	IRCAPITable table_result = CreateIRCTable(catalog, schema, table_name);
 	if (credentials) {
 		string result = GetTableMetadata(context, catalog, schema, table_result.name, catalog.secret_name);
 		std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(result));
 		auto *metadata_root = yyjson_doc_get_root(doc.get());
-		populateTableMetadata(table_result, metadata_root);
+		PopulateTableMetadata(table_result, metadata_root);
 	} else {
 		// Skip fetching metadata, we'll do it later when we access the table
 		IRCAPIColumnDefinition col;

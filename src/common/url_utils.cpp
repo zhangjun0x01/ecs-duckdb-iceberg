@@ -9,10 +9,6 @@ void IRCEndpointBuilder::AddPathComponent(const string &component) {
 	}
 }
 
-void IRCEndpointBuilder::SetPrefix(const string &prefix_) {
-	prefix = prefix_;
-}
-
 string IRCEndpointBuilder::GetHost() const {
 	return host;
 }
@@ -27,10 +23,6 @@ string IRCEndpointBuilder::GetVersion() const {
 
 void IRCEndpointBuilder::SetHost(const string &host_) {
 	host = host_;
-}
-
-string IRCEndpointBuilder::GetPrefix() const {
-	return prefix;
 }
 
 void IRCEndpointBuilder::SetParam(const string &key, const string &value) {
@@ -49,13 +41,10 @@ const std::unordered_map<string, string> IRCEndpointBuilder::GetParams() {
 }
 
 string IRCEndpointBuilder::GetURL() const {
+	//! {host}[/{version}][/{prefix}]/{path_component[0]}/{path_component[1]}
 	string ret = host;
 	if (!version.empty()) {
 		ret = ret + "/" + version;
-	}
-	// usually the warehouse is the prefix.
-	if (!prefix.empty()) {
-		ret = ret + "/" + prefix;
 	}
 	for (auto &component : path_components) {
 		ret += "/" + component;

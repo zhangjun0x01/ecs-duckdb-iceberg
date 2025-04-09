@@ -48,7 +48,7 @@ CREATE SECRET iceberg_secret (
 statement ok
 ATTACH '' AS my_datalake (
 	TYPE ICEBERG,
-	CATALOG_SECRET iceberg_secret,
+	SECRET iceberg_secret,
 	ENDPOINT 'http://127.0.0.1:8181/catalog'
 );
 
@@ -108,7 +108,7 @@ ATTACH '' AS my_datalake (
 	CLIENT_ID 'spark',
 	CLIENT_SECRET '2OR3eRvYfSZzzZ16MlPd95jhLnOaLM52',
 	OAUTH2_SERVER_URI 'http://localhost:30080/realms/iceberg/protocol/openid-connect/token',
-	STORAGE_SECRET storage_secret_2,
+	SECRET storage_secret_2,
 	ENDPOINT 'http://127.0.0.1:8181'
 );
 
@@ -122,25 +122,6 @@ HTTP Error
 
 statement ok
 detach my_datalake;
-
-# use secret for oauth and secret for storage
-# NOT SURE IF THIS IS POSSIBLE WITH LAKEKEEPER
-# statement ok
-# CREATE SECRET iceberg_secret (
-# 	TYPE ICEBERG,
-# 	CLIENT_ID 'spark',
-# 	CLIENT_SECRET '2OR3eRvYfSZzzZ16MlPd95jhLnOaLM52',
-# 	OAUTH2_SERVER_URI 'http://localhost:30080/realms/iceberg/protocol/openid-connect/token',,
-#	 Authorization_type 'Oauth2'
-# );
-#
-# statement ok
-# ATTACH '' AS my_datalake (
-#	 TYPE ICEBERG,
-#	 SECRET iceberg_secret,
-#	 STORAGE_SECRET storage_secret,
-#	 ENDPOINT 'http://127.0.0.1:8181'
-# );
 
 query III
 select * from my_datalake.my_namespace.my_table;

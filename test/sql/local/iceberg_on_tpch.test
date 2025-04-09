@@ -29,7 +29,7 @@ CREATE SECRET my_datalake_storage (
 statement ok
 ATTACH '' AS my_datalake (
     TYPE ICEBERG,
-    STORAGE_SECRET 'my_datalake_storage',
+    SECRET 'my_datalake_storage',
     CLIENT_ID 'admin',
     CLIENT_SECRET 'password',
     ENDPOINT '127.0.0.1:8181'

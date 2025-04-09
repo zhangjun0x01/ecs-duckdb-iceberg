@@ -34,6 +34,7 @@ set(EXTENSION_SOURCES
     src/storage/irc_table_entry.cpp
     src/storage/irc_table_set.cpp
     src/storage/irc_transaction.cpp
+    src/storage/irc_authorization.cpp
     src/storage/irc_transaction_manager.cpp)
 
 add_library(${EXTENSION_NAME} STATIC ${EXTENSION_SOURCES})

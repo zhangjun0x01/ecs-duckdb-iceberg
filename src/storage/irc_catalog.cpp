@@ -15,9 +15,9 @@ using namespace duckdb_yyjson;
 
 namespace duckdb {
 
-IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, IRCCredentials credentials, string warehouse,
-                     string host, string secret_name, string version)
-    : Catalog(db_p), access_mode(access_mode), credentials(std::move(credentials)), warehouse(warehouse), host(host),
+IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, IRCCredentials credentials,
+                     const string &warehouse, const string &uri, const string &secret_name, const string &version)
+    : Catalog(db_p), access_mode(access_mode), credentials(std::move(credentials)), warehouse(warehouse), uri(uri),
       secret_name(secret_name), version(version), schemas(*this) {
 }
 
@@ -137,18 +137,8 @@ DatabaseSize IRCatalog::GetDatabaseSize(ClientContext &context) {
 
 IRCEndpointBuilder IRCatalog::GetBaseUrl() const {
 	auto base_url = IRCEndpointBuilder();
+	base_url.SetHost(uri);
 	base_url.SetVersion(version);
-	base_url.SetHost(host);
-	switch (catalog_type) {
-	case ICEBERG_CATALOG_TYPE::AWS_GLUE:
-	case ICEBERG_CATALOG_TYPE::AWS_S3TABLES: {
-		base_url.AddPathComponent("iceberg");
-		base_url.AddPathComponent(version);
-		break;
-	}
-	default:
-		break;
-	}
 	return base_url;
 }
 
@@ -169,12 +159,12 @@ unique_ptr<SecretEntry> IRCatalog::GetStorageSecret(ClientContext &context, cons
 				return secret_entry;
 			}
 			throw InvalidConfigurationException(
-			    "Found a secret by the name of '%s', but it is not of an accepted type for a 'storage_secret', "
+			    "Found a secret by the name of '%s', but it is not of an accepted type for a 'secret', "
 			    "accepted types are: 's3', 'aws', 'r2' and 'gcs', found '%s'",
 			    secret_name, secret_type);
 		}
 		throw InvalidConfigurationException(
-		    "No secret by the name of '%s' could be found, consider changing the 'storage_secret'", secret_name);
+		    "No secret by the name of '%s' could be found, consider changing the 'secret'", secret_name);
 	}
 
 	for (auto &type : accepted_secret_types) {
