@@ -55,7 +55,6 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	    StringUtil::Format("__internal_ic_%s__%s__%s", table_data->table_id, table_data->schema_name, table_data->name);
 	auto table_credentials =
 	    IRCAPI::GetTableCredentials(context, ic_catalog, table_data->schema_name, table_data->name, secret_base_name);
-	CreateSecretInfo info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
 	// First check if table credentials are set (possible the IC catalog does not return credentials)
 
 	if (table_credentials.config) {

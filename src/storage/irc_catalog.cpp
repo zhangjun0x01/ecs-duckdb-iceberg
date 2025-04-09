@@ -165,6 +165,13 @@ unique_ptr<SecretEntry> IRCatalog::GetS3Secret(ClientContext &context, const str
 		secret_entry = context.db->GetSecretManager().GetSecretByName(transaction, "__default_s3");
 	} else {
 		secret_entry = context.db->GetSecretManager().GetSecretByName(transaction, secret_name);
+		if (secret_entry) {
+			auto secret_type = secret_entry->secret->GetType();
+			if (!StringUtil::CIEquals(secret_type, "s3")) {
+				throw InvalidConfigurationException("Provided 'STORAGE_SECRET' is of type '%s', expected 's3'",
+				                                    secret_type);
+			}
+		}
 	}
 
 	if (!secret_entry) {

@@ -58,7 +58,7 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 		DUCKDB_LOG_WARN(
 		    context, "iceberg",
 		    "'oauth2_server_uri' is not set, defaulting to deprecated '{endpoint}/v1/oauth/tokens' oauth2_server_uri");
-		server_uri = endpoint_it->second.ToString();
+		server_uri = StringUtil::Format("%s/v1/oauth/tokens", endpoint_it->second.ToString());
 	} else {
 		throw InvalidInputException("No 'oauth2_server_uri' was provided, and no 'endpoint' was provided to fall back "
 		                            "on (or consider changing the 'authorization_type')");
