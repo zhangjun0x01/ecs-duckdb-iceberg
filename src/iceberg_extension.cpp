@@ -60,8 +60,9 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 		    "'oauth2_server_uri' is not set, defaulting to deprecated '{endpoint}/v1/oauth/tokens' oauth2_server_uri");
 		server_uri = StringUtil::Format("%s/v1/oauth/tokens", endpoint_it->second.ToString());
 	} else {
-		throw InvalidInputException("No 'oauth2_server_uri' was provided, and no 'endpoint' was provided to fall back "
-		                            "on (or consider changing the 'authorization_type')");
+		throw InvalidInputException(
+		    "AUTHORIZATION_TYPE is 'oauth2', yet no 'oauth2_server_uri' was provided, and no 'endpoint' was provided "
+		    "to fall back on. Please provide one or change the 'authorization_type'.");
 	}
 
 	auto authorization_type_it = result->secret_map.find("authorization_type");
