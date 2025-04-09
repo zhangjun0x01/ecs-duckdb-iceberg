@@ -32,6 +32,30 @@ public:
 	bool required;
 };
 
+struct IcebergFieldMapping {
+public:
+	vector<string> names;
+	//! field-id can be omitted for the root of a struct
+	int32_t field_id = NumericLimits<int32_t>::Maximum();
+	vector<IcebergFieldMapping> fields;
+
+public:
+	void Verify() {
+		if (names.empty()) {
+			throw InvalidInputException(
+			    "Parsed 'schema.name-mapping.default' field mapping is invalid, names list is empty");
+		}
+		if (field_id != NumericLimits<int32_t>::Maximum()) {
+			return;
+		}
+		if (fields.empty()) {
+			throw InvalidInputException(
+			    "Parsed 'schema.name-mapping.default' field mapping (%s) is invalid, has no 'field-id' and no 'fields'",
+			    StringUtil::Join(names, ", "));
+		}
+	}
+};
+
 struct IcebergMetadata {
 private:
 	IcebergMetadata() = default;
@@ -55,6 +79,8 @@ public:
 	vector<yyjson_val *> schemas;
 	uint64_t iceberg_version;
 	uint64_t schema_id;
+
+	vector<IcebergFieldMapping> fields;
 };
 
 //! An Iceberg snapshot https://iceberg.apache.org/spec/#snapshots
