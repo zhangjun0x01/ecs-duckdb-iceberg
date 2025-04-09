@@ -1,43 +1,25 @@
 #include "storage/irc_authorization.hpp"
 #include "api_utils.hpp"
+#include "storage/authorization/oauth2.hpp"
 
 namespace duckdb {
 
-string IRCAuthorization::GetToken(ClientContext &context, const IRCOAuth2RequestInput &input) {
-	vector<string> parameters;
-	parameters.push_back(StringUtil::Format("%s=%s", "grant_type", input.grant_type));
-	parameters.push_back(StringUtil::Format("%s=%s", "client_id", input.client_id));
-	parameters.push_back(StringUtil::Format("%s=%s", "client_secret", input.client_secret));
-	parameters.push_back(StringUtil::Format("%s=%s", "scope", input.scope));
+IRCAuthorizationType IRCAuthorization::TypeFromString(const string &type) {
+	static const case_insensitive_map_t<IRCAuthorizationType> mapping {{"oauth2", IRCAuthorizationType::OAUTH2},
+	                                                                   {"sigv4", IRCAuthorizationType::SIGV4}};
 
-	string post_data = StringUtil::Format("%s", StringUtil::Join(parameters, "&"));
-	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc;
-	try {
-		string api_result = APIUtils::PostRequest(context, input.uri, post_data);
-		doc = std::unique_ptr<yyjson_doc, YyjsonDocDeleter>(ICUtils::api_result_to_doc(api_result));
-	} catch (std::exception &ex) {
-		ErrorData error(ex);
-		throw InvalidConfigurationException("Could not get token from %s, captured error message: %s", input.uri,
-		                                    error.RawMessage());
+	for (auto it : mapping) {
+		if (StringUtil::CIEquals(it.first, type)) {
+			return it.second;
+		}
 	}
-	//! FIXME: the oauth/tokens endpoint returns, on success;
-	// { 'access_token', 'token_type', 'expires_in', <issued_token_type>, 'refresh_token', 'scope'}
-	auto *root = yyjson_doc_get_root(doc.get());
-	auto access_token_val = yyjson_obj_get(root, "access_token");
-	auto token_type_val = yyjson_obj_get(root, "token_type");
-	if (!access_token_val) {
-		throw InvalidConfigurationException("OAuthTokenResponse is missing required property 'access_token'");
+
+	vector<string> accepted_options;
+	for (auto it : mapping) {
+		accepted_options.push_back(it.first);
 	}
-	if (!token_type_val) {
-		throw InvalidConfigurationException("OAuthTokenResponse is missing required property 'token_type'");
-	}
-	string token_type = yyjson_get_str(token_type_val);
-	if (!StringUtil::CIEquals(token_type, "bearer")) {
-		throw NotImplementedException(
-		    "token_type return value '%s' is not supported, only supports 'bearer' currently.", token_type);
-	}
-	string access_token = yyjson_get_str(access_token_val);
-	return access_token;
+	throw InvalidConfigurationException("'authorization_type' '%s' is not supported, valid options are: %s", type,
+	                                    StringUtil::Join(accepted_options, ", "));
 }
 
 unique_ptr<BaseSecret> IRCAuthorization::CreateCatalogSecretFunction(ClientContext &context, CreateSecretInput &input) {
@@ -121,10 +103,10 @@ unique_ptr<BaseSecret> IRCAuthorization::CreateCatalogSecretFunction(ClientConte
 	}
 
 	// Make a request to the oauth2 server uri to get the (bearer) token
-	auto oauth2_input = IRCOAuth2RequestInput(
-	    result->secret_map["oauth2_grant_type"].ToString(), server_uri, result->secret_map["client_id"].ToString(),
-	    result->secret_map["client_secret"].ToString(), result->secret_map["oauth2_scope"].ToString());
-	result->secret_map["token"] = IRCAuthorization::GetToken(context, oauth2_input);
+	result->secret_map["token"] = OAuth2Authorization::GetToken(
+	    context, result->secret_map["oauth2_grant_type"].ToString(), server_uri,
+	    result->secret_map["client_id"].ToString(), result->secret_map["client_secret"].ToString(),
+	    result->secret_map["oauth2_scope"].ToString());
 	return std::move(result);
 }
 

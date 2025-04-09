@@ -18,13 +18,8 @@ string APIUtils::GetAwsService(const string host) {
 	return host.substr(0, host.find_first_of('.'));
 }
 
-string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-                            const string &secret_name, const string &token, curl_slist *extra_headers) {
-	if (StringUtil::StartsWith(endpoint_builder.GetHost(), "glue.") ||
-	    StringUtil::StartsWith(endpoint_builder.GetHost(), "s3tables.")) {
-		auto str = GetRequestAws(context, endpoint_builder, secret_name);
-		return str;
-	}
+string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder, const string &token,
+                            curl_slist *extra_headers) {
 	auto url = endpoint_builder.GetURL();
 	CURL *curl;
 	CURLcode res;

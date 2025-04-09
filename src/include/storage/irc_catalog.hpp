@@ -8,25 +8,11 @@
 #include "url_utils.hpp"
 #include "storage/irc_schema_set.hpp"
 #include "storage/irc_authorization.hpp"
+#include <curl/curl.h>
 
 namespace duckdb {
 
 class IRCSchemaEntry;
-
-struct IRCCredentials {
-	string client_id;
-	string client_secret;
-	//! required to query s3 tables
-	string aws_region;
-	//! Catalog generates the token using client id & secret
-	string token;
-	//! The scope of the OAuth token to request through the client_credentials flow
-	string oauth2_scope;
-	//! OAuth endpoint
-	string oauth2_endpoint;
-	//! The warehouse where the catalog lives
-	string warehouse;
-};
 
 class ICRClearCacheFunction : public TableFunction {
 public:
@@ -34,8 +20,6 @@ public:
 
 	static void ClearCacheOnSetting(ClientContext &context, SetScope scope, Value &parameter);
 };
-
-enum class ICEBERG_CATALOG_TYPE { AWS_S3TABLES, AWS_GLUE, OTHER, INVALID };
 
 class MetadataCacheValue {
 public:
@@ -49,22 +33,20 @@ public:
 
 class IRCatalog : public Catalog {
 public:
-	explicit IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, IRCCredentials credentials,
-	                   const string &warehouse, const string &uri, const string &secret_name,
-	                   const string &version = "v1");
+	explicit IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, unique_ptr<IRCAuthorization> authorization,
+	                   const string &warehouse, const string &uri, const string &version = "v1");
 	~IRCatalog();
 
 	string internal_name;
 	AccessMode access_mode;
-	IRCCredentials credentials;
+	unique_ptr<IRCAuthorization> authorization;
 	IRCEndpointBuilder endpoint_builder;
 
 	//! warehouse
 	string warehouse;
+
 	//! host of the REST catalog
 	string uri;
-	//! secret name that Iceberg catalog should use for authentication
-	string secret_name;
 	//! version
 	string version;
 	//! optional prefix
