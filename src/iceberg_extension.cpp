@@ -160,8 +160,9 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		if (lower_name == "type" || lower_name == "read_only") {
 			// already handled
 		} else if (lower_name == "secret") {
-			if (!storage_secret.empty() && !catalog_secret.empty()) {
-				throw InvalidInputException("duplicate 'secret' (or 'catalog_secret' + 'storage_secret') found");
+			if (!storage_secret.empty() || !catalog_secret.empty()) {
+				throw InvalidInputException(
+				    "'secret' can not be used together with 'storage_secret' or 'catalog_secret'");
 			}
 			auto secret_name = StringUtil::Lower(entry.second.ToString());
 			storage_secret = secret_name;
@@ -217,7 +218,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		// look up any s3 secret
 
 		// if there is no secret, an error will be thrown
-		auto secret_entry = IRCatalog::GetS3Secret(context, storage_secret);
+		auto secret_entry = IRCatalog::GetStorageSecret(context, storage_secret);
 		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 		auto region = kv_secret.TryGetValue("region");
 

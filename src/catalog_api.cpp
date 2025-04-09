@@ -135,7 +135,7 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	auto *root = yyjson_doc_get_root(doc.get());
 	unique_ptr<SecretEntry> catalog_credentials;
 	if (!catalog.secret_name.empty()) {
-		catalog_credentials = IRCatalog::GetS3Secret(context, catalog.secret_name);
+		catalog_credentials = IRCatalog::GetStorageSecret(context, catalog.secret_name);
 	}
 
 	// Mapping from config key to a duckdb secret option

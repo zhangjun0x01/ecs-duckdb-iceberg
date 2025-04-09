@@ -103,7 +103,7 @@ string APIUtils::GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoi
 	req->SetUserAgent(config.UserAgent());
 
 	// will error if no secret can be found for AWS services
-	auto secret_entry = IRCatalog::GetS3Secret(context, secret_name);
+	auto secret_entry = IRCatalog::GetStorageSecret(context, secret_name);
 	auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 
 	std::shared_ptr<Aws::Auth::AWSCredentialsProviderChain> provider;

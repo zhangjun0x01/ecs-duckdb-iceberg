@@ -156,35 +156,42 @@ void IRCatalog::ClearCache() {
 	schemas.ClearEntries();
 }
 
-unique_ptr<SecretEntry> IRCatalog::GetS3Secret(ClientContext &context, const string &secret_name) {
+unique_ptr<SecretEntry> IRCatalog::GetStorageSecret(ClientContext &context, const string &secret_name) {
 	auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
-	// make sure a secret exists to connect to an AWS catalog
-	unique_ptr<SecretEntry> secret_entry = nullptr;
-	if (secret_name.empty()) {
-		//! Lookup the default S3 secret
-		secret_entry = context.db->GetSecretManager().GetSecretByName(transaction, "__default_s3");
-	} else {
-		secret_entry = context.db->GetSecretManager().GetSecretByName(transaction, secret_name);
+
+	case_insensitive_set_t accepted_secret_types {"s3", "aws", "r2", "gcs"};
+
+	if (!secret_name.empty()) {
+		auto secret_entry = context.db->GetSecretManager().GetSecretByName(transaction, secret_name);
 		if (secret_entry) {
 			auto secret_type = secret_entry->secret->GetType();
-			if (!StringUtil::CIEquals(secret_type, "s3")) {
-				throw InvalidConfigurationException("Provided 'STORAGE_SECRET' is of type '%s', expected 's3'",
-				                                    secret_type);
+			if (accepted_secret_types.count(secret_type)) {
+				return secret_entry;
 			}
+			throw InvalidConfigurationException(
+			    "Found a secret by the name of '%s', but it is not of an accepted type for a 'storage_secret', "
+			    "accepted types are: 's3', 'aws', 'r2' and 'gcs', found '%s'",
+			    secret_name, secret_type);
 		}
+		throw InvalidConfigurationException(
+		    "No secret by the name of '%s' could be found, consider changing the 'storage_secret'", secret_name);
 	}
 
-	if (!secret_entry) {
-		auto secret_match = context.db->GetSecretManager().LookupSecret(transaction, "s3://", "s3");
-		if (!secret_match.HasMatch()) {
-			throw InvalidConfigurationException("Failed to find an S3 secret and no explicit secret was passed!");
+	for (auto &type : accepted_secret_types) {
+		if (secret_name.empty()) {
+			//! Lookup the default secret for this type
+			auto secret_entry =
+			    context.db->GetSecretManager().GetSecretByName(transaction, StringUtil::Format("__default_%s", type));
+			if (secret_entry) {
+				return secret_entry;
+			}
 		}
-		secret_entry = std::move(secret_match.secret_entry);
+		auto secret_match = context.db->GetSecretManager().LookupSecret(transaction, type + "://", type);
+		if (secret_match.HasMatch()) {
+			return std::move(secret_match.secret_entry);
+		}
 	}
-	if (secret_entry) {
-		return secret_entry;
-	}
-	throw InvalidConfigurationException("Could not find valid S3 secret");
+	throw InvalidConfigurationException("Could not find a valid storage secret");
 }
 
 unique_ptr<SecretEntry> IRCatalog::GetIcebergSecret(ClientContext &context, const string &secret_name,
