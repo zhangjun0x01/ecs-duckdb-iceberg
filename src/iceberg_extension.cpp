@@ -60,8 +60,8 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 		    "'oauth2_server_uri' is not set, defaulting to deprecated '{endpoint}/v1/oauth/tokens' oauth2_server_uri");
 		server_uri = endpoint_it->second.ToString();
 	} else {
-		throw InvalidInputException(
-		    "No 'oauth2_server_uri' was provided, and no 'endpoint' was provided to fall back on");
+		throw InvalidInputException("No 'oauth2_server_uri' was provided, and no 'endpoint' was provided to fall back "
+		                            "on (or consider changing the 'authorization_type')");
 	}
 
 	auto authorization_type_it = result->secret_map.find("authorization_type");
@@ -272,27 +272,30 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		//! attach options will not be used. Better to explicitly throw than to just ignore the options and cause
 		//! confusion for the user.
 		if (!oauth2_scope.empty()) {
-			throw InvalidInputException("Both an 'oauth2_scope' and a 'catalog_secret' (or 'secret') are provided, "
-			                            "these are mutually exclusive.");
+			throw InvalidConfigurationException(
+			    "Both an 'oauth2_scope' and a 'catalog_secret' (or 'secret') are provided, "
+			    "these are mutually exclusive.");
 		}
 		if (!oauth2_server_uri.empty()) {
-			throw InvalidInputException("Both an 'oauth2_server_uri' and a 'catalog_secret' (or 'secret') are "
-			                            "provided, these are mutually exclusive.");
+			throw InvalidConfigurationException("Both an 'oauth2_server_uri' and a 'catalog_secret' (or 'secret') are "
+			                                    "provided, these are mutually exclusive.");
 		}
 		if (!client_id.empty()) {
-			throw InvalidInputException("Please provide either a client_id+client_secret pair, or 'catalog_secret', "
-			                            "these options are mutually exclusive");
+			throw InvalidConfigurationException(
+			    "Please provide either a client_id+client_secret pair, or 'catalog_secret', "
+			    "these options are mutually exclusive");
 		}
 		if (!client_secret.empty()) {
-			throw InvalidInputException("Please provide either a client_id+client_secret pair, or 'catalog_secret', "
-			                            "these options are mutually exclusive");
+			throw InvalidConfigurationException(
+			    "Please provide either a client_id+client_secret pair, or 'catalog_secret', "
+			    "these options are mutually exclusive");
 		}
 
 		auto &kv_iceberg_secret = dynamic_cast<const KeyValueSecret &>(*iceberg_secret->secret);
 		token = kv_iceberg_secret.TryGetValue("token");
 	} else {
 		if (!catalog_secret.empty()) {
-			throw InvalidInputException("No ICEBERG secret by the name of '%s' could be found", catalog_secret);
+			throw InvalidConfigurationException("No ICEBERG secret by the name of '%s' could be found", catalog_secret);
 		}
 
 		if (oauth2_scope.empty()) {
@@ -313,8 +316,9 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		}
 
 		if (client_id.empty() || client_secret.empty()) {
-			throw InvalidInputException("Please provide either a 'client_id' + 'client_secret' pair or the name of an "
-			                            "ICEBERG secret as 'secret' / 'catalog_secret'");
+			throw InvalidConfigurationException(
+			    "Please provide either a 'client_id' + 'client_secret' pair or the name of an "
+			    "ICEBERG secret as 'secret' / 'catalog_secret'");
 		}
 
 		CreateSecretInput create_secret_input;
