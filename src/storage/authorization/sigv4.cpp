@@ -20,10 +20,11 @@ unique_ptr<IRCAuthorization> SIGV4Authorization::FromAttachOptions(IcebergAttach
 				throw InvalidInputException("Duplicate 'secret' option detected!");
 			}
 			result->secret = StringUtil::Lower(entry.second.ToString());
+		} else {
+			remaining_options.emplace(std::move(entry));
 		}
 	}
-	//! Delete the 'secret' from the options if it was present - it has been handled
-	input.options.erase("secret");
+	input.options = std::move(remaining_options);
 	return result;
 }
 
