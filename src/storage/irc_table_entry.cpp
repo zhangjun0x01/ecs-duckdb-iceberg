@@ -12,6 +12,7 @@
 #include "duckdb/planner/binder.hpp"
 #include "duckdb/planner/logical_operator.hpp"
 #include "duckdb/planner/operator/logical_get.hpp"
+#include "storage/authorization/sigv4.hpp"
 
 namespace duckdb {
 
@@ -73,15 +74,17 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 		}
 
 		if (StringUtil::StartsWith(ic_catalog.uri, "glue")) {
+			auto &sigv4_auth = ic_catalog.authorization->Cast<SIGV4Authorization>();
 			//! Override the endpoint if 'glue' is the host of the catalog
-			auto secret_entry = IRCatalog::GetStorageSecret(context, ic_catalog.secret_name);
+			auto secret_entry = IRCatalog::GetStorageSecret(context, sigv4_auth.secret);
 			auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 			auto region = kv_secret.TryGetValue("region").ToString();
 			auto endpoint = "s3." + region + ".amazonaws.com";
 			info.options["endpoint"] = endpoint;
 		} else if (StringUtil::StartsWith(ic_catalog.uri, "s3tables")) {
+			auto &sigv4_auth = ic_catalog.authorization->Cast<SIGV4Authorization>();
 			//! Override all the options if 's3tables' is the host of the catalog
-			auto secret_entry = IRCatalog::GetStorageSecret(context, ic_catalog.secret_name);
+			auto secret_entry = IRCatalog::GetStorageSecret(context, sigv4_auth.secret);
 			auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 			auto substrings = StringUtil::Split(ic_catalog.warehouse, ":");
 			D_ASSERT(substrings.size() == 6);

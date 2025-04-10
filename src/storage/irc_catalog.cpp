@@ -15,10 +15,13 @@ using namespace duckdb_yyjson;
 
 namespace duckdb {
 
-IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, IRCCredentials credentials,
-                     const string &warehouse, const string &uri, const string &secret_name, const string &version)
-    : Catalog(db_p), access_mode(access_mode), credentials(std::move(credentials)), warehouse(warehouse), uri(uri),
-      secret_name(secret_name), version(version), schemas(*this) {
+IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, unique_ptr<IRCAuthorization> authorization,
+                     const string &warehouse, const string &uri, const string &version)
+    : Catalog(db_p), access_mode(access_mode), authorization(std::move(authorization)), warehouse(warehouse), uri(uri),
+      version(version), schemas(*this) {
+	if (version.empty()) {
+		throw InternalException("version can not be empty");
+	}
 }
 
 IRCatalog::~IRCatalog() = default;
@@ -33,7 +36,7 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	D_ASSERT(prefix.empty());
 	url.AddPathComponent("config");
 	url.SetParam("warehouse", warehouse);
-	auto response = APIUtils::GetRequest(context, url, secret_name, credentials.token);
+	auto response = authorization->GetRequest(context, url);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(response));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *overrides_json = yyjson_obj_get(root, "overrides");
@@ -138,7 +141,7 @@ DatabaseSize IRCatalog::GetDatabaseSize(ClientContext &context) {
 IRCEndpointBuilder IRCatalog::GetBaseUrl() const {
 	auto base_url = IRCEndpointBuilder();
 	base_url.SetHost(uri);
-	base_url.SetVersion(version);
+	base_url.AddPathComponent(version);
 	return base_url;
 }
 
@@ -181,7 +184,7 @@ unique_ptr<SecretEntry> IRCatalog::GetStorageSecret(ClientContext &context, cons
 			return std::move(secret_match.secret_entry);
 		}
 	}
-	throw InvalidConfigurationException("Could not find a valid storage secret");
+	throw InvalidConfigurationException("Could not find a valid storage secret (s3, aws, r2 or gcs)");
 }
 
 unique_ptr<SecretEntry> IRCatalog::GetIcebergSecret(ClientContext &context, const string &secret_name,

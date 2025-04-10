@@ -21,9 +21,6 @@ public:
 	void SetHost(const string &host);
 	string GetHost() const;
 
-	void SetVersion(const string &version_);
-	string GetVersion() const;
-
 	void SetParam(const string &key, const string &value);
 	string GetParam(const string &key) const;
 	const unordered_map<string, string> GetParams();
@@ -35,8 +32,6 @@ public:
 
 private:
 	string host;
-	//! version
-	string version;
 	unordered_map<string, string> params;
 };
 

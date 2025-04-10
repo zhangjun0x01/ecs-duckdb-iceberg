@@ -2,34 +2,57 @@
 
 #include "duckdb/main/secret/secret.hpp"
 #include "catalog_utils.hpp"
+#include <curl/curl.h>
+#include "url_utils.hpp"
 
 namespace duckdb {
 
 enum class IRCAuthorizationType : uint8_t { OAUTH2, SIGV4, INVALID };
 
-struct IRCOAuth2RequestInput {
-public:
-	IRCOAuth2RequestInput(const string &grant_type, const string &uri, const string &client_id,
-	                      const string &client_secret, const string &scope)
-	    : grant_type(grant_type), uri(uri), client_id(client_id), client_secret(client_secret), scope(scope) {
-	}
-
-public:
-	string grant_type;
-	string uri;
-	string client_id;
-	string client_secret;
-	string scope;
+struct IcebergAttachOptions {
+	string endpoint;
+	string warehouse;
+	string secret;
+	string name;
+	IRCAuthorizationType authorization_type = IRCAuthorizationType::INVALID;
+	unordered_map<string, Value> options;
 };
 
 struct IRCAuthorization {
 public:
-	IRCAuthorization() = delete;
+	IRCAuthorization(IRCAuthorizationType type) : type(type) {
+	}
+	virtual ~IRCAuthorization() {
+	}
 
 public:
 	static void SetCatalogSecretParameters(CreateSecretFunction &function);
 	static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context, CreateSecretInput &input);
-	static string GetToken(ClientContext &context, const IRCOAuth2RequestInput &input);
+	static IRCAuthorizationType TypeFromString(const string &type);
+
+public:
+	virtual string GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
+	                          curl_slist *extra_headers = nullptr) = 0;
+
+public:
+	template <class TARGET>
+	TARGET &Cast() {
+		if (type != TARGET::TYPE) {
+			throw InternalException("Failed to cast IRCAuthorization to type - IRCAuthorization type mismatch");
+		}
+		return reinterpret_cast<TARGET &>(*this);
+	}
+
+	template <class TARGET>
+	const TARGET &Cast() const {
+		if (type != TARGET::TYPE) {
+			throw InternalException("Failed to cast IRCAuthorization to type - IRCAuthorization type mismatch");
+		}
+		return reinterpret_cast<const TARGET &>(*this);
+	}
+
+public:
+	IRCAuthorizationType type;
 };
 
 } // namespace duckdb

@@ -17,12 +17,12 @@
 #include <duckdb/main/secret/secret.hpp>
 #include <duckdb/main/secret/secret_manager.hpp>
 #include "duckdb/common/error_data.hpp"
+#include "storage/authorization/sigv4.hpp"
 
 using namespace duckdb_yyjson;
 namespace duckdb {
 
-static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table,
-                               const string &secret_name) {
+static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table) {
 	struct curl_slist *extra_headers = NULL;
 	auto url = catalog.GetBaseUrl();
 	url.AddPathComponent(catalog.prefix);
@@ -31,7 +31,7 @@ static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const
 	url.AddPathComponent("tables");
 	url.AddPathComponent(table);
 	extra_headers = curl_slist_append(extra_headers, "X-Iceberg-Access-Delegation: vended-credentials");
-	string api_result = APIUtils::GetRequest(context, url, secret_name, catalog.credentials.token, extra_headers);
+	string api_result = catalog.authorization->GetRequest(context, url, extra_headers);
 
 	catalog.SetCachedValue(url.GetURL(), api_result);
 	curl_slist_free_all(extra_headers);
@@ -39,7 +39,7 @@ static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const
 }
 
 static string GetTableMetadataCached(ClientContext &context, IRCatalog &catalog, const string &schema,
-                                     const string &table, const string &secret_name) {
+                                     const string &table) {
 	auto url = catalog.GetBaseUrl();
 	url.AddPathComponent(catalog.prefix);
 	url.AddPathComponent("namespaces");
@@ -49,14 +49,14 @@ static string GetTableMetadataCached(ClientContext &context, IRCatalog &catalog,
 	if (catalog.HasCachedValue(url.GetURL())) {
 		return catalog.GetCachedValue(url.GetURL());
 	}
-	return GetTableMetadata(context, catalog, schema, table, secret_name);
+	return GetTableMetadata(context, catalog, schema, table);
 }
 
 void IRCAPI::InitializeCurl() {
 	APIUtils::SelectCurlCertPath();
 }
 
-vector<string> IRCAPI::GetCatalogs(ClientContext &context, IRCatalog &catalog, IRCCredentials credentials) {
+vector<string> IRCAPI::GetCatalogs(ClientContext &context, IRCatalog &catalog) {
 	throw NotImplementedException("ICAPI::GetCatalogs");
 }
 
@@ -130,12 +130,13 @@ static void ParseConfigOptions(yyjson_val *config, case_insensitive_map_t<Value>
 IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema,
                                                    const string &table, const string &secret_base_name) {
 	IRCAPITableCredentials result;
-	string api_result = GetTableMetadataCached(context, catalog, schema, table, catalog.secret_name);
+	string api_result = GetTableMetadataCached(context, catalog, schema, table);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	unique_ptr<SecretEntry> catalog_credentials;
-	if (!catalog.secret_name.empty()) {
-		catalog_credentials = IRCatalog::GetStorageSecret(context, catalog.secret_name);
+	if (catalog.authorization->type == IRCAuthorizationType::SIGV4) {
+		auto &sigv4_auth = catalog.authorization->Cast<SIGV4Authorization>();
+		catalog_credentials = IRCatalog::GetStorageSecret(context, sigv4_auth.secret);
 	}
 
 	// Mapping from config key to a duckdb secret option
@@ -242,10 +243,11 @@ static IRCAPITable CreateIRCTable(IRCatalog &catalog, const string &schema, cons
 }
 
 IRCAPITable IRCAPI::GetTable(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table_name,
-                             optional_ptr<IRCCredentials> credentials) {
+                             bool perform_request) {
 	IRCAPITable table_result = CreateIRCTable(catalog, schema, table_name);
-	if (credentials) {
-		string result = GetTableMetadata(context, catalog, schema, table_result.name, catalog.secret_name);
+
+	if (perform_request) {
+		string result = GetTableMetadata(context, catalog, schema, table_result.name);
 		std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(result));
 		auto *metadata_root = yyjson_doc_get_root(doc.get());
 		PopulateTableMetadata(table_result, metadata_root);
@@ -259,7 +261,6 @@ IRCAPITable IRCAPI::GetTable(ClientContext &context, IRCatalog &catalog, const s
 		col.position = 0;
 		table_result.columns.push_back(col);
 	}
-
 	return table_result;
 }
 
@@ -271,27 +272,26 @@ vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog
 	url.AddPathComponent("namespaces");
 	url.AddPathComponent(schema);
 	url.AddPathComponent("tables");
-	string api_result = APIUtils::GetRequest(context, url, catalog.secret_name, catalog.credentials.token);
+	string api_result = catalog.authorization->GetRequest(context, url);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *tables = yyjson_obj_get(root, "identifiers");
 	size_t idx, max;
 	yyjson_val *table;
 	yyjson_arr_foreach(tables, idx, max, table) {
-		auto table_result =
-		    GetTable(context, catalog, schema, IcebergUtils::TryGetStrFromObject(table, "name"), nullptr);
+		auto table_result = GetTable(context, catalog, schema, IcebergUtils::TryGetStrFromObject(table, "name"));
 		result.push_back(table_result);
 	}
 
 	return result;
 }
 
-vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catalog, IRCCredentials credentials) {
+vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catalog) {
 	vector<IRCAPISchema> result;
 	auto endpoint_builder = catalog.GetBaseUrl();
 	endpoint_builder.AddPathComponent(catalog.prefix);
 	endpoint_builder.AddPathComponent("namespaces");
-	string api_result = APIUtils::GetRequest(context, endpoint_builder, catalog.secret_name, catalog.credentials.token);
+	string api_result = catalog.authorization->GetRequest(context, endpoint_builder);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	//! 'ListNamespacesResponse'
@@ -310,17 +310,16 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catal
 }
 
 IRCAPISchema IRCAPI::CreateSchema(ClientContext &context, IRCatalog &catalog, const string &internal,
-                                  const string &schema, IRCCredentials credentials) {
+                                  const string &schema) {
 	throw NotImplementedException("IRCAPI::Create Schema not Implemented");
 }
 
-void IRCAPI::DropSchema(ClientContext &context, const string &internal, const string &schema,
-                        IRCCredentials credentials) {
+void IRCAPI::DropSchema(ClientContext &context, const string &internal, const string &schema) {
 	throw NotImplementedException("IRCAPI Drop Schema not Implemented");
 }
 
 void IRCAPI::DropTable(ClientContext &context, IRCatalog &catalog, const string &internal, const string &schema,
-                       string &table_name, IRCCredentials credentials) {
+                       string &table_name) {
 	throw NotImplementedException("IRCAPI Drop Table not Implemented");
 }
 
@@ -332,7 +331,7 @@ static std::string json_to_string(yyjson_mut_doc *doc, yyjson_write_flag flags =
 }
 
 IRCAPITable IRCAPI::CreateTable(ClientContext &context, IRCatalog &catalog, const string &internal,
-                                const string &schema, IRCCredentials credentials, CreateTableInfo *table_info) {
+                                const string &schema, CreateTableInfo *table_info) {
 	throw NotImplementedException("IRCAPI Create Table not Implemented");
 }
 
