@@ -73,7 +73,7 @@ unique_ptr<BaseSecret> IRCAuthorization::CreateCatalogSecretFunction(ClientConte
 			    authorization_type);
 		}
 	} else {
-		//! Default to oauth2 authorization type
+		//! Default to oauth2 auth_handler type
 		result->secret_map["authorization_type"] = "oauth2";
 	}
 

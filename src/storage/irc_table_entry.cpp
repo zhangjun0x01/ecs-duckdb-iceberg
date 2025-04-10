@@ -74,7 +74,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 		}
 
 		if (StringUtil::StartsWith(ic_catalog.uri, "glue")) {
-			auto &sigv4_auth = ic_catalog.authorization->Cast<SIGV4Authorization>();
+			auto &sigv4_auth = ic_catalog.auth_handler->Cast<SIGV4Authorization>();
 			//! Override the endpoint if 'glue' is the host of the catalog
 			auto secret_entry = IRCatalog::GetStorageSecret(context, sigv4_auth.secret);
 			auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
@@ -82,7 +82,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 			auto endpoint = "s3." + region + ".amazonaws.com";
 			info.options["endpoint"] = endpoint;
 		} else if (StringUtil::StartsWith(ic_catalog.uri, "s3tables")) {
-			auto &sigv4_auth = ic_catalog.authorization->Cast<SIGV4Authorization>();
+			auto &sigv4_auth = ic_catalog.auth_handler->Cast<SIGV4Authorization>();
 			//! Override all the options if 's3tables' is the host of the catalog
 			auto secret_entry = IRCatalog::GetStorageSecret(context, sigv4_auth.secret);
 			auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);

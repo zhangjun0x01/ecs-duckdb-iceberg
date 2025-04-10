@@ -179,15 +179,15 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		throw InvalidConfigurationException("Missing 'endpoint' option for Iceberg attach");
 	}
 
-	//! Finally, create the authorization class from the authorization_type and the remaining options
-	unique_ptr<IRCAuthorization> authorization;
+	//! Finally, create the auth_handler class from the authorization_type and the remaining options
+	unique_ptr<IRCAuthorization> auth_handler;
 	switch (attach_options.authorization_type) {
 	case IRCAuthorizationType::OAUTH2: {
-		authorization = OAuth2Authorization::FromAttachOptions(context, attach_options);
+		auth_handler = OAuth2Authorization::FromAttachOptions(context, attach_options);
 		break;
 	}
 	case IRCAuthorizationType::SIGV4: {
-		authorization = SIGV4Authorization::FromAttachOptions(attach_options);
+		auth_handler = SIGV4Authorization::FromAttachOptions(attach_options);
 		break;
 	}
 	default:
@@ -204,8 +204,8 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		                                    StringUtil::Join(unrecognized_options, ", "));
 	}
 
-	D_ASSERT(authorization);
-	auto catalog = make_uniq<IRCatalog>(db, access_mode, std::move(authorization), attach_options.warehouse,
+	D_ASSERT(auth_handler);
+	auto catalog = make_uniq<IRCatalog>(db, access_mode, std::move(auth_handler), attach_options.warehouse,
 	                                    attach_options.endpoint);
 	catalog->GetConfig(context);
 	return std::move(catalog);

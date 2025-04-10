@@ -15,9 +15,9 @@ using namespace duckdb_yyjson;
 
 namespace duckdb {
 
-IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, unique_ptr<IRCAuthorization> authorization,
+IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, unique_ptr<IRCAuthorization> auth_handler,
                      const string &warehouse, const string &uri, const string &version)
-    : Catalog(db_p), access_mode(access_mode), authorization(std::move(authorization)), warehouse(warehouse), uri(uri),
+    : Catalog(db_p), access_mode(access_mode), auth_handler(std::move(auth_handler)), warehouse(warehouse), uri(uri),
       version(version), schemas(*this) {
 	if (version.empty()) {
 		throw InternalException("version can not be empty");
@@ -36,7 +36,7 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	D_ASSERT(prefix.empty());
 	url.AddPathComponent("config");
 	url.SetParam("warehouse", warehouse);
-	auto response = authorization->GetRequest(context, url);
+	auto response = auth_handler->GetRequest(context, url);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(response));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *overrides_json = yyjson_obj_get(root, "overrides");

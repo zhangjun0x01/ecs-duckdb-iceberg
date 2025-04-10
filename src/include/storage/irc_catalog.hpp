@@ -33,13 +33,13 @@ public:
 
 class IRCatalog : public Catalog {
 public:
-	explicit IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, unique_ptr<IRCAuthorization> authorization,
+	explicit IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, unique_ptr<IRCAuthorization> auth_handler,
 	                   const string &warehouse, const string &uri, const string &version = "v1");
 	~IRCatalog();
 
 	string internal_name;
 	AccessMode access_mode;
-	unique_ptr<IRCAuthorization> authorization;
+	unique_ptr<IRCAuthorization> auth_handler;
 	IRCEndpointBuilder endpoint_builder;
 
 	//! warehouse
