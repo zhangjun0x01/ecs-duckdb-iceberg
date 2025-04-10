@@ -4,7 +4,6 @@
 #include "yyjson.hpp"
 #include "iceberg_utils.hpp"
 #include "api_utils.hpp"
-#include <curl/curl.h>
 #include <sys/stat.h>
 #include <aws/core/Aws.h>
 #include <aws/s3/S3Client.h>
@@ -18,6 +17,7 @@
 #include <duckdb/main/secret/secret_manager.hpp>
 #include "duckdb/common/error_data.hpp"
 #include "storage/authorization/sigv4.hpp"
+#include <curl/curl.h>
 
 using namespace duckdb_yyjson;
 namespace duckdb {

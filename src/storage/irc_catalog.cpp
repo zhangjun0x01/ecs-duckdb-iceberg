@@ -1,4 +1,3 @@
-#include "storage/irc_catalog.hpp"
 #include "storage/irc_schema_entry.hpp"
 #include "storage/irc_transaction.hpp"
 #include "catalog_api.hpp"
@@ -10,6 +9,7 @@
 #include "duckdb/parser/parsed_data/drop_info.hpp"
 #include "duckdb/parser/parsed_data/create_schema_info.hpp"
 #include "duckdb/main/attached_database.hpp"
+#include "storage/irc_catalog.hpp"
 
 using namespace duckdb_yyjson;
 

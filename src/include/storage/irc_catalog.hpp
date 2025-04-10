@@ -8,7 +8,6 @@
 #include "url_utils.hpp"
 #include "storage/irc_schema_set.hpp"
 #include "storage/irc_authorization.hpp"
-#include <curl/curl.h>
 
 namespace duckdb {
 

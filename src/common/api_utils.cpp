@@ -4,6 +4,7 @@
 #include "duckdb/common/exception/http_exception.hpp"
 #include "duckdb/common/string_util.hpp"
 #include "storage/irc_catalog.hpp"
+#include <curl/curl.h>
 #include <sys/stat.h>
 
 namespace duckdb {

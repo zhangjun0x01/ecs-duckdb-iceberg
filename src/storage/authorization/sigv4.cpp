@@ -1,5 +1,6 @@
 #include "storage/authorization/sigv4.hpp"
 #include "api_utils.hpp"
+#include <curl/curl.h>
 
 namespace duckdb {
 

@@ -11,10 +11,13 @@
 #include "duckdb/common/printer.hpp"
 #include "yyjson.hpp"
 #include "duckdb/common/file_system.hpp"
-#include <curl/curl.h>
 #include "url_utils.hpp"
 
 using namespace duckdb_yyjson;
+
+//! fwd declare
+struct curl_slist;
+typedef void CURL;
 
 namespace duckdb {
 

@@ -2,8 +2,10 @@
 
 #include "duckdb/main/secret/secret.hpp"
 #include "catalog_utils.hpp"
-#include <curl/curl.h>
 #include "url_utils.hpp"
+
+//! fwd declare
+struct curl_slist;
 
 namespace duckdb {
 
