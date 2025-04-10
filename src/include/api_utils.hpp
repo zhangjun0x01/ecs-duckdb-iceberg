@@ -40,8 +40,8 @@ public:
 	//! We use a global here to store the path that is selected on the ICAPI::InitializeCurl call
 
 	static string GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_builder, const string &secret_name);
-	static string GetAwsRegion(const string host);
-	static string GetAwsService(const string host);
+	static string GetAwsRegion(const string &host);
+	static string GetAwsService(const string &host);
 	static string GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
 	                         const string &token = "", curl_slist *extra_headers = NULL);
 	static string DeleteRequest(const string &url, const string &token = "", curl_slist *extra_headers = NULL);

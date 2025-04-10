@@ -8,13 +8,19 @@
 
 namespace duckdb {
 
-string APIUtils::GetAwsRegion(const string host) {
+string StrippedAwsHost(const string &host) {
+	//! Strip off the 'v1/iceberg' portion
+	D_ASSERT(StringUtil::EndsWith(host, "/v1/iceberg"));
+	return host.substr(0, host.size() - 11);
+}
+
+string APIUtils::GetAwsRegion(const string &host) {
 	idx_t first_dot = host.find_first_of('.');
 	idx_t second_dot = host.find_first_of('.', first_dot + 1);
 	return host.substr(first_dot + 1, second_dot - first_dot - 1);
 }
 
-string APIUtils::GetAwsService(const string host) {
+string APIUtils::GetAwsService(const string &host) {
 	return host.substr(0, host.find_first_of('.'));
 }
 
@@ -85,7 +91,7 @@ string APIUtils::GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoi
 	Aws::Http::Scheme scheme = Aws::Http::Scheme::HTTPS;
 	uri.SetScheme(scheme);
 	// set host
-	uri.SetAuthority(endpoint_builder.GetHost());
+	uri.SetAuthority(StrippedAwsHost(endpoint_builder.GetHost()));
 
 	const Aws::Http::URI uri_const = Aws::Http::URI(uri);
 	auto create_http_req = Aws::Http::CreateHttpRequest(uri_const, Aws::Http::HttpMethod::HTTP_GET,
