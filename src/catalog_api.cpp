@@ -202,7 +202,7 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	return result;
 }
 
-static void PopulateTableMetadata(IRCAPITable &table, yyjson_val *metadata_root) {
+static void populateTableMetadata(IRCAPITable &table, yyjson_val *metadata_root) {
 	table.storage_location = IcebergUtils::TryGetStrFromObject(metadata_root, "metadata-location");
 	auto *metadata = yyjson_obj_get(metadata_root, "metadata");
 	// table_result.table_id = IcebergUtils::TryGetStrFromObject(metadata, "table-uuid");
@@ -231,7 +231,7 @@ static void PopulateTableMetadata(IRCAPITable &table, yyjson_val *metadata_root)
 	}
 }
 
-static IRCAPITable CreateIRCTable(IRCatalog &catalog, const string &schema, const string &table_name) {
+static IRCAPITable createTable(IRCatalog &catalog, const string &schema, const string &table_name) {
 	IRCAPITable table_result;
 	table_result.catalog_name = catalog.GetName();
 	table_result.schema_name = schema;
@@ -244,13 +244,13 @@ static IRCAPITable CreateIRCTable(IRCatalog &catalog, const string &schema, cons
 
 IRCAPITable IRCAPI::GetTable(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table_name,
                              bool perform_request) {
-	IRCAPITable table_result = CreateIRCTable(catalog, schema, table_name);
+	IRCAPITable table_result = createTable(catalog, schema, table_name);
 
 	if (perform_request) {
 		string result = GetTableMetadata(context, catalog, schema, table_result.name);
 		std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(result));
 		auto *metadata_root = yyjson_doc_get_root(doc.get());
-		PopulateTableMetadata(table_result, metadata_root);
+		populateTableMetadata(table_result, metadata_root);
 	} else {
 		// Skip fetching metadata, we'll do it later when we access the table
 		IRCAPIColumnDefinition col;
@@ -261,6 +261,7 @@ IRCAPITable IRCAPI::GetTable(ClientContext &context, IRCatalog &catalog, const s
 		col.position = 0;
 		table_result.columns.push_back(col);
 	}
+
 	return table_result;
 }
 
