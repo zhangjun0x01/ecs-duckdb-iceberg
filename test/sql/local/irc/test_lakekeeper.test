@@ -11,6 +11,9 @@ require iceberg
 
 require-env LAKEKEEPER_SERVER_AVAILABLE
 
+# Do not ignore 'HTTP' error messages!
+set ignore_error_messages
+
 statement ok
 create secret my_secret (
 	TYPE ICEBERG,
