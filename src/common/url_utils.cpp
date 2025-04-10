@@ -13,14 +13,6 @@ string IRCEndpointBuilder::GetHost() const {
 	return host;
 }
 
-void IRCEndpointBuilder::SetVersion(const string &version_) {
-	version = version_;
-}
-
-string IRCEndpointBuilder::GetVersion() const {
-	return version;
-}
-
 void IRCEndpointBuilder::SetHost(const string &host_) {
 	host = host_;
 }
@@ -43,9 +35,6 @@ const std::unordered_map<string, string> IRCEndpointBuilder::GetParams() {
 string IRCEndpointBuilder::GetURL() const {
 	//! {host}[/{version}][/{prefix}]/{path_component[0]}/{path_component[1]}
 	string ret = host;
-	if (!version.empty()) {
-		ret = ret + "/" + version;
-	}
 	for (auto &component : path_components) {
 		ret += "/" + component;
 	}
