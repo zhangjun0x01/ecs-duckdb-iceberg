@@ -2,8 +2,8 @@
 # Seems like the python module is not yet publicly available/installable, so unsure what to do about this.
 
 ./polaris \
-  --client-id ${POLARIS_ROOT_ID} \
-  --client-secret ${POLARIS_ROOT_SECRET} \
+  --client-id root \
+  --client-secret secret \
   catalogs \
   create \
   --storage-type FILE \
@@ -12,38 +12,38 @@
 
 \
 ./polaris \
-  --client-id ${POLARIS_ROOT_ID} \
-  --client-secret ${POLARIS_ROOT_SECRET} \
+  --client-id root \
+  --client-secret secret \
   principals \
   create \
   quickstart_user
 
 ./polaris \
-  --client-id ${POLARIS_ROOT_ID} \
-  --client-secret ${POLARIS_ROOT_SECRET} \
+  --client-id root \
+  --client-secret secret \
   principal-roles \
   create \
   quickstart_user_role
 
 ./polaris \
-  --client-id ${POLARIS_ROOT_ID} \
-  --client-secret ${POLARIS_ROOT_SECRET} \
+  --client-id root \
+  --client-secret secret \
   catalog-roles \
   create \
   --catalog quickstart_catalog \
   quickstart_catalog_role
 
 ./polaris \
-  --client-id ${POLARIS_ROOT_ID} \
-  --client-secret ${POLARIS_ROOT_SECRET} \
+  --client-id root \
+  --client-secret secret \
   principal-roles \
   grant \
   --principal quickstart_user \
   quickstart_user_role
 
 ./polaris \
-  --client-id ${POLARIS_ROOT_ID} \
-  --client-secret ${POLARIS_ROOT_SECRET} \
+  --client-id root \
+  --client-secret secret \
   catalog-roles \
   grant \
   --catalog quickstart_catalog \
@@ -51,8 +51,8 @@
   quickstart_catalog_role
 
 ./polaris \
-  --client-id ${POLARIS_ROOT_ID} \
-  --client-secret ${POLARIS_ROOT_SECRET} \
+  --client-id root \
+  --client-secret secret \
   privileges \
   catalog \
   grant \
