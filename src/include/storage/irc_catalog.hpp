@@ -48,7 +48,7 @@ public:
 	//! host of the REST catalog
 	string uri;
 	//! version
-	string version;
+	const string version;
 	//! optional prefix
 	string prefix;
 

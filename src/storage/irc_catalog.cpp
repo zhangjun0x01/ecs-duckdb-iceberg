@@ -19,6 +19,9 @@ IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, unique_ptr<
                      const string &warehouse, const string &uri, const string &version)
     : Catalog(db_p), access_mode(access_mode), authorization(std::move(authorization)), warehouse(warehouse), uri(uri),
       version(version), schemas(*this) {
+	if (version.empty()) {
+		throw InternalException("version can not be empty");
+	}
 }
 
 IRCatalog::~IRCatalog() = default;
