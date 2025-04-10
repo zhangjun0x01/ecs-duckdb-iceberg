@@ -2,6 +2,10 @@
 # description: test integration with iceberg catalog read
 # group: [irc]
 
+require-env POLARIS_CLIENT_ID
+
+require-env POLARIS_CLIENT_SECRET
+
 require-env POLARIS_SERVER_AVAILABLE
 
 require avro
@@ -16,15 +20,15 @@ require aws
 
 statement ok
 create secret polaris_secret (
-	TYPE S3,
-	KEY_ID 'root',
-	SECRET 'secret'
+  TYPE S3,
+  KEY_ID '${POLARIS_CLIENT_ID}',
+  SECRET '${POLARIS_CLIENT_SECRET}'
 );
 
 statement ok
 attach 'quickstart_catalog' as my_datalake (
-	type ICEBERG,
-	ENDPOINT 'http://0.0.0.0:8181/api/catalog'
+    type ICEBERG,
+    ENDPOINT 'http://0.0.0.0:8181/api/catalog'
 );
 
 statement ok
