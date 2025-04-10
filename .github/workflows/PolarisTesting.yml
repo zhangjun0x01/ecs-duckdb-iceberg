@@ -91,7 +91,7 @@ jobs:
           cd polaris_catalog
           ./gradlew clean :polaris-quarkus-server:assemble -Dquarkus.container-image.build=true --no-build-cache
           ./gradlew --stop
-          nohup ./gradlew run > polaris-server.log 2> polaris-error.log &
+          nohup ./gradlew run -Dpolaris.bootstrap.credentials=POLARIS,root,secret > polaris-server.log 2> polaris-error.log &
           cd ..
           # let polaris initialize 
           max_attempts=50
@@ -121,15 +121,11 @@ jobs:
           cd polaris_catalog && ../scripts/polaris/setup_polaris_catalog.sh > user_credentials.json
           cd ..
           python3 scripts/polaris/get_polaris_client_creds.py
-          export POLARIS_CLIENT_ID=$(cat polaris_client_id.txt)
-          export POLARIS_CLIENT_SECRET=$(cat polaris_client_secret.txt)
           python3 scripts/data_generators/generate_data.py polaris
 
       - name: Test with rest catalog
         env:
           POLARIS_SERVER_AVAILABLE: 1
         run: |
-          export POLARIS_CLIENT_ID=$(cat polaris_client_id.txt)
-          export POLARIS_CLIENT_SECRET=$(cat polaris_client_secret.txt)
           ./build/release/test/unittest "$PWD/test/*" --list-test-names-only || true
           ./build/release/test/unittest "$PWD/test/*"

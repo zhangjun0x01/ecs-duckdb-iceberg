@@ -45,8 +45,8 @@ class IcebergPolarisRest:
             "--packages org.apache.iceberg:iceberg-spark-runtime-3.4_2.12:1.4.2,org.apache.iceberg:iceberg-aws-bundle:1.4.2 pyspark-shell"
         )
 
-        client_id = os.getenv('POLARIS_CLIENT_ID', '')
-        client_secret = os.getenv('POLARIS_CLIENT_SECRET', '')
+        client_id = 'root'
+        client_secret = 'secret'
         os.environ["AWS_REGION"] = "us-east-1"
         os.environ["AWS_ACCESS_KEY_ID"] = "admin"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "password"
