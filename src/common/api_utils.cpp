@@ -8,14 +8,29 @@
 
 namespace duckdb {
 
-string GetAuthority(const string &host) {
+namespace {
+
+struct HostDecompositionResult {
+	string authority;
+	vector<string> path_components;
+};
+
+HostDecompositionResult DecomposeHost(const string &host) {
+	HostDecompositionResult result;
+
 	auto start_of_path = host.find('/');
 	if (start_of_path != std::string::npos) {
-		//! Strip off the '/' and anything after it;
-		return host.substr(0, start_of_path);
+		//! Authority consists of everything (assuming the host does not contain the scheme) before the first slash
+		result.authority = host.substr(0, start_of_path);
+		auto remainder = host.substr(start_of_path + 1);
+		result.path_components = StringUtil::Split(remainder, '/');
+	} else {
+		result.authority = host;
 	}
-	return host;
+	return result;
 }
+
+} // namespace
 
 string APIUtils::GetAwsRegion(const string &host) {
 	idx_t first_dot = host.find_first_of('.');
@@ -81,6 +96,11 @@ string APIUtils::GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoi
 	auto service = GetAwsService(endpoint_builder.GetHost());
 	auto region = GetAwsRegion(endpoint_builder.GetHost());
 
+	auto decomposed_host = DecomposeHost(endpoint_builder.GetHost());
+	for (auto &component : decomposed_host.path_components) {
+		uri.AddPathSegment(component);
+	}
+
 	for (auto &component : endpoint_builder.path_components) {
 		uri.AddPathSegment(component);
 	}
@@ -94,7 +114,7 @@ string APIUtils::GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoi
 	Aws::Http::Scheme scheme = Aws::Http::Scheme::HTTPS;
 	uri.SetScheme(scheme);
 	// set host
-	uri.SetAuthority(GetAuthority(endpoint_builder.GetHost()));
+	uri.SetAuthority(decomposed_host.authority);
 
 	const Aws::Http::URI uri_const = Aws::Http::URI(uri);
 	auto create_http_req = Aws::Http::CreateHttpRequest(uri_const, Aws::Http::HttpMethod::HTTP_GET,
