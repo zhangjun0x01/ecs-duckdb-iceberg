@@ -29,9 +29,6 @@ static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context
 	if (!AVRO_LOADED) {
 		auto &db_instance = context.db;
 		ExtensionHelper::AutoLoadExtension(*db_instance, "avro");
-		if (!db_instance->ExtensionIsLoaded("avro")) {
-			throw MissingExtensionException("The iceberg extension requires the avro extension to be loaded!");
-		}
 		AVRO_LOADED = true;
 	}
 
@@ -103,9 +100,6 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	if (!AVRO_LOADED) {
 		auto &db_instance = context.db;
 		ExtensionHelper::AutoLoadExtension(*db_instance, "avro");
-		if (!db_instance->ExtensionIsLoaded("avro")) {
-			throw MissingExtensionException("The iceberg extension requires the avro extension to be loaded!");
-		}
 		AVRO_LOADED = true;
 	}
 
