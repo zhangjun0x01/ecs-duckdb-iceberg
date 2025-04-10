@@ -12,6 +12,9 @@ require iceberg
 
 require httpfs
 
+# Do not ignore 'HTTP' error messages!
+set ignore_error_messages
+
 statement ok
 CREATE SECRET (
     TYPE S3,
