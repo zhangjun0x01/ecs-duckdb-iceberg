@@ -59,7 +59,14 @@ static unique_ptr<FunctionData> IcebergSnapshotsBind(ClientContext &context, Tab
 		} else if (loption == "version") {
 			bind_data->options.table_version = StringValue::Get(kv.second);
 		} else if (loption == "version_name_format") {
-			bind_data->options.version_name_format = StringValue::Get(kv.second);
+			auto value = StringValue::Get(kv.second);
+			auto string_substitutions = IcebergUtils::CountOccurrences(value, "%s");
+			if (string_substitutions != 2) {
+				throw InvalidInputException(
+				    "'version_name_format' has to contain two occurrences of '%s' in it, found %d", "%s",
+				    string_substitutions);
+			}
+			bind_data->options.version_name_format = value;
 		} else if (loption == "skip_schema_inference") {
 			bind_data->options.skip_schema_inference = BooleanValue::Get(kv.second);
 		}
