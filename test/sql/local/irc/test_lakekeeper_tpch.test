@@ -22,7 +22,7 @@ create secret my_secret (
 	CLIENT_ID 'spark',
 	CLIENT_SECRET '2OR3eRvYfSZzzZ16MlPd95jhLnOaLM52',
 	OAUTH2_SCOPE 'lakekeeper',
-	OAUTH2_SERVER_URI 'http://localhost:30080/realms/iceberg/protocol/openid-connect/token',
+	OAUTH2_SERVER_URI 'http://localhost:30080/realms/iceberg/protocol/openid-connect/token'
 )
 
 statement ok
