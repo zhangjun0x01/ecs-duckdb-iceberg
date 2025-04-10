@@ -54,7 +54,7 @@ string OAuth2Authorization::GetToken(ClientContext &context, const string &grant
 
 string OAuth2Authorization::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
                                        curl_slist *extra_headers) {
-	return APIUtils::GetRequest(context, endpoint_builder, token);
+	return APIUtils::GetRequest(context, endpoint_builder, token, extra_headers);
 }
 
 unique_ptr<OAuth2Authorization> OAuth2Authorization::FromAttachOptions(ClientContext &context,
