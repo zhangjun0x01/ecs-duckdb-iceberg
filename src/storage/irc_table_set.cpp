@@ -45,7 +45,7 @@ void ICTableSet::FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &ent
 	}
 
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
-	auto table = IRCAPI::GetTable(context, ic_catalog, schema.name, entry->name);
+	auto table = IRCAPI::GetTable(context, ic_catalog, schema.name, entry->name, true);
 	entry = _CreateCatalogEntry(context, table);
 }
 

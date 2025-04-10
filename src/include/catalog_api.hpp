@@ -53,7 +53,7 @@ public:
 	static vector<string> GetCatalogs(ClientContext &context, IRCatalog &catalog);
 	static vector<IRCAPITable> GetTables(ClientContext &context, IRCatalog &catalog, const string &schema);
 	static IRCAPITable GetTable(ClientContext &context, IRCatalog &catalog, const string &schema,
-	                            const string &table_name);
+	                            const string &table_name, bool perform_request = false);
 	static vector<IRCAPISchema> GetSchemas(ClientContext &context, IRCatalog &catalog);
 
 	static IRCAPISchema CreateSchema(ClientContext &context, IRCatalog &catalog, const string &internal,

@@ -242,27 +242,25 @@ static IRCAPITable CreateIRCTable(IRCatalog &catalog, const string &schema, cons
 	return table_result;
 }
 
-IRCAPITable IRCAPI::GetTable(ClientContext &context, IRCatalog &catalog, const string &schema,
-                             const string &table_name) {
+IRCAPITable IRCAPI::GetTable(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table_name,
+                             bool perform_request) {
 	IRCAPITable table_result = CreateIRCTable(catalog, schema, table_name);
 
-	string result = GetTableMetadata(context, catalog, schema, table_result.name);
-	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(result));
-	auto *metadata_root = yyjson_doc_get_root(doc.get());
-	PopulateTableMetadata(table_result, metadata_root);
-	//! FIXME: The above code was part of the 'if (credentials)' block first ??
-
-	//} else {
-	//	// Skip fetching metadata, we'll do it later when we access the table
-	//	IRCAPIColumnDefinition col;
-	//	col.name = "__";
-	//	col.type_text = "int";
-	//	col.precision = -1;
-	//	col.scale = -1;
-	//	col.position = 0;
-	//	table_result.columns.push_back(col);
-	//}
-
+	if (perform_request) {
+		string result = GetTableMetadata(context, catalog, schema, table_result.name);
+		std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(result));
+		auto *metadata_root = yyjson_doc_get_root(doc.get());
+		PopulateTableMetadata(table_result, metadata_root);
+	} else {
+		// Skip fetching metadata, we'll do it later when we access the table
+		IRCAPIColumnDefinition col;
+		col.name = "__";
+		col.type_text = "int";
+		col.precision = -1;
+		col.scale = -1;
+		col.position = 0;
+		table_result.columns.push_back(col);
+	}
 	return table_result;
 }
 
