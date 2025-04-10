@@ -8,7 +8,7 @@
 
 #pragma once
 
-//#include "duckdb/common/multi_file_reader.hpp"
+#include "duckdb/common/multi_file_reader.hpp"
 #include "duckdb/common/types/batched_data_collection.hpp"
 #include "iceberg_metadata.hpp"
 #include "iceberg_utils.hpp"
