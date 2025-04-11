@@ -2,6 +2,7 @@
 #include "storage/irc_catalog.hpp"
 #include "api_utils.hpp"
 #include "duckdb/common/exception/http_exception.hpp"
+#include "duckdb/logging/logger.hpp"
 
 namespace duckdb {
 
@@ -98,6 +99,8 @@ unique_ptr<OAuth2Authorization> OAuth2Authorization::FromAttachOptions(ClientCon
 				throw InvalidConfigurationException(
 				    "No 'endpoint' was given to attach, and no 'endpoint' could be retrieved from the ICEBERG secret!");
 			}
+			DUCKDB_LOG_INFO(context, "iceberg", "'endpoint' is inferred from the ICEBERG secret '%s'",
+			                iceberg_secret->secret->GetName());
 			input.endpoint = endpoint_from_secret.ToString();
 		}
 		token = kv_iceberg_secret.TryGetValue("token");

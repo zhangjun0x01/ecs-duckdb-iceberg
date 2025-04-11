@@ -1,0 +1,21 @@
+# name: test/sql/local/irc/errors/unrecognized_attach_options.test
+# group: [errors]
+
+require-env ICEBERG_SERVER_AVAILABLE
+
+require avro
+
+require parquet
+
+require iceberg
+
+require httpfs
+
+statement error
+attach '' as my_datalake (
+	TYPE ICEBERG,
+	ENDPOINT 'http://127.0.0.1:8181',
+	SIGNER 'test'
+)
+----
+Invalid Configuration Error: No ICEBERG secret exists, and no OAuth2 options were provided
