@@ -7,8 +7,8 @@ from polaris.catalog.api_client import Configuration as CatalogApiClientConfigur
 # some of this is from https://github.com/apache/polaris/blob/e32ef89bb97642f2ac9a4db82252a4fcf7aa0039/getting-started/spark/notebooks/SparkPolaris.ipynb
 polaris_credential = 'root:s3cr3t'  # pragma: allowlist secret
 
-client_id = os.getenv('POLARIS_ROOT_ID', '')
-client_secret = os.getenv('POLARIS_ROOT_SECRET', '')
+client_id = 'root'
+client_secret = 'secret'
 
 if client_id == '' or client_secret == '':
     Print("could not find polaris root id or polaris root secret")
