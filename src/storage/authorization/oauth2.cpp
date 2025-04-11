@@ -62,100 +62,46 @@ unique_ptr<OAuth2Authorization> OAuth2Authorization::FromAttachOptions(ClientCon
 	auto result = make_uniq<OAuth2Authorization>();
 
 	unordered_map<string, Value> remaining_options;
+	case_insensitive_map_t<Value> create_secret_options;
 	string secret;
+	Value token;
+
+	static const unordered_set<string> recognized_create_secret_options {
+	    "oauth2_scope", "oauth2_server_uri", "oauth2_grant_type", "token", "client_id", "client_secret"};
+
 	for (auto &entry : input.options) {
 		auto lower_name = StringUtil::Lower(entry.first);
 		if (lower_name == "secret") {
 			secret = entry.second.ToString();
-		} else if (lower_name == "oauth2_scope") {
-			result->scope = entry.second.ToString();
-		} else if (lower_name == "oauth2_server_uri") {
-			result->uri = entry.second.ToString();
-		} else if (lower_name == "client_id") {
-			result->client_id = entry.second.ToString();
-		} else if (lower_name == "client_secret") {
-			result->client_secret = entry.second.ToString();
-		} else if (lower_name == "oauth2_grant_type") {
-			result->grant_type = entry.second.ToString();
+		} else if (recognized_create_secret_options.count(lower_name)) {
+			create_secret_options.emplace(std::move(entry));
 		} else {
 			remaining_options.emplace(std::move(entry));
 		}
 	}
 
-	Value token;
-	// Check if any of the options are given that indicate intent to provide options inline, rather than use a secret
-	bool user_intends_to_use_secret = true;
-	if (!result->scope.empty() || !result->uri.empty() || !result->client_id.empty() ||
-	    !result->client_secret.empty()) {
-		user_intends_to_use_secret = false;
-	}
-
-	auto iceberg_secret = IRCatalog::GetIcebergSecret(context, secret, user_intends_to_use_secret);
-	if (iceberg_secret) {
-		//! The catalog secret (iceberg secret) will already have acquired a token, these additional settings in the
-		//! attach options will not be used. Better to explicitly throw than to just ignore the options and cause
-		//! confusion for the user.
-		if (!result->scope.empty()) {
-			throw InvalidConfigurationException(
-			    "Both an 'oauth2_scope' and a 'secret' are provided, these are mutually exclusive.");
+	unique_ptr<SecretEntry> iceberg_secret;
+	if (create_secret_options.empty()) {
+		//! Look up an ICEBERG secret
+		iceberg_secret = IRCatalog::GetIcebergSecret(context, secret);
+		if (!iceberg_secret) {
+			if (!secret.empty()) {
+				throw InvalidConfigurationException("No ICEBERG secret by the name of '%s' could be found", secret);
+			} else {
+				throw InvalidConfigurationException("No ICEBERG secret exists, and no OAuth2 options were provided");
+			}
 		}
-		if (!result->uri.empty()) {
-			throw InvalidConfigurationException("Both an 'oauth2_server_uri' and a 'secret' are "
-			                                    "provided, these are mutually exclusive.");
-		}
-		if (!result->client_id.empty()) {
-			throw InvalidConfigurationException(
-			    "Please provide either a 'client_id'+'client_secret' pair, or 'secret', "
-			    "these options are mutually exclusive");
-		}
-		if (!result->client_secret.empty()) {
-			throw InvalidConfigurationException("Please provide either a client_id+client_secret pair, or 'secret', "
-			                                    "these options are mutually exclusive");
-		}
-
 		auto &kv_iceberg_secret = dynamic_cast<const KeyValueSecret &>(*iceberg_secret->secret);
 		token = kv_iceberg_secret.TryGetValue("token");
-		result->uri = kv_iceberg_secret.TryGetValue("token").ToString();
 	} else {
-		if (!secret.empty()) {
-			throw InvalidConfigurationException("No ICEBERG secret by the name of '%s' could be found", secret);
-		}
-
-		if (result->scope.empty()) {
-			//! Default to the Polaris scope: 'PRINCIPAL_ROLE:ALL'
-			result->scope = "PRINCIPAL_ROLE:ALL";
-		}
-
-		if (result->grant_type.empty()) {
-			result->grant_type = "client_credentials";
-		}
-
-		if (result->uri.empty()) {
-			//! If no oauth2_server_uri is provided, default to the (deprecated) REST API endpoint for it
-			DUCKDB_LOG_WARN(context, "iceberg",
-			                "'oauth2_server_uri' is not set, defaulting to deprecated '{endpoint}/v1/oauth/tokens' "
-			                "oauth2_server_uri");
-			result->uri = StringUtil::Format("%s/v1/oauth/tokens", input.endpoint);
-		}
-
-		if (result->client_id.empty() || result->client_secret.empty()) {
-			throw InvalidConfigurationException("Please provide either a 'client_id' + 'client_secret' pair or the "
-			                                    "name of an ICEBERG secret as 'secret'");
-		}
-
 		CreateSecretInput create_secret_input;
-		create_secret_input.options["oauth2_server_uri"] = result->uri;
-		create_secret_input.options["oauth2_scope"] = result->scope;
-		create_secret_input.options["oauth2_grant_type"] = result->grant_type;
-		create_secret_input.options["client_id"] = result->client_id;
-		create_secret_input.options["client_secret"] = result->client_secret;
-		create_secret_input.options["endpoint"] = input.endpoint;
-		create_secret_input.options["authorization_type"] = "oauth2";
-
+		create_secret_options["endpoint"] = input.endpoint;
+		create_secret_input.options = std::move(create_secret_options);
 		auto new_secret = IRCAuthorization::CreateCatalogSecretFunction(context, create_secret_input);
 		auto &kv_iceberg_secret = dynamic_cast<KeyValueSecret &>(*new_secret);
 		token = kv_iceberg_secret.TryGetValue("token");
 	}
+
 	if (token.IsNull()) {
 		throw HTTPException(StringUtil::Format("Failed to retrieve OAuth2 token from %s", result->uri));
 	}

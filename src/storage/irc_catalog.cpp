@@ -187,12 +187,11 @@ unique_ptr<SecretEntry> IRCatalog::GetStorageSecret(ClientContext &context, cons
 	throw InvalidConfigurationException("Could not find a valid storage secret (s3, aws, r2 or gcs)");
 }
 
-unique_ptr<SecretEntry> IRCatalog::GetIcebergSecret(ClientContext &context, const string &secret_name,
-                                                    bool find_if_empty) {
+unique_ptr<SecretEntry> IRCatalog::GetIcebergSecret(ClientContext &context, const string &secret_name) {
 	auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
 	unique_ptr<SecretEntry> secret_entry = nullptr;
-	if (secret_name.empty() && find_if_empty) {
-		//! Try to find any secret with the 'iceberg' type
+	if (secret_name.empty()) {
+		//! Try to find any secret with type 'iceberg'
 		auto secret_match = context.db->GetSecretManager().LookupSecret(transaction, "", "iceberg");
 		if (!secret_match.HasMatch()) {
 			return nullptr;

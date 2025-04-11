@@ -59,8 +59,7 @@ public:
 	}
 
 	static unique_ptr<SecretEntry> GetStorageSecret(ClientContext &context, const string &secret_name);
-	static unique_ptr<SecretEntry> GetIcebergSecret(ClientContext &context, const string &secret_name,
-	                                                bool find_if_empty);
+	static unique_ptr<SecretEntry> GetIcebergSecret(ClientContext &context, const string &secret_name);
 
 	void GetConfig(ClientContext &context);
 

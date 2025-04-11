@@ -4,6 +4,21 @@
 
 namespace duckdb {
 
+namespace {
+
+//! NOTE: We sadly don't receive the CreateSecretFunction or some other context to deduplicate the recognized options
+//! So we use this to deduplicate it instead
+static const case_insensitive_map_t<LogicalType> &IcebergSecretOptions() {
+	static const case_insensitive_map_t<LogicalType> options {
+	    {"client_id", LogicalType::VARCHAR},         {"client_secret", LogicalType::VARCHAR},
+	    {"endpoint", LogicalType::VARCHAR},          {"token", LogicalType::VARCHAR},
+	    {"oauth2_scope", LogicalType::VARCHAR},      {"oauth2_server_uri", LogicalType::VARCHAR},
+	    {"oauth2_grant_type", LogicalType::VARCHAR}, {"authorization_type", LogicalType::VARCHAR}};
+	return options;
+}
+
+} // namespace
+
 IRCAuthorizationType IRCAuthorization::TypeFromString(const string &type) {
 	static const case_insensitive_map_t<IRCAuthorizationType> mapping {{"oauth2", IRCAuthorizationType::OAUTH2},
 	                                                                   {"sigv4", IRCAuthorizationType::SIGV4}};
@@ -28,9 +43,8 @@ unique_ptr<BaseSecret> IRCAuthorization::CreateCatalogSecretFunction(ClientConte
 	auto result = make_uniq<KeyValueSecret>(prefix_paths, "iceberg", "config", input.name);
 	result->redact_keys = {"token", "client_id", "client_secret"};
 
-	case_insensitive_set_t accepted_parameters {"client_id",         "client_secret",     "endpoint",
-	                                            "oauth2_scope",      "oauth2_server_uri", "oauth2_grant_type",
-	                                            "authorization_type"};
+	auto &accepted_parameters = IcebergSecretOptions();
+
 	for (const auto &named_param : input.options) {
 		auto &param_name = named_param.first;
 		auto it = accepted_parameters.find(param_name);
@@ -41,13 +55,13 @@ unique_ptr<BaseSecret> IRCAuthorization::CreateCatalogSecretFunction(ClientConte
 		}
 	}
 
-	//! If the bearer token is explicitly given, there is no need to make a request, use it directly.
+	//! ---- Token ----
 	auto token_it = result->secret_map.find("token");
 	if (token_it != result->secret_map.end()) {
 		return std::move(result);
 	}
 
-	// Check if we have an oauth2_server_uri, or fall back to the deprecated oauth endpoint
+	//! ---- Server URI (and Endpoint) ----
 	string server_uri;
 	auto oauth2_server_uri_it = result->secret_map.find("oauth2_server_uri");
 	auto endpoint_it = result->secret_map.find("endpoint");
@@ -64,19 +78,21 @@ unique_ptr<BaseSecret> IRCAuthorization::CreateCatalogSecretFunction(ClientConte
 		    "to fall back on. Please provide one or change the 'authorization_type'.");
 	}
 
+	//! ---- Authorization Type ----
 	auto authorization_type_it = result->secret_map.find("authorization_type");
 	if (authorization_type_it != result->secret_map.end()) {
 		auto authorization_type = authorization_type_it->second.ToString();
 		if (!StringUtil::CIEquals(authorization_type, "oauth2")) {
 			throw InvalidInputException(
-			    "Unsupported option ('%s') for 'authorization_type', only supports 'oauth2' currently",
+			    "Unsupported option ('%s') for 'authorization_type', 'ICEBERG' secret only supports 'oauth2' currently",
 			    authorization_type);
 		}
 	} else {
-		//! Default to oauth2 auth_handler type
+		//! Default to oauth2 type
 		result->secret_map["authorization_type"] = "oauth2";
 	}
 
+	//! ---- Client ID + Client Secret ----
 	case_insensitive_set_t required_parameters {"client_id", "client_secret"};
 	for (auto &param : required_parameters) {
 		if (!result->secret_map.count(param)) {
@@ -84,6 +100,7 @@ unique_ptr<BaseSecret> IRCAuthorization::CreateCatalogSecretFunction(ClientConte
 		}
 	}
 
+	//! ---- Grant Type ----
 	auto grant_type_it = result->secret_map.find("oauth2_grant_type");
 	if (grant_type_it != result->secret_map.end()) {
 		auto grant_type = grant_type_it->second.ToString();
@@ -97,6 +114,7 @@ unique_ptr<BaseSecret> IRCAuthorization::CreateCatalogSecretFunction(ClientConte
 		result->secret_map["oauth2_grant_type"] = "client_credentials";
 	}
 
+	//! ---- Scope ----
 	if (!result->secret_map.count("oauth2_scope")) {
 		//! Default to default Polaris role
 		result->secret_map["oauth2_scope"] = "PRINCIPAL_ROLE:ALL";
@@ -111,14 +129,8 @@ unique_ptr<BaseSecret> IRCAuthorization::CreateCatalogSecretFunction(ClientConte
 }
 
 void IRCAuthorization::SetCatalogSecretParameters(CreateSecretFunction &function) {
-	function.named_parameters["client_id"] = LogicalType::VARCHAR;
-	function.named_parameters["client_secret"] = LogicalType::VARCHAR;
-	function.named_parameters["endpoint"] = LogicalType::VARCHAR;
-	function.named_parameters["token"] = LogicalType::VARCHAR;
-	function.named_parameters["oauth2_scope"] = LogicalType::VARCHAR;
-	function.named_parameters["oauth2_server_uri"] = LogicalType::VARCHAR;
-	function.named_parameters["oauth2_grant_type"] = LogicalType::VARCHAR;
-	function.named_parameters["authorization_type"] = LogicalType::VARCHAR;
+	auto &options = IcebergSecretOptions();
+	function.named_parameters.insert(options.begin(), options.end());
 }
 
 } // namespace duckdb
