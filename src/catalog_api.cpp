@@ -17,6 +17,7 @@
 #include <duckdb/main/secret/secret_manager.hpp>
 #include "duckdb/common/error_data.hpp"
 #include "storage/authorization/sigv4.hpp"
+#include "storage/authorization/oauth2.hpp"
 #include <curl/curl.h>
 
 using namespace duckdb_yyjson;
@@ -135,31 +136,38 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	string api_result = GetTableMetadataCached(context, catalog, schema, table);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
-	unique_ptr<SecretEntry> catalog_credentials;
+
+	case_insensitive_map_t<Value> user_defaults;
 	if (catalog.auth_handler->type == IRCAuthorizationType::SIGV4) {
 		auto &sigv4_auth = catalog.auth_handler->Cast<SIGV4Authorization>();
-		catalog_credentials = IRCatalog::GetStorageSecret(context, sigv4_auth.secret);
+		auto catalog_credentials = IRCatalog::GetStorageSecret(context, sigv4_auth.secret);
+		// start with the credentials needed for the catalog and overwrite information contained
+		// in the vended credentials. We do it this way to maintain the region info from the catalog credentials
+		if (catalog_credentials) {
+			auto kv_secret = dynamic_cast<const KeyValueSecret &>(*catalog_credentials->secret);
+			for (auto &option : kv_secret.secret_map) {
+				// Ignore refresh info.
+				// if the credentials are the same as for the catalog, then refreshing the catalog secret is enough
+				// otherwise the vended credentials contain their own information for refreshing.
+				if (option.first != "refresh_info" && option.first != "refresh") {
+					user_defaults.emplace(option);
+				}
+			}
+		}
+	} else if (catalog.auth_handler->type == IRCAuthorizationType::OAUTH2) {
+		auto &oauth2_auth = catalog.auth_handler->Cast<OAuth2Authorization>();
+		if (!oauth2_auth.default_region.empty()) {
+			user_defaults["region"] = oauth2_auth.default_region;
+		}
 	}
 
 	// Mapping from config key to a duckdb secret option
 
 	case_insensitive_map_t<Value> config_options;
 	//! TODO: apply the 'defaults' retrieved from the /v1/config endpoint
+	config_options.insert(user_defaults.begin(), user_defaults.end());
 
 	auto *config_val = yyjson_obj_get(root, "config");
-	// start with the credentials needed for the catalog and overwrite information contained
-	// in the vended credentials. We do it this way to maintain the region info from the catalog credentials
-	if (catalog_credentials) {
-		auto kv_secret = dynamic_cast<const KeyValueSecret &>(*catalog_credentials->secret);
-		for (auto &option : kv_secret.secret_map) {
-			// Ignore refresh info.
-			// if the credentials are the same as for the catalog, then refreshing the catalog secret is enough
-			// otherwise the vended credentials contain their own information for refreshing.
-			if (option.first != "refresh_info" && option.first != "refresh") {
-				config_options.emplace(option);
-			}
-		}
-	}
 	ParseConfigOptions(config_val, config_options);
 
 	auto *storage_credentials = yyjson_obj_get(root, "storage-credentials");

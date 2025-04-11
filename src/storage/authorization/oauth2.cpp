@@ -89,6 +89,8 @@ unique_ptr<OAuth2Authorization> OAuth2Authorization::FromAttachOptions(ClientCon
 		auto lower_name = StringUtil::Lower(entry.first);
 		if (lower_name == "secret") {
 			secret = entry.second.ToString();
+		} else if (lower_name == "default_region") {
+			result->default_region = entry.second.ToString();
 		} else if (recognized_create_secret_options.count(lower_name)) {
 			create_secret_options.emplace(std::move(entry));
 		} else {
