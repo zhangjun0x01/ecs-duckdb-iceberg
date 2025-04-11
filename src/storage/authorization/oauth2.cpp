@@ -104,7 +104,9 @@ unique_ptr<OAuth2Authorization> OAuth2Authorization::FromAttachOptions(ClientCon
 			if (!secret.empty()) {
 				throw InvalidConfigurationException("No ICEBERG secret by the name of '%s' could be found", secret);
 			} else {
-				throw InvalidConfigurationException("No ICEBERG secret exists, and no OAuth2 options were provided");
+				throw InvalidInputException(
+				    "AUTHORIZATION_TYPE is 'oauth2', yet no 'secret' was provided, and no client_id+client_secret were "
+				    "provided. Please provide one of the listed options or change the 'authorization_type'.");
 			}
 		}
 		auto &kv_iceberg_secret = dynamic_cast<const KeyValueSecret &>(*iceberg_secret->secret);
@@ -121,9 +123,9 @@ unique_ptr<OAuth2Authorization> OAuth2Authorization::FromAttachOptions(ClientCon
 		token = kv_iceberg_secret.TryGetValue("token");
 	} else {
 		if (!secret.empty()) {
-			vector<string> option_names;
+			set<string> option_names;
 			for (auto &entry : create_secret_options) {
-				option_names.push_back(entry.first);
+				option_names.insert(entry.first);
 			}
 			throw InvalidConfigurationException(
 			    "Both 'secret' and the following oauth2 option(s) were given: %s. These are mutually exclusive",

@@ -59,5 +59,4 @@ attach 'quickstart_catalog' as my_datalake (
     ENDPOINT 'http://does_not_exist.com/api/catalog'
 )
 ----
-Invalid Configuration Error: Please provide either a 'client_id' + 'client_secret' pair or the name of an ICEBERG secret as 'secret'
-
+Invalid Configuration Error: "AUTHORIZATION_TYPE is 'oauth2', yet no 'secret' was provided, and no client_id+client_secret were provided. Please provide one of the listed options or change the 'authorization_type'."

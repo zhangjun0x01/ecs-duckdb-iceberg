@@ -42,9 +42,9 @@ static IcebergEndpointType EndpointTypeFromString(const string &input) {
 			return entry.second;
 		}
 	}
-	vector<string> options;
+	set<string> options;
 	for (auto &entry : mapping) {
-		options.push_back(entry.first);
+		options.insert(entry.first);
 	}
 	throw InvalidConfigurationException("Unrecognized 'endpoint_type' (%s), accepted options are: %s", input,
 	                                    StringUtil::Join(options, ", "));
@@ -192,9 +192,9 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 
 	//! We throw if there are any additional options not handled by previous steps
 	if (!attach_options.options.empty()) {
-		vector<string> unrecognized_options;
+		set<string> unrecognized_options;
 		for (auto &entry : attach_options.options) {
-			unrecognized_options.push_back(entry.first);
+			unrecognized_options.insert(entry.first);
 		}
 		throw InvalidConfigurationException("Unhandled options found: %s",
 		                                    StringUtil::Join(unrecognized_options, ", "));

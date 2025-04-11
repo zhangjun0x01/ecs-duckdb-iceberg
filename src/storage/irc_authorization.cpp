@@ -14,9 +14,9 @@ IRCAuthorizationType IRCAuthorization::TypeFromString(const string &type) {
 		}
 	}
 
-	vector<string> accepted_options;
+	set<string> accepted_options;
 	for (auto it : mapping) {
-		accepted_options.push_back(it.first);
+		accepted_options.insert(it.first);
 	}
 	throw InvalidConfigurationException("'authorization_type' '%s' is not supported, valid options are: %s", type,
 	                                    StringUtil::Join(accepted_options, ", "));

@@ -18,4 +18,4 @@ attach '' as my_datalake (
 	SIGNER 'test'
 )
 ----
-Invalid Configuration Error: No ICEBERG secret exists, and no OAuth2 options were provided
+Invalid Input Error: AUTHORIZATION_TYPE is 'oauth2', yet no 'secret' was provided, and no client_id+client_secret were provided. Please provide one of the listed options or change the 'authorization_type'.
