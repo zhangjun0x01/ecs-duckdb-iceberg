@@ -214,10 +214,10 @@ string IRCAPI::GetToken(ClientContext &context, const string &uri, const string 
 	auto access_token_val = yyjson_obj_get(root, "access_token");
 	auto token_type_val = yyjson_obj_get(root, "token_type");
 	if (!access_token_val) {
-		throw IOException("OAuthTokenResponse is missing required property 'access_token'");
+		throw InvalidConfigurationException("OAuthTokenResponse is missing required property 'access_token'");
 	}
 	if (!token_type_val) {
-		throw IOException("OAuthTokenResponse is missing required property 'token_type'");
+		throw InvalidConfigurationException("OAuthTokenResponse is missing required property 'token_type'");
 	}
 	string token_type = yyjson_get_str(token_type_val);
 	if (!StringUtil::CIEquals(token_type, "bearer")) {
