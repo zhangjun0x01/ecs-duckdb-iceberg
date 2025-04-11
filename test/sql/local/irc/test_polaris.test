@@ -18,6 +18,9 @@ require iceberg
 
 require aws
 
+# Do not ignore 'HTTP' error messages!
+set ignore_error_messages
+
 statement ok
 create secret polaris_secret (
   TYPE S3,
