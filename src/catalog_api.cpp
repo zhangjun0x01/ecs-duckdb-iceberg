@@ -77,6 +77,8 @@ static void ParseConfigOptions(yyjson_val *config, case_insensitive_map_t<Value>
 	                                                                {"s3.secret-access-key", "secret"},
 	                                                                {"s3.session-token", "session_token"},
 	                                                                {"s3.region", "region"},
+	                                                                {"region", "region"},
+	                                                                {"client.region", "region"},
 	                                                                {"s3.endpoint", "endpoint"}};
 
 	auto config_size = yyjson_obj_size(config);
