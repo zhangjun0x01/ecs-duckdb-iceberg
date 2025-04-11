@@ -17,7 +17,7 @@ attach '' as my_datalake (
 	AUTHORIZATION_TYPE 'oauth2'
 )
 ----
-Invalid Input Error: AUTHORIZATION_TYPE is 'oauth2', yet no 'secret' was provided, and no client_id+client_secret were provided. Please provide one of the listed options or change the 'authorization_type'.
+Invalid Configuration Error: AUTHORIZATION_TYPE is 'oauth2', yet no 'secret' was provided, and no client_id+client_secret were provided. Please provide one of the listed options or change the 'authorization_type'.
 
 statement error
 attach '' as my_datalake (
@@ -26,7 +26,7 @@ attach '' as my_datalake (
 	CLIENT_ID 'root'
 )
 ----
-Invalid Input Error: AUTHORIZATION_TYPE is 'oauth2', yet no 'oauth2_server_uri' was provided, and no 'endpoint' was provided to fall back on. Please provide one or change the 'authorization_type'.
+Invalid Configuration Error: AUTHORIZATION_TYPE is 'oauth2', yet no 'oauth2_server_uri' was provided, and no 'endpoint' was provided to fall back on. Please provide one or change the 'authorization_type'.
 
 statement error
 attach '' as my_datalake (

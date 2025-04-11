@@ -104,7 +104,7 @@ unique_ptr<OAuth2Authorization> OAuth2Authorization::FromAttachOptions(ClientCon
 			if (!secret.empty()) {
 				throw InvalidConfigurationException("No ICEBERG secret by the name of '%s' could be found", secret);
 			} else {
-				throw InvalidInputException(
+				throw InvalidConfigurationException(
 				    "AUTHORIZATION_TYPE is 'oauth2', yet no 'secret' was provided, and no client_id+client_secret were "
 				    "provided. Please provide one of the listed options or change the 'authorization_type'.");
 			}
@@ -187,7 +187,7 @@ unique_ptr<BaseSecret> OAuth2Authorization::CreateCatalogSecretFunction(ClientCo
 		    "'oauth2_server_uri' is not set, defaulting to deprecated '{endpoint}/v1/oauth/tokens' oauth2_server_uri");
 		server_uri = StringUtil::Format("%s/v1/oauth/tokens", endpoint_it->second.ToString());
 	} else {
-		throw InvalidInputException(
+		throw InvalidConfigurationException(
 		    "AUTHORIZATION_TYPE is 'oauth2', yet no 'oauth2_server_uri' was provided, and no 'endpoint' was provided "
 		    "to fall back on. Please provide one or change the 'authorization_type'.");
 	}
