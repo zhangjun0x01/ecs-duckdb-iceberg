@@ -60,7 +60,6 @@ static void S3OrGlueAttachInternal(IcebergAttachOptions &input, const string &se
 	}
 
 	input.authorization_type = IRCAuthorizationType::SIGV4;
-	//! NOTE: The 'v1' here is for the AWS Service API version, not the Iceberg or IRC version
 	input.endpoint = StringUtil::Format("%s.%s.amazonaws.com/iceberg", service, region);
 }
 
