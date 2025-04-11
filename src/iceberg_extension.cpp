@@ -175,10 +175,6 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		attach_options.authorization_type = IRCAuthorizationType::OAUTH2;
 	}
 
-	if (attach_options.endpoint.empty()) {
-		throw InvalidConfigurationException("Missing 'endpoint' option for Iceberg attach");
-	}
-
 	//! Finally, create the auth_handler class from the authorization_type and the remaining options
 	unique_ptr<IRCAuthorization> auth_handler;
 	switch (attach_options.authorization_type) {
@@ -202,6 +198,10 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 		}
 		throw InvalidConfigurationException("Unhandled options found: %s",
 		                                    StringUtil::Join(unrecognized_options, ", "));
+	}
+
+	if (attach_options.endpoint.empty()) {
+		throw InvalidConfigurationException("Missing 'endpoint' option for Iceberg attach");
 	}
 
 	D_ASSERT(auth_handler);

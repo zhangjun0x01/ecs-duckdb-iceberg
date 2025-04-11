@@ -92,10 +92,29 @@ unique_ptr<OAuth2Authorization> OAuth2Authorization::FromAttachOptions(ClientCon
 			}
 		}
 		auto &kv_iceberg_secret = dynamic_cast<const KeyValueSecret &>(*iceberg_secret->secret);
+		auto endpoint_from_secret = kv_iceberg_secret.TryGetValue("endpoint");
+		if (input.endpoint.empty()) {
+			if (endpoint_from_secret.IsNull()) {
+				throw InvalidConfigurationException(
+				    "No 'endpoint' was given to attach, and no 'endpoint' could be retrieved from the ICEBERG secret!");
+			}
+			input.endpoint = endpoint_from_secret.ToString();
+		}
 		token = kv_iceberg_secret.TryGetValue("token");
 	} else {
+		if (!secret.empty()) {
+			vector<string> option_names;
+			for (auto &entry : create_secret_options) {
+				option_names.push_back(entry.first);
+			}
+			throw InvalidConfigurationException(
+			    "Both 'secret' and the following oauth2 option(s) were given: %s. These are mutually exclusive",
+			    StringUtil::Join(option_names, ", "));
+		}
 		CreateSecretInput create_secret_input;
-		create_secret_options["endpoint"] = input.endpoint;
+		if (!input.endpoint.empty()) {
+			create_secret_options["endpoint"] = input.endpoint;
+		}
 		create_secret_input.options = std::move(create_secret_options);
 		auto new_secret = IRCAuthorization::CreateCatalogSecretFunction(context, create_secret_input);
 		auto &kv_iceberg_secret = dynamic_cast<KeyValueSecret &>(*new_secret);
