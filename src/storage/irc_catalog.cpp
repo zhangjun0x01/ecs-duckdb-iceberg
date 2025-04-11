@@ -152,7 +152,7 @@ void IRCatalog::ClearCache() {
 unique_ptr<SecretEntry> IRCatalog::GetStorageSecret(ClientContext &context, const string &secret_name) {
 	auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
 
-	case_insensitive_set_t accepted_secret_types {"s3", "aws", "r2", "gcs"};
+	case_insensitive_set_t accepted_secret_types {"s3", "aws"};
 
 	if (!secret_name.empty()) {
 		auto secret_entry = context.db->GetSecretManager().GetSecretByName(transaction, secret_name);
@@ -163,7 +163,7 @@ unique_ptr<SecretEntry> IRCatalog::GetStorageSecret(ClientContext &context, cons
 			}
 			throw InvalidConfigurationException(
 			    "Found a secret by the name of '%s', but it is not of an accepted type for a 'secret', "
-			    "accepted types are: 's3', 'aws', 'r2' and 'gcs', found '%s'",
+			    "accepted types are: 's3' or 'aws', found '%s'",
 			    secret_name, secret_type);
 		}
 		throw InvalidConfigurationException(
@@ -184,7 +184,7 @@ unique_ptr<SecretEntry> IRCatalog::GetStorageSecret(ClientContext &context, cons
 			return std::move(secret_match.secret_entry);
 		}
 	}
-	throw InvalidConfigurationException("Could not find a valid storage secret (s3, aws, r2 or gcs)");
+	throw InvalidConfigurationException("Could not find a valid storage secret (s3 or aws)");
 }
 
 unique_ptr<SecretEntry> IRCatalog::GetIcebergSecret(ClientContext &context, const string &secret_name) {

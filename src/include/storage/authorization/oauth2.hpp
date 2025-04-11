@@ -19,6 +19,8 @@ public:
 	                  curl_slist *extra_headers) override;
 	static string GetToken(ClientContext &context, const string &grant_type, const string &uri, const string &client_id,
 	                       const string &client_secret, const string &scope);
+	static void SetCatalogSecretParameters(CreateSecretFunction &function);
+	static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context, CreateSecretInput &input);
 
 public:
 	string grant_type;

@@ -263,8 +263,8 @@ static void LoadInternal(DatabaseInstance &instance) {
 	secret_type.default_provider = "config";
 
 	ExtensionUtil::RegisterSecretType(instance, secret_type);
-	CreateSecretFunction secret_function = {"iceberg", "config", IRCAuthorization::CreateCatalogSecretFunction};
-	IRCAuthorization::SetCatalogSecretParameters(secret_function);
+	CreateSecretFunction secret_function = {"iceberg", "config", OAuth2Authorization::CreateCatalogSecretFunction};
+	OAuth2Authorization::SetCatalogSecretParameters(secret_function);
 	ExtensionUtil::RegisterFunction(instance, secret_function);
 
 	config.storage_extensions["iceberg"] = make_uniq<IRCStorageExtension>();

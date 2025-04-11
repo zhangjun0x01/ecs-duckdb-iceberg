@@ -28,8 +28,6 @@ public:
 	}
 
 public:
-	static void SetCatalogSecretParameters(CreateSecretFunction &function);
-	static unique_ptr<BaseSecret> CreateCatalogSecretFunction(ClientContext &context, CreateSecretInput &input);
 	static IRCAuthorizationType TypeFromString(const string &type);
 
 public:
