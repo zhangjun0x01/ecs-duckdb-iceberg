@@ -144,6 +144,8 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	// Mapping from config key to a duckdb secret option
 
 	case_insensitive_map_t<Value> config_options;
+	//! TODO: apply the 'defaults' retrieved from the /v1/config endpoint
+
 	auto *config_val = yyjson_obj_get(root, "config");
 	// start with the credentials needed for the catalog and overwrite information contained
 	// in the vended credentials. We do it this way to maintain the region info from the catalog credentials
@@ -185,6 +187,7 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 
 			auto *sc_config = yyjson_obj_get(storage_credential, "config");
 			ParseConfigOptions(sc_config, create_secret_info.options);
+			//! TODO: apply the 'overrides' retrieved from the /v1/config endpoint
 			result.storage_credentials.push_back(create_secret_info);
 		}
 	}
@@ -194,6 +197,7 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 		result.config =
 		    make_uniq<CreateSecretInfo>(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
 		auto &config = *result.config;
+		//! TODO: apply the 'overrides' retrieved from the /v1/config endpoint
 		config.options = config_options;
 		config.name = secret_base_name;
 		config.type = "s3";
