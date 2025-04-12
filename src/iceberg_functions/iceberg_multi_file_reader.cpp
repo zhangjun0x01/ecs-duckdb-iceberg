@@ -19,7 +19,7 @@ string IcebergMultiFileList::ToDuckDBPath(const string &raw_path) {
 }
 
 string IcebergMultiFileList::GetPath() const {
-	return GetPaths()[0];
+	return GetPaths()[0].path;
 }
 
 void IcebergMultiFileList::Bind(vector<LogicalType> &return_types, vector<string> &names) {
@@ -43,7 +43,7 @@ unique_ptr<MultiFileList> IcebergMultiFileList::ComplexFilterPushdown(ClientCont
 	return nullptr;
 }
 
-vector<string> IcebergMultiFileList::GetAllFiles() {
+vector<OpenFileInfo> IcebergMultiFileList::GetAllFiles() {
 	throw NotImplementedException("NOT IMPLEMENTED");
 }
 
@@ -64,7 +64,7 @@ idx_t IcebergMultiFileList::GetTotalFileCount() {
 	// FIXME: the 'added_files_count' + the 'existing_files_count'
 	// in the Manifest List should give us this information without scanning the manifest list
 	idx_t i = data_files.size();
-	while (!GetFile(i).empty()) {
+	while (!GetFile(i).path.empty()) {
 		i++;
 	}
 	return data_files.size();
@@ -82,7 +82,7 @@ unique_ptr<NodeStatistics> IcebergMultiFileList::GetCardinality(ClientContext &c
 	return nullptr;
 }
 
-string IcebergMultiFileList::GetFile(idx_t file_id) {
+OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 	if (!initialized) {
 		InitializeFiles();
 	}
@@ -125,20 +125,20 @@ string IcebergMultiFileList::GetFile(idx_t file_id) {
 #endif
 
 	if (file_id >= data_files.size()) {
-		return string();
+		return OpenFileInfo();
 	}
 
 	D_ASSERT(file_id < data_files.size());
 	auto &data_file = data_files[file_id];
 	auto &path = data_file.file_path;
 
+	string file_path = path;
 	if (options.allow_moved_paths) {
 		auto iceberg_path = GetPath();
 		auto &fs = FileSystem::GetFileSystem(context);
-		return IcebergUtils::GetFullPath(iceberg_path, path, fs);
-	} else {
-		return path;
+		file_path = IcebergUtils::GetFullPath(iceberg_path, path, fs);
 	}
+	return OpenFileInfo(file_path);
 }
 
 void IcebergMultiFileList::InitializeFiles() {
@@ -494,7 +494,13 @@ bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, Mu
 		return true;
 	}
 	if (loption == "version_name_format") {
-		this->options.version_name_format = StringValue::Get(val);
+		auto value = StringValue::Get(val);
+		auto string_substitutions = IcebergUtils::CountOccurrences(value, "%s");
+		if (string_substitutions != 2) {
+			throw InvalidInputException("'version_name_format' has to contain two occurrences of '%s' in it, found %d",
+			                            "%s", string_substitutions);
+		}
+		this->options.version_name_format = value;
 		return true;
 	}
 	if (loption == "snapshot_from_id") {

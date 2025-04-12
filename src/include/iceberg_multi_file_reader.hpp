@@ -59,7 +59,7 @@ public:
 	unique_ptr<MultiFileList> ComplexFilterPushdown(ClientContext &context, const MultiFileOptions &options,
 	                                                MultiFilePushdownInfo &info,
 	                                                vector<unique_ptr<Expression>> &filters) override;
-	vector<string> GetAllFiles() override;
+	vector<OpenFileInfo> GetAllFiles() override;
 	FileExpandResult GetExpandResult() override;
 	idx_t GetTotalFileCount() override;
 	unique_ptr<NodeStatistics> GetCardinality(ClientContext &context) override;
@@ -71,7 +71,7 @@ public:
 
 protected:
 	//! Get the i-th expanded file
-	string GetFile(idx_t i) override;
+	OpenFileInfo GetFile(idx_t i) override;
 	// TODO: How to guarantee we only call this after the filter pushdown?
 	void InitializeFiles();
 

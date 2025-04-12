@@ -12,6 +12,7 @@
 #include "yyjson.hpp"
 #include "iceberg_types.hpp"
 #include "iceberg_options.hpp"
+#include "duckdb/common/open_file_info.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -82,7 +83,7 @@ protected:
 	static bool UnsafeVersionGuessingEnabled(ClientContext &context);
 	static string GetTableVersionFromHint(const string &path, FileSystem &fs, string version_format);
 	static string GuessTableVersion(const string &meta_path, FileSystem &fs, const IcebergOptions &options);
-	static string PickTableVersion(vector<string> &found_metadata, string &version_pattern, string &glob);
+	static string PickTableVersion(vector<OpenFileInfo> &found_metadata, string &version_pattern, string &glob);
 
 	//! Internal JSON parsing functions
 	static yyjson_val *FindLatestSnapshotInternal(yyjson_val *snapshots);

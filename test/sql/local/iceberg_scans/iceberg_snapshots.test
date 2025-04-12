@@ -30,7 +30,7 @@ SELECT * FROM ICEBERG_SNAPSHOTS('data/persistent/iceberg/lineitem_iceberg', vers
 statement error
 SELECT * FROM ICEBERG_SNAPSHOTS('data/persistent/iceberg/lineitem_iceberg', version="1", version_name_format='v%s%s.metadata.gz');
 ----
-IO Error: Iceberg metadata file not found for table version '1' using 'none' compression and format(s): 'v%s%s.metadata.gz'
+Invalid Configuration Error: Iceberg metadata file not found for table version '1' using 'none' compression and format(s): 'v%s%s.metadata.gz'
 
 query IIII
 SELECT * FROM ICEBERG_SNAPSHOTS('data/persistent/iceberg/lineitem_iceberg', version="1", version_name_format='v%s%s.metadata.json');
@@ -45,12 +45,12 @@ SELECT * FROM ICEBERG_SNAPSHOTS('data/persistent/iceberg/lineitem_iceberg', vers
 statement error
 SELECT * FROM ICEBERG_SNAPSHOTS('data/persistent/iceberg/lineitem_iceberg_nonexistent');
 ----
-IO Error: Failed to read iceberg table. No version was provided and no version-hint could be found,
+Invalid Configuration Error: Failed to read iceberg table. No version was provided and no version-hint could be found,
 
 statement error
 SELECT * FROM ICEBERG_SNAPSHOTS('data/persistent/iceberg/lineitem_iceberg_gz');
 ----
-IO Error: Iceberg metadata file not found for table version '2' using 'none' compression and format(s): 'v%s%s.metadata.json,%s%s.metadata.json'
+Invalid Configuration Error: Iceberg metadata file not found for table version '2' using 'none' compression and format(s): 'v%s%s.metadata.json,%s%s.metadata.json'
 
 query IIII
 SELECT * FROM ICEBERG_SNAPSHOTS('data/persistent/iceberg/lineitem_iceberg_gz', metadata_compression_codec="gzip");
