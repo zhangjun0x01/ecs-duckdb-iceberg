@@ -364,6 +364,12 @@ void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry) con
 	vector<LogicalType> input_types;
 	vector<string> input_names;
 
+	//! TODO: wrap this read in a MultiFileReader (IcebergDeleteMultiFileReader ?)
+	//! we need this because the `equality_ids` refer to the field-ids of the delete file
+	//! The parquet 'schema' named param doesn't cut it because that requires the types of the selected columns as well.
+	//! On top of that, the 'schema.name-mapping.default' could also be relevant for the delete file to discover the
+	//! field id of it.
+
 	TableFunctionRef empty;
 	TableFunction dummy_table_function;
 	dummy_table_function.name = "IcebergDeleteScan";
