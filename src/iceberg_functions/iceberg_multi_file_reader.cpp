@@ -322,7 +322,36 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	}
 }
 
-void IcebergMultiFileList::ScanDeleteFile(const string &delete_file_path) const {
+void IcebergMultiFileList::ScanPositionalDeleteFile(DataChunk &result) const {
+	auto names = FlatVector::GetData<string_t>(result.data[0]);
+	auto row_ids = FlatVector::GetData<int64_t>(result.data[1]);
+
+	auto count = result.size();
+	if (count == 0) {
+		return;
+	}
+	reference<string_t> current_file_path = names[0];
+	reference<IcebergPositionalDeleteData> deletes = positional_delete_data[current_file_path.get().GetString()];
+
+	for (idx_t i = 0; i < count; i++) {
+		auto &name = names[i];
+		auto &row_id = row_ids[i];
+
+		if (name != current_file_path.get()) {
+			current_file_path = name;
+			deletes = positional_delete_data[current_file_path.get().GetString()];
+		}
+
+		deletes.get().AddRow(row_id);
+	}
+}
+
+void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &entry, DataChunk &result) const {
+	throw NotImplementedException("TODO: equality deletes not supported yet");
+}
+
+void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry) const {
+	auto &delete_file_path = entry.file_path;
 	auto &instance = DatabaseInstance::GetDatabase(context);
 	auto &parquet_scan_entry = ExtensionUtil::GetTableFunction(instance, "parquet_scan");
 	auto &parquet_scan = parquet_scan_entry.functions.functions[0];
@@ -360,53 +389,29 @@ void IcebergMultiFileList::ScanDeleteFile(const string &delete_file_path) const 
 	auto global_state = parquet_scan.init_global(context, input);
 	auto local_state = parquet_scan.init_local(execution_context, input, global_state.get());
 
-	do {
-		TableFunctionInput function_input(bind_data.get(), local_state.get(), global_state.get());
-		result.Reset();
-		parquet_scan.function(context, function_input, result);
-
-		idx_t count = result.size();
-		for (auto &vec : result.data) {
-			vec.Flatten(count);
-		}
-
-		auto names = FlatVector::GetData<string_t>(result.data[0]);
-		auto row_ids = FlatVector::GetData<int64_t>(result.data[1]);
-
-		if (count == 0) {
-			continue;
-		}
-		reference<string_t> current_file_path = names[0];
-
-		auto initial_key = current_file_path.get().GetString();
-		auto it = delete_data.find(initial_key);
-		if (it == delete_data.end()) {
-			it = delete_data.emplace(initial_key, make_uniq<IcebergDeleteData>()).first;
-		}
-		reference<IcebergDeleteData> deletes = *it->second;
-
-		for (idx_t i = 0; i < count; i++) {
-			auto &name = names[i];
-			auto &row_id = row_ids[i];
-
-			if (name != current_file_path.get()) {
-				current_file_path = name;
-				auto key = current_file_path.get().GetString();
-				auto it = delete_data.find(key);
-				if (it == delete_data.end()) {
-					it = delete_data.emplace(key, make_uniq<IcebergDeleteData>()).first;
-				}
-				deletes = *it->second;
-			}
-
-			deletes.get().AddRow(row_id);
-		}
-	} while (result.size() != 0);
+	if (entry.content == IcebergManifestEntryContentType::POSITION_DELETES) {
+		do {
+			TableFunctionInput function_input(bind_data.get(), local_state.get(), global_state.get());
+			result.Reset();
+			parquet_scan.function(context, function_input, result);
+			result.Flatten();
+			ScanPositionalDeleteFile(result);
+		} while (result.size() != 0);
+	} else if (entry.content == IcebergManifestEntryContentType::EQUALITY_DELETES) {
+		do {
+			TableFunctionInput function_input(bind_data.get(), local_state.get(), global_state.get());
+			result.Reset();
+			parquet_scan.function(context, function_input, result);
+			result.Flatten();
+			ScanEqualityDeleteFile(entry, result);
+		} while (result.size() != 0);
+	}
 }
 
-unique_ptr<IcebergDeleteData> IcebergMultiFileList::GetDeletesForFile(const string &file_path) const {
-	auto it = delete_data.find(file_path);
-	if (it != delete_data.end()) {
+optional_ptr<IcebergPositionalDeleteData>
+IcebergMultiFileList::GetPositionalDeletesForFile(const string &file_path) const {
+	auto it = positional_delete_data.find(file_path);
+	if (it != positional_delete_data.end()) {
 		// There is delete data for this file, return it
 		return std::move(it->second);
 	}
@@ -460,7 +465,7 @@ void IcebergMultiFileList::ProcessDeletes() const {
 #endif
 
 	for (auto &entry : delete_files) {
-		ScanDeleteFile(entry.file_path);
+		ScanDeleteFile(entry);
 	}
 
 	D_ASSERT(current_delete_manifest == delete_manifests.end());
@@ -472,8 +477,34 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
                                            ExpressionExecutor &executor,
                                            optional_ptr<MultiFileReaderGlobalState> global_state) {
 	// Base class finalization first
-	MultiFileReader::FinalizeChunk(context, bind_data, reader, reader_data, input_chunk, output_chunk, executor,
-	                               global_state);
+	MultiFileReader::FinalizeChunk(context, bind_data, reader_data, chunk, global_state);
+
+	D_ASSERT(global_state);
+	auto &iceberg_global_state = global_state->Cast<IcebergMultiFileReaderGlobalState>();
+	D_ASSERT(iceberg_global_state.file_list);
+
+	// Get the metadata for this file
+	const auto &multi_file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state->file_list);
+	auto file_id = reader_data.file_list_idx.GetIndex();
+	auto &data_file = multi_file_list.data_files[file_id];
+
+	// The path of the data file where this chunk was read from
+	auto &file_path = data_file.file_path;
+	optional_ptr<IcebergPositionalDeleteData> positional_delete_data;
+	{
+		std::lock_guard<mutex> guard(multi_file_list.delete_lock);
+		if (multi_file_list.current_delete_manifest != multi_file_list.delete_manifests.end()) {
+			multi_file_list.ProcessDeletes();
+		}
+		positional_delete_data = multi_file_list.GetPositionalDeletesForFile(file_path);
+	}
+
+	if (positional_delete_data) {
+		D_ASSERT(iceberg_global_state.file_row_number_idx.IsValid());
+		auto &file_row_number_column = chunk.data[iceberg_global_state.file_row_number_idx.GetIndex()];
+
+		positional_delete_data->Apply(chunk, file_row_number_column);
+	}
 }
 
 bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, MultiFileOptions &options,

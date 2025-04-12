@@ -17,9 +17,33 @@
 
 namespace duckdb {
 
-struct IcebergDeleteData : public DeleteFilter {
+// struct IcebergFileMetaData {
+// public:
+//    IcebergFileMetaData() {};
+//    IcebergFileMetaData (const IcebergFileMetaData&) = delete;
+//    IcebergFileMetaData& operator= (const IcebergFileMetaData&) = delete;
+// public:
+//    optional_idx iceberg_snapshot_version;
+//    optional_idx file_number;
+//    optional_idx cardinality;
+//    case_insensitive_map_t<string> partition_map;
+//};
+
+struct IcebergEqualityDeleteData {
 public:
-	IcebergDeleteData() {
+	IcebergEqualityDeleteData() {
+	}
+
+public:
+	//! Every entry here is a CONJUNCTION_AND expression constructed from:
+	//! - the equality delete (parquet) file.
+	//! - the 'equality_ids' from the 'data_file' (avro).
+	vector<unique_ptr<Expression>> equality_deletes;
+};
+
+struct IcebergPositionalDeleteData {
+public:
+	IcebergPositionalDeleteData() {
 	}
 
 public:
@@ -66,8 +90,10 @@ public:
 	unique_ptr<NodeStatistics> GetCardinality(ClientContext &context) override;
 
 public:
-	void ScanDeleteFile(const string &delete_file_path) const;
-	unique_ptr<IcebergDeleteData> GetDeletesForFile(const string &file_path) const;
+	void ScanPositionalDeleteFile(DataChunk &result) const;
+	void ScanEqualityDeleteFile(const IcebergManifestEntry &entry, DataChunk &result) const;
+	void ScanDeleteFile(const IcebergManifestEntry &entry) const;
+	optional_ptr<IcebergPositionalDeleteData> GetPositionalDeletesForFile(const string &file_path) const;
 	void ProcessDeletes() const;
 
 protected:
@@ -98,7 +124,8 @@ public:
 	mutable vector<IcebergManifest>::iterator current_delete_manifest;
 
 	//! For each file that has a delete file, the state for processing that/those delete file(s)
-	mutable case_insensitive_map_t<unique_ptr<IcebergDeleteData>> delete_data;
+	mutable case_insensitive_map_t<IcebergPositionalDeleteData> positional_delete_data;
+	mutable case_insensitive_map_t<IcebergEqualityDeleteData> equality_delete_data;
 	mutable mutex delete_lock;
 
 	bool initialized = false;
