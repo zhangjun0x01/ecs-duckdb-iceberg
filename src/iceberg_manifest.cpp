@@ -159,6 +159,22 @@ void IcebergManifestEntryV1::PopulateNameMapping(idx_t column_id, const LogicalT
 	EntryNameMapping(column_id, type, name, name_to_vec);
 }
 
+static vector<int32_t> GetEqualityIds(Vector &equality_ids, idx_t index) {
+
+	auto &equality_ids_child = ListVector::GetEntry(equality_ids);
+	auto equality_ids_data = FlatVector::GetData<int32_t>(equality_ids_child);
+	auto equality_ids_list = FlatVector::GetData<list_entry_t>(equality_ids);
+	auto list_entry = equality_ids_list[index];
+
+	vector<int32_t> result;
+	for (idx_t j = 0; j < list_entry.length; j++) {
+		auto list_idx = list_entry.offset + j;
+		result.push_back(equality_ids_data[list_idx]);
+	}
+
+	return result;
+}
+
 idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count,
                                              const ManifestReaderInput &input, vector<entry_type> &result) {
 	auto &name_to_vec = input.name_to_vec;
@@ -170,6 +186,12 @@ idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx
 	D_ASSERT(name_to_vec.at("file_format").GetPrimaryIndex() == data_file_idx);
 	D_ASSERT(name_to_vec.at("record_count").GetPrimaryIndex() == data_file_idx);
 	D_ASSERT(name_to_vec.at("content").GetPrimaryIndex() == data_file_idx);
+	optional_ptr<Vector> equality_ids;
+
+	auto equality_ids_it = name_to_vec.find("equality_ids");
+	if (equality_ids_it != name_to_vec.end()) {
+		equality_ids = *child_entries[equality_ids_it->second.GetChildIndex(0).GetPrimaryIndex()];
+	}
 
 	auto content =
 	    FlatVector::GetData<int32_t>(*child_entries[name_to_vec.at("content").GetChildIndex(0).GetPrimaryIndex()]);
@@ -194,6 +216,9 @@ idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx
 		if (input.skip_deleted && entry.status == IcebergManifestEntryStatusType::DELETED) {
 			//! Skip this entry, we don't care about deleted entries
 			continue;
+		}
+		if (equality_ids) {
+			entry.equality_ids = GetEqualityIds(*equality_ids, index);
 		}
 		produced++;
 		result.push_back(entry);

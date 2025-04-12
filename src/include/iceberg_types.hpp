@@ -98,6 +98,7 @@ public:
 	IcebergManifestEntryContentType content;
 	string file_path;
 	string file_format;
+	vector<int32_t> equality_ids;
 	int64_t record_count;
 
 public:
