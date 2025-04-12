@@ -39,7 +39,22 @@ string CreateNamespaceResponse::TryFromJSON(yyjson_val *obj) {
 	auto properties_val = yyjson_obj_get(obj, "properties");
 	if (properties_val) {
 		has_properties = true;
-		properties = parse_object_of_strings(properties_val);
+		if (yyjson_is_obj(properties_val)) {
+			size_t idx, max;
+			yyjson_val *key, *val;
+			yyjson_obj_foreach(obj, idx, max, key, val) {
+				auto key_str = yyjson_get_str(key);
+				string tmp;
+				if (yyjson_is_str(val)) {
+					tmp = yyjson_get_str(val);
+				} else {
+					return "CreateNamespaceResponse property 'tmp' is not of type 'string'";
+				}
+				properties.emplace(key_str, std::move(tmp));
+			}
+		} else {
+			return "CreateNamespaceResponse property 'properties' is not of type 'object'";
+		}
 	}
 	return string();
 }

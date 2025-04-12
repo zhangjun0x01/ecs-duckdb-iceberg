@@ -179,6 +179,32 @@ class AdditionalProperty:
     skip_if_excluded: List[str] = field(default_factory=list)
 
 
+@dataclass
+class PrimitiveTypeMapping:
+    conversion: str
+    type_check: str
+    cpp_type: str
+    formats: Dict[str, "PrimitiveTypeMapping"] = field(default_factory=dict)
+
+
+PRIMITIVE_TYPE_MAPPING = {
+    'string': PrimitiveTypeMapping(type_check='yyjson_is_str', conversion='yyjson_get_str', cpp_type='string'),
+    'integer': PrimitiveTypeMapping(type_check='yyjson_is_sint', conversion='yyjson_get_sint', cpp_type='int64_t'),
+    'boolean': PrimitiveTypeMapping(type_check='yyjson_is_bool', conversion='yyjson_get_bool', cpp_type='bool'),
+    'number': PrimitiveTypeMapping(
+        type_check='yyjson_is_num',
+        conversion='yyjson_get_num',
+        cpp_type='double',
+        formats={
+            'double': PrimitiveTypeMapping(
+                type_check='yyjson_is_real', conversion='yyjson_get_real', cpp_type='double'
+            ),
+            'float': PrimitiveTypeMapping(type_check='yyjson_is_real', conversion='yyjson_get_real', cpp_type='float'),
+        },
+    ),
+}
+
+
 class CPPClass:
     def __init__(self, class_name, parse_info: ParseInfo):
         self.name = class_name
@@ -529,8 +555,8 @@ class CPPClass:
 
         assignment = 'std::move(tmp)'
         if item_type.type != Property.Type.SCHEMA_REFERENCE:
-            item_parse = self.generate_item_parse(item_type, 'val')
-            res.append(f'\tauto tmp = {item_parse};')
+            res.append(f'{self.generate_variable_type(item_type)} tmp;')
+            res.extend(self.generate_item_parse(item_type, 'val', 'tmp'))
         else:
             schema_property = cast(SchemaReferenceProperty, item_type)
             self.referenced_schemas.add(schema_property.ref)
@@ -545,7 +571,7 @@ class CPPClass:
         res.append('}')
         return res
 
-    def generate_item_parse(self, property: Property, source: str) -> str:
+    def generate_item_parse(self, property: Property, source: str, target: str) -> List[str]:
         if property.type == Property.Type.SCHEMA_REFERENCE:
             print(f"Unrecognized property type {property.type}, {source}")
             exit(1)
@@ -556,33 +582,74 @@ class CPPClass:
         elif property.type == Property.Type.PRIMITIVE:
             # FIXME: add a check to see that the yyjson_val* is of the right type
             # FIXME: check for null in returned char* for 'yyjson_get_str?
-            PRIMITIVE_PARSE_FUNCTIONS = {
-                'string': 'yyjson_get_str',
-                'integer': 'yyjson_get_sint',
-                'boolean': 'yyjson_get_bool',
-            }
             primitive_property = cast(PrimitiveProperty, property)
             item_type = primitive_property.primitive_type
-            if item_type in PRIMITIVE_PARSE_FUNCTIONS:
-                parse_func = PRIMITIVE_PARSE_FUNCTIONS[item_type]
-            elif item_type == 'number':
-                format = primitive_property.format
-                if not format:
-                    print(f"'number' without a 'format' property in the spec!")
-                    exit(1)
-                NUMBER_PARSE_FUNCTIONS = {'double': 'yyjson_get_real', 'float': 'yyjson_get_real'}
-                if format not in NUMBER_PARSE_FUNCTIONS:
-                    print(f"'number' without an unrecognized 'format' found, {format}")
-                    exit(1)
-                parse_func = NUMBER_PARSE_FUNCTIONS[format]
-            else:
-                print(f"Unrecognized primitive type '{item_type}' encountered in array")
+            if item_type not in PRIMITIVE_TYPE_MAPPING:
+                print(f"Primitive type '{item_type}' not in PRIMITIVE_TYPE_MAPPING")
                 exit(1)
-            return f'{parse_func}({source})'
-        elif property.type == Property.Type.OBJECT and property.is_object_of_strings():
-            return f'parse_object_of_strings({source})'
+
+            type_mapping: PrimitiveTypeMapping = PRIMITIVE_TYPE_MAPPING[item_type]
+            # NOTE: no need to really check the 'format' of the 'property' here
+            # FIXME: 'target' is not the property name in the spec, it's already been transformed to the cpp variable name
+            return [
+                f'if ({type_mapping.type_check}({source})) {{',
+                f'\t{target} = {type_mapping.conversion}({source});',
+                '} else {',
+                f"""\treturn "{self.name} property '{target}' is not of type '{item_type}'";""",
+                '}',
+            ]
         elif property.type == Property.Type.OBJECT and property.is_raw_object():
-            return source
+            return [
+                f'if (yyjson_is_obj({source})) {{',
+                f'\t{target} = {source};',
+                '} else {',
+                f"""\treturn "{self.name} property '{target}' is not of type 'object'";""",
+                '}',
+            ]
+        elif property.type == Property.Type.OBJECT and property.additional_properties:
+            object_property = cast(ObjectProperty, property)
+            additional_properties = property.additional_properties
+
+            res = []
+
+            res.append(f'if (yyjson_is_obj({source})) {{')
+            res.extend(
+                [
+                    '\tsize_t idx, max;',
+                    '\tyyjson_val *key, *val;',
+                    '\tyyjson_obj_foreach(obj, idx, max, key, val) {',
+                ]
+            )
+            # FIXME: check for null in returned char*?
+            res.append('\t\tauto key_str = yyjson_get_str(key);')
+            res.append(f'\t\t{self.generate_variable_type(additional_properties)} tmp;')
+
+            if additional_properties.type != Property.Type.SCHEMA_REFERENCE:
+                item_definition = [f'\t\t{x}' for x in self.generate_item_parse(additional_properties, 'val', 'tmp')]
+                res.extend(item_definition)
+            else:
+                schema_property = cast(SchemaReferenceProperty, additional_properties)
+                self.referenced_schemas.add(schema_property.ref)
+                if schema_property.ref in self.parse_info.recursive_schemas:
+                    print(f"Encountered recursive schema '{schema_property.ref}' in 'generate_additional_properties'")
+                    exit(1)
+                res.append(f'\t\t{schema_property.ref} tmp;')
+                res.extend(
+                    [
+                        '\terror = tmp.TryFromJSON(val);',
+                        '\tif (!error.empty()) {',
+                        '\t\treturn error;',
+                        '\t}',
+                    ]
+                )
+            res.extend(
+                [
+                    f'\t\t{target}.emplace(key_str, std::move(tmp));',
+                    '\t}',
+                ]
+            )
+            res.extend(['} else {', f"""\treturn "{self.name} property '{target}' is not of type 'object'";""", '}'])
+            return res
         else:
             print(f"Unrecognized type in 'generate_item_parse', {property.type}")
             exit(1)
@@ -609,8 +676,7 @@ class CPPClass:
             )
             return result
         else:
-            item_parse = self.generate_item_parse(schema, source)
-            return [f'{target} = {item_parse};']
+            return self.generate_item_parse(schema, source, target)
 
     def generate_optional_properties(self, name: str, properties: Dict[str, Property]):
         if not properties:
@@ -658,8 +724,8 @@ class CPPClass:
 
         body = []
         if additional_properties.type != Property.Type.SCHEMA_REFERENCE:
-            item_definition = self.generate_item_parse(additional_properties, 'val')
-            body.append(f'\tauto tmp = {item_definition};')
+            body.append(f'\t{self.generate_variable_type(additional_properties)} tmp;')
+            body.extend(self.generate_item_parse(additional_properties, 'val', 'tmp'))
         else:
             schema_property = cast(SchemaReferenceProperty, additional_properties)
             self.referenced_schemas.add(schema_property.ref)
@@ -694,15 +760,10 @@ class CPPClass:
             item_type = self.generate_variable_type(array_property.item_type)
             return f'vector<{item_type}>'
         elif schema.type == Property.Type.PRIMITIVE:
-            PRIMITIVE_TYPE_MAPPING = {
-                'string': 'string',
-                'integer': 'int64_t',
-                'boolean': 'bool',
-            }
             primitive_property = cast(PrimitiveProperty, schema)
             primitive_type = primitive_property.primitive_type
             if primitive_type in PRIMITIVE_TYPE_MAPPING:
-                return PRIMITIVE_TYPE_MAPPING[primitive_type]
+                return PRIMITIVE_TYPE_MAPPING[primitive_type].cpp_type
             elif primitive_type == 'number':
                 if not primitive_property.format:
                     print(f"'number' without a 'format' property in the spec!")

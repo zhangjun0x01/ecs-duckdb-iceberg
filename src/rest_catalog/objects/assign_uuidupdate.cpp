@@ -35,12 +35,20 @@ string AssignUUIDUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!uuid_val) {
 		return "AssignUUIDUpdate required property 'uuid' is missing";
 	} else {
-		uuid = yyjson_get_str(uuid_val);
+		if (yyjson_is_str(uuid_val)) {
+			uuid = yyjson_get_str(uuid_val);
+		} else {
+			return "AssignUUIDUpdate property 'uuid' is not of type 'string'";
+		}
 	}
 	auto action_val = yyjson_obj_get(obj, "action");
 	if (action_val) {
 		has_action = true;
-		action = yyjson_get_str(action_val);
+		if (yyjson_is_str(action_val)) {
+			action = yyjson_get_str(action_val);
+		} else {
+			return "AssignUUIDUpdate property 'action' is not of type 'string'";
+		}
 	}
 	return string();
 }

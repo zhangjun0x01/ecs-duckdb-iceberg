@@ -31,25 +31,41 @@ string ViewMetadata::TryFromJSON(yyjson_val *obj) {
 	if (!view_uuid_val) {
 		return "ViewMetadata required property 'view-uuid' is missing";
 	} else {
-		view_uuid = yyjson_get_str(view_uuid_val);
+		if (yyjson_is_str(view_uuid_val)) {
+			view_uuid = yyjson_get_str(view_uuid_val);
+		} else {
+			return "ViewMetadata property 'view_uuid' is not of type 'string'";
+		}
 	}
 	auto format_version_val = yyjson_obj_get(obj, "format-version");
 	if (!format_version_val) {
 		return "ViewMetadata required property 'format-version' is missing";
 	} else {
-		format_version = yyjson_get_sint(format_version_val);
+		if (yyjson_is_sint(format_version_val)) {
+			format_version = yyjson_get_sint(format_version_val);
+		} else {
+			return "ViewMetadata property 'format_version' is not of type 'integer'";
+		}
 	}
 	auto location_val = yyjson_obj_get(obj, "location");
 	if (!location_val) {
 		return "ViewMetadata required property 'location' is missing";
 	} else {
-		location = yyjson_get_str(location_val);
+		if (yyjson_is_str(location_val)) {
+			location = yyjson_get_str(location_val);
+		} else {
+			return "ViewMetadata property 'location' is not of type 'string'";
+		}
 	}
 	auto current_version_id_val = yyjson_obj_get(obj, "current-version-id");
 	if (!current_version_id_val) {
 		return "ViewMetadata required property 'current-version-id' is missing";
 	} else {
-		current_version_id = yyjson_get_sint(current_version_id_val);
+		if (yyjson_is_sint(current_version_id_val)) {
+			current_version_id = yyjson_get_sint(current_version_id_val);
+		} else {
+			return "ViewMetadata property 'current_version_id' is not of type 'integer'";
+		}
 	}
 	auto versions_val = yyjson_obj_get(obj, "versions");
 	if (!versions_val) {
@@ -99,7 +115,22 @@ string ViewMetadata::TryFromJSON(yyjson_val *obj) {
 	auto properties_val = yyjson_obj_get(obj, "properties");
 	if (properties_val) {
 		has_properties = true;
-		properties = parse_object_of_strings(properties_val);
+		if (yyjson_is_obj(properties_val)) {
+			size_t idx, max;
+			yyjson_val *key, *val;
+			yyjson_obj_foreach(obj, idx, max, key, val) {
+				auto key_str = yyjson_get_str(key);
+				string tmp;
+				if (yyjson_is_str(val)) {
+					tmp = yyjson_get_str(val);
+				} else {
+					return "ViewMetadata property 'tmp' is not of type 'string'";
+				}
+				properties.emplace(key_str, std::move(tmp));
+			}
+		} else {
+			return "ViewMetadata property 'properties' is not of type 'object'";
+		}
 	}
 	return string();
 }

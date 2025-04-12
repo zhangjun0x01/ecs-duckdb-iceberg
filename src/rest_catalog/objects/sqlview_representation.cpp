@@ -31,19 +31,31 @@ string SQLViewRepresentation::TryFromJSON(yyjson_val *obj) {
 	if (!type_val) {
 		return "SQLViewRepresentation required property 'type' is missing";
 	} else {
-		type = yyjson_get_str(type_val);
+		if (yyjson_is_str(type_val)) {
+			type = yyjson_get_str(type_val);
+		} else {
+			return "SQLViewRepresentation property 'type' is not of type 'string'";
+		}
 	}
 	auto sql_val = yyjson_obj_get(obj, "sql");
 	if (!sql_val) {
 		return "SQLViewRepresentation required property 'sql' is missing";
 	} else {
-		sql = yyjson_get_str(sql_val);
+		if (yyjson_is_str(sql_val)) {
+			sql = yyjson_get_str(sql_val);
+		} else {
+			return "SQLViewRepresentation property 'sql' is not of type 'string'";
+		}
 	}
 	auto dialect_val = yyjson_obj_get(obj, "dialect");
 	if (!dialect_val) {
 		return "SQLViewRepresentation required property 'dialect' is missing";
 	} else {
-		dialect = yyjson_get_str(dialect_val);
+		if (yyjson_is_str(dialect_val)) {
+			dialect = yyjson_get_str(dialect_val);
+		} else {
+			return "SQLViewRepresentation property 'dialect' is not of type 'string'";
+		}
 	}
 	return string();
 }

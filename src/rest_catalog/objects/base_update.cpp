@@ -31,7 +31,11 @@ string BaseUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!action_val) {
 		return "BaseUpdate required property 'action' is missing";
 	} else {
-		action = yyjson_get_str(action_val);
+		if (yyjson_is_str(action_val)) {
+			action = yyjson_get_str(action_val);
+		} else {
+			return "BaseUpdate property 'action' is not of type 'string'";
+		}
 	}
 	return string();
 }

@@ -52,7 +52,12 @@ string SetExpression::TryFromJSON(yyjson_val *obj) {
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(values_val, idx, max, val) {
-			auto tmp = val;
+			yyjson_val *tmp;
+			if (yyjson_is_obj(val)) {
+				tmp = val;
+			} else {
+				return "SetExpression property 'tmp' is not of type 'object'";
+			}
 			values.emplace_back(std::move(tmp));
 		}
 	}

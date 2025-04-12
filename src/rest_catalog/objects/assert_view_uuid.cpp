@@ -31,13 +31,21 @@ string AssertViewUUID::TryFromJSON(yyjson_val *obj) {
 	if (!type_val) {
 		return "AssertViewUUID required property 'type' is missing";
 	} else {
-		type = yyjson_get_str(type_val);
+		if (yyjson_is_str(type_val)) {
+			type = yyjson_get_str(type_val);
+		} else {
+			return "AssertViewUUID property 'type' is not of type 'string'";
+		}
 	}
 	auto uuid_val = yyjson_obj_get(obj, "uuid");
 	if (!uuid_val) {
 		return "AssertViewUUID required property 'uuid' is missing";
 	} else {
-		uuid = yyjson_get_str(uuid_val);
+		if (yyjson_is_str(uuid_val)) {
+			uuid = yyjson_get_str(uuid_val);
+		} else {
+			return "AssertViewUUID property 'uuid' is not of type 'string'";
+		}
 	}
 	return string();
 }

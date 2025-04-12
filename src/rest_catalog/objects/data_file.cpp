@@ -35,7 +35,11 @@ string DataFile::TryFromJSON(yyjson_val *obj) {
 	if (!content_val) {
 		return "DataFile required property 'content' is missing";
 	} else {
-		content = yyjson_get_str(content_val);
+		if (yyjson_is_str(content_val)) {
+			content = yyjson_get_str(content_val);
+		} else {
+			return "DataFile property 'content' is not of type 'string'";
+		}
 	}
 	auto column_sizes_val = yyjson_obj_get(obj, "column-sizes");
 	if (column_sizes_val) {

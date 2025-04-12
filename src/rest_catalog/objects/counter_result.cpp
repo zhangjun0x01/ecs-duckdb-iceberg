@@ -31,13 +31,21 @@ string CounterResult::TryFromJSON(yyjson_val *obj) {
 	if (!unit_val) {
 		return "CounterResult required property 'unit' is missing";
 	} else {
-		unit = yyjson_get_str(unit_val);
+		if (yyjson_is_str(unit_val)) {
+			unit = yyjson_get_str(unit_val);
+		} else {
+			return "CounterResult property 'unit' is not of type 'string'";
+		}
 	}
 	auto value_val = yyjson_obj_get(obj, "value");
 	if (!value_val) {
 		return "CounterResult required property 'value' is missing";
 	} else {
-		value = yyjson_get_sint(value_val);
+		if (yyjson_is_sint(value_val)) {
+			value = yyjson_get_sint(value_val);
+		} else {
+			return "CounterResult property 'value' is not of type 'integer'";
+		}
 	}
 	return string();
 }

@@ -31,17 +31,29 @@ string OAuthError::TryFromJSON(yyjson_val *obj) {
 	if (!_error_val) {
 		return "OAuthError required property 'error' is missing";
 	} else {
-		_error = yyjson_get_str(_error_val);
+		if (yyjson_is_str(_error_val)) {
+			_error = yyjson_get_str(_error_val);
+		} else {
+			return "OAuthError property '_error' is not of type 'string'";
+		}
 	}
 	auto error_description_val = yyjson_obj_get(obj, "error_description");
 	if (error_description_val) {
 		has_error_description = true;
-		error_description = yyjson_get_str(error_description_val);
+		if (yyjson_is_str(error_description_val)) {
+			error_description = yyjson_get_str(error_description_val);
+		} else {
+			return "OAuthError property 'error_description' is not of type 'string'";
+		}
 	}
 	auto error_uri_val = yyjson_obj_get(obj, "error_uri");
 	if (error_uri_val) {
 		has_error_uri = true;
-		error_uri = yyjson_get_str(error_uri_val);
+		if (yyjson_is_str(error_uri_val)) {
+			error_uri = yyjson_get_str(error_uri_val);
+		} else {
+			return "OAuthError property 'error_uri' is not of type 'string'";
+		}
 	}
 	return string();
 }

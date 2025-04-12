@@ -35,12 +35,20 @@ string AssertLastAssignedFieldId::TryFromJSON(yyjson_val *obj) {
 	if (!last_assigned_field_id_val) {
 		return "AssertLastAssignedFieldId required property 'last-assigned-field-id' is missing";
 	} else {
-		last_assigned_field_id = yyjson_get_sint(last_assigned_field_id_val);
+		if (yyjson_is_sint(last_assigned_field_id_val)) {
+			last_assigned_field_id = yyjson_get_sint(last_assigned_field_id_val);
+		} else {
+			return "AssertLastAssignedFieldId property 'last_assigned_field_id' is not of type 'integer'";
+		}
 	}
 	auto type_val = yyjson_obj_get(obj, "type");
 	if (type_val) {
 		has_type = true;
-		type = yyjson_get_str(type_val);
+		if (yyjson_is_str(type_val)) {
+			type = yyjson_get_str(type_val);
+		} else {
+			return "AssertLastAssignedFieldId property 'type' is not of type 'string'";
+		}
 	}
 	return string();
 }

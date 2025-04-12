@@ -27,7 +27,11 @@ TokenType TokenType::FromJSON(yyjson_val *obj) {
 
 string TokenType::TryFromJSON(yyjson_val *obj) {
 	string error;
-	value = yyjson_get_str(obj);
+	if (yyjson_is_str(obj)) {
+		value = yyjson_get_str(obj);
+	} else {
+		return "TokenType property 'value' is not of type 'string'";
+	}
 	return string();
 }
 

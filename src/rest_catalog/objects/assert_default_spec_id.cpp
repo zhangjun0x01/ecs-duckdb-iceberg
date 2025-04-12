@@ -35,12 +35,20 @@ string AssertDefaultSpecId::TryFromJSON(yyjson_val *obj) {
 	if (!default_spec_id_val) {
 		return "AssertDefaultSpecId required property 'default-spec-id' is missing";
 	} else {
-		default_spec_id = yyjson_get_sint(default_spec_id_val);
+		if (yyjson_is_sint(default_spec_id_val)) {
+			default_spec_id = yyjson_get_sint(default_spec_id_val);
+		} else {
+			return "AssertDefaultSpecId property 'default_spec_id' is not of type 'integer'";
+		}
 	}
 	auto type_val = yyjson_obj_get(obj, "type");
 	if (type_val) {
 		has_type = true;
-		type = yyjson_get_str(type_val);
+		if (yyjson_is_str(type_val)) {
+			type = yyjson_get_str(type_val);
+		} else {
+			return "AssertDefaultSpecId property 'type' is not of type 'string'";
+		}
 	}
 	return string();
 }

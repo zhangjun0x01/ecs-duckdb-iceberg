@@ -31,13 +31,32 @@ string StorageCredential::TryFromJSON(yyjson_val *obj) {
 	if (!prefix_val) {
 		return "StorageCredential required property 'prefix' is missing";
 	} else {
-		prefix = yyjson_get_str(prefix_val);
+		if (yyjson_is_str(prefix_val)) {
+			prefix = yyjson_get_str(prefix_val);
+		} else {
+			return "StorageCredential property 'prefix' is not of type 'string'";
+		}
 	}
 	auto config_val = yyjson_obj_get(obj, "config");
 	if (!config_val) {
 		return "StorageCredential required property 'config' is missing";
 	} else {
-		config = parse_object_of_strings(config_val);
+		if (yyjson_is_obj(config_val)) {
+			size_t idx, max;
+			yyjson_val *key, *val;
+			yyjson_obj_foreach(obj, idx, max, key, val) {
+				auto key_str = yyjson_get_str(key);
+				string tmp;
+				if (yyjson_is_str(val)) {
+					tmp = yyjson_get_str(val);
+				} else {
+					return "StorageCredential property 'tmp' is not of type 'string'";
+				}
+				config.emplace(key_str, std::move(tmp));
+			}
+		} else {
+			return "StorageCredential property 'config' is not of type 'object'";
+		}
 	}
 	return string();
 }

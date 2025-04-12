@@ -31,28 +31,59 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	if (!format_version_val) {
 		return "TableMetadata required property 'format-version' is missing";
 	} else {
-		format_version = yyjson_get_sint(format_version_val);
+		if (yyjson_is_sint(format_version_val)) {
+			format_version = yyjson_get_sint(format_version_val);
+		} else {
+			return "TableMetadata property 'format_version' is not of type 'integer'";
+		}
 	}
 	auto table_uuid_val = yyjson_obj_get(obj, "table-uuid");
 	if (!table_uuid_val) {
 		return "TableMetadata required property 'table-uuid' is missing";
 	} else {
-		table_uuid = yyjson_get_str(table_uuid_val);
+		if (yyjson_is_str(table_uuid_val)) {
+			table_uuid = yyjson_get_str(table_uuid_val);
+		} else {
+			return "TableMetadata property 'table_uuid' is not of type 'string'";
+		}
 	}
 	auto location_val = yyjson_obj_get(obj, "location");
 	if (location_val) {
 		has_location = true;
-		location = yyjson_get_str(location_val);
+		if (yyjson_is_str(location_val)) {
+			location = yyjson_get_str(location_val);
+		} else {
+			return "TableMetadata property 'location' is not of type 'string'";
+		}
 	}
 	auto last_updated_ms_val = yyjson_obj_get(obj, "last-updated-ms");
 	if (last_updated_ms_val) {
 		has_last_updated_ms = true;
-		last_updated_ms = yyjson_get_sint(last_updated_ms_val);
+		if (yyjson_is_sint(last_updated_ms_val)) {
+			last_updated_ms = yyjson_get_sint(last_updated_ms_val);
+		} else {
+			return "TableMetadata property 'last_updated_ms' is not of type 'integer'";
+		}
 	}
 	auto properties_val = yyjson_obj_get(obj, "properties");
 	if (properties_val) {
 		has_properties = true;
-		properties = parse_object_of_strings(properties_val);
+		if (yyjson_is_obj(properties_val)) {
+			size_t idx, max;
+			yyjson_val *key, *val;
+			yyjson_obj_foreach(obj, idx, max, key, val) {
+				auto key_str = yyjson_get_str(key);
+				string tmp;
+				if (yyjson_is_str(val)) {
+					tmp = yyjson_get_str(val);
+				} else {
+					return "TableMetadata property 'tmp' is not of type 'string'";
+				}
+				properties.emplace(key_str, std::move(tmp));
+			}
+		} else {
+			return "TableMetadata property 'properties' is not of type 'object'";
+		}
 	}
 	auto schemas_val = yyjson_obj_get(obj, "schemas");
 	if (schemas_val) {
@@ -71,12 +102,20 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	auto current_schema_id_val = yyjson_obj_get(obj, "current-schema-id");
 	if (current_schema_id_val) {
 		has_current_schema_id = true;
-		current_schema_id = yyjson_get_sint(current_schema_id_val);
+		if (yyjson_is_sint(current_schema_id_val)) {
+			current_schema_id = yyjson_get_sint(current_schema_id_val);
+		} else {
+			return "TableMetadata property 'current_schema_id' is not of type 'integer'";
+		}
 	}
 	auto last_column_id_val = yyjson_obj_get(obj, "last-column-id");
 	if (last_column_id_val) {
 		has_last_column_id = true;
-		last_column_id = yyjson_get_sint(last_column_id_val);
+		if (yyjson_is_sint(last_column_id_val)) {
+			last_column_id = yyjson_get_sint(last_column_id_val);
+		} else {
+			return "TableMetadata property 'last_column_id' is not of type 'integer'";
+		}
 	}
 	auto partition_specs_val = yyjson_obj_get(obj, "partition-specs");
 	if (partition_specs_val) {
@@ -95,12 +134,20 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	auto default_spec_id_val = yyjson_obj_get(obj, "default-spec-id");
 	if (default_spec_id_val) {
 		has_default_spec_id = true;
-		default_spec_id = yyjson_get_sint(default_spec_id_val);
+		if (yyjson_is_sint(default_spec_id_val)) {
+			default_spec_id = yyjson_get_sint(default_spec_id_val);
+		} else {
+			return "TableMetadata property 'default_spec_id' is not of type 'integer'";
+		}
 	}
 	auto last_partition_id_val = yyjson_obj_get(obj, "last-partition-id");
 	if (last_partition_id_val) {
 		has_last_partition_id = true;
-		last_partition_id = yyjson_get_sint(last_partition_id_val);
+		if (yyjson_is_sint(last_partition_id_val)) {
+			last_partition_id = yyjson_get_sint(last_partition_id_val);
+		} else {
+			return "TableMetadata property 'last_partition_id' is not of type 'integer'";
+		}
 	}
 	auto sort_orders_val = yyjson_obj_get(obj, "sort-orders");
 	if (sort_orders_val) {
@@ -119,7 +166,11 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	auto default_sort_order_id_val = yyjson_obj_get(obj, "default-sort-order-id");
 	if (default_sort_order_id_val) {
 		has_default_sort_order_id = true;
-		default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
+		if (yyjson_is_sint(default_sort_order_id_val)) {
+			default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
+		} else {
+			return "TableMetadata property 'default_sort_order_id' is not of type 'integer'";
+		}
 	}
 	auto snapshots_val = yyjson_obj_get(obj, "snapshots");
 	if (snapshots_val) {
@@ -146,12 +197,20 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	auto current_snapshot_id_val = yyjson_obj_get(obj, "current-snapshot-id");
 	if (current_snapshot_id_val) {
 		has_current_snapshot_id = true;
-		current_snapshot_id = yyjson_get_sint(current_snapshot_id_val);
+		if (yyjson_is_sint(current_snapshot_id_val)) {
+			current_snapshot_id = yyjson_get_sint(current_snapshot_id_val);
+		} else {
+			return "TableMetadata property 'current_snapshot_id' is not of type 'integer'";
+		}
 	}
 	auto last_sequence_number_val = yyjson_obj_get(obj, "last-sequence-number");
 	if (last_sequence_number_val) {
 		has_last_sequence_number = true;
-		last_sequence_number = yyjson_get_sint(last_sequence_number_val);
+		if (yyjson_is_sint(last_sequence_number_val)) {
+			last_sequence_number = yyjson_get_sint(last_sequence_number_val);
+		} else {
+			return "TableMetadata property 'last_sequence_number' is not of type 'integer'";
+		}
 	}
 	auto snapshot_log_val = yyjson_obj_get(obj, "snapshot-log");
 	if (snapshot_log_val) {

@@ -27,7 +27,11 @@ BooleanTypeValue BooleanTypeValue::FromJSON(yyjson_val *obj) {
 
 string BooleanTypeValue::TryFromJSON(yyjson_val *obj) {
 	string error;
-	value = yyjson_get_bool(obj);
+	if (yyjson_is_bool(obj)) {
+		value = yyjson_get_bool(obj);
+	} else {
+		return "BooleanTypeValue property 'value' is not of type 'boolean'";
+	}
 	return string();
 }
 

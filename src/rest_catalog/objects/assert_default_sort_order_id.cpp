@@ -35,12 +35,20 @@ string AssertDefaultSortOrderId::TryFromJSON(yyjson_val *obj) {
 	if (!default_sort_order_id_val) {
 		return "AssertDefaultSortOrderId required property 'default-sort-order-id' is missing";
 	} else {
-		default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
+		if (yyjson_is_sint(default_sort_order_id_val)) {
+			default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
+		} else {
+			return "AssertDefaultSortOrderId property 'default_sort_order_id' is not of type 'integer'";
+		}
 	}
 	auto type_val = yyjson_obj_get(obj, "type");
 	if (type_val) {
 		has_type = true;
-		type = yyjson_get_str(type_val);
+		if (yyjson_is_str(type_val)) {
+			type = yyjson_get_str(type_val);
+		} else {
+			return "AssertDefaultSortOrderId property 'type' is not of type 'string'";
+		}
 	}
 	return string();
 }

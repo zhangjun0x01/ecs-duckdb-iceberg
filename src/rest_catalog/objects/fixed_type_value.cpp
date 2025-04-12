@@ -27,7 +27,11 @@ FixedTypeValue FixedTypeValue::FromJSON(yyjson_val *obj) {
 
 string FixedTypeValue::TryFromJSON(yyjson_val *obj) {
 	string error;
-	value = yyjson_get_str(obj);
+	if (yyjson_is_str(obj)) {
+		value = yyjson_get_str(obj);
+	} else {
+		return "FixedTypeValue property 'value' is not of type 'string'";
+	}
 	return string();
 }
 

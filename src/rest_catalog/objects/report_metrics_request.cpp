@@ -42,7 +42,11 @@ string ReportMetricsRequest::TryFromJSON(yyjson_val *obj) {
 	if (!report_type_val) {
 		return "ReportMetricsRequest required property 'report-type' is missing";
 	} else {
-		report_type = yyjson_get_str(report_type_val);
+		if (yyjson_is_str(report_type_val)) {
+			report_type = yyjson_get_str(report_type_val);
+		} else {
+			return "ReportMetricsRequest property 'report_type' is not of type 'string'";
+		}
 	}
 	return string();
 }

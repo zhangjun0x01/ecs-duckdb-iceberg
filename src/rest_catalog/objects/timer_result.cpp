@@ -31,19 +31,31 @@ string TimerResult::TryFromJSON(yyjson_val *obj) {
 	if (!time_unit_val) {
 		return "TimerResult required property 'time-unit' is missing";
 	} else {
-		time_unit = yyjson_get_str(time_unit_val);
+		if (yyjson_is_str(time_unit_val)) {
+			time_unit = yyjson_get_str(time_unit_val);
+		} else {
+			return "TimerResult property 'time_unit' is not of type 'string'";
+		}
 	}
 	auto count_val = yyjson_obj_get(obj, "count");
 	if (!count_val) {
 		return "TimerResult required property 'count' is missing";
 	} else {
-		count = yyjson_get_sint(count_val);
+		if (yyjson_is_sint(count_val)) {
+			count = yyjson_get_sint(count_val);
+		} else {
+			return "TimerResult property 'count' is not of type 'integer'";
+		}
 	}
 	auto total_duration_val = yyjson_obj_get(obj, "total-duration");
 	if (!total_duration_val) {
 		return "TimerResult required property 'total-duration' is missing";
 	} else {
-		total_duration = yyjson_get_sint(total_duration_val);
+		if (yyjson_is_sint(total_duration_val)) {
+			total_duration = yyjson_get_sint(total_duration_val);
+		} else {
+			return "TimerResult property 'total_duration' is not of type 'integer'";
+		}
 	}
 	return string();
 }

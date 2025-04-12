@@ -31,13 +31,43 @@ string CatalogConfig::TryFromJSON(yyjson_val *obj) {
 	if (!defaults_val) {
 		return "CatalogConfig required property 'defaults' is missing";
 	} else {
-		defaults = parse_object_of_strings(defaults_val);
+		if (yyjson_is_obj(defaults_val)) {
+			size_t idx, max;
+			yyjson_val *key, *val;
+			yyjson_obj_foreach(obj, idx, max, key, val) {
+				auto key_str = yyjson_get_str(key);
+				string tmp;
+				if (yyjson_is_str(val)) {
+					tmp = yyjson_get_str(val);
+				} else {
+					return "CatalogConfig property 'tmp' is not of type 'string'";
+				}
+				defaults.emplace(key_str, std::move(tmp));
+			}
+		} else {
+			return "CatalogConfig property 'defaults' is not of type 'object'";
+		}
 	}
 	auto overrides_val = yyjson_obj_get(obj, "overrides");
 	if (!overrides_val) {
 		return "CatalogConfig required property 'overrides' is missing";
 	} else {
-		overrides = parse_object_of_strings(overrides_val);
+		if (yyjson_is_obj(overrides_val)) {
+			size_t idx, max;
+			yyjson_val *key, *val;
+			yyjson_obj_foreach(obj, idx, max, key, val) {
+				auto key_str = yyjson_get_str(key);
+				string tmp;
+				if (yyjson_is_str(val)) {
+					tmp = yyjson_get_str(val);
+				} else {
+					return "CatalogConfig property 'tmp' is not of type 'string'";
+				}
+				overrides.emplace(key_str, std::move(tmp));
+			}
+		} else {
+			return "CatalogConfig property 'overrides' is not of type 'object'";
+		}
 	}
 	auto endpoints_val = yyjson_obj_get(obj, "endpoints");
 	if (endpoints_val) {
@@ -45,7 +75,12 @@ string CatalogConfig::TryFromJSON(yyjson_val *obj) {
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(endpoints_val, idx, max, val) {
-			auto tmp = yyjson_get_str(val);
+			string tmp;
+			if (yyjson_is_str(val)) {
+				tmp = yyjson_get_str(val);
+			} else {
+				return "CatalogConfig property 'tmp' is not of type 'string'";
+			}
 			endpoints.emplace_back(std::move(tmp));
 		}
 	}

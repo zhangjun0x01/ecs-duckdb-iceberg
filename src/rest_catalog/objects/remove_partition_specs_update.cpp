@@ -38,14 +38,23 @@ string RemovePartitionSpecsUpdate::TryFromJSON(yyjson_val *obj) {
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(spec_ids_val, idx, max, val) {
-			auto tmp = yyjson_get_sint(val);
+			int64_t tmp;
+			if (yyjson_is_sint(val)) {
+				tmp = yyjson_get_sint(val);
+			} else {
+				return "RemovePartitionSpecsUpdate property 'tmp' is not of type 'integer'";
+			}
 			spec_ids.emplace_back(std::move(tmp));
 		}
 	}
 	auto action_val = yyjson_obj_get(obj, "action");
 	if (action_val) {
 		has_action = true;
-		action = yyjson_get_str(action_val);
+		if (yyjson_is_str(action_val)) {
+			action = yyjson_get_str(action_val);
+		} else {
+			return "RemovePartitionSpecsUpdate property 'action' is not of type 'string'";
+		}
 	}
 	return string();
 }

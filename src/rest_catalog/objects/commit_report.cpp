@@ -31,25 +31,41 @@ string CommitReport::TryFromJSON(yyjson_val *obj) {
 	if (!table_name_val) {
 		return "CommitReport required property 'table-name' is missing";
 	} else {
-		table_name = yyjson_get_str(table_name_val);
+		if (yyjson_is_str(table_name_val)) {
+			table_name = yyjson_get_str(table_name_val);
+		} else {
+			return "CommitReport property 'table_name' is not of type 'string'";
+		}
 	}
 	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (!snapshot_id_val) {
 		return "CommitReport required property 'snapshot-id' is missing";
 	} else {
-		snapshot_id = yyjson_get_sint(snapshot_id_val);
+		if (yyjson_is_sint(snapshot_id_val)) {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		} else {
+			return "CommitReport property 'snapshot_id' is not of type 'integer'";
+		}
 	}
 	auto sequence_number_val = yyjson_obj_get(obj, "sequence-number");
 	if (!sequence_number_val) {
 		return "CommitReport required property 'sequence-number' is missing";
 	} else {
-		sequence_number = yyjson_get_sint(sequence_number_val);
+		if (yyjson_is_sint(sequence_number_val)) {
+			sequence_number = yyjson_get_sint(sequence_number_val);
+		} else {
+			return "CommitReport property 'sequence_number' is not of type 'integer'";
+		}
 	}
 	auto operation_val = yyjson_obj_get(obj, "operation");
 	if (!operation_val) {
 		return "CommitReport required property 'operation' is missing";
 	} else {
-		operation = yyjson_get_str(operation_val);
+		if (yyjson_is_str(operation_val)) {
+			operation = yyjson_get_str(operation_val);
+		} else {
+			return "CommitReport property 'operation' is not of type 'string'";
+		}
 	}
 	auto metrics_val = yyjson_obj_get(obj, "metrics");
 	if (!metrics_val) {
@@ -63,7 +79,22 @@ string CommitReport::TryFromJSON(yyjson_val *obj) {
 	auto metadata_val = yyjson_obj_get(obj, "metadata");
 	if (metadata_val) {
 		has_metadata = true;
-		metadata = parse_object_of_strings(metadata_val);
+		if (yyjson_is_obj(metadata_val)) {
+			size_t idx, max;
+			yyjson_val *key, *val;
+			yyjson_obj_foreach(obj, idx, max, key, val) {
+				auto key_str = yyjson_get_str(key);
+				string tmp;
+				if (yyjson_is_str(val)) {
+					tmp = yyjson_get_str(val);
+				} else {
+					return "CommitReport property 'tmp' is not of type 'string'";
+				}
+				metadata.emplace(key_str, std::move(tmp));
+			}
+		} else {
+			return "CommitReport property 'metadata' is not of type 'object'";
+		}
 	}
 	return string();
 }

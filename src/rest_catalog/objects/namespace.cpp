@@ -30,7 +30,12 @@ string Namespace::TryFromJSON(yyjson_val *obj) {
 	size_t idx, max;
 	yyjson_val *val;
 	yyjson_arr_foreach(obj, idx, max, val) {
-		auto tmp = yyjson_get_str(val);
+		string tmp;
+		if (yyjson_is_str(val)) {
+			tmp = yyjson_get_str(val);
+		} else {
+			return "Namespace property 'tmp' is not of type 'string'";
+		}
 		value.emplace_back(std::move(tmp));
 	}
 	return string();

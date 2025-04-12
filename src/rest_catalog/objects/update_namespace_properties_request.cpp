@@ -33,14 +33,34 @@ string UpdateNamespacePropertiesRequest::TryFromJSON(yyjson_val *obj) {
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(removals_val, idx, max, val) {
-			auto tmp = yyjson_get_str(val);
+			string tmp;
+			if (yyjson_is_str(val)) {
+				tmp = yyjson_get_str(val);
+			} else {
+				return "UpdateNamespacePropertiesRequest property 'tmp' is not of type 'string'";
+			}
 			removals.emplace_back(std::move(tmp));
 		}
 	}
 	auto updates_val = yyjson_obj_get(obj, "updates");
 	if (updates_val) {
 		has_updates = true;
-		updates = parse_object_of_strings(updates_val);
+		if (yyjson_is_obj(updates_val)) {
+			size_t idx, max;
+			yyjson_val *key, *val;
+			yyjson_obj_foreach(obj, idx, max, key, val) {
+				auto key_str = yyjson_get_str(key);
+				string tmp;
+				if (yyjson_is_str(val)) {
+					tmp = yyjson_get_str(val);
+				} else {
+					return "UpdateNamespacePropertiesRequest property 'tmp' is not of type 'string'";
+				}
+				updates.emplace(key_str, std::move(tmp));
+			}
+		} else {
+			return "UpdateNamespacePropertiesRequest property 'updates' is not of type 'object'";
+		}
 	}
 	return string();
 }

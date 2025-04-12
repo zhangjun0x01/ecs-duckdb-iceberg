@@ -31,13 +31,21 @@ string StructField::TryFromJSON(yyjson_val *obj) {
 	if (!id_val) {
 		return "StructField required property 'id' is missing";
 	} else {
-		id = yyjson_get_sint(id_val);
+		if (yyjson_is_sint(id_val)) {
+			id = yyjson_get_sint(id_val);
+		} else {
+			return "StructField property 'id' is not of type 'integer'";
+		}
 	}
 	auto name_val = yyjson_obj_get(obj, "name");
 	if (!name_val) {
 		return "StructField required property 'name' is missing";
 	} else {
-		name = yyjson_get_str(name_val);
+		if (yyjson_is_str(name_val)) {
+			name = yyjson_get_str(name_val);
+		} else {
+			return "StructField property 'name' is not of type 'string'";
+		}
 	}
 	auto type_val = yyjson_obj_get(obj, "type");
 	if (!type_val) {
@@ -53,12 +61,20 @@ string StructField::TryFromJSON(yyjson_val *obj) {
 	if (!required_val) {
 		return "StructField required property 'required' is missing";
 	} else {
-		required = yyjson_get_bool(required_val);
+		if (yyjson_is_bool(required_val)) {
+			required = yyjson_get_bool(required_val);
+		} else {
+			return "StructField property 'required' is not of type 'boolean'";
+		}
 	}
 	auto doc_val = yyjson_obj_get(obj, "doc");
 	if (doc_val) {
 		has_doc = true;
-		doc = yyjson_get_str(doc_val);
+		if (yyjson_is_str(doc_val)) {
+			doc = yyjson_get_str(doc_val);
+		} else {
+			return "StructField property 'doc' is not of type 'string'";
+		}
 	}
 	auto initial_default_val = yyjson_obj_get(obj, "initial-default");
 	if (initial_default_val) {

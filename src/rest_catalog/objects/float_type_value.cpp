@@ -27,7 +27,11 @@ FloatTypeValue FloatTypeValue::FromJSON(yyjson_val *obj) {
 
 string FloatTypeValue::TryFromJSON(yyjson_val *obj) {
 	string error;
-	value = yyjson_get_real(obj);
+	if (yyjson_is_num(obj)) {
+		value = yyjson_get_num(obj);
+	} else {
+		return "FloatTypeValue property 'value' is not of type 'number'";
+	}
 	return string();
 }
 

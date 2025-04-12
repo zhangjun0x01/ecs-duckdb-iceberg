@@ -31,13 +31,21 @@ string OAuthTokenExchangeRequest::TryFromJSON(yyjson_val *obj) {
 	if (!grant_type_val) {
 		return "OAuthTokenExchangeRequest required property 'grant_type' is missing";
 	} else {
-		grant_type = yyjson_get_str(grant_type_val);
+		if (yyjson_is_str(grant_type_val)) {
+			grant_type = yyjson_get_str(grant_type_val);
+		} else {
+			return "OAuthTokenExchangeRequest property 'grant_type' is not of type 'string'";
+		}
 	}
 	auto subject_token_val = yyjson_obj_get(obj, "subject_token");
 	if (!subject_token_val) {
 		return "OAuthTokenExchangeRequest required property 'subject_token' is missing";
 	} else {
-		subject_token = yyjson_get_str(subject_token_val);
+		if (yyjson_is_str(subject_token_val)) {
+			subject_token = yyjson_get_str(subject_token_val);
+		} else {
+			return "OAuthTokenExchangeRequest property 'subject_token' is not of type 'string'";
+		}
 	}
 	auto subject_token_type_val = yyjson_obj_get(obj, "subject_token_type");
 	if (!subject_token_type_val) {
@@ -51,7 +59,11 @@ string OAuthTokenExchangeRequest::TryFromJSON(yyjson_val *obj) {
 	auto scope_val = yyjson_obj_get(obj, "scope");
 	if (scope_val) {
 		has_scope = true;
-		scope = yyjson_get_str(scope_val);
+		if (yyjson_is_str(scope_val)) {
+			scope = yyjson_get_str(scope_val);
+		} else {
+			return "OAuthTokenExchangeRequest property 'scope' is not of type 'string'";
+		}
 	}
 	auto requested_token_type_val = yyjson_obj_get(obj, "requested_token_type");
 	if (requested_token_type_val) {
@@ -64,7 +76,11 @@ string OAuthTokenExchangeRequest::TryFromJSON(yyjson_val *obj) {
 	auto actor_token_val = yyjson_obj_get(obj, "actor_token");
 	if (actor_token_val) {
 		has_actor_token = true;
-		actor_token = yyjson_get_str(actor_token_val);
+		if (yyjson_is_str(actor_token_val)) {
+			actor_token = yyjson_get_str(actor_token_val);
+		} else {
+			return "OAuthTokenExchangeRequest property 'actor_token' is not of type 'string'";
+		}
 	}
 	auto actor_token_type_val = yyjson_obj_get(obj, "actor_token_type");
 	if (actor_token_type_val) {

@@ -42,7 +42,12 @@ string FileScanTask::TryFromJSON(yyjson_val *obj) {
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(delete_file_references_val, idx, max, val) {
-			auto tmp = yyjson_get_sint(val);
+			int64_t tmp;
+			if (yyjson_is_sint(val)) {
+				tmp = yyjson_get_sint(val);
+			} else {
+				return "FileScanTask property 'tmp' is not of type 'integer'";
+			}
 			delete_file_references.emplace_back(std::move(tmp));
 		}
 	}

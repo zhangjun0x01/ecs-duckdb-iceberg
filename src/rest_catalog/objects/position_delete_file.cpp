@@ -35,17 +35,29 @@ string PositionDeleteFile::TryFromJSON(yyjson_val *obj) {
 	if (!content_val) {
 		return "PositionDeleteFile required property 'content' is missing";
 	} else {
-		content = yyjson_get_str(content_val);
+		if (yyjson_is_str(content_val)) {
+			content = yyjson_get_str(content_val);
+		} else {
+			return "PositionDeleteFile property 'content' is not of type 'string'";
+		}
 	}
 	auto content_offset_val = yyjson_obj_get(obj, "content-offset");
 	if (content_offset_val) {
 		has_content_offset = true;
-		content_offset = yyjson_get_sint(content_offset_val);
+		if (yyjson_is_sint(content_offset_val)) {
+			content_offset = yyjson_get_sint(content_offset_val);
+		} else {
+			return "PositionDeleteFile property 'content_offset' is not of type 'integer'";
+		}
 	}
 	auto content_size_in_bytes_val = yyjson_obj_get(obj, "content-size-in-bytes");
 	if (content_size_in_bytes_val) {
 		has_content_size_in_bytes = true;
-		content_size_in_bytes = yyjson_get_sint(content_size_in_bytes_val);
+		if (yyjson_is_sint(content_size_in_bytes_val)) {
+			content_size_in_bytes = yyjson_get_sint(content_size_in_bytes_val);
+		} else {
+			return "PositionDeleteFile property 'content_size_in_bytes' is not of type 'integer'";
+		}
 	}
 	return string();
 }

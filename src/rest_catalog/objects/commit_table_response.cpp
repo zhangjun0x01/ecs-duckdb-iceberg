@@ -31,7 +31,11 @@ string CommitTableResponse::TryFromJSON(yyjson_val *obj) {
 	if (!metadata_location_val) {
 		return "CommitTableResponse required property 'metadata-location' is missing";
 	} else {
-		metadata_location = yyjson_get_str(metadata_location_val);
+		if (yyjson_is_str(metadata_location_val)) {
+			metadata_location = yyjson_get_str(metadata_location_val);
+		} else {
+			return "CommitTableResponse property 'metadata_location' is not of type 'string'";
+		}
 	}
 	auto metadata_val = yyjson_obj_get(obj, "metadata");
 	if (!metadata_val) {

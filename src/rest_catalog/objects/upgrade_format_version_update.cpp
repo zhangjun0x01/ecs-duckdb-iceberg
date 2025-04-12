@@ -35,12 +35,20 @@ string UpgradeFormatVersionUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!format_version_val) {
 		return "UpgradeFormatVersionUpdate required property 'format-version' is missing";
 	} else {
-		format_version = yyjson_get_sint(format_version_val);
+		if (yyjson_is_sint(format_version_val)) {
+			format_version = yyjson_get_sint(format_version_val);
+		} else {
+			return "UpgradeFormatVersionUpdate property 'format_version' is not of type 'integer'";
+		}
 	}
 	auto action_val = yyjson_obj_get(obj, "action");
 	if (action_val) {
 		has_action = true;
-		action = yyjson_get_str(action_val);
+		if (yyjson_is_str(action_val)) {
+			action = yyjson_get_str(action_val);
+		} else {
+			return "UpgradeFormatVersionUpdate property 'action' is not of type 'string'";
+		}
 	}
 	return string();
 }

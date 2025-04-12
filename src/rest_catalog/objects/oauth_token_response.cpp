@@ -31,18 +31,30 @@ string OAuthTokenResponse::TryFromJSON(yyjson_val *obj) {
 	if (!access_token_val) {
 		return "OAuthTokenResponse required property 'access_token' is missing";
 	} else {
-		access_token = yyjson_get_str(access_token_val);
+		if (yyjson_is_str(access_token_val)) {
+			access_token = yyjson_get_str(access_token_val);
+		} else {
+			return "OAuthTokenResponse property 'access_token' is not of type 'string'";
+		}
 	}
 	auto token_type_val = yyjson_obj_get(obj, "token_type");
 	if (!token_type_val) {
 		return "OAuthTokenResponse required property 'token_type' is missing";
 	} else {
-		token_type = yyjson_get_str(token_type_val);
+		if (yyjson_is_str(token_type_val)) {
+			token_type = yyjson_get_str(token_type_val);
+		} else {
+			return "OAuthTokenResponse property 'token_type' is not of type 'string'";
+		}
 	}
 	auto expires_in_val = yyjson_obj_get(obj, "expires_in");
 	if (expires_in_val) {
 		has_expires_in = true;
-		expires_in = yyjson_get_sint(expires_in_val);
+		if (yyjson_is_sint(expires_in_val)) {
+			expires_in = yyjson_get_sint(expires_in_val);
+		} else {
+			return "OAuthTokenResponse property 'expires_in' is not of type 'integer'";
+		}
 	}
 	auto issued_token_type_val = yyjson_obj_get(obj, "issued_token_type");
 	if (issued_token_type_val) {
@@ -55,12 +67,20 @@ string OAuthTokenResponse::TryFromJSON(yyjson_val *obj) {
 	auto refresh_token_val = yyjson_obj_get(obj, "refresh_token");
 	if (refresh_token_val) {
 		has_refresh_token = true;
-		refresh_token = yyjson_get_str(refresh_token_val);
+		if (yyjson_is_str(refresh_token_val)) {
+			refresh_token = yyjson_get_str(refresh_token_val);
+		} else {
+			return "OAuthTokenResponse property 'refresh_token' is not of type 'string'";
+		}
 	}
 	auto scope_val = yyjson_obj_get(obj, "scope");
 	if (scope_val) {
 		has_scope = true;
-		scope = yyjson_get_str(scope_val);
+		if (yyjson_is_str(scope_val)) {
+			scope = yyjson_get_str(scope_val);
+		} else {
+			return "OAuthTokenResponse property 'scope' is not of type 'string'";
+		}
 	}
 	return string();
 }

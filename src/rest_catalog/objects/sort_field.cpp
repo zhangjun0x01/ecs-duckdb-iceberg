@@ -31,7 +31,11 @@ string SortField::TryFromJSON(yyjson_val *obj) {
 	if (!source_id_val) {
 		return "SortField required property 'source-id' is missing";
 	} else {
-		source_id = yyjson_get_sint(source_id_val);
+		if (yyjson_is_sint(source_id_val)) {
+			source_id = yyjson_get_sint(source_id_val);
+		} else {
+			return "SortField property 'source_id' is not of type 'integer'";
+		}
 	}
 	auto transform_val = yyjson_obj_get(obj, "transform");
 	if (!transform_val) {
