@@ -68,7 +68,7 @@ string ViewVersion::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_obj(summary_val)) {
 			size_t idx, max;
 			yyjson_val *key, *val;
-			yyjson_obj_foreach(obj, idx, max, key, val) {
+			yyjson_obj_foreach(summary_val, idx, max, key, val) {
 				auto key_str = yyjson_get_str(key);
 				string tmp;
 				if (yyjson_is_str(val)) {
