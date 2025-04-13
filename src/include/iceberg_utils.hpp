@@ -39,6 +39,8 @@ public:
 	                                 bool default_val = false);
 	static string TryGetStrFromObject(yyjson_val *obj, const string &field, bool fail_on_missing,
 	                                  const char *default_val = "");
+
+	static idx_t CountOccurrences(const string &input, const string &to_find);
 };
 
 } // namespace duckdb
