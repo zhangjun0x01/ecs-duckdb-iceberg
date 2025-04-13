@@ -46,7 +46,8 @@ string FileScanTask::TryFromJSON(yyjson_val *obj) {
 			if (yyjson_is_sint(val)) {
 				tmp = yyjson_get_sint(val);
 			} else {
-				return "FileScanTask property 'tmp' is not of type 'integer'";
+				return StringUtil::Format("FileScanTask property 'tmp' is not of type 'integer', found '%s' instead",
+				                          yyjson_get_type_desc(val));
 			}
 			delete_file_references.emplace_back(std::move(tmp));
 		}

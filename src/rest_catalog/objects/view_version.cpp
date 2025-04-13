@@ -34,7 +34,8 @@ string ViewVersion::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(version_id_val)) {
 			version_id = yyjson_get_sint(version_id_val);
 		} else {
-			return "ViewVersion property 'version_id' is not of type 'integer'";
+			return StringUtil::Format("ViewVersion property 'version_id' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(version_id_val));
 		}
 	}
 	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
@@ -44,7 +45,9 @@ string ViewVersion::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(timestamp_ms_val)) {
 			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 		} else {
-			return "ViewVersion property 'timestamp_ms' is not of type 'integer'";
+			return StringUtil::Format(
+			    "ViewVersion property 'timestamp_ms' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(timestamp_ms_val));
 		}
 	}
 	auto schema_id_val = yyjson_obj_get(obj, "schema-id");
@@ -54,7 +57,8 @@ string ViewVersion::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(schema_id_val)) {
 			schema_id = yyjson_get_sint(schema_id_val);
 		} else {
-			return "ViewVersion property 'schema_id' is not of type 'integer'";
+			return StringUtil::Format("ViewVersion property 'schema_id' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(schema_id_val));
 		}
 	}
 	auto summary_val = yyjson_obj_get(obj, "summary");
@@ -70,7 +74,8 @@ string ViewVersion::TryFromJSON(yyjson_val *obj) {
 				if (yyjson_is_str(val)) {
 					tmp = yyjson_get_str(val);
 				} else {
-					return "ViewVersion property 'tmp' is not of type 'string'";
+					return StringUtil::Format("ViewVersion property 'tmp' is not of type 'string', found '%s' instead",
+					                          yyjson_get_type_desc(val));
 				}
 				summary.emplace(key_str, std::move(tmp));
 			}
@@ -108,7 +113,9 @@ string ViewVersion::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(default_catalog_val)) {
 			default_catalog = yyjson_get_str(default_catalog_val);
 		} else {
-			return "ViewVersion property 'default_catalog' is not of type 'string'";
+			return StringUtil::Format(
+			    "ViewVersion property 'default_catalog' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(default_catalog_val));
 		}
 	}
 	return string();

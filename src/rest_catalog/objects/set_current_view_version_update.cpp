@@ -38,7 +38,9 @@ string SetCurrentViewVersionUpdate::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(view_version_id_val)) {
 			view_version_id = yyjson_get_sint(view_version_id_val);
 		} else {
-			return "SetCurrentViewVersionUpdate property 'view_version_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "SetCurrentViewVersionUpdate property 'view_version_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(view_version_id_val));
 		}
 	}
 	auto action_val = yyjson_obj_get(obj, "action");
@@ -47,7 +49,9 @@ string SetCurrentViewVersionUpdate::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(action_val)) {
 			action = yyjson_get_str(action_val);
 		} else {
-			return "SetCurrentViewVersionUpdate property 'action' is not of type 'string'";
+			return StringUtil::Format(
+			    "SetCurrentViewVersionUpdate property 'action' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(action_val));
 		}
 	}
 	return string();

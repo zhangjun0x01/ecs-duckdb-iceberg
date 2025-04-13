@@ -48,7 +48,8 @@ string PartitionSpec::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(spec_id_val)) {
 			spec_id = yyjson_get_sint(spec_id_val);
 		} else {
-			return "PartitionSpec property 'spec_id' is not of type 'integer'";
+			return StringUtil::Format("PartitionSpec property 'spec_id' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(spec_id_val));
 		}
 	}
 	return string();

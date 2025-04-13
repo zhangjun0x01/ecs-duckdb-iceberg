@@ -34,7 +34,8 @@ string TimerResult::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(time_unit_val)) {
 			time_unit = yyjson_get_str(time_unit_val);
 		} else {
-			return "TimerResult property 'time_unit' is not of type 'string'";
+			return StringUtil::Format("TimerResult property 'time_unit' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(time_unit_val));
 		}
 	}
 	auto count_val = yyjson_obj_get(obj, "count");
@@ -44,7 +45,8 @@ string TimerResult::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(count_val)) {
 			count = yyjson_get_sint(count_val);
 		} else {
-			return "TimerResult property 'count' is not of type 'integer'";
+			return StringUtil::Format("TimerResult property 'count' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(count_val));
 		}
 	}
 	auto total_duration_val = yyjson_obj_get(obj, "total-duration");
@@ -54,7 +56,9 @@ string TimerResult::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(total_duration_val)) {
 			total_duration = yyjson_get_sint(total_duration_val);
 		} else {
-			return "TimerResult property 'total_duration' is not of type 'integer'";
+			return StringUtil::Format(
+			    "TimerResult property 'total_duration' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(total_duration_val));
 		}
 	}
 	return string();

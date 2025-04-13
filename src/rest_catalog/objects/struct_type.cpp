@@ -34,7 +34,8 @@ string StructType::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(type_val)) {
 			type = yyjson_get_str(type_val);
 		} else {
-			return "StructType property 'type' is not of type 'string'";
+			return StringUtil::Format("StructType property 'type' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(type_val));
 		}
 	}
 	auto fields_val = yyjson_obj_get(obj, "fields");

@@ -38,7 +38,9 @@ string EqualityDeleteFile::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(content_val)) {
 			content = yyjson_get_str(content_val);
 		} else {
-			return "EqualityDeleteFile property 'content' is not of type 'string'";
+			return StringUtil::Format(
+			    "EqualityDeleteFile property 'content' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(content_val));
 		}
 	}
 	auto equality_ids_val = yyjson_obj_get(obj, "equality-ids");
@@ -51,7 +53,9 @@ string EqualityDeleteFile::TryFromJSON(yyjson_val *obj) {
 			if (yyjson_is_sint(val)) {
 				tmp = yyjson_get_sint(val);
 			} else {
-				return "EqualityDeleteFile property 'tmp' is not of type 'integer'";
+				return StringUtil::Format(
+				    "EqualityDeleteFile property 'tmp' is not of type 'integer', found '%s' instead",
+				    yyjson_get_type_desc(val));
 			}
 			equality_ids.emplace_back(std::move(tmp));
 		}

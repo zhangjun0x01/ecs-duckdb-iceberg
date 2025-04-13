@@ -34,7 +34,8 @@ string StructField::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(id_val)) {
 			id = yyjson_get_sint(id_val);
 		} else {
-			return "StructField property 'id' is not of type 'integer'";
+			return StringUtil::Format("StructField property 'id' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(id_val));
 		}
 	}
 	auto name_val = yyjson_obj_get(obj, "name");
@@ -44,7 +45,8 @@ string StructField::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(name_val)) {
 			name = yyjson_get_str(name_val);
 		} else {
-			return "StructField property 'name' is not of type 'string'";
+			return StringUtil::Format("StructField property 'name' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(name_val));
 		}
 	}
 	auto type_val = yyjson_obj_get(obj, "type");
@@ -64,7 +66,8 @@ string StructField::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_bool(required_val)) {
 			required = yyjson_get_bool(required_val);
 		} else {
-			return "StructField property 'required' is not of type 'boolean'";
+			return StringUtil::Format("StructField property 'required' is not of type 'boolean', found '%s' instead",
+			                          yyjson_get_type_desc(required_val));
 		}
 	}
 	auto doc_val = yyjson_obj_get(obj, "doc");
@@ -73,7 +76,8 @@ string StructField::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(doc_val)) {
 			doc = yyjson_get_str(doc_val);
 		} else {
-			return "StructField property 'doc' is not of type 'string'";
+			return StringUtil::Format("StructField property 'doc' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(doc_val));
 		}
 	}
 	auto initial_default_val = yyjson_obj_get(obj, "initial-default");

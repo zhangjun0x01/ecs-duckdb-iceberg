@@ -34,7 +34,8 @@ string CommitReport::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(table_name_val)) {
 			table_name = yyjson_get_str(table_name_val);
 		} else {
-			return "CommitReport property 'table_name' is not of type 'string'";
+			return StringUtil::Format("CommitReport property 'table_name' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(table_name_val));
 		}
 	}
 	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
@@ -44,7 +45,9 @@ string CommitReport::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(snapshot_id_val)) {
 			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		} else {
-			return "CommitReport property 'snapshot_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "CommitReport property 'snapshot_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(snapshot_id_val));
 		}
 	}
 	auto sequence_number_val = yyjson_obj_get(obj, "sequence-number");
@@ -54,7 +57,9 @@ string CommitReport::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(sequence_number_val)) {
 			sequence_number = yyjson_get_sint(sequence_number_val);
 		} else {
-			return "CommitReport property 'sequence_number' is not of type 'integer'";
+			return StringUtil::Format(
+			    "CommitReport property 'sequence_number' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(sequence_number_val));
 		}
 	}
 	auto operation_val = yyjson_obj_get(obj, "operation");
@@ -64,7 +69,8 @@ string CommitReport::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(operation_val)) {
 			operation = yyjson_get_str(operation_val);
 		} else {
-			return "CommitReport property 'operation' is not of type 'string'";
+			return StringUtil::Format("CommitReport property 'operation' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(operation_val));
 		}
 	}
 	auto metrics_val = yyjson_obj_get(obj, "metrics");
@@ -88,7 +94,8 @@ string CommitReport::TryFromJSON(yyjson_val *obj) {
 				if (yyjson_is_str(val)) {
 					tmp = yyjson_get_str(val);
 				} else {
-					return "CommitReport property 'tmp' is not of type 'string'";
+					return StringUtil::Format("CommitReport property 'tmp' is not of type 'string', found '%s' instead",
+					                          yyjson_get_type_desc(val));
 				}
 				metadata.emplace(key_str, std::move(tmp));
 			}

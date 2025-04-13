@@ -38,7 +38,9 @@ string UpdateNamespacePropertiesResponse::TryFromJSON(yyjson_val *obj) {
 			if (yyjson_is_str(val)) {
 				tmp = yyjson_get_str(val);
 			} else {
-				return "UpdateNamespacePropertiesResponse property 'tmp' is not of type 'string'";
+				return StringUtil::Format(
+				    "UpdateNamespacePropertiesResponse property 'tmp' is not of type 'string', found '%s' instead",
+				    yyjson_get_type_desc(val));
 			}
 			updated.emplace_back(std::move(tmp));
 		}
@@ -54,7 +56,9 @@ string UpdateNamespacePropertiesResponse::TryFromJSON(yyjson_val *obj) {
 			if (yyjson_is_str(val)) {
 				tmp = yyjson_get_str(val);
 			} else {
-				return "UpdateNamespacePropertiesResponse property 'tmp' is not of type 'string'";
+				return StringUtil::Format(
+				    "UpdateNamespacePropertiesResponse property 'tmp' is not of type 'string', found '%s' instead",
+				    yyjson_get_type_desc(val));
 			}
 			removed.emplace_back(std::move(tmp));
 		}
@@ -69,7 +73,9 @@ string UpdateNamespacePropertiesResponse::TryFromJSON(yyjson_val *obj) {
 			if (yyjson_is_str(val)) {
 				tmp = yyjson_get_str(val);
 			} else {
-				return "UpdateNamespacePropertiesResponse property 'tmp' is not of type 'string'";
+				return StringUtil::Format(
+				    "UpdateNamespacePropertiesResponse property 'tmp' is not of type 'string', found '%s' instead",
+				    yyjson_get_type_desc(val));
 			}
 			missing.emplace_back(std::move(tmp));
 		}

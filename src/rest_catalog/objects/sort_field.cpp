@@ -34,7 +34,8 @@ string SortField::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(source_id_val)) {
 			source_id = yyjson_get_sint(source_id_val);
 		} else {
-			return "SortField property 'source_id' is not of type 'integer'";
+			return StringUtil::Format("SortField property 'source_id' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(source_id_val));
 		}
 	}
 	auto transform_val = yyjson_obj_get(obj, "transform");

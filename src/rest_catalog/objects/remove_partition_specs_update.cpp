@@ -42,7 +42,9 @@ string RemovePartitionSpecsUpdate::TryFromJSON(yyjson_val *obj) {
 			if (yyjson_is_sint(val)) {
 				tmp = yyjson_get_sint(val);
 			} else {
-				return "RemovePartitionSpecsUpdate property 'tmp' is not of type 'integer'";
+				return StringUtil::Format(
+				    "RemovePartitionSpecsUpdate property 'tmp' is not of type 'integer', found '%s' instead",
+				    yyjson_get_type_desc(val));
 			}
 			spec_ids.emplace_back(std::move(tmp));
 		}
@@ -53,7 +55,9 @@ string RemovePartitionSpecsUpdate::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(action_val)) {
 			action = yyjson_get_str(action_val);
 		} else {
-			return "RemovePartitionSpecsUpdate property 'action' is not of type 'string'";
+			return StringUtil::Format(
+			    "RemovePartitionSpecsUpdate property 'action' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(action_val));
 		}
 	}
 	return string();

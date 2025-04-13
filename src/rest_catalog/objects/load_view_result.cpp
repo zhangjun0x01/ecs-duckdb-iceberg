@@ -34,7 +34,9 @@ string LoadViewResult::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(metadata_location_val)) {
 			metadata_location = yyjson_get_str(metadata_location_val);
 		} else {
-			return "LoadViewResult property 'metadata_location' is not of type 'string'";
+			return StringUtil::Format(
+			    "LoadViewResult property 'metadata_location' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(metadata_location_val));
 		}
 	}
 	auto metadata_val = yyjson_obj_get(obj, "metadata");
@@ -58,7 +60,9 @@ string LoadViewResult::TryFromJSON(yyjson_val *obj) {
 				if (yyjson_is_str(val)) {
 					tmp = yyjson_get_str(val);
 				} else {
-					return "LoadViewResult property 'tmp' is not of type 'string'";
+					return StringUtil::Format(
+					    "LoadViewResult property 'tmp' is not of type 'string', found '%s' instead",
+					    yyjson_get_type_desc(val));
 				}
 				config.emplace(key_str, std::move(tmp));
 			}

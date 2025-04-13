@@ -38,7 +38,9 @@ string PositionDeleteFile::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(content_val)) {
 			content = yyjson_get_str(content_val);
 		} else {
-			return "PositionDeleteFile property 'content' is not of type 'string'";
+			return StringUtil::Format(
+			    "PositionDeleteFile property 'content' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(content_val));
 		}
 	}
 	auto content_offset_val = yyjson_obj_get(obj, "content-offset");
@@ -47,7 +49,9 @@ string PositionDeleteFile::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(content_offset_val)) {
 			content_offset = yyjson_get_sint(content_offset_val);
 		} else {
-			return "PositionDeleteFile property 'content_offset' is not of type 'integer'";
+			return StringUtil::Format(
+			    "PositionDeleteFile property 'content_offset' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(content_offset_val));
 		}
 	}
 	auto content_size_in_bytes_val = yyjson_obj_get(obj, "content-size-in-bytes");
@@ -56,7 +60,9 @@ string PositionDeleteFile::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(content_size_in_bytes_val)) {
 			content_size_in_bytes = yyjson_get_sint(content_size_in_bytes_val);
 		} else {
-			return "PositionDeleteFile property 'content_size_in_bytes' is not of type 'integer'";
+			return StringUtil::Format(
+			    "PositionDeleteFile property 'content_size_in_bytes' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(content_size_in_bytes_val));
 		}
 	}
 	return string();

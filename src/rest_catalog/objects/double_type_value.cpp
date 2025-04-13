@@ -30,7 +30,8 @@ string DoubleTypeValue::TryFromJSON(yyjson_val *obj) {
 	if (yyjson_is_num(obj)) {
 		value = yyjson_get_num(obj);
 	} else {
-		return "DoubleTypeValue property 'value' is not of type 'number'";
+		return StringUtil::Format("DoubleTypeValue property 'value' is not of type 'number', found '%s' instead",
+		                          yyjson_get_type_desc(obj));
 	}
 	return string();
 }

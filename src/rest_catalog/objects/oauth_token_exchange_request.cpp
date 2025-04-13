@@ -34,7 +34,9 @@ string OAuthTokenExchangeRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(grant_type_val)) {
 			grant_type = yyjson_get_str(grant_type_val);
 		} else {
-			return "OAuthTokenExchangeRequest property 'grant_type' is not of type 'string'";
+			return StringUtil::Format(
+			    "OAuthTokenExchangeRequest property 'grant_type' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(grant_type_val));
 		}
 	}
 	auto subject_token_val = yyjson_obj_get(obj, "subject_token");
@@ -44,7 +46,9 @@ string OAuthTokenExchangeRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(subject_token_val)) {
 			subject_token = yyjson_get_str(subject_token_val);
 		} else {
-			return "OAuthTokenExchangeRequest property 'subject_token' is not of type 'string'";
+			return StringUtil::Format(
+			    "OAuthTokenExchangeRequest property 'subject_token' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(subject_token_val));
 		}
 	}
 	auto subject_token_type_val = yyjson_obj_get(obj, "subject_token_type");
@@ -62,7 +66,9 @@ string OAuthTokenExchangeRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(scope_val)) {
 			scope = yyjson_get_str(scope_val);
 		} else {
-			return "OAuthTokenExchangeRequest property 'scope' is not of type 'string'";
+			return StringUtil::Format(
+			    "OAuthTokenExchangeRequest property 'scope' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(scope_val));
 		}
 	}
 	auto requested_token_type_val = yyjson_obj_get(obj, "requested_token_type");
@@ -79,7 +85,9 @@ string OAuthTokenExchangeRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(actor_token_val)) {
 			actor_token = yyjson_get_str(actor_token_val);
 		} else {
-			return "OAuthTokenExchangeRequest property 'actor_token' is not of type 'string'";
+			return StringUtil::Format(
+			    "OAuthTokenExchangeRequest property 'actor_token' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(actor_token_val));
 		}
 	}
 	auto actor_token_type_val = yyjson_obj_get(obj, "actor_token_type");

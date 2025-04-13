@@ -38,7 +38,9 @@ string AssertDefaultSortOrderId::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(default_sort_order_id_val)) {
 			default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
 		} else {
-			return "AssertDefaultSortOrderId property 'default_sort_order_id' is not of type 'integer'";
+			return StringUtil::Format("AssertDefaultSortOrderId property 'default_sort_order_id' is not of type "
+			                          "'integer', found '%s' instead",
+			                          yyjson_get_type_desc(default_sort_order_id_val));
 		}
 	}
 	auto type_val = yyjson_obj_get(obj, "type");
@@ -47,7 +49,9 @@ string AssertDefaultSortOrderId::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(type_val)) {
 			type = yyjson_get_str(type_val);
 		} else {
-			return "AssertDefaultSortOrderId property 'type' is not of type 'string'";
+			return StringUtil::Format(
+			    "AssertDefaultSortOrderId property 'type' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(type_val));
 		}
 	}
 	return string();

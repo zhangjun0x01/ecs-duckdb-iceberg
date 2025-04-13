@@ -35,7 +35,8 @@ string Schema::Object1::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(schema_id_val)) {
 			schema_id = yyjson_get_sint(schema_id_val);
 		} else {
-			return "Object1 property 'schema_id' is not of type 'integer'";
+			return StringUtil::Format("Object1 property 'schema_id' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(schema_id_val));
 		}
 	}
 	auto identifier_field_ids_val = yyjson_obj_get(obj, "identifier-field-ids");
@@ -48,7 +49,8 @@ string Schema::Object1::TryFromJSON(yyjson_val *obj) {
 			if (yyjson_is_sint(val)) {
 				tmp = yyjson_get_sint(val);
 			} else {
-				return "Object1 property 'tmp' is not of type 'integer'";
+				return StringUtil::Format("Object1 property 'tmp' is not of type 'integer', found '%s' instead",
+				                          yyjson_get_type_desc(val));
 			}
 			identifier_field_ids.emplace_back(std::move(tmp));
 		}

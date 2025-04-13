@@ -34,7 +34,8 @@ string AssertViewUUID::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(type_val)) {
 			type = yyjson_get_str(type_val);
 		} else {
-			return "AssertViewUUID property 'type' is not of type 'string'";
+			return StringUtil::Format("AssertViewUUID property 'type' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(type_val));
 		}
 	}
 	auto uuid_val = yyjson_obj_get(obj, "uuid");
@@ -44,7 +45,8 @@ string AssertViewUUID::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(uuid_val)) {
 			uuid = yyjson_get_str(uuid_val);
 		} else {
-			return "AssertViewUUID property 'uuid' is not of type 'string'";
+			return StringUtil::Format("AssertViewUUID property 'uuid' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(uuid_val));
 		}
 	}
 	return string();

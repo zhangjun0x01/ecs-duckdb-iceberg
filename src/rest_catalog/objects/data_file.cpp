@@ -38,7 +38,8 @@ string DataFile::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(content_val)) {
 			content = yyjson_get_str(content_val);
 		} else {
-			return "DataFile property 'content' is not of type 'string'";
+			return StringUtil::Format("DataFile property 'content' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(content_val));
 		}
 	}
 	auto column_sizes_val = yyjson_obj_get(obj, "column-sizes");

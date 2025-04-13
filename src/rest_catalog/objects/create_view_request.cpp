@@ -34,7 +34,8 @@ string CreateViewRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(name_val)) {
 			name = yyjson_get_str(name_val);
 		} else {
-			return "CreateViewRequest property 'name' is not of type 'string'";
+			return StringUtil::Format("CreateViewRequest property 'name' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(name_val));
 		}
 	}
 	auto schema_val = yyjson_obj_get(obj, "schema");
@@ -68,7 +69,9 @@ string CreateViewRequest::TryFromJSON(yyjson_val *obj) {
 				if (yyjson_is_str(val)) {
 					tmp = yyjson_get_str(val);
 				} else {
-					return "CreateViewRequest property 'tmp' is not of type 'string'";
+					return StringUtil::Format(
+					    "CreateViewRequest property 'tmp' is not of type 'string', found '%s' instead",
+					    yyjson_get_type_desc(val));
 				}
 				properties.emplace(key_str, std::move(tmp));
 			}
@@ -82,7 +85,9 @@ string CreateViewRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(location_val)) {
 			location = yyjson_get_str(location_val);
 		} else {
-			return "CreateViewRequest property 'location' is not of type 'string'";
+			return StringUtil::Format(
+			    "CreateViewRequest property 'location' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(location_val));
 		}
 	}
 	return string();

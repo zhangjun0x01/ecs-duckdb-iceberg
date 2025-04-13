@@ -34,7 +34,9 @@ string ViewHistoryEntry::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(version_id_val)) {
 			version_id = yyjson_get_sint(version_id_val);
 		} else {
-			return "ViewHistoryEntry property 'version_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "ViewHistoryEntry property 'version_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(version_id_val));
 		}
 	}
 	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
@@ -44,7 +46,9 @@ string ViewHistoryEntry::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(timestamp_ms_val)) {
 			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 		} else {
-			return "ViewHistoryEntry property 'timestamp_ms' is not of type 'integer'";
+			return StringUtil::Format(
+			    "ViewHistoryEntry property 'timestamp_ms' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(timestamp_ms_val));
 		}
 	}
 	return string();

@@ -30,7 +30,8 @@ string FloatTypeValue::TryFromJSON(yyjson_val *obj) {
 	if (yyjson_is_num(obj)) {
 		value = yyjson_get_num(obj);
 	} else {
-		return "FloatTypeValue property 'value' is not of type 'number'";
+		return StringUtil::Format("FloatTypeValue property 'value' is not of type 'number', found '%s' instead",
+		                          yyjson_get_type_desc(obj));
 	}
 	return string();
 }
