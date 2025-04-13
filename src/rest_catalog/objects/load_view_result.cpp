@@ -31,7 +31,11 @@ string LoadViewResult::TryFromJSON(yyjson_val *obj) {
 	if (!metadata_location_val) {
 		return "LoadViewResult required property 'metadata-location' is missing";
 	} else {
-		metadata_location = yyjson_get_str(metadata_location_val);
+		if (yyjson_is_str(metadata_location_val)) {
+			metadata_location = yyjson_get_str(metadata_location_val);
+		} else {
+			return "LoadViewResult property 'metadata_location' is not of type 'string'";
+		}
 	}
 	auto metadata_val = yyjson_obj_get(obj, "metadata");
 	if (!metadata_val) {
@@ -45,7 +49,22 @@ string LoadViewResult::TryFromJSON(yyjson_val *obj) {
 	auto config_val = yyjson_obj_get(obj, "config");
 	if (config_val) {
 		has_config = true;
-		config = parse_object_of_strings(config_val);
+		if (yyjson_is_obj(config_val)) {
+			size_t idx, max;
+			yyjson_val *key, *val;
+			yyjson_obj_foreach(obj, idx, max, key, val) {
+				auto key_str = yyjson_get_str(key);
+				string tmp;
+				if (yyjson_is_str(val)) {
+					tmp = yyjson_get_str(val);
+				} else {
+					return "LoadViewResult property 'tmp' is not of type 'string'";
+				}
+				config.emplace(key_str, std::move(tmp));
+			}
+		} else {
+			return "LoadViewResult property 'config' is not of type 'object'";
+		}
 	}
 	return string();
 }

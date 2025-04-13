@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class SnapshotReference {
 public:
 	SnapshotReference();
+	SnapshotReference(const SnapshotReference &) = delete;
+	SnapshotReference &operator=(const SnapshotReference &) = delete;
+	SnapshotReference(SnapshotReference &&) = default;
+	SnapshotReference &operator=(SnapshotReference &&) = default;
 
 public:
 	static SnapshotReference FromJSON(yyjson_val *obj);

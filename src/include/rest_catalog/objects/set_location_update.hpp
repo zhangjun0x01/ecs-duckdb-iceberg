@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class SetLocationUpdate {
 public:
 	SetLocationUpdate();
+	SetLocationUpdate(const SetLocationUpdate &) = delete;
+	SetLocationUpdate &operator=(const SetLocationUpdate &) = delete;
+	SetLocationUpdate(SetLocationUpdate &&) = default;
+	SetLocationUpdate &operator=(SetLocationUpdate &&) = default;
 
 public:
 	static SetLocationUpdate FromJSON(yyjson_val *obj);

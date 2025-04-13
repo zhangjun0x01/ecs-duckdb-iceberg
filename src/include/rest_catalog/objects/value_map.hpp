@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class ValueMap {
 public:
 	ValueMap();
+	ValueMap(const ValueMap &) = delete;
+	ValueMap &operator=(const ValueMap &) = delete;
+	ValueMap(ValueMap &&) = default;
+	ValueMap &operator=(ValueMap &&) = default;
 
 public:
 	static ValueMap FromJSON(yyjson_val *obj);

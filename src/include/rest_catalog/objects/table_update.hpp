@@ -35,6 +35,10 @@ namespace rest_api_objects {
 class TableUpdate {
 public:
 	TableUpdate();
+	TableUpdate(const TableUpdate &) = delete;
+	TableUpdate &operator=(const TableUpdate &) = delete;
+	TableUpdate(TableUpdate &&) = default;
+	TableUpdate &operator=(TableUpdate &&) = default;
 
 public:
 	static TableUpdate FromJSON(yyjson_val *obj);

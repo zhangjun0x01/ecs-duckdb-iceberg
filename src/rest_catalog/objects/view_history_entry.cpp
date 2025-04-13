@@ -31,13 +31,21 @@ string ViewHistoryEntry::TryFromJSON(yyjson_val *obj) {
 	if (!version_id_val) {
 		return "ViewHistoryEntry required property 'version-id' is missing";
 	} else {
-		version_id = yyjson_get_sint(version_id_val);
+		if (yyjson_is_sint(version_id_val)) {
+			version_id = yyjson_get_sint(version_id_val);
+		} else {
+			return "ViewHistoryEntry property 'version_id' is not of type 'integer'";
+		}
 	}
 	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
 	if (!timestamp_ms_val) {
 		return "ViewHistoryEntry required property 'timestamp-ms' is missing";
 	} else {
-		timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		if (yyjson_is_sint(timestamp_ms_val)) {
+			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		} else {
+			return "ViewHistoryEntry property 'timestamp_ms' is not of type 'integer'";
+		}
 	}
 	return string();
 }

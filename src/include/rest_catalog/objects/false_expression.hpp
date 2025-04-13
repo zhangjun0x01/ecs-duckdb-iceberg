@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class FalseExpression {
 public:
 	FalseExpression();
+	FalseExpression(const FalseExpression &) = delete;
+	FalseExpression &operator=(const FalseExpression &) = delete;
+	FalseExpression(FalseExpression &&) = default;
+	FalseExpression &operator=(FalseExpression &&) = default;
 
 public:
 	static FalseExpression FromJSON(yyjson_val *obj);

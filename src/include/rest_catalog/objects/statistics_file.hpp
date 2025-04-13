@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class StatisticsFile {
 public:
 	StatisticsFile();
+	StatisticsFile(const StatisticsFile &) = delete;
+	StatisticsFile &operator=(const StatisticsFile &) = delete;
+	StatisticsFile(StatisticsFile &&) = default;
+	StatisticsFile &operator=(StatisticsFile &&) = default;
 
 public:
 	static StatisticsFile FromJSON(yyjson_val *obj);

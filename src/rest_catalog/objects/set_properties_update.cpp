@@ -35,12 +35,31 @@ string SetPropertiesUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!updates_val) {
 		return "SetPropertiesUpdate required property 'updates' is missing";
 	} else {
-		updates = parse_object_of_strings(updates_val);
+		if (yyjson_is_obj(updates_val)) {
+			size_t idx, max;
+			yyjson_val *key, *val;
+			yyjson_obj_foreach(obj, idx, max, key, val) {
+				auto key_str = yyjson_get_str(key);
+				string tmp;
+				if (yyjson_is_str(val)) {
+					tmp = yyjson_get_str(val);
+				} else {
+					return "SetPropertiesUpdate property 'tmp' is not of type 'string'";
+				}
+				updates.emplace(key_str, std::move(tmp));
+			}
+		} else {
+			return "SetPropertiesUpdate property 'updates' is not of type 'object'";
+		}
 	}
 	auto action_val = yyjson_obj_get(obj, "action");
 	if (action_val) {
 		has_action = true;
-		action = yyjson_get_str(action_val);
+		if (yyjson_is_str(action_val)) {
+			action = yyjson_get_str(action_val);
+		} else {
+			return "SetPropertiesUpdate property 'action' is not of type 'string'";
+		}
 	}
 	return string();
 }

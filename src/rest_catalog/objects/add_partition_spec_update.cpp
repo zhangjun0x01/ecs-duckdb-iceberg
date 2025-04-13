@@ -43,7 +43,11 @@ string AddPartitionSpecUpdate::TryFromJSON(yyjson_val *obj) {
 	auto action_val = yyjson_obj_get(obj, "action");
 	if (action_val) {
 		has_action = true;
-		action = yyjson_get_str(action_val);
+		if (yyjson_is_str(action_val)) {
+			action = yyjson_get_str(action_val);
+		} else {
+			return "AddPartitionSpecUpdate property 'action' is not of type 'string'";
+		}
 	}
 	return string();
 }

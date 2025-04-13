@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class RenameTableRequest {
 public:
 	RenameTableRequest();
+	RenameTableRequest(const RenameTableRequest &) = delete;
+	RenameTableRequest &operator=(const RenameTableRequest &) = delete;
+	RenameTableRequest(RenameTableRequest &&) = default;
+	RenameTableRequest &operator=(RenameTableRequest &&) = default;
 
 public:
 	static RenameTableRequest FromJSON(yyjson_val *obj);

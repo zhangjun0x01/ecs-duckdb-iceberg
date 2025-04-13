@@ -43,12 +43,20 @@ string SetStatisticsUpdate::TryFromJSON(yyjson_val *obj) {
 	auto action_val = yyjson_obj_get(obj, "action");
 	if (action_val) {
 		has_action = true;
-		action = yyjson_get_str(action_val);
+		if (yyjson_is_str(action_val)) {
+			action = yyjson_get_str(action_val);
+		} else {
+			return "SetStatisticsUpdate property 'action' is not of type 'string'";
+		}
 	}
 	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (snapshot_id_val) {
 		has_snapshot_id = true;
-		snapshot_id = yyjson_get_sint(snapshot_id_val);
+		if (yyjson_is_sint(snapshot_id_val)) {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		} else {
+			return "SetStatisticsUpdate property 'snapshot_id' is not of type 'integer'";
+		}
 	}
 	return string();
 }

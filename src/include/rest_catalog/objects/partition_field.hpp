@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class PartitionField {
 public:
 	PartitionField();
+	PartitionField(const PartitionField &) = delete;
+	PartitionField &operator=(const PartitionField &) = delete;
+	PartitionField(PartitionField &&) = default;
+	PartitionField &operator=(PartitionField &&) = default;
 
 public:
 	static PartitionField FromJSON(yyjson_val *obj);

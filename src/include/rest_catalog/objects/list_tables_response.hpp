@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class ListTablesResponse {
 public:
 	ListTablesResponse();
+	ListTablesResponse(const ListTablesResponse &) = delete;
+	ListTablesResponse &operator=(const ListTablesResponse &) = delete;
+	ListTablesResponse(ListTablesResponse &&) = default;
+	ListTablesResponse &operator=(ListTablesResponse &&) = default;
 
 public:
 	static ListTablesResponse FromJSON(yyjson_val *obj);

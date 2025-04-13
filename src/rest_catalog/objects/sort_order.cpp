@@ -31,7 +31,11 @@ string SortOrder::TryFromJSON(yyjson_val *obj) {
 	if (!order_id_val) {
 		return "SortOrder required property 'order-id' is missing";
 	} else {
-		order_id = yyjson_get_sint(order_id_val);
+		if (yyjson_is_sint(order_id_val)) {
+			order_id = yyjson_get_sint(order_id_val);
+		} else {
+			return "SortOrder property 'order_id' is not of type 'integer'";
+		}
 	}
 	auto fields_val = yyjson_obj_get(obj, "fields");
 	if (!fields_val) {

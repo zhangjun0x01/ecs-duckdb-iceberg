@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class PartitionSpec {
 public:
 	PartitionSpec();
+	PartitionSpec(const PartitionSpec &) = delete;
+	PartitionSpec &operator=(const PartitionSpec &) = delete;
+	PartitionSpec(PartitionSpec &&) = default;
+	PartitionSpec &operator=(PartitionSpec &&) = default;
 
 public:
 	static PartitionSpec FromJSON(yyjson_val *obj);

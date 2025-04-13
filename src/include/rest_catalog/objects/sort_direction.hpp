@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class SortDirection {
 public:
 	SortDirection();
+	SortDirection(const SortDirection &) = delete;
+	SortDirection &operator=(const SortDirection &) = delete;
+	SortDirection(SortDirection &&) = default;
+	SortDirection &operator=(SortDirection &&) = default;
 
 public:
 	static SortDirection FromJSON(yyjson_val *obj);

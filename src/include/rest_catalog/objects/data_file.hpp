@@ -18,6 +18,10 @@ namespace rest_api_objects {
 class DataFile {
 public:
 	DataFile();
+	DataFile(const DataFile &) = delete;
+	DataFile &operator=(const DataFile &) = delete;
+	DataFile(DataFile &&) = default;
+	DataFile &operator=(DataFile &&) = default;
 
 public:
 	static DataFile FromJSON(yyjson_val *obj);

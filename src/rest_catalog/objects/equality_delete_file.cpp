@@ -35,7 +35,11 @@ string EqualityDeleteFile::TryFromJSON(yyjson_val *obj) {
 	if (!content_val) {
 		return "EqualityDeleteFile required property 'content' is missing";
 	} else {
-		content = yyjson_get_str(content_val);
+		if (yyjson_is_str(content_val)) {
+			content = yyjson_get_str(content_val);
+		} else {
+			return "EqualityDeleteFile property 'content' is not of type 'string'";
+		}
 	}
 	auto equality_ids_val = yyjson_obj_get(obj, "equality-ids");
 	if (equality_ids_val) {
@@ -43,7 +47,12 @@ string EqualityDeleteFile::TryFromJSON(yyjson_val *obj) {
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(equality_ids_val, idx, max, val) {
-			auto tmp = yyjson_get_sint(val);
+			int64_t tmp;
+			if (yyjson_is_sint(val)) {
+				tmp = yyjson_get_sint(val);
+			} else {
+				return "EqualityDeleteFile property 'tmp' is not of type 'integer'";
+			}
 			equality_ids.emplace_back(std::move(tmp));
 		}
 	}

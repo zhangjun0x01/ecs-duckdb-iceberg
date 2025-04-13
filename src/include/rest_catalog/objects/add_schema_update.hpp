@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class AddSchemaUpdate {
 public:
 	AddSchemaUpdate();
+	AddSchemaUpdate(const AddSchemaUpdate &) = delete;
+	AddSchemaUpdate &operator=(const AddSchemaUpdate &) = delete;
+	AddSchemaUpdate(AddSchemaUpdate &&) = default;
+	AddSchemaUpdate &operator=(AddSchemaUpdate &&) = default;
 
 public:
 	static AddSchemaUpdate FromJSON(yyjson_val *obj);

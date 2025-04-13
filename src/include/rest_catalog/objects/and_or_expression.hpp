@@ -18,6 +18,10 @@ class Expression;
 class AndOrExpression {
 public:
 	AndOrExpression();
+	AndOrExpression(const AndOrExpression &) = delete;
+	AndOrExpression &operator=(const AndOrExpression &) = delete;
+	AndOrExpression(AndOrExpression &&) = default;
+	AndOrExpression &operator=(AndOrExpression &&) = default;
 
 public:
 	static AndOrExpression FromJSON(yyjson_val *obj);

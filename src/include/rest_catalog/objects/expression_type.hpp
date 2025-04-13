@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class ExpressionType {
 public:
 	ExpressionType();
+	ExpressionType(const ExpressionType &) = delete;
+	ExpressionType &operator=(const ExpressionType &) = delete;
+	ExpressionType(ExpressionType &&) = default;
+	ExpressionType &operator=(ExpressionType &&) = default;
 
 public:
 	static ExpressionType FromJSON(yyjson_val *obj);

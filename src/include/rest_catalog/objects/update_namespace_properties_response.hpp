@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class UpdateNamespacePropertiesResponse {
 public:
 	UpdateNamespacePropertiesResponse();
+	UpdateNamespacePropertiesResponse(const UpdateNamespacePropertiesResponse &) = delete;
+	UpdateNamespacePropertiesResponse &operator=(const UpdateNamespacePropertiesResponse &) = delete;
+	UpdateNamespacePropertiesResponse(UpdateNamespacePropertiesResponse &&) = default;
+	UpdateNamespacePropertiesResponse &operator=(UpdateNamespacePropertiesResponse &&) = default;
 
 public:
 	static UpdateNamespacePropertiesResponse FromJSON(yyjson_val *obj);

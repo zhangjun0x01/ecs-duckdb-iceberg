@@ -31,25 +31,52 @@ string ViewVersion::TryFromJSON(yyjson_val *obj) {
 	if (!version_id_val) {
 		return "ViewVersion required property 'version-id' is missing";
 	} else {
-		version_id = yyjson_get_sint(version_id_val);
+		if (yyjson_is_sint(version_id_val)) {
+			version_id = yyjson_get_sint(version_id_val);
+		} else {
+			return "ViewVersion property 'version_id' is not of type 'integer'";
+		}
 	}
 	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
 	if (!timestamp_ms_val) {
 		return "ViewVersion required property 'timestamp-ms' is missing";
 	} else {
-		timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		if (yyjson_is_sint(timestamp_ms_val)) {
+			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		} else {
+			return "ViewVersion property 'timestamp_ms' is not of type 'integer'";
+		}
 	}
 	auto schema_id_val = yyjson_obj_get(obj, "schema-id");
 	if (!schema_id_val) {
 		return "ViewVersion required property 'schema-id' is missing";
 	} else {
-		schema_id = yyjson_get_sint(schema_id_val);
+		if (yyjson_is_sint(schema_id_val)) {
+			schema_id = yyjson_get_sint(schema_id_val);
+		} else {
+			return "ViewVersion property 'schema_id' is not of type 'integer'";
+		}
 	}
 	auto summary_val = yyjson_obj_get(obj, "summary");
 	if (!summary_val) {
 		return "ViewVersion required property 'summary' is missing";
 	} else {
-		summary = parse_object_of_strings(summary_val);
+		if (yyjson_is_obj(summary_val)) {
+			size_t idx, max;
+			yyjson_val *key, *val;
+			yyjson_obj_foreach(obj, idx, max, key, val) {
+				auto key_str = yyjson_get_str(key);
+				string tmp;
+				if (yyjson_is_str(val)) {
+					tmp = yyjson_get_str(val);
+				} else {
+					return "ViewVersion property 'tmp' is not of type 'string'";
+				}
+				summary.emplace(key_str, std::move(tmp));
+			}
+		} else {
+			return "ViewVersion property 'summary' is not of type 'object'";
+		}
 	}
 	auto representations_val = yyjson_obj_get(obj, "representations");
 	if (!representations_val) {
@@ -78,7 +105,11 @@ string ViewVersion::TryFromJSON(yyjson_val *obj) {
 	auto default_catalog_val = yyjson_obj_get(obj, "default-catalog");
 	if (default_catalog_val) {
 		has_default_catalog = true;
-		default_catalog = yyjson_get_str(default_catalog_val);
+		if (yyjson_is_str(default_catalog_val)) {
+			default_catalog = yyjson_get_str(default_catalog_val);
+		} else {
+			return "ViewVersion property 'default_catalog' is not of type 'string'";
+		}
 	}
 	return string();
 }

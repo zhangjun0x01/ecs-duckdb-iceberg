@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class LoadViewResult {
 public:
 	LoadViewResult();
+	LoadViewResult(const LoadViewResult &) = delete;
+	LoadViewResult &operator=(const LoadViewResult &) = delete;
+	LoadViewResult(LoadViewResult &&) = default;
+	LoadViewResult &operator=(LoadViewResult &&) = default;
 
 public:
 	static LoadViewResult FromJSON(yyjson_val *obj);

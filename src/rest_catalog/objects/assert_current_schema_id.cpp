@@ -35,12 +35,20 @@ string AssertCurrentSchemaId::TryFromJSON(yyjson_val *obj) {
 	if (!current_schema_id_val) {
 		return "AssertCurrentSchemaId required property 'current-schema-id' is missing";
 	} else {
-		current_schema_id = yyjson_get_sint(current_schema_id_val);
+		if (yyjson_is_sint(current_schema_id_val)) {
+			current_schema_id = yyjson_get_sint(current_schema_id_val);
+		} else {
+			return "AssertCurrentSchemaId property 'current_schema_id' is not of type 'integer'";
+		}
 	}
 	auto type_val = yyjson_obj_get(obj, "type");
 	if (type_val) {
 		has_type = true;
-		type = yyjson_get_str(type_val);
+		if (yyjson_is_str(type_val)) {
+			type = yyjson_get_str(type_val);
+		} else {
+			return "AssertCurrentSchemaId property 'type' is not of type 'string'";
+		}
 	}
 	return string();
 }

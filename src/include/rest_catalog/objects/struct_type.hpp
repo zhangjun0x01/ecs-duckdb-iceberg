@@ -17,6 +17,10 @@ class StructField;
 class StructType {
 public:
 	StructType();
+	StructType(const StructType &) = delete;
+	StructType &operator=(const StructType &) = delete;
+	StructType(StructType &&) = default;
+	StructType &operator=(StructType &&) = default;
 
 public:
 	static StructType FromJSON(yyjson_val *obj);

@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class OAuthClientCredentialsRequest {
 public:
 	OAuthClientCredentialsRequest();
+	OAuthClientCredentialsRequest(const OAuthClientCredentialsRequest &) = delete;
+	OAuthClientCredentialsRequest &operator=(const OAuthClientCredentialsRequest &) = delete;
+	OAuthClientCredentialsRequest(OAuthClientCredentialsRequest &&) = default;
+	OAuthClientCredentialsRequest &operator=(OAuthClientCredentialsRequest &&) = default;
 
 public:
 	static OAuthClientCredentialsRequest FromJSON(yyjson_val *obj);

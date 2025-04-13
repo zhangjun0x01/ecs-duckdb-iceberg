@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class SetCurrentViewVersionUpdate {
 public:
 	SetCurrentViewVersionUpdate();
+	SetCurrentViewVersionUpdate(const SetCurrentViewVersionUpdate &) = delete;
+	SetCurrentViewVersionUpdate &operator=(const SetCurrentViewVersionUpdate &) = delete;
+	SetCurrentViewVersionUpdate(SetCurrentViewVersionUpdate &&) = default;
+	SetCurrentViewVersionUpdate &operator=(SetCurrentViewVersionUpdate &&) = default;
 
 public:
 	static SetCurrentViewVersionUpdate FromJSON(yyjson_val *obj);

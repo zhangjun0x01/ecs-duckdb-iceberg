@@ -25,7 +25,6 @@ import duckdb
 import os
 from pyspark import SparkContext
 from pathlib import Path
-import duckdb
 import shutil
 
 DATA_GENERATION_DIR = f"./data/generated/iceberg/polaris-rest/"
@@ -125,17 +124,44 @@ class IcebergPolarisRest:
     def GenerateTables(self, con):
         # Generate the tpch tables
         self.GenerateTPCH(con)
-        con.sql("CREATE NAMESPACE IF NOT EXISTS COLLADO_TEST")
-        con.sql("USE NAMESPACE COLLADO_TEST")
-        con.sql(
-            """
-        CREATE TABLE IF NOT EXISTS quickstart_table (
-          id BIGINT, data STRING
-        )
-        USING ICEBERG
-        """
-        )
-        con.sql("INSERT INTO quickstart_table VALUES (1, 'some data'), (2, 'more data'), (3, 'yet more data')")
+        for table_dir in self.GetTableDirs():
+            full_table_dir = f"./scripts/data_generators/generate_polaris_rest/{table_dir}"
+            setup_script = self.GetSetupFile(full_table_dir)
+
+            PARQUET_SRC_FILE = f"scripts/data_generators/tmp_data/tmp.parquet"
+            if setup_script != "":
+                os.system(
+                    f"PARQUET_SRC_FILE='{PARQUET_SRC_FILE}' python3 {full_table_dir}/{os.path.basename(setup_script)}"
+                )
+                con.read.parquet(PARQUET_SRC_FILE).createOrReplaceTempView('parquet_file_view')
+
+            update_files = self.GetSQLFiles(full_table_dir)
+
+            last_file = ""
+            for path in update_files:
+                full_file_path = f"{full_table_dir}/{os.path.basename(path)}"
+                with open(full_file_path, 'r') as file:
+                    file_trimmed = os.path.basename(path)[:-4]
+                    last_file = file_trimmed
+                    all_queries = file.read()
+                    queries_array = all_queries.split(';')
+                    for query in queries_array:
+                        if query.strip() == '':
+                            continue
+                        # Run spark query
+                        con.sql(query)
+
+                    # Create a parquet copy of table
+                    df = con.read.table(f"default.{table_dir}")
+                    df.write.mode("overwrite").parquet(f"{INTERMEDIATE_DATA}/{table_dir}/{file_trimmed}/data.parquet")
+
+            if last_file != "":
+                ### Finally, copy the latest results to a "final" dir for easy test writing
+                shutil.copytree(
+                    f"{INTERMEDIATE_DATA}/{table_dir}/{last_file}/data.parquet",
+                    f"{INTERMEDIATE_DATA}/{table_dir}/last/data.parquet",
+                    dirs_exist_ok=True,
+                )
 
     def CloseConnection(self, con):
         del con

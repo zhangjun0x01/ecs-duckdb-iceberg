@@ -33,7 +33,11 @@ string Snapshot::Object2::TryFromJSON(yyjson_val *obj) {
 	if (!operation_val) {
 		return "Object2 required property 'operation' is missing";
 	} else {
-		operation = yyjson_get_str(operation_val);
+		if (yyjson_is_str(operation_val)) {
+			operation = yyjson_get_str(operation_val);
+		} else {
+			return "Object2 property 'operation' is not of type 'string'";
+		}
 	}
 	case_insensitive_set_t handled_properties {"operation"};
 	size_t idx, max;
@@ -43,8 +47,13 @@ string Snapshot::Object2::TryFromJSON(yyjson_val *obj) {
 		if (handled_properties.count(key_str)) {
 			continue;
 		}
-		auto tmp = yyjson_get_str(val);
-		additional_properties[key_str] = tmp;
+		string tmp;
+		if (yyjson_is_str(val)) {
+			tmp = yyjson_get_str(val);
+		} else {
+			return "Object2 property 'tmp' is not of type 'string'";
+		}
+		additional_properties.emplace(key_str, std::move(tmp));
 	}
 	return string();
 }
@@ -64,19 +73,31 @@ string Snapshot::TryFromJSON(yyjson_val *obj) {
 	if (!snapshot_id_val) {
 		return "Snapshot required property 'snapshot-id' is missing";
 	} else {
-		snapshot_id = yyjson_get_sint(snapshot_id_val);
+		if (yyjson_is_sint(snapshot_id_val)) {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		} else {
+			return "Snapshot property 'snapshot_id' is not of type 'integer'";
+		}
 	}
 	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
 	if (!timestamp_ms_val) {
 		return "Snapshot required property 'timestamp-ms' is missing";
 	} else {
-		timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		if (yyjson_is_sint(timestamp_ms_val)) {
+			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		} else {
+			return "Snapshot property 'timestamp_ms' is not of type 'integer'";
+		}
 	}
 	auto manifest_list_val = yyjson_obj_get(obj, "manifest-list");
 	if (!manifest_list_val) {
 		return "Snapshot required property 'manifest-list' is missing";
 	} else {
-		manifest_list = yyjson_get_str(manifest_list_val);
+		if (yyjson_is_str(manifest_list_val)) {
+			manifest_list = yyjson_get_str(manifest_list_val);
+		} else {
+			return "Snapshot property 'manifest_list' is not of type 'string'";
+		}
 	}
 	auto summary_val = yyjson_obj_get(obj, "summary");
 	if (!summary_val) {
@@ -90,17 +111,29 @@ string Snapshot::TryFromJSON(yyjson_val *obj) {
 	auto parent_snapshot_id_val = yyjson_obj_get(obj, "parent-snapshot-id");
 	if (parent_snapshot_id_val) {
 		has_parent_snapshot_id = true;
-		parent_snapshot_id = yyjson_get_sint(parent_snapshot_id_val);
+		if (yyjson_is_sint(parent_snapshot_id_val)) {
+			parent_snapshot_id = yyjson_get_sint(parent_snapshot_id_val);
+		} else {
+			return "Snapshot property 'parent_snapshot_id' is not of type 'integer'";
+		}
 	}
 	auto sequence_number_val = yyjson_obj_get(obj, "sequence-number");
 	if (sequence_number_val) {
 		has_sequence_number = true;
-		sequence_number = yyjson_get_sint(sequence_number_val);
+		if (yyjson_is_sint(sequence_number_val)) {
+			sequence_number = yyjson_get_sint(sequence_number_val);
+		} else {
+			return "Snapshot property 'sequence_number' is not of type 'integer'";
+		}
 	}
 	auto schema_id_val = yyjson_obj_get(obj, "schema-id");
 	if (schema_id_val) {
 		has_schema_id = true;
-		schema_id = yyjson_get_sint(schema_id_val);
+		if (yyjson_is_sint(schema_id_val)) {
+			schema_id = yyjson_get_sint(schema_id_val);
+		} else {
+			return "Snapshot property 'schema_id' is not of type 'integer'";
+		}
 	}
 	return string();
 }

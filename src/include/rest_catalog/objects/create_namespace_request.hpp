@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class CreateNamespaceRequest {
 public:
 	CreateNamespaceRequest();
+	CreateNamespaceRequest(const CreateNamespaceRequest &) = delete;
+	CreateNamespaceRequest &operator=(const CreateNamespaceRequest &) = delete;
+	CreateNamespaceRequest(CreateNamespaceRequest &&) = default;
+	CreateNamespaceRequest &operator=(CreateNamespaceRequest &&) = default;
 
 public:
 	static CreateNamespaceRequest FromJSON(yyjson_val *obj);

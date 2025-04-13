@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class AssertViewUUID {
 public:
 	AssertViewUUID();
+	AssertViewUUID(const AssertViewUUID &) = delete;
+	AssertViewUUID &operator=(const AssertViewUUID &) = delete;
+	AssertViewUUID(AssertViewUUID &&) = default;
+	AssertViewUUID &operator=(AssertViewUUID &&) = default;
 
 public:
 	static AssertViewUUID FromJSON(yyjson_val *obj);

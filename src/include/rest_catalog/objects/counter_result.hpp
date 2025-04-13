@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class CounterResult {
 public:
 	CounterResult();
+	CounterResult(const CounterResult &) = delete;
+	CounterResult &operator=(const CounterResult &) = delete;
+	CounterResult(CounterResult &&) = default;
+	CounterResult &operator=(CounterResult &&) = default;
 
 public:
 	static CounterResult FromJSON(yyjson_val *obj);

@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class SetExpression {
 public:
 	SetExpression();
+	SetExpression(const SetExpression &) = delete;
+	SetExpression &operator=(const SetExpression &) = delete;
+	SetExpression(SetExpression &&) = default;
+	SetExpression &operator=(SetExpression &&) = default;
 
 public:
 	static SetExpression FromJSON(yyjson_val *obj);

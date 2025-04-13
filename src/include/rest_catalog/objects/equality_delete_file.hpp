@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class EqualityDeleteFile {
 public:
 	EqualityDeleteFile();
+	EqualityDeleteFile(const EqualityDeleteFile &) = delete;
+	EqualityDeleteFile &operator=(const EqualityDeleteFile &) = delete;
+	EqualityDeleteFile(EqualityDeleteFile &&) = default;
+	EqualityDeleteFile &operator=(EqualityDeleteFile &&) = default;
 
 public:
 	static EqualityDeleteFile FromJSON(yyjson_val *obj);

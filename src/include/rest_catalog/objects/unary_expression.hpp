@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class UnaryExpression {
 public:
 	UnaryExpression();
+	UnaryExpression(const UnaryExpression &) = delete;
+	UnaryExpression &operator=(const UnaryExpression &) = delete;
+	UnaryExpression(UnaryExpression &&) = default;
+	UnaryExpression &operator=(UnaryExpression &&) = default;
 
 public:
 	static UnaryExpression FromJSON(yyjson_val *obj);

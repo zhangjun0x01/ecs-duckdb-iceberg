@@ -27,7 +27,11 @@ PrimitiveType PrimitiveType::FromJSON(yyjson_val *obj) {
 
 string PrimitiveType::TryFromJSON(yyjson_val *obj) {
 	string error;
-	value = yyjson_get_str(obj);
+	if (yyjson_is_str(obj)) {
+		value = yyjson_get_str(obj);
+	} else {
+		return "PrimitiveType property 'value' is not of type 'string'";
+	}
 	return string();
 }
 

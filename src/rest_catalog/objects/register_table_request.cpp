@@ -31,18 +31,30 @@ string RegisterTableRequest::TryFromJSON(yyjson_val *obj) {
 	if (!name_val) {
 		return "RegisterTableRequest required property 'name' is missing";
 	} else {
-		name = yyjson_get_str(name_val);
+		if (yyjson_is_str(name_val)) {
+			name = yyjson_get_str(name_val);
+		} else {
+			return "RegisterTableRequest property 'name' is not of type 'string'";
+		}
 	}
 	auto metadata_location_val = yyjson_obj_get(obj, "metadata-location");
 	if (!metadata_location_val) {
 		return "RegisterTableRequest required property 'metadata-location' is missing";
 	} else {
-		metadata_location = yyjson_get_str(metadata_location_val);
+		if (yyjson_is_str(metadata_location_val)) {
+			metadata_location = yyjson_get_str(metadata_location_val);
+		} else {
+			return "RegisterTableRequest property 'metadata_location' is not of type 'string'";
+		}
 	}
 	auto overwrite_val = yyjson_obj_get(obj, "overwrite");
 	if (overwrite_val) {
 		has_overwrite = true;
-		overwrite = yyjson_get_bool(overwrite_val);
+		if (yyjson_is_bool(overwrite_val)) {
+			overwrite = yyjson_get_bool(overwrite_val);
+		} else {
+			return "RegisterTableRequest property 'overwrite' is not of type 'boolean'";
+		}
 	}
 	return string();
 }

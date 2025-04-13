@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class AssertDefaultSpecId {
 public:
 	AssertDefaultSpecId();
+	AssertDefaultSpecId(const AssertDefaultSpecId &) = delete;
+	AssertDefaultSpecId &operator=(const AssertDefaultSpecId &) = delete;
+	AssertDefaultSpecId(AssertDefaultSpecId &&) = default;
+	AssertDefaultSpecId &operator=(AssertDefaultSpecId &&) = default;
 
 public:
 	static AssertDefaultSpecId FromJSON(yyjson_val *obj);

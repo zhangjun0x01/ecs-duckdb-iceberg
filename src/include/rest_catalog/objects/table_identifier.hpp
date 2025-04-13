@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class TableIdentifier {
 public:
 	TableIdentifier();
+	TableIdentifier(const TableIdentifier &) = delete;
+	TableIdentifier &operator=(const TableIdentifier &) = delete;
+	TableIdentifier(TableIdentifier &&) = default;
+	TableIdentifier &operator=(TableIdentifier &&) = default;
 
 public:
 	static TableIdentifier FromJSON(yyjson_val *obj);

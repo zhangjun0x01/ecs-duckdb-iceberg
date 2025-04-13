@@ -17,9 +17,17 @@ namespace rest_api_objects {
 class CompletedPlanningResult {
 public:
 	CompletedPlanningResult();
+	CompletedPlanningResult(const CompletedPlanningResult &) = delete;
+	CompletedPlanningResult &operator=(const CompletedPlanningResult &) = delete;
+	CompletedPlanningResult(CompletedPlanningResult &&) = default;
+	CompletedPlanningResult &operator=(CompletedPlanningResult &&) = default;
 	class Object5 {
 	public:
 		Object5();
+		Object5(const Object5 &) = delete;
+		Object5 &operator=(const Object5 &) = delete;
+		Object5(Object5 &&) = default;
+		Object5 &operator=(Object5 &&) = default;
 
 	public:
 		static Object5 FromJSON(yyjson_val *obj);

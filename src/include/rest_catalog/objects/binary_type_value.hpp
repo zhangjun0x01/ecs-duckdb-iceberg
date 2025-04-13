@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class BinaryTypeValue {
 public:
 	BinaryTypeValue();
+	BinaryTypeValue(const BinaryTypeValue &) = delete;
+	BinaryTypeValue &operator=(const BinaryTypeValue &) = delete;
+	BinaryTypeValue(BinaryTypeValue &&) = default;
+	BinaryTypeValue &operator=(BinaryTypeValue &&) = default;
 
 public:
 	static BinaryTypeValue FromJSON(yyjson_val *obj);

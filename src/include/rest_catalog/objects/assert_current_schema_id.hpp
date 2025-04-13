@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class AssertCurrentSchemaId {
 public:
 	AssertCurrentSchemaId();
+	AssertCurrentSchemaId(const AssertCurrentSchemaId &) = delete;
+	AssertCurrentSchemaId &operator=(const AssertCurrentSchemaId &) = delete;
+	AssertCurrentSchemaId(AssertCurrentSchemaId &&) = default;
+	AssertCurrentSchemaId &operator=(AssertCurrentSchemaId &&) = default;
 
 public:
 	static AssertCurrentSchemaId FromJSON(yyjson_val *obj);

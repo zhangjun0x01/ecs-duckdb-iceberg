@@ -35,18 +35,30 @@ string AssertRefSnapshotId::TryFromJSON(yyjson_val *obj) {
 	if (!ref_val) {
 		return "AssertRefSnapshotId required property 'ref' is missing";
 	} else {
-		ref = yyjson_get_str(ref_val);
+		if (yyjson_is_str(ref_val)) {
+			ref = yyjson_get_str(ref_val);
+		} else {
+			return "AssertRefSnapshotId property 'ref' is not of type 'string'";
+		}
 	}
 	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (!snapshot_id_val) {
 		return "AssertRefSnapshotId required property 'snapshot-id' is missing";
 	} else {
-		snapshot_id = yyjson_get_sint(snapshot_id_val);
+		if (yyjson_is_sint(snapshot_id_val)) {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		} else {
+			return "AssertRefSnapshotId property 'snapshot_id' is not of type 'integer'";
+		}
 	}
 	auto type_val = yyjson_obj_get(obj, "type");
 	if (type_val) {
 		has_type = true;
-		type = yyjson_get_str(type_val);
+		if (yyjson_is_str(type_val)) {
+			type = yyjson_get_str(type_val);
+		} else {
+			return "AssertRefSnapshotId property 'type' is not of type 'string'";
+		}
 	}
 	return string();
 }

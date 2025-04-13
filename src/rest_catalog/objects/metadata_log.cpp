@@ -33,13 +33,21 @@ string MetadataLog::Object4::TryFromJSON(yyjson_val *obj) {
 	if (!metadata_file_val) {
 		return "Object4 required property 'metadata-file' is missing";
 	} else {
-		metadata_file = yyjson_get_str(metadata_file_val);
+		if (yyjson_is_str(metadata_file_val)) {
+			metadata_file = yyjson_get_str(metadata_file_val);
+		} else {
+			return "Object4 property 'metadata_file' is not of type 'string'";
+		}
 	}
 	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
 	if (!timestamp_ms_val) {
 		return "Object4 required property 'timestamp-ms' is missing";
 	} else {
-		timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		if (yyjson_is_sint(timestamp_ms_val)) {
+			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		} else {
+			return "Object4 property 'timestamp_ms' is not of type 'integer'";
+		}
 	}
 	return string();
 }

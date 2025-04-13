@@ -31,19 +31,31 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 	if (!type_val) {
 		return "BlobMetadata required property 'type' is missing";
 	} else {
-		type = yyjson_get_str(type_val);
+		if (yyjson_is_str(type_val)) {
+			type = yyjson_get_str(type_val);
+		} else {
+			return "BlobMetadata property 'type' is not of type 'string'";
+		}
 	}
 	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (!snapshot_id_val) {
 		return "BlobMetadata required property 'snapshot-id' is missing";
 	} else {
-		snapshot_id = yyjson_get_sint(snapshot_id_val);
+		if (yyjson_is_sint(snapshot_id_val)) {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		} else {
+			return "BlobMetadata property 'snapshot_id' is not of type 'integer'";
+		}
 	}
 	auto sequence_number_val = yyjson_obj_get(obj, "sequence-number");
 	if (!sequence_number_val) {
 		return "BlobMetadata required property 'sequence-number' is missing";
 	} else {
-		sequence_number = yyjson_get_sint(sequence_number_val);
+		if (yyjson_is_sint(sequence_number_val)) {
+			sequence_number = yyjson_get_sint(sequence_number_val);
+		} else {
+			return "BlobMetadata property 'sequence_number' is not of type 'integer'";
+		}
 	}
 	auto fields_val = yyjson_obj_get(obj, "fields");
 	if (!fields_val) {
@@ -52,14 +64,34 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(fields_val, idx, max, val) {
-			auto tmp = yyjson_get_sint(val);
+			int64_t tmp;
+			if (yyjson_is_sint(val)) {
+				tmp = yyjson_get_sint(val);
+			} else {
+				return "BlobMetadata property 'tmp' is not of type 'integer'";
+			}
 			fields.emplace_back(std::move(tmp));
 		}
 	}
 	auto properties_val = yyjson_obj_get(obj, "properties");
 	if (properties_val) {
 		has_properties = true;
-		properties = parse_object_of_strings(properties_val);
+		if (yyjson_is_obj(properties_val)) {
+			size_t idx, max;
+			yyjson_val *key, *val;
+			yyjson_obj_foreach(obj, idx, max, key, val) {
+				auto key_str = yyjson_get_str(key);
+				string tmp;
+				if (yyjson_is_str(val)) {
+					tmp = yyjson_get_str(val);
+				} else {
+					return "BlobMetadata property 'tmp' is not of type 'string'";
+				}
+				properties.emplace(key_str, std::move(tmp));
+			}
+		} else {
+			return "BlobMetadata property 'properties' is not of type 'object'";
+		}
 	}
 	return string();
 }

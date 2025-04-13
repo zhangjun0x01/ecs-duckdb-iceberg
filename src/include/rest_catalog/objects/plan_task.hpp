@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class PlanTask {
 public:
 	PlanTask();
+	PlanTask(const PlanTask &) = delete;
+	PlanTask &operator=(const PlanTask &) = delete;
+	PlanTask(PlanTask &&) = default;
+	PlanTask &operator=(PlanTask &&) = default;
 
 public:
 	static PlanTask FromJSON(yyjson_val *obj);

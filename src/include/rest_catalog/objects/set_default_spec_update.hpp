@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class SetDefaultSpecUpdate {
 public:
 	SetDefaultSpecUpdate();
+	SetDefaultSpecUpdate(const SetDefaultSpecUpdate &) = delete;
+	SetDefaultSpecUpdate &operator=(const SetDefaultSpecUpdate &) = delete;
+	SetDefaultSpecUpdate(SetDefaultSpecUpdate &&) = default;
+	SetDefaultSpecUpdate &operator=(SetDefaultSpecUpdate &&) = default;
 
 public:
 	static SetDefaultSpecUpdate FromJSON(yyjson_val *obj);

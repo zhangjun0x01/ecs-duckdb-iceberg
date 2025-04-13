@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class FloatTypeValue {
 public:
 	FloatTypeValue();
+	FloatTypeValue(const FloatTypeValue &) = delete;
+	FloatTypeValue &operator=(const FloatTypeValue &) = delete;
+	FloatTypeValue(FloatTypeValue &&) = default;
+	FloatTypeValue &operator=(FloatTypeValue &&) = default;
 
 public:
 	static FloatTypeValue FromJSON(yyjson_val *obj);
@@ -23,7 +27,7 @@ public:
 	string TryFromJSON(yyjson_val *obj);
 
 public:
-	float value;
+	double value;
 };
 
 } // namespace rest_api_objects

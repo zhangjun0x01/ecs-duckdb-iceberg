@@ -32,7 +32,11 @@ string CompletedPlanningWithIDResult::Object6::TryFromJSON(yyjson_val *obj) {
 	auto plan_id_val = yyjson_obj_get(obj, "plan-id");
 	if (plan_id_val) {
 		has_plan_id = true;
-		plan_id = yyjson_get_str(plan_id_val);
+		if (yyjson_is_str(plan_id_val)) {
+			plan_id = yyjson_get_str(plan_id_val);
+		} else {
+			return "Object6 property 'plan_id' is not of type 'string'";
+		}
 	}
 	return string();
 }

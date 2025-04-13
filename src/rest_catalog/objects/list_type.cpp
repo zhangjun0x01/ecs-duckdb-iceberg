@@ -31,13 +31,21 @@ string ListType::TryFromJSON(yyjson_val *obj) {
 	if (!type_val) {
 		return "ListType required property 'type' is missing";
 	} else {
-		type = yyjson_get_str(type_val);
+		if (yyjson_is_str(type_val)) {
+			type = yyjson_get_str(type_val);
+		} else {
+			return "ListType property 'type' is not of type 'string'";
+		}
 	}
 	auto element_id_val = yyjson_obj_get(obj, "element-id");
 	if (!element_id_val) {
 		return "ListType required property 'element-id' is missing";
 	} else {
-		element_id = yyjson_get_sint(element_id_val);
+		if (yyjson_is_sint(element_id_val)) {
+			element_id = yyjson_get_sint(element_id_val);
+		} else {
+			return "ListType property 'element_id' is not of type 'integer'";
+		}
 	}
 	auto element_val = yyjson_obj_get(obj, "element");
 	if (!element_val) {
@@ -53,7 +61,11 @@ string ListType::TryFromJSON(yyjson_val *obj) {
 	if (!element_required_val) {
 		return "ListType required property 'element-required' is missing";
 	} else {
-		element_required = yyjson_get_bool(element_required_val);
+		if (yyjson_is_bool(element_required_val)) {
+			element_required = yyjson_get_bool(element_required_val);
+		} else {
+			return "ListType property 'element_required' is not of type 'boolean'";
+		}
 	}
 	return string();
 }

@@ -18,6 +18,10 @@ class Type;
 class StructField {
 public:
 	StructField();
+	StructField(const StructField &) = delete;
+	StructField &operator=(const StructField &) = delete;
+	StructField(StructField &&) = default;
+	StructField &operator=(StructField &&) = default;
 
 public:
 	static StructField FromJSON(yyjson_val *obj);

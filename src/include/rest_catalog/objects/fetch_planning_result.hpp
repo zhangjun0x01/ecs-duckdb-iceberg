@@ -18,6 +18,10 @@ namespace rest_api_objects {
 class FetchPlanningResult {
 public:
 	FetchPlanningResult();
+	FetchPlanningResult(const FetchPlanningResult &) = delete;
+	FetchPlanningResult &operator=(const FetchPlanningResult &) = delete;
+	FetchPlanningResult(FetchPlanningResult &&) = default;
+	FetchPlanningResult &operator=(FetchPlanningResult &&) = default;
 
 public:
 	static FetchPlanningResult FromJSON(yyjson_val *obj);

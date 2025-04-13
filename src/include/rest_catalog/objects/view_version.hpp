@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class ViewVersion {
 public:
 	ViewVersion();
+	ViewVersion(const ViewVersion &) = delete;
+	ViewVersion &operator=(const ViewVersion &) = delete;
+	ViewVersion(ViewVersion &&) = default;
+	ViewVersion &operator=(ViewVersion &&) = default;
 
 public:
 	static ViewVersion FromJSON(yyjson_val *obj);

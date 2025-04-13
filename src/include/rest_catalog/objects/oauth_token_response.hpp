@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class OAuthTokenResponse {
 public:
 	OAuthTokenResponse();
+	OAuthTokenResponse(const OAuthTokenResponse &) = delete;
+	OAuthTokenResponse &operator=(const OAuthTokenResponse &) = delete;
+	OAuthTokenResponse(OAuthTokenResponse &&) = default;
+	OAuthTokenResponse &operator=(OAuthTokenResponse &&) = default;
 
 public:
 	static OAuthTokenResponse FromJSON(yyjson_val *obj);

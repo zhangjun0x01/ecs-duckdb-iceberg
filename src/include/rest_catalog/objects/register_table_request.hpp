@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class RegisterTableRequest {
 public:
 	RegisterTableRequest();
+	RegisterTableRequest(const RegisterTableRequest &) = delete;
+	RegisterTableRequest &operator=(const RegisterTableRequest &) = delete;
+	RegisterTableRequest(RegisterTableRequest &&) = default;
+	RegisterTableRequest &operator=(RegisterTableRequest &&) = default;
 
 public:
 	static RegisterTableRequest FromJSON(yyjson_val *obj);

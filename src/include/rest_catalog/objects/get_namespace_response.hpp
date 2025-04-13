@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class GetNamespaceResponse {
 public:
 	GetNamespaceResponse();
+	GetNamespaceResponse(const GetNamespaceResponse &) = delete;
+	GetNamespaceResponse &operator=(const GetNamespaceResponse &) = delete;
+	GetNamespaceResponse(GetNamespaceResponse &&) = default;
+	GetNamespaceResponse &operator=(GetNamespaceResponse &&) = default;
 
 public:
 	static GetNamespaceResponse FromJSON(yyjson_val *obj);

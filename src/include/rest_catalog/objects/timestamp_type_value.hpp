@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class TimestampTypeValue {
 public:
 	TimestampTypeValue();
+	TimestampTypeValue(const TimestampTypeValue &) = delete;
+	TimestampTypeValue &operator=(const TimestampTypeValue &) = delete;
+	TimestampTypeValue(TimestampTypeValue &&) = default;
+	TimestampTypeValue &operator=(TimestampTypeValue &&) = default;
 
 public:
 	static TimestampTypeValue FromJSON(yyjson_val *obj);

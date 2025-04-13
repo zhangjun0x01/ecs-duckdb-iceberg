@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class RemoveStatisticsUpdate {
 public:
 	RemoveStatisticsUpdate();
+	RemoveStatisticsUpdate(const RemoveStatisticsUpdate &) = delete;
+	RemoveStatisticsUpdate &operator=(const RemoveStatisticsUpdate &) = delete;
+	RemoveStatisticsUpdate(RemoveStatisticsUpdate &&) = default;
+	RemoveStatisticsUpdate &operator=(RemoveStatisticsUpdate &&) = default;
 
 public:
 	static RemoveStatisticsUpdate FromJSON(yyjson_val *obj);

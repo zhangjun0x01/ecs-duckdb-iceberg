@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class LiteralExpression {
 public:
 	LiteralExpression();
+	LiteralExpression(const LiteralExpression &) = delete;
+	LiteralExpression &operator=(const LiteralExpression &) = delete;
+	LiteralExpression(LiteralExpression &&) = default;
+	LiteralExpression &operator=(LiteralExpression &&) = default;
 
 public:
 	static LiteralExpression FromJSON(yyjson_val *obj);

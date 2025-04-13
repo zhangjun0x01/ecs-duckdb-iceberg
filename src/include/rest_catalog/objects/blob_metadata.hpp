@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class BlobMetadata {
 public:
 	BlobMetadata();
+	BlobMetadata(const BlobMetadata &) = delete;
+	BlobMetadata &operator=(const BlobMetadata &) = delete;
+	BlobMetadata(BlobMetadata &&) = default;
+	BlobMetadata &operator=(BlobMetadata &&) = default;
 
 public:
 	static BlobMetadata FromJSON(yyjson_val *obj);

@@ -19,6 +19,10 @@ namespace rest_api_objects {
 class PlanTableScanResult {
 public:
 	PlanTableScanResult();
+	PlanTableScanResult(const PlanTableScanResult &) = delete;
+	PlanTableScanResult &operator=(const PlanTableScanResult &) = delete;
+	PlanTableScanResult(PlanTableScanResult &&) = default;
+	PlanTableScanResult &operator=(PlanTableScanResult &&) = default;
 
 public:
 	static PlanTableScanResult FromJSON(yyjson_val *obj);

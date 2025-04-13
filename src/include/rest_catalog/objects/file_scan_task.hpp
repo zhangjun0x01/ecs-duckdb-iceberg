@@ -18,6 +18,10 @@ class Expression;
 class FileScanTask {
 public:
 	FileScanTask();
+	FileScanTask(const FileScanTask &) = delete;
+	FileScanTask &operator=(const FileScanTask &) = delete;
+	FileScanTask(FileScanTask &&) = default;
+	FileScanTask &operator=(FileScanTask &&) = default;
 
 public:
 	static FileScanTask FromJSON(yyjson_val *obj);

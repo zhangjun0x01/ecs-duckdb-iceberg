@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class MetricResult {
 public:
 	MetricResult();
+	MetricResult(const MetricResult &) = delete;
+	MetricResult &operator=(const MetricResult &) = delete;
+	MetricResult(MetricResult &&) = default;
+	MetricResult &operator=(MetricResult &&) = default;
 
 public:
 	static MetricResult FromJSON(yyjson_val *obj);

@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class AssertLastAssignedPartitionId {
 public:
 	AssertLastAssignedPartitionId();
+	AssertLastAssignedPartitionId(const AssertLastAssignedPartitionId &) = delete;
+	AssertLastAssignedPartitionId &operator=(const AssertLastAssignedPartitionId &) = delete;
+	AssertLastAssignedPartitionId(AssertLastAssignedPartitionId &&) = default;
+	AssertLastAssignedPartitionId &operator=(AssertLastAssignedPartitionId &&) = default;
 
 public:
 	static AssertLastAssignedPartitionId FromJSON(yyjson_val *obj);

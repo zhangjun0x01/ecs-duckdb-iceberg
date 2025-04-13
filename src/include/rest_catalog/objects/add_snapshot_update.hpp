@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class AddSnapshotUpdate {
 public:
 	AddSnapshotUpdate();
+	AddSnapshotUpdate(const AddSnapshotUpdate &) = delete;
+	AddSnapshotUpdate &operator=(const AddSnapshotUpdate &) = delete;
+	AddSnapshotUpdate(AddSnapshotUpdate &&) = default;
+	AddSnapshotUpdate &operator=(AddSnapshotUpdate &&) = default;
 
 public:
 	static AddSnapshotUpdate FromJSON(yyjson_val *obj);

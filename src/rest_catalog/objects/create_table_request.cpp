@@ -31,7 +31,11 @@ string CreateTableRequest::TryFromJSON(yyjson_val *obj) {
 	if (!name_val) {
 		return "CreateTableRequest required property 'name' is missing";
 	} else {
-		name = yyjson_get_str(name_val);
+		if (yyjson_is_str(name_val)) {
+			name = yyjson_get_str(name_val);
+		} else {
+			return "CreateTableRequest property 'name' is not of type 'string'";
+		}
 	}
 	auto schema_val = yyjson_obj_get(obj, "schema");
 	if (!schema_val) {
@@ -45,7 +49,11 @@ string CreateTableRequest::TryFromJSON(yyjson_val *obj) {
 	auto location_val = yyjson_obj_get(obj, "location");
 	if (location_val) {
 		has_location = true;
-		location = yyjson_get_str(location_val);
+		if (yyjson_is_str(location_val)) {
+			location = yyjson_get_str(location_val);
+		} else {
+			return "CreateTableRequest property 'location' is not of type 'string'";
+		}
 	}
 	auto partition_spec_val = yyjson_obj_get(obj, "partition-spec");
 	if (partition_spec_val) {
@@ -66,12 +74,31 @@ string CreateTableRequest::TryFromJSON(yyjson_val *obj) {
 	auto stage_create_val = yyjson_obj_get(obj, "stage-create");
 	if (stage_create_val) {
 		has_stage_create = true;
-		stage_create = yyjson_get_bool(stage_create_val);
+		if (yyjson_is_bool(stage_create_val)) {
+			stage_create = yyjson_get_bool(stage_create_val);
+		} else {
+			return "CreateTableRequest property 'stage_create' is not of type 'boolean'";
+		}
 	}
 	auto properties_val = yyjson_obj_get(obj, "properties");
 	if (properties_val) {
 		has_properties = true;
-		properties = parse_object_of_strings(properties_val);
+		if (yyjson_is_obj(properties_val)) {
+			size_t idx, max;
+			yyjson_val *key, *val;
+			yyjson_obj_foreach(obj, idx, max, key, val) {
+				auto key_str = yyjson_get_str(key);
+				string tmp;
+				if (yyjson_is_str(val)) {
+					tmp = yyjson_get_str(val);
+				} else {
+					return "CreateTableRequest property 'tmp' is not of type 'string'";
+				}
+				properties.emplace(key_str, std::move(tmp));
+			}
+		} else {
+			return "CreateTableRequest property 'properties' is not of type 'object'";
+		}
 	}
 	return string();
 }

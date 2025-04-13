@@ -17,6 +17,10 @@ namespace rest_api_objects {
 class OAuthTokenRequest {
 public:
 	OAuthTokenRequest();
+	OAuthTokenRequest(const OAuthTokenRequest &) = delete;
+	OAuthTokenRequest &operator=(const OAuthTokenRequest &) = delete;
+	OAuthTokenRequest(OAuthTokenRequest &&) = default;
+	OAuthTokenRequest &operator=(OAuthTokenRequest &&) = default;
 
 public:
 	static OAuthTokenRequest FromJSON(yyjson_val *obj);

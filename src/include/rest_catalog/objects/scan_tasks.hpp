@@ -18,6 +18,10 @@ namespace rest_api_objects {
 class ScanTasks {
 public:
 	ScanTasks();
+	ScanTasks(const ScanTasks &) = delete;
+	ScanTasks &operator=(const ScanTasks &) = delete;
+	ScanTasks(ScanTasks &&) = default;
+	ScanTasks &operator=(ScanTasks &&) = default;
 
 public:
 	static ScanTasks FromJSON(yyjson_val *obj);

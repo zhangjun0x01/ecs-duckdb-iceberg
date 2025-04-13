@@ -31,19 +31,31 @@ string ErrorModel::TryFromJSON(yyjson_val *obj) {
 	if (!message_val) {
 		return "ErrorModel required property 'message' is missing";
 	} else {
-		message = yyjson_get_str(message_val);
+		if (yyjson_is_str(message_val)) {
+			message = yyjson_get_str(message_val);
+		} else {
+			return "ErrorModel property 'message' is not of type 'string'";
+		}
 	}
 	auto type_val = yyjson_obj_get(obj, "type");
 	if (!type_val) {
 		return "ErrorModel required property 'type' is missing";
 	} else {
-		type = yyjson_get_str(type_val);
+		if (yyjson_is_str(type_val)) {
+			type = yyjson_get_str(type_val);
+		} else {
+			return "ErrorModel property 'type' is not of type 'string'";
+		}
 	}
 	auto code_val = yyjson_obj_get(obj, "code");
 	if (!code_val) {
 		return "ErrorModel required property 'code' is missing";
 	} else {
-		code = yyjson_get_sint(code_val);
+		if (yyjson_is_sint(code_val)) {
+			code = yyjson_get_sint(code_val);
+		} else {
+			return "ErrorModel property 'code' is not of type 'integer'";
+		}
 	}
 	auto stack_val = yyjson_obj_get(obj, "stack");
 	if (stack_val) {
@@ -51,7 +63,12 @@ string ErrorModel::TryFromJSON(yyjson_val *obj) {
 		size_t idx, max;
 		yyjson_val *val;
 		yyjson_arr_foreach(stack_val, idx, max, val) {
-			auto tmp = yyjson_get_str(val);
+			string tmp;
+			if (yyjson_is_str(val)) {
+				tmp = yyjson_get_str(val);
+			} else {
+				return "ErrorModel property 'tmp' is not of type 'string'";
+			}
 			stack.emplace_back(std::move(tmp));
 		}
 	}

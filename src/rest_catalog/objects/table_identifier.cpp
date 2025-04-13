@@ -40,7 +40,11 @@ string TableIdentifier::TryFromJSON(yyjson_val *obj) {
 	if (!name_val) {
 		return "TableIdentifier required property 'name' is missing";
 	} else {
-		name = yyjson_get_str(name_val);
+		if (yyjson_is_str(name_val)) {
+			name = yyjson_get_str(name_val);
+		} else {
+			return "TableIdentifier property 'name' is not of type 'string'";
+		}
 	}
 	return string();
 }

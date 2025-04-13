@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class OAuthTokenExchangeRequest {
 public:
 	OAuthTokenExchangeRequest();
+	OAuthTokenExchangeRequest(const OAuthTokenExchangeRequest &) = delete;
+	OAuthTokenExchangeRequest &operator=(const OAuthTokenExchangeRequest &) = delete;
+	OAuthTokenExchangeRequest(OAuthTokenExchangeRequest &&) = default;
+	OAuthTokenExchangeRequest &operator=(OAuthTokenExchangeRequest &&) = default;
 
 public:
 	static OAuthTokenExchangeRequest FromJSON(yyjson_val *obj);

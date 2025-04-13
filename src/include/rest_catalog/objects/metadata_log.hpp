@@ -15,9 +15,17 @@ namespace rest_api_objects {
 class MetadataLog {
 public:
 	MetadataLog();
+	MetadataLog(const MetadataLog &) = delete;
+	MetadataLog &operator=(const MetadataLog &) = delete;
+	MetadataLog(MetadataLog &&) = default;
+	MetadataLog &operator=(MetadataLog &&) = default;
 	class Object4 {
 	public:
 		Object4();
+		Object4(const Object4 &) = delete;
+		Object4 &operator=(const Object4 &) = delete;
+		Object4(Object4 &&) = default;
+		Object4 &operator=(Object4 &&) = default;
 
 	public:
 		static Object4 FromJSON(yyjson_val *obj);

@@ -33,13 +33,21 @@ string SnapshotLog::Object3::TryFromJSON(yyjson_val *obj) {
 	if (!snapshot_id_val) {
 		return "Object3 required property 'snapshot-id' is missing";
 	} else {
-		snapshot_id = yyjson_get_sint(snapshot_id_val);
+		if (yyjson_is_sint(snapshot_id_val)) {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		} else {
+			return "Object3 property 'snapshot_id' is not of type 'integer'";
+		}
 	}
 	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
 	if (!timestamp_ms_val) {
 		return "Object3 required property 'timestamp-ms' is missing";
 	} else {
-		timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		if (yyjson_is_sint(timestamp_ms_val)) {
+			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		} else {
+			return "Object3 property 'timestamp_ms' is not of type 'integer'";
+		}
 	}
 	return string();
 }

@@ -31,19 +31,31 @@ string PartitionStatisticsFile::TryFromJSON(yyjson_val *obj) {
 	if (!snapshot_id_val) {
 		return "PartitionStatisticsFile required property 'snapshot-id' is missing";
 	} else {
-		snapshot_id = yyjson_get_sint(snapshot_id_val);
+		if (yyjson_is_sint(snapshot_id_val)) {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		} else {
+			return "PartitionStatisticsFile property 'snapshot_id' is not of type 'integer'";
+		}
 	}
 	auto statistics_path_val = yyjson_obj_get(obj, "statistics-path");
 	if (!statistics_path_val) {
 		return "PartitionStatisticsFile required property 'statistics-path' is missing";
 	} else {
-		statistics_path = yyjson_get_str(statistics_path_val);
+		if (yyjson_is_str(statistics_path_val)) {
+			statistics_path = yyjson_get_str(statistics_path_val);
+		} else {
+			return "PartitionStatisticsFile property 'statistics_path' is not of type 'string'";
+		}
 	}
 	auto file_size_in_bytes_val = yyjson_obj_get(obj, "file-size-in-bytes");
 	if (!file_size_in_bytes_val) {
 		return "PartitionStatisticsFile required property 'file-size-in-bytes' is missing";
 	} else {
-		file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
+		if (yyjson_is_sint(file_size_in_bytes_val)) {
+			file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
+		} else {
+			return "PartitionStatisticsFile property 'file_size_in_bytes' is not of type 'integer'";
+		}
 	}
 	return string();
 }

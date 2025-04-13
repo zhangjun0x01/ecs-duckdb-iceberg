@@ -31,7 +31,11 @@ string TableRequirement::TryFromJSON(yyjson_val *obj) {
 	if (!type_val) {
 		return "TableRequirement required property 'type' is missing";
 	} else {
-		type = yyjson_get_str(type_val);
+		if (yyjson_is_str(type_val)) {
+			type = yyjson_get_str(type_val);
+		} else {
+			return "TableRequirement property 'type' is not of type 'string'";
+		}
 	}
 	return string();
 }

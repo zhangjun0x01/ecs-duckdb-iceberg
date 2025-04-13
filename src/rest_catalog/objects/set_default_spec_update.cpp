@@ -35,12 +35,20 @@ string SetDefaultSpecUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!spec_id_val) {
 		return "SetDefaultSpecUpdate required property 'spec-id' is missing";
 	} else {
-		spec_id = yyjson_get_sint(spec_id_val);
+		if (yyjson_is_sint(spec_id_val)) {
+			spec_id = yyjson_get_sint(spec_id_val);
+		} else {
+			return "SetDefaultSpecUpdate property 'spec_id' is not of type 'integer'";
+		}
 	}
 	auto action_val = yyjson_obj_get(obj, "action");
 	if (action_val) {
 		has_action = true;
-		action = yyjson_get_str(action_val);
+		if (yyjson_is_str(action_val)) {
+			action = yyjson_get_str(action_val);
+		} else {
+			return "SetDefaultSpecUpdate property 'action' is not of type 'string'";
+		}
 	}
 	return string();
 }

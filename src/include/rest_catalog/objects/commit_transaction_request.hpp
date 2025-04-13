@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class CommitTransactionRequest {
 public:
 	CommitTransactionRequest();
+	CommitTransactionRequest(const CommitTransactionRequest &) = delete;
+	CommitTransactionRequest &operator=(const CommitTransactionRequest &) = delete;
+	CommitTransactionRequest(CommitTransactionRequest &&) = default;
+	CommitTransactionRequest &operator=(CommitTransactionRequest &&) = default;
 
 public:
 	static CommitTransactionRequest FromJSON(yyjson_val *obj);

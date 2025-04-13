@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class DecimalTypeValue {
 public:
 	DecimalTypeValue();
+	DecimalTypeValue(const DecimalTypeValue &) = delete;
+	DecimalTypeValue &operator=(const DecimalTypeValue &) = delete;
+	DecimalTypeValue(DecimalTypeValue &&) = default;
+	DecimalTypeValue &operator=(DecimalTypeValue &&) = default;
 
 public:
 	static DecimalTypeValue FromJSON(yyjson_val *obj);

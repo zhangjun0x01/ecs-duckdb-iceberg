@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class AssignUUIDUpdate {
 public:
 	AssignUUIDUpdate();
+	AssignUUIDUpdate(const AssignUUIDUpdate &) = delete;
+	AssignUUIDUpdate &operator=(const AssignUUIDUpdate &) = delete;
+	AssignUUIDUpdate(AssignUUIDUpdate &&) = default;
+	AssignUUIDUpdate &operator=(AssignUUIDUpdate &&) = default;
 
 public:
 	static AssignUUIDUpdate FromJSON(yyjson_val *obj);

@@ -30,7 +30,11 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (snapshot_id_val) {
 		has_snapshot_id = true;
-		snapshot_id = yyjson_get_sint(snapshot_id_val);
+		if (yyjson_is_sint(snapshot_id_val)) {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		} else {
+			return "PlanTableScanRequest property 'snapshot_id' is not of type 'integer'";
+		}
 	}
 	auto select_val = yyjson_obj_get(obj, "select");
 	if (select_val) {
@@ -58,22 +62,38 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 	auto case_sensitive_val = yyjson_obj_get(obj, "case-sensitive");
 	if (case_sensitive_val) {
 		has_case_sensitive = true;
-		case_sensitive = yyjson_get_bool(case_sensitive_val);
+		if (yyjson_is_bool(case_sensitive_val)) {
+			case_sensitive = yyjson_get_bool(case_sensitive_val);
+		} else {
+			return "PlanTableScanRequest property 'case_sensitive' is not of type 'boolean'";
+		}
 	}
 	auto use_snapshot_schema_val = yyjson_obj_get(obj, "use-snapshot-schema");
 	if (use_snapshot_schema_val) {
 		has_use_snapshot_schema = true;
-		use_snapshot_schema = yyjson_get_bool(use_snapshot_schema_val);
+		if (yyjson_is_bool(use_snapshot_schema_val)) {
+			use_snapshot_schema = yyjson_get_bool(use_snapshot_schema_val);
+		} else {
+			return "PlanTableScanRequest property 'use_snapshot_schema' is not of type 'boolean'";
+		}
 	}
 	auto start_snapshot_id_val = yyjson_obj_get(obj, "start-snapshot-id");
 	if (start_snapshot_id_val) {
 		has_start_snapshot_id = true;
-		start_snapshot_id = yyjson_get_sint(start_snapshot_id_val);
+		if (yyjson_is_sint(start_snapshot_id_val)) {
+			start_snapshot_id = yyjson_get_sint(start_snapshot_id_val);
+		} else {
+			return "PlanTableScanRequest property 'start_snapshot_id' is not of type 'integer'";
+		}
 	}
 	auto end_snapshot_id_val = yyjson_obj_get(obj, "end-snapshot-id");
 	if (end_snapshot_id_val) {
 		has_end_snapshot_id = true;
-		end_snapshot_id = yyjson_get_sint(end_snapshot_id_val);
+		if (yyjson_is_sint(end_snapshot_id_val)) {
+			end_snapshot_id = yyjson_get_sint(end_snapshot_id_val);
+		} else {
+			return "PlanTableScanRequest property 'end_snapshot_id' is not of type 'integer'";
+		}
 	}
 	auto stats_fields_val = yyjson_obj_get(obj, "stats-fields");
 	if (stats_fields_val) {

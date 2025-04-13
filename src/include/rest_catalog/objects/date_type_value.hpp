@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class DateTypeValue {
 public:
 	DateTypeValue();
+	DateTypeValue(const DateTypeValue &) = delete;
+	DateTypeValue &operator=(const DateTypeValue &) = delete;
+	DateTypeValue(DateTypeValue &&) = default;
+	DateTypeValue &operator=(DateTypeValue &&) = default;
 
 public:
 	static DateTypeValue FromJSON(yyjson_val *obj);

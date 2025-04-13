@@ -18,6 +18,10 @@ namespace rest_api_objects {
 class CommitViewRequest {
 public:
 	CommitViewRequest();
+	CommitViewRequest(const CommitViewRequest &) = delete;
+	CommitViewRequest &operator=(const CommitViewRequest &) = delete;
+	CommitViewRequest(CommitViewRequest &&) = default;
+	CommitViewRequest &operator=(CommitViewRequest &&) = default;
 
 public:
 	static CommitViewRequest FromJSON(yyjson_val *obj);

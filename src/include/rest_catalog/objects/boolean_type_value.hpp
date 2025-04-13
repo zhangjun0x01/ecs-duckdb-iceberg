@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class BooleanTypeValue {
 public:
 	BooleanTypeValue();
+	BooleanTypeValue(const BooleanTypeValue &) = delete;
+	BooleanTypeValue &operator=(const BooleanTypeValue &) = delete;
+	BooleanTypeValue(BooleanTypeValue &&) = default;
+	BooleanTypeValue &operator=(BooleanTypeValue &&) = default;
 
 public:
 	static BooleanTypeValue FromJSON(yyjson_val *obj);

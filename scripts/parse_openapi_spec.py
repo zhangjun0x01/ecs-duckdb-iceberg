@@ -8,20 +8,6 @@ API_SPEC_PATH = os.path.join(SCRIPT_PATH, 'api.yaml')
 
 PRIMITIVE_TYPES = ['string', 'number', 'integer', 'boolean']
 
-###
-### FIXME:
-### The following are not generated correctly:
-### - DeleteFile
-### - Expression
-### - FetchPlanningResult
-### - MetricResult (anyOf is not supported yet)
-### - Metrics
-### - OAuthTokenRequest
-### - PlanTableScanResult
-### - SnapshotReferences
-### - TableUpdate
-### - Term (missing 'TransformTerm' member)
-
 
 class Property:
     class Type(Enum):

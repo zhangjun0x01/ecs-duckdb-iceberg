@@ -31,7 +31,11 @@ string TransformTerm::TryFromJSON(yyjson_val *obj) {
 	if (!type_val) {
 		return "TransformTerm required property 'type' is missing";
 	} else {
-		type = yyjson_get_str(type_val);
+		if (yyjson_is_str(type_val)) {
+			type = yyjson_get_str(type_val);
+		} else {
+			return "TransformTerm property 'type' is not of type 'string'";
+		}
 	}
 	auto transform_val = yyjson_obj_get(obj, "transform");
 	if (!transform_val) {

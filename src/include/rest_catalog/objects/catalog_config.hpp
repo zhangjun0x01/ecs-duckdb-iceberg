@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class CatalogConfig {
 public:
 	CatalogConfig();
+	CatalogConfig(const CatalogConfig &) = delete;
+	CatalogConfig &operator=(const CatalogConfig &) = delete;
+	CatalogConfig(CatalogConfig &&) = default;
+	CatalogConfig &operator=(CatalogConfig &&) = default;
 
 public:
 	static CatalogConfig FromJSON(yyjson_val *obj);

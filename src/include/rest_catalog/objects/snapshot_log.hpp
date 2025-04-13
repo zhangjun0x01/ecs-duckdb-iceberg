@@ -15,9 +15,17 @@ namespace rest_api_objects {
 class SnapshotLog {
 public:
 	SnapshotLog();
+	SnapshotLog(const SnapshotLog &) = delete;
+	SnapshotLog &operator=(const SnapshotLog &) = delete;
+	SnapshotLog(SnapshotLog &&) = default;
+	SnapshotLog &operator=(SnapshotLog &&) = default;
 	class Object3 {
 	public:
 		Object3();
+		Object3(const Object3 &) = delete;
+		Object3 &operator=(const Object3 &) = delete;
+		Object3(Object3 &&) = default;
+		Object3 &operator=(Object3 &&) = default;
 
 	public:
 		static Object3 FromJSON(yyjson_val *obj);

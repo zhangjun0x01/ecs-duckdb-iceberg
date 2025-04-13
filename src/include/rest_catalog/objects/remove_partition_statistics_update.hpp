@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class RemovePartitionStatisticsUpdate {
 public:
 	RemovePartitionStatisticsUpdate();
+	RemovePartitionStatisticsUpdate(const RemovePartitionStatisticsUpdate &) = delete;
+	RemovePartitionStatisticsUpdate &operator=(const RemovePartitionStatisticsUpdate &) = delete;
+	RemovePartitionStatisticsUpdate(RemovePartitionStatisticsUpdate &&) = default;
+	RemovePartitionStatisticsUpdate &operator=(RemovePartitionStatisticsUpdate &&) = default;
 
 public:
 	static RemovePartitionStatisticsUpdate FromJSON(yyjson_val *obj);

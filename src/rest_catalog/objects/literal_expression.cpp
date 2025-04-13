@@ -49,7 +49,11 @@ string LiteralExpression::TryFromJSON(yyjson_val *obj) {
 	if (!value_val) {
 		return "LiteralExpression required property 'value' is missing";
 	} else {
-		value = value_val;
+		if (yyjson_is_obj(value_val)) {
+			value = value_val;
+		} else {
+			return "LiteralExpression property 'value' is not of type 'object'";
+		}
 	}
 	return string();
 }

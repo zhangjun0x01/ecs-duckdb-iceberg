@@ -27,7 +27,11 @@ DecimalTypeValue DecimalTypeValue::FromJSON(yyjson_val *obj) {
 
 string DecimalTypeValue::TryFromJSON(yyjson_val *obj) {
 	string error;
-	value = yyjson_get_str(obj);
+	if (yyjson_is_str(obj)) {
+		value = yyjson_get_str(obj);
+	} else {
+		return "DecimalTypeValue property 'value' is not of type 'string'";
+	}
 	return string();
 }
 

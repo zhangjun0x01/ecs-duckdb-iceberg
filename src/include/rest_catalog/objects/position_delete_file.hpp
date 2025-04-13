@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class PositionDeleteFile {
 public:
 	PositionDeleteFile();
+	PositionDeleteFile(const PositionDeleteFile &) = delete;
+	PositionDeleteFile &operator=(const PositionDeleteFile &) = delete;
+	PositionDeleteFile(PositionDeleteFile &&) = default;
+	PositionDeleteFile &operator=(PositionDeleteFile &&) = default;
 
 public:
 	static PositionDeleteFile FromJSON(yyjson_val *obj);

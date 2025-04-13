@@ -15,6 +15,10 @@ namespace rest_api_objects {
 class TableRequirement {
 public:
 	TableRequirement();
+	TableRequirement(const TableRequirement &) = delete;
+	TableRequirement &operator=(const TableRequirement &) = delete;
+	TableRequirement(TableRequirement &&) = default;
+	TableRequirement &operator=(TableRequirement &&) = default;
 
 public:
 	static TableRequirement FromJSON(yyjson_val *obj);

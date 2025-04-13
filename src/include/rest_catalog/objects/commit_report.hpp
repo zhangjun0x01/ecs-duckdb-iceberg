@@ -16,6 +16,10 @@ namespace rest_api_objects {
 class CommitReport {
 public:
 	CommitReport();
+	CommitReport(const CommitReport &) = delete;
+	CommitReport &operator=(const CommitReport &) = delete;
+	CommitReport(CommitReport &&) = default;
+	CommitReport &operator=(CommitReport &&) = default;
 
 public:
 	static CommitReport FromJSON(yyjson_val *obj);

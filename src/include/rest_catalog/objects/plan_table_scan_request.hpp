@@ -18,6 +18,10 @@ class Expression;
 class PlanTableScanRequest {
 public:
 	PlanTableScanRequest();
+	PlanTableScanRequest(const PlanTableScanRequest &) = delete;
+	PlanTableScanRequest &operator=(const PlanTableScanRequest &) = delete;
+	PlanTableScanRequest(PlanTableScanRequest &&) = default;
+	PlanTableScanRequest &operator=(PlanTableScanRequest &&) = default;
 
 public:
 	static PlanTableScanRequest FromJSON(yyjson_val *obj);
