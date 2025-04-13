@@ -617,7 +617,7 @@ class CPPClass:
                 [
                     '\tsize_t idx, max;',
                     '\tyyjson_val *key, *val;',
-                    '\tyyjson_obj_foreach(obj, idx, max, key, val) {',
+                    f'\tyyjson_obj_foreach({source}, idx, max, key, val) {{',
                 ]
             )
             # FIXME: check for null in returned char*?
