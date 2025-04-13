@@ -36,7 +36,8 @@ string MetadataLog::Object4::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(metadata_file_val)) {
 			metadata_file = yyjson_get_str(metadata_file_val);
 		} else {
-			return "Object4 property 'metadata_file' is not of type 'string'";
+			return StringUtil::Format("Object4 property 'metadata_file' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(metadata_file_val));
 		}
 	}
 	auto timestamp_ms_val = yyjson_obj_get(obj, "timestamp-ms");
@@ -46,7 +47,8 @@ string MetadataLog::Object4::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(timestamp_ms_val)) {
 			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 		} else {
-			return "Object4 property 'timestamp_ms' is not of type 'integer'";
+			return StringUtil::Format("Object4 property 'timestamp_ms' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(timestamp_ms_val));
 		}
 	}
 	return string();

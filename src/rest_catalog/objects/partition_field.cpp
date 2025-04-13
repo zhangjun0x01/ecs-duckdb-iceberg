@@ -34,7 +34,9 @@ string PartitionField::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(source_id_val)) {
 			source_id = yyjson_get_sint(source_id_val);
 		} else {
-			return "PartitionField property 'source_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "PartitionField property 'source_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(source_id_val));
 		}
 	}
 	auto transform_val = yyjson_obj_get(obj, "transform");
@@ -53,7 +55,8 @@ string PartitionField::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(name_val)) {
 			name = yyjson_get_str(name_val);
 		} else {
-			return "PartitionField property 'name' is not of type 'string'";
+			return StringUtil::Format("PartitionField property 'name' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(name_val));
 		}
 	}
 	auto field_id_val = yyjson_obj_get(obj, "field-id");
@@ -62,7 +65,8 @@ string PartitionField::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(field_id_val)) {
 			field_id = yyjson_get_sint(field_id_val);
 		} else {
-			return "PartitionField property 'field_id' is not of type 'integer'";
+			return StringUtil::Format("PartitionField property 'field_id' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(field_id_val));
 		}
 	}
 	return string();

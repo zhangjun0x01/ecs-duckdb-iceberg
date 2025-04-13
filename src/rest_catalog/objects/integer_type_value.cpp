@@ -30,7 +30,8 @@ string IntegerTypeValue::TryFromJSON(yyjson_val *obj) {
 	if (yyjson_is_sint(obj)) {
 		value = yyjson_get_sint(obj);
 	} else {
-		return "IntegerTypeValue property 'value' is not of type 'integer'";
+		return StringUtil::Format("IntegerTypeValue property 'value' is not of type 'integer', found '%s' instead",
+		                          yyjson_get_type_desc(obj));
 	}
 	return string();
 }

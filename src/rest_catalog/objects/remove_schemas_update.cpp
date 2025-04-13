@@ -42,7 +42,9 @@ string RemoveSchemasUpdate::TryFromJSON(yyjson_val *obj) {
 			if (yyjson_is_sint(val)) {
 				tmp = yyjson_get_sint(val);
 			} else {
-				return "RemoveSchemasUpdate property 'tmp' is not of type 'integer'";
+				return StringUtil::Format(
+				    "RemoveSchemasUpdate property 'tmp' is not of type 'integer', found '%s' instead",
+				    yyjson_get_type_desc(val));
 			}
 			schema_ids.emplace_back(std::move(tmp));
 		}
@@ -53,7 +55,9 @@ string RemoveSchemasUpdate::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(action_val)) {
 			action = yyjson_get_str(action_val);
 		} else {
-			return "RemoveSchemasUpdate property 'action' is not of type 'string'";
+			return StringUtil::Format(
+			    "RemoveSchemasUpdate property 'action' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(action_val));
 		}
 	}
 	return string();

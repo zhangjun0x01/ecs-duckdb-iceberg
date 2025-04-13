@@ -33,7 +33,9 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(snapshot_id_val)) {
 			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		} else {
-			return "PlanTableScanRequest property 'snapshot_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "PlanTableScanRequest property 'snapshot_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(snapshot_id_val));
 		}
 	}
 	auto select_val = yyjson_obj_get(obj, "select");
@@ -65,7 +67,9 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_bool(case_sensitive_val)) {
 			case_sensitive = yyjson_get_bool(case_sensitive_val);
 		} else {
-			return "PlanTableScanRequest property 'case_sensitive' is not of type 'boolean'";
+			return StringUtil::Format(
+			    "PlanTableScanRequest property 'case_sensitive' is not of type 'boolean', found '%s' instead",
+			    yyjson_get_type_desc(case_sensitive_val));
 		}
 	}
 	auto use_snapshot_schema_val = yyjson_obj_get(obj, "use-snapshot-schema");
@@ -74,7 +78,9 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_bool(use_snapshot_schema_val)) {
 			use_snapshot_schema = yyjson_get_bool(use_snapshot_schema_val);
 		} else {
-			return "PlanTableScanRequest property 'use_snapshot_schema' is not of type 'boolean'";
+			return StringUtil::Format(
+			    "PlanTableScanRequest property 'use_snapshot_schema' is not of type 'boolean', found '%s' instead",
+			    yyjson_get_type_desc(use_snapshot_schema_val));
 		}
 	}
 	auto start_snapshot_id_val = yyjson_obj_get(obj, "start-snapshot-id");
@@ -83,7 +89,9 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(start_snapshot_id_val)) {
 			start_snapshot_id = yyjson_get_sint(start_snapshot_id_val);
 		} else {
-			return "PlanTableScanRequest property 'start_snapshot_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "PlanTableScanRequest property 'start_snapshot_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(start_snapshot_id_val));
 		}
 	}
 	auto end_snapshot_id_val = yyjson_obj_get(obj, "end-snapshot-id");
@@ -92,7 +100,9 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(end_snapshot_id_val)) {
 			end_snapshot_id = yyjson_get_sint(end_snapshot_id_val);
 		} else {
-			return "PlanTableScanRequest property 'end_snapshot_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "PlanTableScanRequest property 'end_snapshot_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(end_snapshot_id_val));
 		}
 	}
 	auto stats_fields_val = yyjson_obj_get(obj, "stats-fields");

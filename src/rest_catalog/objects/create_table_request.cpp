@@ -34,7 +34,8 @@ string CreateTableRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(name_val)) {
 			name = yyjson_get_str(name_val);
 		} else {
-			return "CreateTableRequest property 'name' is not of type 'string'";
+			return StringUtil::Format("CreateTableRequest property 'name' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(name_val));
 		}
 	}
 	auto schema_val = yyjson_obj_get(obj, "schema");
@@ -52,7 +53,9 @@ string CreateTableRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(location_val)) {
 			location = yyjson_get_str(location_val);
 		} else {
-			return "CreateTableRequest property 'location' is not of type 'string'";
+			return StringUtil::Format(
+			    "CreateTableRequest property 'location' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(location_val));
 		}
 	}
 	auto partition_spec_val = yyjson_obj_get(obj, "partition-spec");
@@ -77,7 +80,9 @@ string CreateTableRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_bool(stage_create_val)) {
 			stage_create = yyjson_get_bool(stage_create_val);
 		} else {
-			return "CreateTableRequest property 'stage_create' is not of type 'boolean'";
+			return StringUtil::Format(
+			    "CreateTableRequest property 'stage_create' is not of type 'boolean', found '%s' instead",
+			    yyjson_get_type_desc(stage_create_val));
 		}
 	}
 	auto properties_val = yyjson_obj_get(obj, "properties");
@@ -92,7 +97,9 @@ string CreateTableRequest::TryFromJSON(yyjson_val *obj) {
 				if (yyjson_is_str(val)) {
 					tmp = yyjson_get_str(val);
 				} else {
-					return "CreateTableRequest property 'tmp' is not of type 'string'";
+					return StringUtil::Format(
+					    "CreateTableRequest property 'tmp' is not of type 'string', found '%s' instead",
+					    yyjson_get_type_desc(val));
 				}
 				properties.emplace(key_str, std::move(tmp));
 			}

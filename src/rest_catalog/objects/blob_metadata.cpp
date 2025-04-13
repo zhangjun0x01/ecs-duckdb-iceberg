@@ -34,7 +34,8 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(type_val)) {
 			type = yyjson_get_str(type_val);
 		} else {
-			return "BlobMetadata property 'type' is not of type 'string'";
+			return StringUtil::Format("BlobMetadata property 'type' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(type_val));
 		}
 	}
 	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
@@ -44,7 +45,9 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(snapshot_id_val)) {
 			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		} else {
-			return "BlobMetadata property 'snapshot_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "BlobMetadata property 'snapshot_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(snapshot_id_val));
 		}
 	}
 	auto sequence_number_val = yyjson_obj_get(obj, "sequence-number");
@@ -54,7 +57,9 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(sequence_number_val)) {
 			sequence_number = yyjson_get_sint(sequence_number_val);
 		} else {
-			return "BlobMetadata property 'sequence_number' is not of type 'integer'";
+			return StringUtil::Format(
+			    "BlobMetadata property 'sequence_number' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(sequence_number_val));
 		}
 	}
 	auto fields_val = yyjson_obj_get(obj, "fields");
@@ -68,7 +73,8 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 			if (yyjson_is_sint(val)) {
 				tmp = yyjson_get_sint(val);
 			} else {
-				return "BlobMetadata property 'tmp' is not of type 'integer'";
+				return StringUtil::Format("BlobMetadata property 'tmp' is not of type 'integer', found '%s' instead",
+				                          yyjson_get_type_desc(val));
 			}
 			fields.emplace_back(std::move(tmp));
 		}
@@ -85,7 +91,8 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 				if (yyjson_is_str(val)) {
 					tmp = yyjson_get_str(val);
 				} else {
-					return "BlobMetadata property 'tmp' is not of type 'string'";
+					return StringUtil::Format("BlobMetadata property 'tmp' is not of type 'string', found '%s' instead",
+					                          yyjson_get_type_desc(val));
 				}
 				properties.emplace(key_str, std::move(tmp));
 			}

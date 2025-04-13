@@ -34,7 +34,9 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(format_version_val)) {
 			format_version = yyjson_get_sint(format_version_val);
 		} else {
-			return "TableMetadata property 'format_version' is not of type 'integer'";
+			return StringUtil::Format(
+			    "TableMetadata property 'format_version' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(format_version_val));
 		}
 	}
 	auto table_uuid_val = yyjson_obj_get(obj, "table-uuid");
@@ -44,7 +46,8 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(table_uuid_val)) {
 			table_uuid = yyjson_get_str(table_uuid_val);
 		} else {
-			return "TableMetadata property 'table_uuid' is not of type 'string'";
+			return StringUtil::Format("TableMetadata property 'table_uuid' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(table_uuid_val));
 		}
 	}
 	auto location_val = yyjson_obj_get(obj, "location");
@@ -53,7 +56,8 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(location_val)) {
 			location = yyjson_get_str(location_val);
 		} else {
-			return "TableMetadata property 'location' is not of type 'string'";
+			return StringUtil::Format("TableMetadata property 'location' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(location_val));
 		}
 	}
 	auto last_updated_ms_val = yyjson_obj_get(obj, "last-updated-ms");
@@ -62,7 +66,9 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(last_updated_ms_val)) {
 			last_updated_ms = yyjson_get_sint(last_updated_ms_val);
 		} else {
-			return "TableMetadata property 'last_updated_ms' is not of type 'integer'";
+			return StringUtil::Format(
+			    "TableMetadata property 'last_updated_ms' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(last_updated_ms_val));
 		}
 	}
 	auto properties_val = yyjson_obj_get(obj, "properties");
@@ -77,7 +83,9 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 				if (yyjson_is_str(val)) {
 					tmp = yyjson_get_str(val);
 				} else {
-					return "TableMetadata property 'tmp' is not of type 'string'";
+					return StringUtil::Format(
+					    "TableMetadata property 'tmp' is not of type 'string', found '%s' instead",
+					    yyjson_get_type_desc(val));
 				}
 				properties.emplace(key_str, std::move(tmp));
 			}
@@ -105,7 +113,9 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(current_schema_id_val)) {
 			current_schema_id = yyjson_get_sint(current_schema_id_val);
 		} else {
-			return "TableMetadata property 'current_schema_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "TableMetadata property 'current_schema_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(current_schema_id_val));
 		}
 	}
 	auto last_column_id_val = yyjson_obj_get(obj, "last-column-id");
@@ -114,7 +124,9 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(last_column_id_val)) {
 			last_column_id = yyjson_get_sint(last_column_id_val);
 		} else {
-			return "TableMetadata property 'last_column_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "TableMetadata property 'last_column_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(last_column_id_val));
 		}
 	}
 	auto partition_specs_val = yyjson_obj_get(obj, "partition-specs");
@@ -137,7 +149,9 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(default_spec_id_val)) {
 			default_spec_id = yyjson_get_sint(default_spec_id_val);
 		} else {
-			return "TableMetadata property 'default_spec_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "TableMetadata property 'default_spec_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(default_spec_id_val));
 		}
 	}
 	auto last_partition_id_val = yyjson_obj_get(obj, "last-partition-id");
@@ -146,7 +160,9 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(last_partition_id_val)) {
 			last_partition_id = yyjson_get_sint(last_partition_id_val);
 		} else {
-			return "TableMetadata property 'last_partition_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "TableMetadata property 'last_partition_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(last_partition_id_val));
 		}
 	}
 	auto sort_orders_val = yyjson_obj_get(obj, "sort-orders");
@@ -169,7 +185,9 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(default_sort_order_id_val)) {
 			default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
 		} else {
-			return "TableMetadata property 'default_sort_order_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "TableMetadata property 'default_sort_order_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(default_sort_order_id_val));
 		}
 	}
 	auto snapshots_val = yyjson_obj_get(obj, "snapshots");
@@ -200,7 +218,9 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(current_snapshot_id_val)) {
 			current_snapshot_id = yyjson_get_sint(current_snapshot_id_val);
 		} else {
-			return "TableMetadata property 'current_snapshot_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "TableMetadata property 'current_snapshot_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(current_snapshot_id_val));
 		}
 	}
 	auto last_sequence_number_val = yyjson_obj_get(obj, "last-sequence-number");
@@ -209,7 +229,9 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(last_sequence_number_val)) {
 			last_sequence_number = yyjson_get_sint(last_sequence_number_val);
 		} else {
-			return "TableMetadata property 'last_sequence_number' is not of type 'integer'";
+			return StringUtil::Format(
+			    "TableMetadata property 'last_sequence_number' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(last_sequence_number_val));
 		}
 	}
 	auto snapshot_log_val = yyjson_obj_get(obj, "snapshot-log");

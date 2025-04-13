@@ -38,7 +38,9 @@ string RemovePartitionStatisticsUpdate::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(snapshot_id_val)) {
 			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		} else {
-			return "RemovePartitionStatisticsUpdate property 'snapshot_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "RemovePartitionStatisticsUpdate property 'snapshot_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(snapshot_id_val));
 		}
 	}
 	auto action_val = yyjson_obj_get(obj, "action");
@@ -47,7 +49,9 @@ string RemovePartitionStatisticsUpdate::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(action_val)) {
 			action = yyjson_get_str(action_val);
 		} else {
-			return "RemovePartitionStatisticsUpdate property 'action' is not of type 'string'";
+			return StringUtil::Format(
+			    "RemovePartitionStatisticsUpdate property 'action' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(action_val));
 		}
 	}
 	return string();

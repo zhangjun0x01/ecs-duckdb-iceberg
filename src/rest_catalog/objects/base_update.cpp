@@ -34,7 +34,8 @@ string BaseUpdate::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(action_val)) {
 			action = yyjson_get_str(action_val);
 		} else {
-			return "BaseUpdate property 'action' is not of type 'string'";
+			return StringUtil::Format("BaseUpdate property 'action' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(action_val));
 		}
 	}
 	return string();

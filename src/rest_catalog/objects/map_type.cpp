@@ -34,7 +34,8 @@ string MapType::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(type_val)) {
 			type = yyjson_get_str(type_val);
 		} else {
-			return "MapType property 'type' is not of type 'string'";
+			return StringUtil::Format("MapType property 'type' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(type_val));
 		}
 	}
 	auto key_id_val = yyjson_obj_get(obj, "key-id");
@@ -44,7 +45,8 @@ string MapType::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(key_id_val)) {
 			key_id = yyjson_get_sint(key_id_val);
 		} else {
-			return "MapType property 'key_id' is not of type 'integer'";
+			return StringUtil::Format("MapType property 'key_id' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(key_id_val));
 		}
 	}
 	auto key_val = yyjson_obj_get(obj, "key");
@@ -64,7 +66,8 @@ string MapType::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(value_id_val)) {
 			value_id = yyjson_get_sint(value_id_val);
 		} else {
-			return "MapType property 'value_id' is not of type 'integer'";
+			return StringUtil::Format("MapType property 'value_id' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(value_id_val));
 		}
 	}
 	auto value_val = yyjson_obj_get(obj, "value");
@@ -84,7 +87,8 @@ string MapType::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_bool(value_required_val)) {
 			value_required = yyjson_get_bool(value_required_val);
 		} else {
-			return "MapType property 'value_required' is not of type 'boolean'";
+			return StringUtil::Format("MapType property 'value_required' is not of type 'boolean', found '%s' instead",
+			                          yyjson_get_type_desc(value_required_val));
 		}
 	}
 	return string();

@@ -45,7 +45,9 @@ string ReportMetricsRequest::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(report_type_val)) {
 			report_type = yyjson_get_str(report_type_val);
 		} else {
-			return "ReportMetricsRequest property 'report_type' is not of type 'string'";
+			return StringUtil::Format(
+			    "ReportMetricsRequest property 'report_type' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(report_type_val));
 		}
 	}
 	return string();

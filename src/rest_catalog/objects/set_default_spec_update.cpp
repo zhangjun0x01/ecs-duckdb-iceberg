@@ -38,7 +38,9 @@ string SetDefaultSpecUpdate::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(spec_id_val)) {
 			spec_id = yyjson_get_sint(spec_id_val);
 		} else {
-			return "SetDefaultSpecUpdate property 'spec_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "SetDefaultSpecUpdate property 'spec_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(spec_id_val));
 		}
 	}
 	auto action_val = yyjson_obj_get(obj, "action");
@@ -47,7 +49,9 @@ string SetDefaultSpecUpdate::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(action_val)) {
 			action = yyjson_get_str(action_val);
 		} else {
-			return "SetDefaultSpecUpdate property 'action' is not of type 'string'";
+			return StringUtil::Format(
+			    "SetDefaultSpecUpdate property 'action' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(action_val));
 		}
 	}
 	return string();

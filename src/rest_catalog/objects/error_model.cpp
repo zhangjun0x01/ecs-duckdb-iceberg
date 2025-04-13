@@ -34,7 +34,8 @@ string ErrorModel::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(message_val)) {
 			message = yyjson_get_str(message_val);
 		} else {
-			return "ErrorModel property 'message' is not of type 'string'";
+			return StringUtil::Format("ErrorModel property 'message' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(message_val));
 		}
 	}
 	auto type_val = yyjson_obj_get(obj, "type");
@@ -44,7 +45,8 @@ string ErrorModel::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(type_val)) {
 			type = yyjson_get_str(type_val);
 		} else {
-			return "ErrorModel property 'type' is not of type 'string'";
+			return StringUtil::Format("ErrorModel property 'type' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(type_val));
 		}
 	}
 	auto code_val = yyjson_obj_get(obj, "code");
@@ -54,7 +56,8 @@ string ErrorModel::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(code_val)) {
 			code = yyjson_get_sint(code_val);
 		} else {
-			return "ErrorModel property 'code' is not of type 'integer'";
+			return StringUtil::Format("ErrorModel property 'code' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(code_val));
 		}
 	}
 	auto stack_val = yyjson_obj_get(obj, "stack");
@@ -67,7 +70,8 @@ string ErrorModel::TryFromJSON(yyjson_val *obj) {
 			if (yyjson_is_str(val)) {
 				tmp = yyjson_get_str(val);
 			} else {
-				return "ErrorModel property 'tmp' is not of type 'string'";
+				return StringUtil::Format("ErrorModel property 'tmp' is not of type 'string', found '%s' instead",
+				                          yyjson_get_type_desc(val));
 			}
 			stack.emplace_back(std::move(tmp));
 		}

@@ -595,7 +595,7 @@ class CPPClass:
                 f'if ({type_mapping.type_check}({source})) {{',
                 f'\t{target} = {type_mapping.conversion}({source});',
                 '} else {',
-                f"""\treturn "{self.name} property '{target}' is not of type '{item_type}'";""",
+                f"""\treturn StringUtil::Format("{self.name} property '{target}' is not of type '{item_type}', found '%s' instead", yyjson_get_type_desc({source}));""",
                 '}',
             ]
         elif property.type == Property.Type.OBJECT and property.is_raw_object():

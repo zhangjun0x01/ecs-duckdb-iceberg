@@ -34,7 +34,8 @@ string ViewMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(view_uuid_val)) {
 			view_uuid = yyjson_get_str(view_uuid_val);
 		} else {
-			return "ViewMetadata property 'view_uuid' is not of type 'string'";
+			return StringUtil::Format("ViewMetadata property 'view_uuid' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(view_uuid_val));
 		}
 	}
 	auto format_version_val = yyjson_obj_get(obj, "format-version");
@@ -44,7 +45,9 @@ string ViewMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(format_version_val)) {
 			format_version = yyjson_get_sint(format_version_val);
 		} else {
-			return "ViewMetadata property 'format_version' is not of type 'integer'";
+			return StringUtil::Format(
+			    "ViewMetadata property 'format_version' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(format_version_val));
 		}
 	}
 	auto location_val = yyjson_obj_get(obj, "location");
@@ -54,7 +57,8 @@ string ViewMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(location_val)) {
 			location = yyjson_get_str(location_val);
 		} else {
-			return "ViewMetadata property 'location' is not of type 'string'";
+			return StringUtil::Format("ViewMetadata property 'location' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(location_val));
 		}
 	}
 	auto current_version_id_val = yyjson_obj_get(obj, "current-version-id");
@@ -64,7 +68,9 @@ string ViewMetadata::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(current_version_id_val)) {
 			current_version_id = yyjson_get_sint(current_version_id_val);
 		} else {
-			return "ViewMetadata property 'current_version_id' is not of type 'integer'";
+			return StringUtil::Format(
+			    "ViewMetadata property 'current_version_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(current_version_id_val));
 		}
 	}
 	auto versions_val = yyjson_obj_get(obj, "versions");
@@ -124,7 +130,8 @@ string ViewMetadata::TryFromJSON(yyjson_val *obj) {
 				if (yyjson_is_str(val)) {
 					tmp = yyjson_get_str(val);
 				} else {
-					return "ViewMetadata property 'tmp' is not of type 'string'";
+					return StringUtil::Format("ViewMetadata property 'tmp' is not of type 'string', found '%s' instead",
+					                          yyjson_get_type_desc(val));
 				}
 				properties.emplace(key_str, std::move(tmp));
 			}

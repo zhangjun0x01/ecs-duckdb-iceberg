@@ -30,7 +30,8 @@ string BooleanTypeValue::TryFromJSON(yyjson_val *obj) {
 	if (yyjson_is_bool(obj)) {
 		value = yyjson_get_bool(obj);
 	} else {
-		return "BooleanTypeValue property 'value' is not of type 'boolean'";
+		return StringUtil::Format("BooleanTypeValue property 'value' is not of type 'boolean', found '%s' instead",
+		                          yyjson_get_type_desc(obj));
 	}
 	return string();
 }

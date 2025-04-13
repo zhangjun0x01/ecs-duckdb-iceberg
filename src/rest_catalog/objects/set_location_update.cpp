@@ -38,7 +38,9 @@ string SetLocationUpdate::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(location_val)) {
 			location = yyjson_get_str(location_val);
 		} else {
-			return "SetLocationUpdate property 'location' is not of type 'string'";
+			return StringUtil::Format(
+			    "SetLocationUpdate property 'location' is not of type 'string', found '%s' instead",
+			    yyjson_get_type_desc(location_val));
 		}
 	}
 	auto action_val = yyjson_obj_get(obj, "action");
@@ -47,7 +49,8 @@ string SetLocationUpdate::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_str(action_val)) {
 			action = yyjson_get_str(action_val);
 		} else {
-			return "SetLocationUpdate property 'action' is not of type 'string'";
+			return StringUtil::Format("SetLocationUpdate property 'action' is not of type 'string', found '%s' instead",
+			                          yyjson_get_type_desc(action_val));
 		}
 	}
 	return string();

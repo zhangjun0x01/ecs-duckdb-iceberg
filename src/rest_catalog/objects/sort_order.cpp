@@ -34,7 +34,8 @@ string SortOrder::TryFromJSON(yyjson_val *obj) {
 		if (yyjson_is_sint(order_id_val)) {
 			order_id = yyjson_get_sint(order_id_val);
 		} else {
-			return "SortOrder property 'order_id' is not of type 'integer'";
+			return StringUtil::Format("SortOrder property 'order_id' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(order_id_val));
 		}
 	}
 	auto fields_val = yyjson_obj_get(obj, "fields");
