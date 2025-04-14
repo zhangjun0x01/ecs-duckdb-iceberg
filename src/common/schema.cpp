@@ -103,7 +103,7 @@ static LogicalType ParseTypeValue(rest_api_objects::Type &type) {
 	throw InvalidConfigurationException("Encountered an unrecognized type in JSON schema: \"%s\"", type_str);
 }
 
-static IcebergColumnDefinition ParseFromJson(rest_api_objects::StructField &field) {
+IcebergColumnDefinition IcebergColumnDefinition::ParseFromJson(rest_api_objects::StructField &field) {
 	IcebergColumnDefinition ret;
 
 	ret.id = field.id;
@@ -122,7 +122,7 @@ static vector<IcebergColumnDefinition> ParseSchemaFromJson(yyjson_val *schema_js
 
 	vector<IcebergColumnDefinition> ret;
 	for (auto &field : struct_type.fields) {
-		ret.push_back(ParseFromJson(*field));
+		ret.push_back(IcebergColumnDefinition::ParseFromJson(*field));
 	}
 	return ret;
 }

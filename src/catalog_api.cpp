@@ -66,33 +66,6 @@ vector<string> IRCAPI::GetCatalogs(ClientContext &context, IRCatalog &catalog) {
 	throw NotImplementedException("ICAPI::GetCatalogs");
 }
 
-static IRCAPIColumnDefinition ParseColumnDefinition(const rest_api_objects::StructField &column_def) {
-	IRCAPIColumnDefinition result;
-	result.name = column_def.name;
-	auto &type = column_def.type;
-
-	result.precision = -1;
-	result.scale = -1;
-	if (type->has_primitive_type) {
-		//! FIXME: only primitive types have 'type_text'
-		result.type_text = type->primitive_type.value;
-		auto &primitive_type = type->primitive_type;
-		if (StringUtil::StartsWith(primitive_type.value, "decimal")) {
-			auto &decimal_type = primitive_type.value;
-			//! FIXME: This was 'type_precision' and 'type_scale', but 'type-precision' or 'type_precision' are not
-			//! valid fields of the spec?
-			// instead, the PrimitiveType can contain a 'value' property that can have 'decimal(10,2)' as its value)
-			if (sscanf(decimal_type.c_str(), "decimal(%lld,%lld)", &result.precision, &result.scale) != 2) {
-				throw InvalidInputException("Expected format: 'decimal(%d,%d)', got '%s'", decimal_type);
-			}
-		}
-	} else {
-		throw NotImplementedException("Can't currently parse non-primitive types");
-	}
-	result.position = column_def.id;
-	return result;
-}
-
 static void ParseConfigOptions(const case_insensitive_map_t<string> &config, case_insensitive_map_t<Value> &options) {
 	//! Set of recognized config parameters and the duckdb secret option that matches it.
 	static const case_insensitive_map_t<string> config_to_option = {{"s3.access-key-id", "key_id"},
@@ -257,8 +230,7 @@ static void populateTableMetadata(IRCAPITable &table, const rest_api_objects::Lo
 			found = true;
 			auto &columns = schema.struct_type.fields;
 			for (auto &col : columns) {
-				auto column_definition = ParseColumnDefinition(*col);
-				table.columns.push_back(column_definition);
+				table.columns.push_back(IcebergColumnDefinition::ParseFromJson(*col));
 			}
 		}
 	}
@@ -291,15 +263,12 @@ IRCAPITable IRCAPI::GetTable(ClientContext &context, IRCatalog &catalog, const s
 		populateTableMetadata(table_result, load_table_result);
 	} else {
 		// Skip fetching metadata, we'll do it later when we access the table
-		IRCAPIColumnDefinition col;
+		IcebergColumnDefinition col;
 		col.name = "__";
-		col.type_text = "int";
-		col.precision = -1;
-		col.scale = -1;
-		col.position = 0;
+		col.id = 0;
+		col.type = LogicalType::UNKNOWN;
 		table_result.columns.push_back(col);
 	}
-
 	return table_result;
 }
 

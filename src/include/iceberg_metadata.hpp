@@ -12,6 +12,7 @@
 #include "yyjson.hpp"
 #include "iceberg_types.hpp"
 #include "iceberg_options.hpp"
+#include "rest_catalog/objects/struct_field.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -19,6 +20,7 @@ namespace duckdb {
 
 struct IcebergColumnDefinition {
 public:
+	static IcebergColumnDefinition ParseFromJson(rest_api_objects::StructField &field);
 	LogicalType ToDuckDBType() {
 		return type;
 	}
