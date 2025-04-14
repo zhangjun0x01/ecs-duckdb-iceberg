@@ -24,7 +24,7 @@ using namespace duckdb_yyjson;
 namespace duckdb {
 
 static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table) {
-	RequestInput curl_handle;
+	RequestInput request_input;
 
 	auto url = catalog.GetBaseUrl();
 	url.AddPathComponent(catalog.prefix);
@@ -33,8 +33,8 @@ static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const
 	url.AddPathComponent("tables");
 	url.AddPathComponent(table);
 
-	curl_handle.AddHeader("X-Iceberg-Access-Delegation: vended-credentials");
-	string api_result = catalog.auth_handler->GetRequest(context, url, curl_handle);
+	request_input.AddHeader("X-Iceberg-Access-Delegation: vended-credentials");
+	string api_result = catalog.auth_handler->GetRequest(context, url, request_input);
 
 	catalog.SetCachedValue(url.GetURL(), api_result);
 	return api_result;
@@ -288,8 +288,8 @@ vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog
 	url.AddPathComponent("namespaces");
 	url.AddPathComponent(schema);
 	url.AddPathComponent("tables");
-	RequestInput curl_handle;
-	string api_result = catalog.auth_handler->GetRequest(context, url, curl_handle);
+	RequestInput request_input;
+	string api_result = catalog.auth_handler->GetRequest(context, url, request_input);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *tables = yyjson_obj_get(root, "identifiers");
@@ -308,8 +308,8 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catal
 	auto endpoint_builder = catalog.GetBaseUrl();
 	endpoint_builder.AddPathComponent(catalog.prefix);
 	endpoint_builder.AddPathComponent("namespaces");
-	RequestInput curl_handle;
-	string api_result = catalog.auth_handler->GetRequest(context, endpoint_builder, curl_handle);
+	RequestInput request_input;
+	string api_result = catalog.auth_handler->GetRequest(context, endpoint_builder, request_input);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	//! 'ListNamespacesResponse'
