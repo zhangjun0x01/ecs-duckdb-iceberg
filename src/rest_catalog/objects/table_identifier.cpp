@@ -40,7 +40,9 @@ string TableIdentifier::TryFromJSON(yyjson_val *obj) {
 	if (!name_val) {
 		return "TableIdentifier required property 'name' is missing";
 	} else {
-		if (yyjson_is_str(name_val)) {
+		if (yyjson_is_null(name_val)) {
+			return "TableIdentifier property 'name' is not nullable, but is 'null'"
+		} else if (yyjson_is_str(name_val)) {
 			name = yyjson_get_str(name_val);
 		} else {
 			return StringUtil::Format("TableIdentifier property 'name' is not of type 'string', found '%s' instead",

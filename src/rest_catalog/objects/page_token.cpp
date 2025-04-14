@@ -27,7 +27,9 @@ PageToken PageToken::FromJSON(yyjson_val *obj) {
 
 string PageToken::TryFromJSON(yyjson_val *obj) {
 	string error;
-	if (yyjson_is_str(obj)) {
+	if (yyjson_is_null(obj)) {
+		//! do nothing, property is explicitly nullable
+	} else if (yyjson_is_str(obj)) {
 		value = yyjson_get_str(obj);
 	} else {
 		return StringUtil::Format("PageToken property 'value' is not of type 'string', found '%s' instead",

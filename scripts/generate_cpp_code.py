@@ -572,6 +572,21 @@ class CPPClass:
         return res
 
     def generate_item_parse(self, property: Property, source: str, target: str) -> List[str]:
+        res = []
+        prefix = ''
+        if property.nullable is not None:
+            prefix = '} else '
+            if property.nullable == True:
+                res.extend([f'if (yyjson_is_null({source})) {{', '\t//! do nothing, property is explicitly nullable'])
+            else:
+                res.extend(
+                    [
+                        f'if (yyjson_is_null({source})) {{',
+                        f'''\treturn "{self.name} property '{target}' is not nullable, but is 'null'"''',
+                    ]
+                )
+                pass
+
         if property.type == Property.Type.SCHEMA_REFERENCE:
             print(f"Unrecognized property type {property.type}, {source}")
             exit(1)
@@ -591,28 +606,30 @@ class CPPClass:
             type_mapping: PrimitiveTypeMapping = PRIMITIVE_TYPE_MAPPING[item_type]
             # NOTE: no need to really check the 'format' of the 'property' here
             # FIXME: 'target' is not the property name in the spec, it's already been transformed to the cpp variable name
-            return [
-                f'if ({type_mapping.type_check}({source})) {{',
-                f'\t{target} = {type_mapping.conversion}({source});',
-                '} else {',
-                f"""\treturn StringUtil::Format("{self.name} property '{target}' is not of type '{item_type}', found '%s' instead", yyjson_get_type_desc({source}));""",
-                '}',
-            ]
+            res.extend(
+                [
+                    f'{prefix}if ({type_mapping.type_check}({source})) {{',
+                    f'\t{target} = {type_mapping.conversion}({source});',
+                    '} else {',
+                    f"""\treturn StringUtil::Format("{self.name} property '{target}' is not of type '{item_type}', found '%s' instead", yyjson_get_type_desc({source}));""",
+                    '}',
+                ]
+            )
         elif property.type == Property.Type.OBJECT and property.is_raw_object():
-            return [
-                f'if (yyjson_is_obj({source})) {{',
-                f'\t{target} = {source};',
-                '} else {',
-                f"""\treturn "{self.name} property '{target}' is not of type 'object'";""",
-                '}',
-            ]
+            res.extend(
+                [
+                    f'{prefix}if (yyjson_is_obj({source})) {{',
+                    f'\t{target} = {source};',
+                    '} else {',
+                    f"""\treturn "{self.name} property '{target}' is not of type 'object'";""",
+                    '}',
+                ]
+            )
         elif property.type == Property.Type.OBJECT and property.additional_properties:
             object_property = cast(ObjectProperty, property)
             additional_properties = property.additional_properties
 
-            res = []
-
-            res.append(f'if (yyjson_is_obj({source})) {{')
+            res.append(f'{prefix}if (yyjson_is_obj({source})) {{')
             res.extend(
                 [
                     '\tsize_t idx, max;',
@@ -649,10 +666,10 @@ class CPPClass:
                 ]
             )
             res.extend(['} else {', f"""\treturn "{self.name} property '{target}' is not of type 'object'";""", '}'])
-            return res
         else:
             print(f"Unrecognized type in 'generate_item_parse', {property.type}")
             exit(1)
+        return res
 
     def generate_assignment(self, schema: Property, target: str, source: str) -> List[str]:
         if schema.type == Property.Type.ARRAY:
