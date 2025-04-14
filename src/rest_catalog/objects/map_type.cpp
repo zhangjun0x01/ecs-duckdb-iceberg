@@ -42,8 +42,8 @@ string MapType::TryFromJSON(yyjson_val *obj) {
 	if (!key_id_val) {
 		return "MapType required property 'key-id' is missing";
 	} else {
-		if (yyjson_is_sint(key_id_val)) {
-			key_id = yyjson_get_sint(key_id_val);
+		if (yyjson_is_int(key_id_val)) {
+			key_id = yyjson_get_int(key_id_val);
 		} else {
 			return StringUtil::Format("MapType property 'key_id' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(key_id_val));
@@ -63,8 +63,8 @@ string MapType::TryFromJSON(yyjson_val *obj) {
 	if (!value_id_val) {
 		return "MapType required property 'value-id' is missing";
 	} else {
-		if (yyjson_is_sint(value_id_val)) {
-			value_id = yyjson_get_sint(value_id_val);
+		if (yyjson_is_int(value_id_val)) {
+			value_id = yyjson_get_int(value_id_val);
 		} else {
 			return StringUtil::Format("MapType property 'value_id' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(value_id_val));

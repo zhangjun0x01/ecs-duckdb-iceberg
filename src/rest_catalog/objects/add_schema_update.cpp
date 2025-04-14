@@ -53,8 +53,8 @@ string AddSchemaUpdate::TryFromJSON(yyjson_val *obj) {
 	auto last_column_id_val = yyjson_obj_get(obj, "last-column-id");
 	if (last_column_id_val) {
 		has_last_column_id = true;
-		if (yyjson_is_sint(last_column_id_val)) {
-			last_column_id = yyjson_get_sint(last_column_id_val);
+		if (yyjson_is_int(last_column_id_val)) {
+			last_column_id = yyjson_get_int(last_column_id_val);
 		} else {
 			return StringUtil::Format(
 			    "AddSchemaUpdate property 'last_column_id' is not of type 'integer', found '%s' instead",

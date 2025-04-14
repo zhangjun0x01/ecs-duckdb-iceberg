@@ -31,8 +31,8 @@ string ViewVersion::TryFromJSON(yyjson_val *obj) {
 	if (!version_id_val) {
 		return "ViewVersion required property 'version-id' is missing";
 	} else {
-		if (yyjson_is_sint(version_id_val)) {
-			version_id = yyjson_get_sint(version_id_val);
+		if (yyjson_is_int(version_id_val)) {
+			version_id = yyjson_get_int(version_id_val);
 		} else {
 			return StringUtil::Format("ViewVersion property 'version_id' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(version_id_val));
@@ -42,8 +42,8 @@ string ViewVersion::TryFromJSON(yyjson_val *obj) {
 	if (!timestamp_ms_val) {
 		return "ViewVersion required property 'timestamp-ms' is missing";
 	} else {
-		if (yyjson_is_sint(timestamp_ms_val)) {
-			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		if (yyjson_is_int(timestamp_ms_val)) {
+			timestamp_ms = yyjson_get_int(timestamp_ms_val);
 		} else {
 			return StringUtil::Format(
 			    "ViewVersion property 'timestamp_ms' is not of type 'integer', found '%s' instead",
@@ -54,8 +54,8 @@ string ViewVersion::TryFromJSON(yyjson_val *obj) {
 	if (!schema_id_val) {
 		return "ViewVersion required property 'schema-id' is missing";
 	} else {
-		if (yyjson_is_sint(schema_id_val)) {
-			schema_id = yyjson_get_sint(schema_id_val);
+		if (yyjson_is_int(schema_id_val)) {
+			schema_id = yyjson_get_int(schema_id_val);
 		} else {
 			return StringUtil::Format("ViewVersion property 'schema_id' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(schema_id_val));

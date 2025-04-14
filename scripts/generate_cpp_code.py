@@ -189,7 +189,8 @@ class PrimitiveTypeMapping:
 
 PRIMITIVE_TYPE_MAPPING = {
     'string': PrimitiveTypeMapping(type_check='yyjson_is_str', conversion='yyjson_get_str', cpp_type='string'),
-    'integer': PrimitiveTypeMapping(type_check='yyjson_is_sint', conversion='yyjson_get_sint', cpp_type='int64_t'),
+    # FIXME: yyjson distinguishes between 'sint' and 'uint', might want to make this distinction based on 'minimum'+'maximum' values if provided
+    'integer': PrimitiveTypeMapping(type_check='yyjson_is_int', conversion='yyjson_get_int', cpp_type='int64_t'),
     'boolean': PrimitiveTypeMapping(type_check='yyjson_is_bool', conversion='yyjson_get_bool', cpp_type='bool'),
     'number': PrimitiveTypeMapping(
         type_check='yyjson_is_num',

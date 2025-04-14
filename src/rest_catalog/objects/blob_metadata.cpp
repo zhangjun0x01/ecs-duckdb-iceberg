@@ -42,8 +42,8 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 	if (!snapshot_id_val) {
 		return "BlobMetadata required property 'snapshot-id' is missing";
 	} else {
-		if (yyjson_is_sint(snapshot_id_val)) {
-			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		if (yyjson_is_int(snapshot_id_val)) {
+			snapshot_id = yyjson_get_int(snapshot_id_val);
 		} else {
 			return StringUtil::Format(
 			    "BlobMetadata property 'snapshot_id' is not of type 'integer', found '%s' instead",
@@ -54,8 +54,8 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 	if (!sequence_number_val) {
 		return "BlobMetadata required property 'sequence-number' is missing";
 	} else {
-		if (yyjson_is_sint(sequence_number_val)) {
-			sequence_number = yyjson_get_sint(sequence_number_val);
+		if (yyjson_is_int(sequence_number_val)) {
+			sequence_number = yyjson_get_int(sequence_number_val);
 		} else {
 			return StringUtil::Format(
 			    "BlobMetadata property 'sequence_number' is not of type 'integer', found '%s' instead",
@@ -71,8 +71,8 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 			yyjson_val *val;
 			yyjson_arr_foreach(fields_val, idx, max, val) {
 				int64_t tmp;
-				if (yyjson_is_sint(val)) {
-					tmp = yyjson_get_sint(val);
+				if (yyjson_is_int(val)) {
+					tmp = yyjson_get_int(val);
 				} else {
 					return StringUtil::Format(
 					    "BlobMetadata property 'tmp' is not of type 'integer', found '%s' instead",

@@ -40,8 +40,8 @@ string RemovePartitionSpecsUpdate::TryFromJSON(yyjson_val *obj) {
 			yyjson_val *val;
 			yyjson_arr_foreach(spec_ids_val, idx, max, val) {
 				int64_t tmp;
-				if (yyjson_is_sint(val)) {
-					tmp = yyjson_get_sint(val);
+				if (yyjson_is_int(val)) {
+					tmp = yyjson_get_int(val);
 				} else {
 					return StringUtil::Format(
 					    "RemovePartitionSpecsUpdate property 'tmp' is not of type 'integer', found '%s' instead",

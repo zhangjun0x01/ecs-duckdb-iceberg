@@ -35,8 +35,8 @@ string SetCurrentViewVersionUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!view_version_id_val) {
 		return "SetCurrentViewVersionUpdate required property 'view-version-id' is missing";
 	} else {
-		if (yyjson_is_sint(view_version_id_val)) {
-			view_version_id = yyjson_get_sint(view_version_id_val);
+		if (yyjson_is_int(view_version_id_val)) {
+			view_version_id = yyjson_get_int(view_version_id_val);
 		} else {
 			return StringUtil::Format(
 			    "SetCurrentViewVersionUpdate property 'view_version_id' is not of type 'integer', found '%s' instead",

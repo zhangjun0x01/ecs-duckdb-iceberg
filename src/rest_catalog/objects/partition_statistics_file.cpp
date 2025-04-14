@@ -31,8 +31,8 @@ string PartitionStatisticsFile::TryFromJSON(yyjson_val *obj) {
 	if (!snapshot_id_val) {
 		return "PartitionStatisticsFile required property 'snapshot-id' is missing";
 	} else {
-		if (yyjson_is_sint(snapshot_id_val)) {
-			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		if (yyjson_is_int(snapshot_id_val)) {
+			snapshot_id = yyjson_get_int(snapshot_id_val);
 		} else {
 			return StringUtil::Format(
 			    "PartitionStatisticsFile property 'snapshot_id' is not of type 'integer', found '%s' instead",
@@ -55,8 +55,8 @@ string PartitionStatisticsFile::TryFromJSON(yyjson_val *obj) {
 	if (!file_size_in_bytes_val) {
 		return "PartitionStatisticsFile required property 'file-size-in-bytes' is missing";
 	} else {
-		if (yyjson_is_sint(file_size_in_bytes_val)) {
-			file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
+		if (yyjson_is_int(file_size_in_bytes_val)) {
+			file_size_in_bytes = yyjson_get_int(file_size_in_bytes_val);
 		} else {
 			return StringUtil::Format(
 			    "PartitionStatisticsFile property 'file_size_in_bytes' is not of type 'integer', found '%s' instead",

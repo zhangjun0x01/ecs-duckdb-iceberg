@@ -35,8 +35,8 @@ string SetDefaultSpecUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!spec_id_val) {
 		return "SetDefaultSpecUpdate required property 'spec-id' is missing";
 	} else {
-		if (yyjson_is_sint(spec_id_val)) {
-			spec_id = yyjson_get_sint(spec_id_val);
+		if (yyjson_is_int(spec_id_val)) {
+			spec_id = yyjson_get_int(spec_id_val);
 		} else {
 			return StringUtil::Format(
 			    "SetDefaultSpecUpdate property 'spec_id' is not of type 'integer', found '%s' instead",

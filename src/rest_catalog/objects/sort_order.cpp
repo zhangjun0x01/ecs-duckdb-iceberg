@@ -31,8 +31,8 @@ string SortOrder::TryFromJSON(yyjson_val *obj) {
 	if (!order_id_val) {
 		return "SortOrder required property 'order-id' is missing";
 	} else {
-		if (yyjson_is_sint(order_id_val)) {
-			order_id = yyjson_get_sint(order_id_val);
+		if (yyjson_is_int(order_id_val)) {
+			order_id = yyjson_get_int(order_id_val);
 		} else {
 			return StringUtil::Format("SortOrder property 'order_id' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(order_id_val));

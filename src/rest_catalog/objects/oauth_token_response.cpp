@@ -54,8 +54,8 @@ string OAuthTokenResponse::TryFromJSON(yyjson_val *obj) {
 	auto expires_in_val = yyjson_obj_get(obj, "expires_in");
 	if (expires_in_val) {
 		has_expires_in = true;
-		if (yyjson_is_sint(expires_in_val)) {
-			expires_in = yyjson_get_sint(expires_in_val);
+		if (yyjson_is_int(expires_in_val)) {
+			expires_in = yyjson_get_int(expires_in_val);
 		} else {
 			return StringUtil::Format(
 			    "OAuthTokenResponse property 'expires_in' is not of type 'integer', found '%s' instead",

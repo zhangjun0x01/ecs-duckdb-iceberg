@@ -35,8 +35,8 @@ string UpgradeFormatVersionUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!format_version_val) {
 		return "UpgradeFormatVersionUpdate required property 'format-version' is missing";
 	} else {
-		if (yyjson_is_sint(format_version_val)) {
-			format_version = yyjson_get_sint(format_version_val);
+		if (yyjson_is_int(format_version_val)) {
+			format_version = yyjson_get_int(format_version_val);
 		} else {
 			return StringUtil::Format(
 			    "UpgradeFormatVersionUpdate property 'format_version' is not of type 'integer', found '%s' instead",

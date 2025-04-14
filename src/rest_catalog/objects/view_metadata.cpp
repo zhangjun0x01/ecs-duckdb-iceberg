@@ -42,8 +42,8 @@ string ViewMetadata::TryFromJSON(yyjson_val *obj) {
 	if (!format_version_val) {
 		return "ViewMetadata required property 'format-version' is missing";
 	} else {
-		if (yyjson_is_sint(format_version_val)) {
-			format_version = yyjson_get_sint(format_version_val);
+		if (yyjson_is_int(format_version_val)) {
+			format_version = yyjson_get_int(format_version_val);
 		} else {
 			return StringUtil::Format(
 			    "ViewMetadata property 'format_version' is not of type 'integer', found '%s' instead",
@@ -65,8 +65,8 @@ string ViewMetadata::TryFromJSON(yyjson_val *obj) {
 	if (!current_version_id_val) {
 		return "ViewMetadata required property 'current-version-id' is missing";
 	} else {
-		if (yyjson_is_sint(current_version_id_val)) {
-			current_version_id = yyjson_get_sint(current_version_id_val);
+		if (yyjson_is_int(current_version_id_val)) {
+			current_version_id = yyjson_get_int(current_version_id_val);
 		} else {
 			return StringUtil::Format(
 			    "ViewMetadata property 'current_version_id' is not of type 'integer', found '%s' instead",

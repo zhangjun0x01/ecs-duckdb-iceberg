@@ -53,8 +53,8 @@ string ErrorModel::TryFromJSON(yyjson_val *obj) {
 	if (!code_val) {
 		return "ErrorModel required property 'code' is missing";
 	} else {
-		if (yyjson_is_sint(code_val)) {
-			code = yyjson_get_sint(code_val);
+		if (yyjson_is_int(code_val)) {
+			code = yyjson_get_int(code_val);
 		} else {
 			return StringUtil::Format("ErrorModel property 'code' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(code_val));

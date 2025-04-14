@@ -35,8 +35,8 @@ string AssertLastAssignedFieldId::TryFromJSON(yyjson_val *obj) {
 	if (!last_assigned_field_id_val) {
 		return "AssertLastAssignedFieldId required property 'last-assigned-field-id' is missing";
 	} else {
-		if (yyjson_is_sint(last_assigned_field_id_val)) {
-			last_assigned_field_id = yyjson_get_sint(last_assigned_field_id_val);
+		if (yyjson_is_int(last_assigned_field_id_val)) {
+			last_assigned_field_id = yyjson_get_int(last_assigned_field_id_val);
 		} else {
 			return StringUtil::Format("AssertLastAssignedFieldId property 'last_assigned_field_id' is not of type "
 			                          "'integer', found '%s' instead",

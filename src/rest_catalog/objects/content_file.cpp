@@ -31,8 +31,8 @@ string ContentFile::TryFromJSON(yyjson_val *obj) {
 	if (!spec_id_val) {
 		return "ContentFile required property 'spec-id' is missing";
 	} else {
-		if (yyjson_is_sint(spec_id_val)) {
-			spec_id = yyjson_get_sint(spec_id_val);
+		if (yyjson_is_int(spec_id_val)) {
+			spec_id = yyjson_get_int(spec_id_val);
 		} else {
 			return StringUtil::Format("ContentFile property 'spec_id' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(spec_id_val));
@@ -93,8 +93,8 @@ string ContentFile::TryFromJSON(yyjson_val *obj) {
 	if (!file_size_in_bytes_val) {
 		return "ContentFile required property 'file-size-in-bytes' is missing";
 	} else {
-		if (yyjson_is_sint(file_size_in_bytes_val)) {
-			file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
+		if (yyjson_is_int(file_size_in_bytes_val)) {
+			file_size_in_bytes = yyjson_get_int(file_size_in_bytes_val);
 		} else {
 			return StringUtil::Format(
 			    "ContentFile property 'file_size_in_bytes' is not of type 'integer', found '%s' instead",
@@ -105,8 +105,8 @@ string ContentFile::TryFromJSON(yyjson_val *obj) {
 	if (!record_count_val) {
 		return "ContentFile required property 'record-count' is missing";
 	} else {
-		if (yyjson_is_sint(record_count_val)) {
-			record_count = yyjson_get_sint(record_count_val);
+		if (yyjson_is_int(record_count_val)) {
+			record_count = yyjson_get_int(record_count_val);
 		} else {
 			return StringUtil::Format(
 			    "ContentFile property 'record_count' is not of type 'integer', found '%s' instead",
@@ -129,8 +129,8 @@ string ContentFile::TryFromJSON(yyjson_val *obj) {
 			yyjson_val *val;
 			yyjson_arr_foreach(split_offsets_val, idx, max, val) {
 				int64_t tmp;
-				if (yyjson_is_sint(val)) {
-					tmp = yyjson_get_sint(val);
+				if (yyjson_is_int(val)) {
+					tmp = yyjson_get_int(val);
 				} else {
 					return StringUtil::Format("ContentFile property 'tmp' is not of type 'integer', found '%s' instead",
 					                          yyjson_get_type_desc(val));
@@ -145,8 +145,8 @@ string ContentFile::TryFromJSON(yyjson_val *obj) {
 	auto sort_order_id_val = yyjson_obj_get(obj, "sort-order-id");
 	if (sort_order_id_val) {
 		has_sort_order_id = true;
-		if (yyjson_is_sint(sort_order_id_val)) {
-			sort_order_id = yyjson_get_sint(sort_order_id_val);
+		if (yyjson_is_int(sort_order_id_val)) {
+			sort_order_id = yyjson_get_int(sort_order_id_val);
 		} else {
 			return StringUtil::Format(
 			    "ContentFile property 'sort_order_id' is not of type 'integer', found '%s' instead",
