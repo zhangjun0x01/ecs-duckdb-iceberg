@@ -37,7 +37,7 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	D_ASSERT(prefix.empty());
 	url.AddPathComponent("config");
 	url.SetParam("warehouse", warehouse);
-	CURLHandle curl_handle;
+	RequestInput curl_handle;
 	auto response = auth_handler->GetRequest(context, url, curl_handle);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(response));
 	auto *root = yyjson_doc_get_root(doc.get());

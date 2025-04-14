@@ -16,7 +16,7 @@ public:
 public:
 	static unique_ptr<OAuth2Authorization> FromAttachOptions(ClientContext &context, IcebergAttachOptions &input);
 	string GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-	                  CURLHandle &curl_handle) override;
+	                  RequestInput &curl_handle) override;
 	static string GetToken(ClientContext &context, const string &grant_type, const string &uri, const string &client_id,
 	                       const string &client_secret, const string &scope);
 	static void SetCatalogSecretParameters(CreateSecretFunction &function);

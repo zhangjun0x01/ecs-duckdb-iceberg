@@ -43,12 +43,12 @@ public:
 	static string GetAwsRegion(const string &host);
 	static string GetAwsService(const string &host);
 	static string GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-	                         CURLHandle &curl_handle, const string &token = "");
-	static string DeleteRequest(const string &url, CURLHandle &curl_handle, const string &token = "");
+	                         RequestInput &curl_handle, const string &token = "");
+	static string DeleteRequest(ClientContext &context, const string &url, RequestInput &curl_handle,
+	                            const string &token = "");
 	static bool SelectCurlCertPath();
-	static size_t RequestWriteCallback(void *contents, size_t size, size_t nmemb, void *userp);
 	static string PostRequest(ClientContext &context, const string &url, const string &post_data,
-	                          CURLHandle &curl_handle, const string &content_type = "x-www-form-urlencoded",
+	                          RequestInput &curl_handle, const string &content_type = "x-www-form-urlencoded",
 	                          const string &token = "");
 };
 

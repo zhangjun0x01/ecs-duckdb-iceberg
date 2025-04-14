@@ -30,7 +30,7 @@ public:
 
 public:
 	virtual string GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-	                          CURLHandle &curl_handle) = 0;
+	                          RequestInput &curl_handle) = 0;
 
 public:
 	template <class TARGET>

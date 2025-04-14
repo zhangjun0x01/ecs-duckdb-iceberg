@@ -41,7 +41,7 @@ string OAuth2Authorization::GetToken(ClientContext &context, const string &grant
 	string post_data = StringUtil::Format("%s", StringUtil::Join(parameters, "&"));
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc;
 	try {
-		CURLHandle curl_handle;
+		RequestInput curl_handle;
 		string api_result = APIUtils::PostRequest(context, uri, post_data, curl_handle);
 		doc = std::unique_ptr<yyjson_doc, YyjsonDocDeleter>(ICUtils::api_result_to_doc(api_result));
 	} catch (std::exception &ex) {
@@ -70,7 +70,7 @@ string OAuth2Authorization::GetToken(ClientContext &context, const string &grant
 }
 
 string OAuth2Authorization::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-                                       CURLHandle &curl_handle) {
+                                       RequestInput &curl_handle) {
 	return APIUtils::GetRequest(context, endpoint_builder, curl_handle, token);
 }
 

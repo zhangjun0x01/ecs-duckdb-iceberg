@@ -24,7 +24,7 @@ using namespace duckdb_yyjson;
 namespace duckdb {
 
 static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table) {
-	CURLHandle curl_handle;
+	RequestInput curl_handle;
 
 	auto url = catalog.GetBaseUrl();
 	url.AddPathComponent(catalog.prefix);
@@ -288,7 +288,7 @@ vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog
 	url.AddPathComponent("namespaces");
 	url.AddPathComponent(schema);
 	url.AddPathComponent("tables");
-	CURLHandle curl_handle;
+	RequestInput curl_handle;
 	string api_result = catalog.auth_handler->GetRequest(context, url, curl_handle);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
@@ -308,7 +308,7 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catal
 	auto endpoint_builder = catalog.GetBaseUrl();
 	endpoint_builder.AddPathComponent(catalog.prefix);
 	endpoint_builder.AddPathComponent("namespaces");
-	CURLHandle curl_handle;
+	RequestInput curl_handle;
 	string api_result = catalog.auth_handler->GetRequest(context, endpoint_builder, curl_handle);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
