@@ -27,8 +27,6 @@
 
 namespace duckdb {
 
-bool AVRO_LOADED = false;
-
 enum class IcebergEndpointType : uint8_t { AWS_S3TABLES, AWS_GLUE, INVALID };
 
 static IcebergEndpointType EndpointTypeFromString(const string &input) {
@@ -125,10 +123,10 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	attach_options.warehouse = info.path;
 	attach_options.name = name;
 
-	if (!AVRO_LOADED) {
+	if (!__AVRO_LOADED__) {
 		auto &db_instance = context.db;
 		ExtensionHelper::AutoLoadExtension(*db_instance, "avro");
-		AVRO_LOADED = true;
+		__AVRO_LOADED__ = true;
 	}
 	// check if we have a secret provided
 	string secret_name;
