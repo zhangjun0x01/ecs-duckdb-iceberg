@@ -31,15 +31,20 @@ string CommitViewRequest::TryFromJSON(yyjson_val *obj) {
 	if (!updates_val) {
 		return "CommitViewRequest required property 'updates' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(updates_val, idx, max, val) {
-			ViewUpdate tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(updates_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(updates_val, idx, max, val) {
+				ViewUpdate tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				updates.emplace_back(std::move(tmp));
 			}
-			updates.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("CommitViewRequest property 'updates' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(updates_val));
 		}
 	}
 	auto identifier_val = yyjson_obj_get(obj, "identifier");
@@ -53,15 +58,21 @@ string CommitViewRequest::TryFromJSON(yyjson_val *obj) {
 	auto requirements_val = yyjson_obj_get(obj, "requirements");
 	if (requirements_val) {
 		has_requirements = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(requirements_val, idx, max, val) {
-			ViewRequirement tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(requirements_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(requirements_val, idx, max, val) {
+				ViewRequirement tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				requirements.emplace_back(std::move(tmp));
 			}
-			requirements.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "CommitViewRequest property 'requirements' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(requirements_val));
 		}
 	}
 	return string();

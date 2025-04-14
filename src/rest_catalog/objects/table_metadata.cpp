@@ -96,15 +96,20 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	auto schemas_val = yyjson_obj_get(obj, "schemas");
 	if (schemas_val) {
 		has_schemas = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(schemas_val, idx, max, val) {
-			Schema tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(schemas_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(schemas_val, idx, max, val) {
+				Schema tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				schemas.emplace_back(std::move(tmp));
 			}
-			schemas.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("TableMetadata property 'schemas' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(schemas_val));
 		}
 	}
 	auto current_schema_id_val = yyjson_obj_get(obj, "current-schema-id");
@@ -132,15 +137,21 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	auto partition_specs_val = yyjson_obj_get(obj, "partition-specs");
 	if (partition_specs_val) {
 		has_partition_specs = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(partition_specs_val, idx, max, val) {
-			PartitionSpec tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(partition_specs_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(partition_specs_val, idx, max, val) {
+				PartitionSpec tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				partition_specs.emplace_back(std::move(tmp));
 			}
-			partition_specs.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "TableMetadata property 'partition_specs' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(partition_specs_val));
 		}
 	}
 	auto default_spec_id_val = yyjson_obj_get(obj, "default-spec-id");
@@ -168,15 +179,20 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	auto sort_orders_val = yyjson_obj_get(obj, "sort-orders");
 	if (sort_orders_val) {
 		has_sort_orders = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(sort_orders_val, idx, max, val) {
-			SortOrder tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(sort_orders_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(sort_orders_val, idx, max, val) {
+				SortOrder tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				sort_orders.emplace_back(std::move(tmp));
 			}
-			sort_orders.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("TableMetadata property 'sort_orders' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(sort_orders_val));
 		}
 	}
 	auto default_sort_order_id_val = yyjson_obj_get(obj, "default-sort-order-id");
@@ -193,15 +209,20 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	auto snapshots_val = yyjson_obj_get(obj, "snapshots");
 	if (snapshots_val) {
 		has_snapshots = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(snapshots_val, idx, max, val) {
-			Snapshot tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(snapshots_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(snapshots_val, idx, max, val) {
+				Snapshot tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				snapshots.emplace_back(std::move(tmp));
 			}
-			snapshots.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("TableMetadata property 'snapshots' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(snapshots_val));
 		}
 	}
 	auto refs_val = yyjson_obj_get(obj, "refs");
@@ -253,29 +274,40 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	auto statistics_val = yyjson_obj_get(obj, "statistics");
 	if (statistics_val) {
 		has_statistics = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(statistics_val, idx, max, val) {
-			StatisticsFile tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(statistics_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(statistics_val, idx, max, val) {
+				StatisticsFile tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				statistics.emplace_back(std::move(tmp));
 			}
-			statistics.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("TableMetadata property 'statistics' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(statistics_val));
 		}
 	}
 	auto partition_statistics_val = yyjson_obj_get(obj, "partition-statistics");
 	if (partition_statistics_val) {
 		has_partition_statistics = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(partition_statistics_val, idx, max, val) {
-			PartitionStatisticsFile tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(partition_statistics_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(partition_statistics_val, idx, max, val) {
+				PartitionStatisticsFile tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				partition_statistics.emplace_back(std::move(tmp));
 			}
-			partition_statistics.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "TableMetadata property 'partition_statistics' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(partition_statistics_val));
 		}
 	}
 	return string();

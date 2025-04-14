@@ -35,18 +35,24 @@ string RemovePartitionSpecsUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!spec_ids_val) {
 		return "RemovePartitionSpecsUpdate required property 'spec-ids' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(spec_ids_val, idx, max, val) {
-			int64_t tmp;
-			if (yyjson_is_sint(val)) {
-				tmp = yyjson_get_sint(val);
-			} else {
-				return StringUtil::Format(
-				    "RemovePartitionSpecsUpdate property 'tmp' is not of type 'integer', found '%s' instead",
-				    yyjson_get_type_desc(val));
+		if (yyjson_is_arr(spec_ids_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(spec_ids_val, idx, max, val) {
+				int64_t tmp;
+				if (yyjson_is_sint(val)) {
+					tmp = yyjson_get_sint(val);
+				} else {
+					return StringUtil::Format(
+					    "RemovePartitionSpecsUpdate property 'tmp' is not of type 'integer', found '%s' instead",
+					    yyjson_get_type_desc(val));
+				}
+				spec_ids.emplace_back(std::move(tmp));
 			}
-			spec_ids.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "RemovePartitionSpecsUpdate property 'spec_ids' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(spec_ids_val));
 		}
 	}
 	auto action_val = yyjson_obj_get(obj, "action");

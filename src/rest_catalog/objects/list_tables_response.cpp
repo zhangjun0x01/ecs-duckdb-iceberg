@@ -38,15 +38,21 @@ string ListTablesResponse::TryFromJSON(yyjson_val *obj) {
 	auto identifiers_val = yyjson_obj_get(obj, "identifiers");
 	if (identifiers_val) {
 		has_identifiers = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(identifiers_val, idx, max, val) {
-			TableIdentifier tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(identifiers_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(identifiers_val, idx, max, val) {
+				TableIdentifier tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				identifiers.emplace_back(std::move(tmp));
 			}
-			identifiers.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "ListTablesResponse property 'identifiers' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(identifiers_val));
 		}
 	}
 	return string();

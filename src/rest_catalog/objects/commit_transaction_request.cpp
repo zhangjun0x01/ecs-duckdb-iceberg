@@ -31,15 +31,21 @@ string CommitTransactionRequest::TryFromJSON(yyjson_val *obj) {
 	if (!table_changes_val) {
 		return "CommitTransactionRequest required property 'table-changes' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(table_changes_val, idx, max, val) {
-			CommitTableRequest tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(table_changes_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(table_changes_val, idx, max, val) {
+				CommitTableRequest tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				table_changes.emplace_back(std::move(tmp));
 			}
-			table_changes.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "CommitTransactionRequest property 'table_changes' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(table_changes_val));
 		}
 	}
 	return string();

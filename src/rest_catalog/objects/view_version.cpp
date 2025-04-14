@@ -87,15 +87,21 @@ string ViewVersion::TryFromJSON(yyjson_val *obj) {
 	if (!representations_val) {
 		return "ViewVersion required property 'representations' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(representations_val, idx, max, val) {
-			ViewRepresentation tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(representations_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(representations_val, idx, max, val) {
+				ViewRepresentation tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				representations.emplace_back(std::move(tmp));
 			}
-			representations.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "ViewVersion property 'representations' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(representations_val));
 		}
 	}
 	auto default_namespace_val = yyjson_obj_get(obj, "default-namespace");

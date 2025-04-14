@@ -65,15 +65,20 @@ SnapshotLog SnapshotLog::FromJSON(yyjson_val *obj) {
 
 string SnapshotLog::TryFromJSON(yyjson_val *obj) {
 	string error;
-	size_t idx, max;
-	yyjson_val *val;
-	yyjson_arr_foreach(obj, idx, max, val) {
-		Object3 tmp;
-		error = tmp.TryFromJSON(val);
-		if (!error.empty()) {
-			return error;
+	if (yyjson_is_arr(obj)) {
+		size_t idx, max;
+		yyjson_val *val;
+		yyjson_arr_foreach(obj, idx, max, val) {
+			Object3 tmp;
+			error = tmp.TryFromJSON(val);
+			if (!error.empty()) {
+				return error;
+			}
+			value.emplace_back(std::move(tmp));
 		}
-		value.emplace_back(std::move(tmp));
+	} else {
+		return StringUtil::Format("SnapshotLog property 'value' is not of type 'array', found '%s' instead",
+		                          yyjson_get_type_desc(obj));
 	}
 	return string();
 }

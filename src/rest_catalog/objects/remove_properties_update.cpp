@@ -35,18 +35,24 @@ string RemovePropertiesUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!removals_val) {
 		return "RemovePropertiesUpdate required property 'removals' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(removals_val, idx, max, val) {
-			string tmp;
-			if (yyjson_is_str(val)) {
-				tmp = yyjson_get_str(val);
-			} else {
-				return StringUtil::Format(
-				    "RemovePropertiesUpdate property 'tmp' is not of type 'string', found '%s' instead",
-				    yyjson_get_type_desc(val));
+		if (yyjson_is_arr(removals_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(removals_val, idx, max, val) {
+				string tmp;
+				if (yyjson_is_str(val)) {
+					tmp = yyjson_get_str(val);
+				} else {
+					return StringUtil::Format(
+					    "RemovePropertiesUpdate property 'tmp' is not of type 'string', found '%s' instead",
+					    yyjson_get_type_desc(val));
+				}
+				removals.emplace_back(std::move(tmp));
 			}
-			removals.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "RemovePropertiesUpdate property 'removals' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(removals_val));
 		}
 	}
 	auto action_val = yyjson_obj_get(obj, "action");

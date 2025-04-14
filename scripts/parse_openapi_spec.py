@@ -21,6 +21,7 @@ class Property:
         self.all_of: List[Property] = []
         self.any_of: List[Property] = []
         self.one_of: List[Property] = []
+        self.nullable: Optional[bool] = None
 
     def is_string(self):
         if self.type != Property.Type.PRIMITIVE:
@@ -157,6 +158,7 @@ class ResponseObjectsGenerator:
 
         # default to 'object' (see 'AssertViewUUID')
         property_type = spec.get('type', 'object')
+        nullable = spec.get('nullable', None)
 
         one_of = spec.get('oneOf')
         all_of = spec.get('allOf')
@@ -174,6 +176,8 @@ class ResponseObjectsGenerator:
         else:
             print(f"Property has unrecognized type: '{property_type}'!")
             exit(1)
+
+        result.nullable = nullable
 
         if one_of:
             if property_type != 'object':

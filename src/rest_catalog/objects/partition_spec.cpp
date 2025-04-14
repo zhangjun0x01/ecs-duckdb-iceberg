@@ -31,15 +31,20 @@ string PartitionSpec::TryFromJSON(yyjson_val *obj) {
 	if (!fields_val) {
 		return "PartitionSpec required property 'fields' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(fields_val, idx, max, val) {
-			PartitionField tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(fields_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(fields_val, idx, max, val) {
+				PartitionField tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				fields.emplace_back(std::move(tmp));
 			}
-			fields.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("PartitionSpec property 'fields' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(fields_val));
 		}
 	}
 	auto spec_id_val = yyjson_obj_get(obj, "spec-id");

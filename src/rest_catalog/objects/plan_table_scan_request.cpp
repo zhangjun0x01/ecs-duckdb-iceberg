@@ -41,15 +41,21 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 	auto select_val = yyjson_obj_get(obj, "select");
 	if (select_val) {
 		has_select = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(select_val, idx, max, val) {
-			FieldName tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(select_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(select_val, idx, max, val) {
+				FieldName tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				select.emplace_back(std::move(tmp));
 			}
-			select.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "PlanTableScanRequest property 'select' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(select_val));
 		}
 	}
 	auto filter_val = yyjson_obj_get(obj, "filter");
@@ -108,15 +114,21 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 	auto stats_fields_val = yyjson_obj_get(obj, "stats-fields");
 	if (stats_fields_val) {
 		has_stats_fields = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(stats_fields_val, idx, max, val) {
-			FieldName tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(stats_fields_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(stats_fields_val, idx, max, val) {
+				FieldName tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				stats_fields.emplace_back(std::move(tmp));
 			}
-			stats_fields.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "PlanTableScanRequest property 'stats_fields' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(stats_fields_val));
 		}
 	}
 	return string();

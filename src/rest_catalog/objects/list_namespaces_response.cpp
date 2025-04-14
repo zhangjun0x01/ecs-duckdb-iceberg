@@ -38,15 +38,21 @@ string ListNamespacesResponse::TryFromJSON(yyjson_val *obj) {
 	auto namespaces_val = yyjson_obj_get(obj, "namespaces");
 	if (namespaces_val) {
 		has_namespaces = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(namespaces_val, idx, max, val) {
-			Namespace tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(namespaces_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(namespaces_val, idx, max, val) {
+				Namespace tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				namespaces.emplace_back(std::move(tmp));
 			}
-			namespaces.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "ListNamespacesResponse property 'namespaces' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(namespaces_val));
 		}
 	}
 	return string();

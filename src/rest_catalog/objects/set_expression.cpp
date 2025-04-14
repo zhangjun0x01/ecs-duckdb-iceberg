@@ -49,16 +49,21 @@ string SetExpression::TryFromJSON(yyjson_val *obj) {
 	if (!values_val) {
 		return "SetExpression required property 'values' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(values_val, idx, max, val) {
-			yyjson_val *tmp;
-			if (yyjson_is_obj(val)) {
-				tmp = val;
-			} else {
-				return "SetExpression property 'tmp' is not of type 'object'";
+		if (yyjson_is_arr(values_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(values_val, idx, max, val) {
+				yyjson_val *tmp;
+				if (yyjson_is_obj(val)) {
+					tmp = val;
+				} else {
+					return "SetExpression property 'tmp' is not of type 'object'";
+				}
+				values.emplace_back(std::move(tmp));
 			}
-			values.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("SetExpression property 'values' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(values_val));
 		}
 	}
 	return string();
