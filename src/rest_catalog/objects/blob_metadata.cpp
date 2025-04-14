@@ -66,17 +66,23 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 	if (!fields_val) {
 		return "BlobMetadata required property 'fields' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(fields_val, idx, max, val) {
-			int64_t tmp;
-			if (yyjson_is_sint(val)) {
-				tmp = yyjson_get_sint(val);
-			} else {
-				return StringUtil::Format("BlobMetadata property 'tmp' is not of type 'integer', found '%s' instead",
-				                          yyjson_get_type_desc(val));
+		if (yyjson_is_arr(fields_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(fields_val, idx, max, val) {
+				int64_t tmp;
+				if (yyjson_is_sint(val)) {
+					tmp = yyjson_get_sint(val);
+				} else {
+					return StringUtil::Format(
+					    "BlobMetadata property 'tmp' is not of type 'integer', found '%s' instead",
+					    yyjson_get_type_desc(val));
+				}
+				fields.emplace_back(std::move(tmp));
 			}
-			fields.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("BlobMetadata property 'fields' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(fields_val));
 		}
 	}
 	auto properties_val = yyjson_obj_get(obj, "properties");

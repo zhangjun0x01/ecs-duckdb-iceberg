@@ -275,7 +275,7 @@ class CPPClass:
         assert not array_property.one_of
         assert not array_property.any_of
 
-        self.try_from_json_body = self.generate_array_loop('obj', 'value', array_property.item_type)
+        self.try_from_json_body = self.generate_array_loop('obj', 'value', array_property)
 
         nested_classes = self.generate_nested_class_definitions()
 
@@ -547,28 +547,56 @@ class CPPClass:
             self.variables.append(f'\t{item.ref} {property_name};')
             self.variables.append(f'\tbool has_{property_name} = false;')
 
-    def generate_array_loop(self, array_name, destination_name, item_type: Property) -> List[str]:
-        res = []
-        res.append('size_t idx, max;')
-        res.append('yyjson_val *val;')
-        res.append(f'yyjson_arr_foreach({array_name}, idx, max, val) {{')
+    def generate_array_loop(self, array_name, destination_name, array_property: ArrayProperty) -> List[str]:
+        item_type = array_property.item_type
+        body = []
+        body.append('size_t idx, max;')
+        body.append('yyjson_val *val;')
+        body.append(f'yyjson_arr_foreach({array_name}, idx, max, val) {{')
 
         assignment = 'std::move(tmp)'
         if item_type.type != Property.Type.SCHEMA_REFERENCE:
-            res.append(f'{self.generate_variable_type(item_type)} tmp;')
-            res.extend(self.generate_item_parse(item_type, 'val', 'tmp'))
+            body.append(f'{self.generate_variable_type(item_type)} tmp;')
+            body.extend(self.generate_item_parse(item_type, 'val', 'tmp'))
         else:
             schema_property = cast(SchemaReferenceProperty, item_type)
             self.referenced_schemas.add(schema_property.ref)
             item_definition = ''
             if schema_property.ref in self.parse_info.recursive_schemas:
-                res.extend([f'\tauto tmp_p = make_uniq<{schema_property.ref}>();', '\tauto &tmp = *tmp_p;'])
+                body.extend([f'\tauto tmp_p = make_uniq<{schema_property.ref}>();', '\tauto &tmp = *tmp_p;'])
                 assignment = 'std::move(tmp_p)'
             else:
-                res.append(f'\t{schema_property.ref} tmp;')
-            res.extend(['\terror = tmp.TryFromJSON(val);', '\tif (!error.empty()) {', '\t\treturn error;', '\t}'])
-        res.append(f'\t{destination_name}.emplace_back({assignment});')
-        res.append('}')
+                body.append(f'\t{schema_property.ref} tmp;')
+            body.extend(['\terror = tmp.TryFromJSON(val);', '\tif (!error.empty()) {', '\t\treturn error;', '\t}'])
+        body.append(f'\t{destination_name}.emplace_back({assignment});')
+        body.append('}')
+
+        res = []
+        prefix = ''
+        if array_property.nullable is not None:
+            prefix = '} else '
+            if array_property.nullable == True:
+                res.extend(
+                    [f'if (yyjson_is_null({array_name})) {{', '\t//! do nothing, property is explicitly nullable']
+                )
+            else:
+                res.extend(
+                    [
+                        f'if (yyjson_is_null({array_name})) {{',
+                        f'''\treturn "{self.name} property '{destination_name}' is not nullable, but is 'null'";''',
+                    ]
+                )
+
+        res.append(f'{prefix}if (yyjson_is_arr({array_name})) {{')
+        res.extend([f'\t{x}' for x in body])
+        res.extend(
+            [
+                '} else {',
+                f"""\treturn StringUtil::Format("{self.name} property '{destination_name}' is not of type 'array', found '%s' instead", yyjson_get_type_desc({array_name}));""",
+                '}',
+            ]
+        )
+
         return res
 
     def generate_item_parse(self, property: Property, source: str, target: str) -> List[str]:
@@ -582,10 +610,9 @@ class CPPClass:
                 res.extend(
                     [
                         f'if (yyjson_is_null({source})) {{',
-                        f'''\treturn "{self.name} property '{target}' is not nullable, but is 'null'"''',
+                        f'''\treturn "{self.name} property '{target}' is not nullable, but is 'null'";''',
                     ]
                 )
-                pass
 
         if property.type == Property.Type.SCHEMA_REFERENCE:
             print(f"Unrecognized property type {property.type}, {source}")
@@ -674,7 +701,7 @@ class CPPClass:
     def generate_assignment(self, schema: Property, target: str, source: str) -> List[str]:
         if schema.type == Property.Type.ARRAY:
             array_property = cast(ArrayProperty, schema)
-            return self.generate_array_loop(source, target, array_property.item_type)
+            return self.generate_array_loop(source, target, array_property)
         elif schema.type == Property.Type.SCHEMA_REFERENCE:
             schema_property = cast(SchemaReferenceProperty, schema)
             self.referenced_schemas.add(schema_property.ref)

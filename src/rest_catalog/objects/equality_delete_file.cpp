@@ -46,18 +46,24 @@ string EqualityDeleteFile::TryFromJSON(yyjson_val *obj) {
 	auto equality_ids_val = yyjson_obj_get(obj, "equality-ids");
 	if (equality_ids_val) {
 		has_equality_ids = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(equality_ids_val, idx, max, val) {
-			int64_t tmp;
-			if (yyjson_is_sint(val)) {
-				tmp = yyjson_get_sint(val);
-			} else {
-				return StringUtil::Format(
-				    "EqualityDeleteFile property 'tmp' is not of type 'integer', found '%s' instead",
-				    yyjson_get_type_desc(val));
+		if (yyjson_is_arr(equality_ids_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(equality_ids_val, idx, max, val) {
+				int64_t tmp;
+				if (yyjson_is_sint(val)) {
+					tmp = yyjson_get_sint(val);
+				} else {
+					return StringUtil::Format(
+					    "EqualityDeleteFile property 'tmp' is not of type 'integer', found '%s' instead",
+					    yyjson_get_type_desc(val));
+				}
+				equality_ids.emplace_back(std::move(tmp));
 			}
-			equality_ids.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "EqualityDeleteFile property 'equality_ids' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(equality_ids_val));
 		}
 	}
 	return string();

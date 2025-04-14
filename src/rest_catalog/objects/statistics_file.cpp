@@ -79,15 +79,21 @@ string StatisticsFile::TryFromJSON(yyjson_val *obj) {
 	if (!blob_metadata_val) {
 		return "StatisticsFile required property 'blob-metadata' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(blob_metadata_val, idx, max, val) {
-			BlobMetadata tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(blob_metadata_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(blob_metadata_val, idx, max, val) {
+				BlobMetadata tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				blob_metadata.emplace_back(std::move(tmp));
 			}
-			blob_metadata.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "StatisticsFile property 'blob_metadata' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(blob_metadata_val));
 		}
 	}
 	return string();

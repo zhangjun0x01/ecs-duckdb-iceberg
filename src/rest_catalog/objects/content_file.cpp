@@ -42,15 +42,20 @@ string ContentFile::TryFromJSON(yyjson_val *obj) {
 	if (!partition_val) {
 		return "ContentFile required property 'partition' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(partition_val, idx, max, val) {
-			PrimitiveTypeValue tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(partition_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(partition_val, idx, max, val) {
+				PrimitiveTypeValue tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				partition.emplace_back(std::move(tmp));
 			}
-			partition.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("ContentFile property 'partition' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(partition_val));
 		}
 	}
 	auto content_val = yyjson_obj_get(obj, "content");
@@ -119,17 +124,22 @@ string ContentFile::TryFromJSON(yyjson_val *obj) {
 	auto split_offsets_val = yyjson_obj_get(obj, "split-offsets");
 	if (split_offsets_val) {
 		has_split_offsets = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(split_offsets_val, idx, max, val) {
-			int64_t tmp;
-			if (yyjson_is_sint(val)) {
-				tmp = yyjson_get_sint(val);
-			} else {
-				return StringUtil::Format("ContentFile property 'tmp' is not of type 'integer', found '%s' instead",
-				                          yyjson_get_type_desc(val));
+		if (yyjson_is_arr(split_offsets_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(split_offsets_val, idx, max, val) {
+				int64_t tmp;
+				if (yyjson_is_sint(val)) {
+					tmp = yyjson_get_sint(val);
+				} else {
+					return StringUtil::Format("ContentFile property 'tmp' is not of type 'integer', found '%s' instead",
+					                          yyjson_get_type_desc(val));
+				}
+				split_offsets.emplace_back(std::move(tmp));
 			}
-			split_offsets.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("ContentFile property 'split_offsets' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(split_offsets_val));
 		}
 	}
 	auto sort_order_id_val = yyjson_obj_get(obj, "sort-order-id");

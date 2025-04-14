@@ -31,15 +31,21 @@ string LoadCredentialsResponse::TryFromJSON(yyjson_val *obj) {
 	if (!storage_credentials_val) {
 		return "LoadCredentialsResponse required property 'storage-credentials' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(storage_credentials_val, idx, max, val) {
-			StorageCredential tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(storage_credentials_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(storage_credentials_val, idx, max, val) {
+				StorageCredential tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				storage_credentials.emplace_back(std::move(tmp));
 			}
-			storage_credentials.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "LoadCredentialsResponse property 'storage_credentials' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(storage_credentials_val));
 		}
 	}
 	return string();

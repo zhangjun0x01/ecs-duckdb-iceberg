@@ -31,30 +31,42 @@ string CommitTableRequest::TryFromJSON(yyjson_val *obj) {
 	if (!requirements_val) {
 		return "CommitTableRequest required property 'requirements' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(requirements_val, idx, max, val) {
-			TableRequirement tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(requirements_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(requirements_val, idx, max, val) {
+				TableRequirement tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				requirements.emplace_back(std::move(tmp));
 			}
-			requirements.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "CommitTableRequest property 'requirements' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(requirements_val));
 		}
 	}
 	auto updates_val = yyjson_obj_get(obj, "updates");
 	if (!updates_val) {
 		return "CommitTableRequest required property 'updates' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(updates_val, idx, max, val) {
-			TableUpdate tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(updates_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(updates_val, idx, max, val) {
+				TableUpdate tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				updates.emplace_back(std::move(tmp));
 			}
-			updates.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "CommitTableRequest property 'updates' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(updates_val));
 		}
 	}
 	auto identifier_val = yyjson_obj_get(obj, "identifier");

@@ -42,17 +42,23 @@ string Schema::Object1::TryFromJSON(yyjson_val *obj) {
 	auto identifier_field_ids_val = yyjson_obj_get(obj, "identifier-field-ids");
 	if (identifier_field_ids_val) {
 		has_identifier_field_ids = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(identifier_field_ids_val, idx, max, val) {
-			int64_t tmp;
-			if (yyjson_is_sint(val)) {
-				tmp = yyjson_get_sint(val);
-			} else {
-				return StringUtil::Format("Object1 property 'tmp' is not of type 'integer', found '%s' instead",
-				                          yyjson_get_type_desc(val));
+		if (yyjson_is_arr(identifier_field_ids_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(identifier_field_ids_val, idx, max, val) {
+				int64_t tmp;
+				if (yyjson_is_sint(val)) {
+					tmp = yyjson_get_sint(val);
+				} else {
+					return StringUtil::Format("Object1 property 'tmp' is not of type 'integer', found '%s' instead",
+					                          yyjson_get_type_desc(val));
+				}
+				identifier_field_ids.emplace_back(std::move(tmp));
 			}
-			identifier_field_ids.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "Object1 property 'identifier_field_ids' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(identifier_field_ids_val));
 		}
 	}
 	return string();

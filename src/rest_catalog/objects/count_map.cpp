@@ -30,29 +30,39 @@ string CountMap::TryFromJSON(yyjson_val *obj) {
 	auto keys_val = yyjson_obj_get(obj, "keys");
 	if (keys_val) {
 		has_keys = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(keys_val, idx, max, val) {
-			IntegerTypeValue tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(keys_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(keys_val, idx, max, val) {
+				IntegerTypeValue tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				keys.emplace_back(std::move(tmp));
 			}
-			keys.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("CountMap property 'keys' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(keys_val));
 		}
 	}
 	auto values_val = yyjson_obj_get(obj, "values");
 	if (values_val) {
 		has_values = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(values_val, idx, max, val) {
-			LongTypeValue tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(values_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(values_val, idx, max, val) {
+				LongTypeValue tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				values.emplace_back(std::move(tmp));
 			}
-			values.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("CountMap property 'values' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(values_val));
 		}
 	}
 	return string();

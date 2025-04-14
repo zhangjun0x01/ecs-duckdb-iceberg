@@ -77,45 +77,60 @@ string ViewMetadata::TryFromJSON(yyjson_val *obj) {
 	if (!versions_val) {
 		return "ViewMetadata required property 'versions' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(versions_val, idx, max, val) {
-			ViewVersion tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(versions_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(versions_val, idx, max, val) {
+				ViewVersion tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				versions.emplace_back(std::move(tmp));
 			}
-			versions.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("ViewMetadata property 'versions' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(versions_val));
 		}
 	}
 	auto version_log_val = yyjson_obj_get(obj, "version-log");
 	if (!version_log_val) {
 		return "ViewMetadata required property 'version-log' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(version_log_val, idx, max, val) {
-			ViewHistoryEntry tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(version_log_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(version_log_val, idx, max, val) {
+				ViewHistoryEntry tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				version_log.emplace_back(std::move(tmp));
 			}
-			version_log.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("ViewMetadata property 'version_log' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(version_log_val));
 		}
 	}
 	auto schemas_val = yyjson_obj_get(obj, "schemas");
 	if (!schemas_val) {
 		return "ViewMetadata required property 'schemas' is missing";
 	} else {
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(schemas_val, idx, max, val) {
-			Schema tmp;
-			error = tmp.TryFromJSON(val);
-			if (!error.empty()) {
-				return error;
+		if (yyjson_is_arr(schemas_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(schemas_val, idx, max, val) {
+				Schema tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				schemas.emplace_back(std::move(tmp));
 			}
-			schemas.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format("ViewMetadata property 'schemas' is not of type 'array', found '%s' instead",
+			                          yyjson_get_type_desc(schemas_val));
 		}
 	}
 	auto properties_val = yyjson_obj_get(obj, "properties");

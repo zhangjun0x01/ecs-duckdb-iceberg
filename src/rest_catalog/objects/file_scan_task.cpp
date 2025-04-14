@@ -39,17 +39,24 @@ string FileScanTask::TryFromJSON(yyjson_val *obj) {
 	auto delete_file_references_val = yyjson_obj_get(obj, "delete-file-references");
 	if (delete_file_references_val) {
 		has_delete_file_references = true;
-		size_t idx, max;
-		yyjson_val *val;
-		yyjson_arr_foreach(delete_file_references_val, idx, max, val) {
-			int64_t tmp;
-			if (yyjson_is_sint(val)) {
-				tmp = yyjson_get_sint(val);
-			} else {
-				return StringUtil::Format("FileScanTask property 'tmp' is not of type 'integer', found '%s' instead",
-				                          yyjson_get_type_desc(val));
+		if (yyjson_is_arr(delete_file_references_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(delete_file_references_val, idx, max, val) {
+				int64_t tmp;
+				if (yyjson_is_sint(val)) {
+					tmp = yyjson_get_sint(val);
+				} else {
+					return StringUtil::Format(
+					    "FileScanTask property 'tmp' is not of type 'integer', found '%s' instead",
+					    yyjson_get_type_desc(val));
+				}
+				delete_file_references.emplace_back(std::move(tmp));
 			}
-			delete_file_references.emplace_back(std::move(tmp));
+		} else {
+			return StringUtil::Format(
+			    "FileScanTask property 'delete_file_references' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(delete_file_references_val));
 		}
 	}
 	auto residual_filter_val = yyjson_obj_get(obj, "residual-filter");
