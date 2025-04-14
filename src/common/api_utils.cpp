@@ -4,6 +4,7 @@
 #include "duckdb/common/exception/http_exception.hpp"
 #include "duckdb/common/string_util.hpp"
 #include "storage/irc_catalog.hpp"
+
 #include <curl/curl.h>
 #include <sys/stat.h>
 
@@ -33,6 +34,8 @@ HostDecompositionResult DecomposeHost(const string &host) {
 
 } // namespace
 
+static void InitializeCurlObject(CURL *curl, const string &token);
+
 string APIUtils::GetAwsRegion(const string &host) {
 	idx_t first_dot = host.find_first_of('.');
 	idx_t second_dot = host.find_first_of('.', first_dot + 1);
@@ -43,41 +46,41 @@ string APIUtils::GetAwsService(const string &host) {
 	return host.substr(0, host.find_first_of('.'));
 }
 
-string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder, const string &token,
-                            curl_slist *extra_headers) {
+string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder, CURLHandle &curl_handle,
+                            const string &token) {
 	auto url = endpoint_builder.GetURL();
 	CURL *curl;
 	CURLcode res;
 	string readBuffer;
 
 	curl = curl_easy_init();
-	if (curl) {
-		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, RequestWriteCallback);
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-
-		// Set the user Agent.
-		auto &config = DBConfig::GetConfig(context);
-		extra_headers =
-		    curl_slist_append(extra_headers, StringUtil::Format("User-Agent: %s", config.UserAgent()).c_str());
-		if (extra_headers) {
-			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, extra_headers);
-		}
-
-		InitializeCurlObject(curl, token);
-		res = curl_easy_perform(curl);
-		curl_easy_cleanup(curl);
-
-		DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.Curl.HTTPRequest", "GET %s (curl code '%s')", url,
-		                 curl_easy_strerror(res));
-		if (res != CURLcode::CURLE_OK) {
-			string error = curl_easy_strerror(res);
-			throw HTTPException(StringUtil::Format("Curl Request to '%s' failed with error: '%s'", url, error));
-		}
-
-		return readBuffer;
+	if (!curl) {
+		throw InternalException("Failed to initialize curl");
 	}
-	throw InternalException("Failed to initialize curl");
+
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, RequestWriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+	// Set the user Agent.
+	auto &config = DBConfig::GetConfig(context);
+	curl_handle.AddHeader(StringUtil::Format("User-Agent: %s", config.UserAgent()).c_str());
+	if (curl_handle.extra_headers) {
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_handle.extra_headers);
+	}
+
+	InitializeCurlObject(curl, token);
+	res = curl_easy_perform(curl);
+	curl_easy_cleanup(curl);
+
+	DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.Curl.HTTPRequest", "GET %s (curl code '%s')", url,
+	                 curl_easy_strerror(res));
+	if (res != CURLcode::CURLE_OK) {
+		string error = curl_easy_strerror(res);
+		throw HTTPException(StringUtil::Format("Curl Request to '%s' failed with error: '%s'", url, error));
+	}
+
+	return readBuffer;
 }
 
 string APIUtils::GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_builder, const string &secret_name) {
@@ -173,7 +176,7 @@ bool APIUtils::SelectCurlCertPath() {
 	return false;
 }
 
-bool APIUtils::SetCurlCAFileInfo(CURL *curl) {
+static bool SetCurlCAFileInfo(CURL *curl) {
 	if (!SELECTED_CURL_CERT_PATH.empty()) {
 		curl_easy_setopt(curl, CURLOPT_CAINFO, SELECTED_CURL_CERT_PATH.c_str());
 		return true;
@@ -183,7 +186,7 @@ bool APIUtils::SetCurlCAFileInfo(CURL *curl) {
 
 // Note: every curl object we use should set this, because without it some linux distro's may not find the CA
 // certificate.
-void APIUtils::InitializeCurlObject(CURL *curl, const string &token) {
+static void InitializeCurlObject(CURL *curl, const string &token) {
 	if (!token.empty()) {
 		curl_easy_setopt(curl, CURLOPT_XOAUTH2_BEARER, token.c_str());
 		curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BEARER);
@@ -191,7 +194,7 @@ void APIUtils::InitializeCurlObject(CURL *curl, const string &token) {
 	SetCurlCAFileInfo(curl);
 }
 
-string APIUtils::DeleteRequest(const string &url, const string &token, curl_slist *extra_headers) {
+string APIUtils::DeleteRequest(const string &url, CURLHandle &curl_handle, const string &token) {
 	CURL *curl;
 	CURLcode res;
 	string readBuffer;
@@ -203,8 +206,8 @@ string APIUtils::DeleteRequest(const string &url, const string &token, curl_slis
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, RequestWriteCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
-		if (extra_headers) {
-			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, extra_headers);
+		if (curl_handle.extra_headers) {
+			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_handle.extra_headers);
 		}
 
 		InitializeCurlObject(curl, token);
@@ -222,7 +225,7 @@ string APIUtils::DeleteRequest(const string &url, const string &token, curl_slis
 }
 
 string APIUtils::PostRequest(ClientContext &context, const string &url, const string &post_data,
-                             const string &content_type, const string &token, curl_slist *extra_headers) {
+                             CURLHandle &curl_handle, const string &content_type, const string &token) {
 	string readBuffer;
 	CURL *curl = curl_easy_init();
 	if (!curl) {
@@ -244,8 +247,8 @@ string APIUtils::PostRequest(ClientContext &context, const string &url, const st
 	headers = curl_slist_append(headers, StringUtil::Format("User-Agent: %s", config.UserAgent()).c_str());
 
 	// Append any extra headers
-	if (extra_headers) {
-		struct curl_slist *temp = extra_headers;
+	if (curl_handle.extra_headers) {
+		struct curl_slist *temp = curl_handle.extra_headers;
 		while (temp) {
 			headers = curl_slist_append(headers, temp->data);
 			temp = temp->next;

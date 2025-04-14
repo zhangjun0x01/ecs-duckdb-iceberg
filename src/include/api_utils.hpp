@@ -12,12 +12,9 @@
 #include "yyjson.hpp"
 #include "duckdb/common/file_system.hpp"
 #include "url_utils.hpp"
+#include "curl.hpp"
 
 using namespace duckdb_yyjson;
-
-//! fwd declare
-struct curl_slist;
-typedef void CURL;
 
 namespace duckdb {
 
@@ -46,15 +43,13 @@ public:
 	static string GetAwsRegion(const string &host);
 	static string GetAwsService(const string &host);
 	static string GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-	                         const string &token = "", curl_slist *extra_headers = NULL);
-	static string DeleteRequest(const string &url, const string &token = "", curl_slist *extra_headers = NULL);
-	static void InitializeCurlObject(CURL *curl, const string &token);
-	static bool SetCurlCAFileInfo(CURL *curl);
+	                         CURLHandle &curl_handle, const string &token = "");
+	static string DeleteRequest(const string &url, CURLHandle &curl_handle, const string &token = "");
 	static bool SelectCurlCertPath();
 	static size_t RequestWriteCallback(void *contents, size_t size, size_t nmemb, void *userp);
 	static string PostRequest(ClientContext &context, const string &url, const string &post_data,
-	                          const string &content_type = "x-www-form-urlencoded", const string &token = "",
-	                          curl_slist *extra_headers = NULL);
+	                          CURLHandle &curl_handle, const string &content_type = "x-www-form-urlencoded",
+	                          const string &token = "");
 };
 
 } // namespace duckdb

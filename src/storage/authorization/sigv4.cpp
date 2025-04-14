@@ -30,7 +30,7 @@ unique_ptr<IRCAuthorization> SIGV4Authorization::FromAttachOptions(IcebergAttach
 }
 
 string SIGV4Authorization::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-                                      curl_slist *extra_headers) {
+                                      CURLHandle &) {
 	return APIUtils::GetRequestAws(context, endpoint_builder, secret);
 }
 
