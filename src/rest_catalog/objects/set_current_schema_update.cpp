@@ -35,8 +35,8 @@ string SetCurrentSchemaUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!schema_id_val) {
 		return "SetCurrentSchemaUpdate required property 'schema-id' is missing";
 	} else {
-		if (yyjson_is_sint(schema_id_val)) {
-			schema_id = yyjson_get_sint(schema_id_val);
+		if (yyjson_is_int(schema_id_val)) {
+			schema_id = yyjson_get_int(schema_id_val);
 		} else {
 			return StringUtil::Format(
 			    "SetCurrentSchemaUpdate property 'schema_id' is not of type 'integer', found '%s' instead",

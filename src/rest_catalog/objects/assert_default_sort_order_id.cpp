@@ -35,8 +35,8 @@ string AssertDefaultSortOrderId::TryFromJSON(yyjson_val *obj) {
 	if (!default_sort_order_id_val) {
 		return "AssertDefaultSortOrderId required property 'default-sort-order-id' is missing";
 	} else {
-		if (yyjson_is_sint(default_sort_order_id_val)) {
-			default_sort_order_id = yyjson_get_sint(default_sort_order_id_val);
+		if (yyjson_is_int(default_sort_order_id_val)) {
+			default_sort_order_id = yyjson_get_int(default_sort_order_id_val);
 		} else {
 			return StringUtil::Format("AssertDefaultSortOrderId property 'default_sort_order_id' is not of type "
 			                          "'integer', found '%s' instead",

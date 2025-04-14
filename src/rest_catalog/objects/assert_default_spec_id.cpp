@@ -35,8 +35,8 @@ string AssertDefaultSpecId::TryFromJSON(yyjson_val *obj) {
 	if (!default_spec_id_val) {
 		return "AssertDefaultSpecId required property 'default-spec-id' is missing";
 	} else {
-		if (yyjson_is_sint(default_spec_id_val)) {
-			default_spec_id = yyjson_get_sint(default_spec_id_val);
+		if (yyjson_is_int(default_spec_id_val)) {
+			default_spec_id = yyjson_get_int(default_spec_id_val);
 		} else {
 			return StringUtil::Format(
 			    "AssertDefaultSpecId property 'default_spec_id' is not of type 'integer', found '%s' instead",

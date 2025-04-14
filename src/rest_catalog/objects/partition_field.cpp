@@ -31,8 +31,8 @@ string PartitionField::TryFromJSON(yyjson_val *obj) {
 	if (!source_id_val) {
 		return "PartitionField required property 'source-id' is missing";
 	} else {
-		if (yyjson_is_sint(source_id_val)) {
-			source_id = yyjson_get_sint(source_id_val);
+		if (yyjson_is_int(source_id_val)) {
+			source_id = yyjson_get_int(source_id_val);
 		} else {
 			return StringUtil::Format(
 			    "PartitionField property 'source_id' is not of type 'integer', found '%s' instead",
@@ -62,8 +62,8 @@ string PartitionField::TryFromJSON(yyjson_val *obj) {
 	auto field_id_val = yyjson_obj_get(obj, "field-id");
 	if (field_id_val) {
 		has_field_id = true;
-		if (yyjson_is_sint(field_id_val)) {
-			field_id = yyjson_get_sint(field_id_val);
+		if (yyjson_is_int(field_id_val)) {
+			field_id = yyjson_get_int(field_id_val);
 		} else {
 			return StringUtil::Format("PartitionField property 'field_id' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(field_id_val));

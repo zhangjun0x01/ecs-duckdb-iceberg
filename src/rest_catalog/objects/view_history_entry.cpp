@@ -31,8 +31,8 @@ string ViewHistoryEntry::TryFromJSON(yyjson_val *obj) {
 	if (!version_id_val) {
 		return "ViewHistoryEntry required property 'version-id' is missing";
 	} else {
-		if (yyjson_is_sint(version_id_val)) {
-			version_id = yyjson_get_sint(version_id_val);
+		if (yyjson_is_int(version_id_val)) {
+			version_id = yyjson_get_int(version_id_val);
 		} else {
 			return StringUtil::Format(
 			    "ViewHistoryEntry property 'version_id' is not of type 'integer', found '%s' instead",
@@ -43,8 +43,8 @@ string ViewHistoryEntry::TryFromJSON(yyjson_val *obj) {
 	if (!timestamp_ms_val) {
 		return "ViewHistoryEntry required property 'timestamp-ms' is missing";
 	} else {
-		if (yyjson_is_sint(timestamp_ms_val)) {
-			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		if (yyjson_is_int(timestamp_ms_val)) {
+			timestamp_ms = yyjson_get_int(timestamp_ms_val);
 		} else {
 			return StringUtil::Format(
 			    "ViewHistoryEntry property 'timestamp_ms' is not of type 'integer', found '%s' instead",

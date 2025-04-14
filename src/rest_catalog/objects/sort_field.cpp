@@ -31,8 +31,8 @@ string SortField::TryFromJSON(yyjson_val *obj) {
 	if (!source_id_val) {
 		return "SortField required property 'source-id' is missing";
 	} else {
-		if (yyjson_is_sint(source_id_val)) {
-			source_id = yyjson_get_sint(source_id_val);
+		if (yyjson_is_int(source_id_val)) {
+			source_id = yyjson_get_int(source_id_val);
 		} else {
 			return StringUtil::Format("SortField property 'source_id' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(source_id_val));

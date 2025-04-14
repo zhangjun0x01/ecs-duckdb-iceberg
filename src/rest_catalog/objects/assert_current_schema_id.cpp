@@ -35,8 +35,8 @@ string AssertCurrentSchemaId::TryFromJSON(yyjson_val *obj) {
 	if (!current_schema_id_val) {
 		return "AssertCurrentSchemaId required property 'current-schema-id' is missing";
 	} else {
-		if (yyjson_is_sint(current_schema_id_val)) {
-			current_schema_id = yyjson_get_sint(current_schema_id_val);
+		if (yyjson_is_int(current_schema_id_val)) {
+			current_schema_id = yyjson_get_int(current_schema_id_val);
 		} else {
 			return StringUtil::Format(
 			    "AssertCurrentSchemaId property 'current_schema_id' is not of type 'integer', found '%s' instead",

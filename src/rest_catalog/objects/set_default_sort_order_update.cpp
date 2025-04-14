@@ -35,8 +35,8 @@ string SetDefaultSortOrderUpdate::TryFromJSON(yyjson_val *obj) {
 	if (!sort_order_id_val) {
 		return "SetDefaultSortOrderUpdate required property 'sort-order-id' is missing";
 	} else {
-		if (yyjson_is_sint(sort_order_id_val)) {
-			sort_order_id = yyjson_get_sint(sort_order_id_val);
+		if (yyjson_is_int(sort_order_id_val)) {
+			sort_order_id = yyjson_get_int(sort_order_id_val);
 		} else {
 			return StringUtil::Format(
 			    "SetDefaultSortOrderUpdate property 'sort_order_id' is not of type 'integer', found '%s' instead",

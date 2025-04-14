@@ -42,8 +42,8 @@ string ListType::TryFromJSON(yyjson_val *obj) {
 	if (!element_id_val) {
 		return "ListType required property 'element-id' is missing";
 	} else {
-		if (yyjson_is_sint(element_id_val)) {
-			element_id = yyjson_get_sint(element_id_val);
+		if (yyjson_is_int(element_id_val)) {
+			element_id = yyjson_get_int(element_id_val);
 		} else {
 			return StringUtil::Format("ListType property 'element_id' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(element_id_val));

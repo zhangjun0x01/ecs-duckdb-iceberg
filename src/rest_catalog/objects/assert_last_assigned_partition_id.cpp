@@ -35,8 +35,8 @@ string AssertLastAssignedPartitionId::TryFromJSON(yyjson_val *obj) {
 	if (!last_assigned_partition_id_val) {
 		return "AssertLastAssignedPartitionId required property 'last-assigned-partition-id' is missing";
 	} else {
-		if (yyjson_is_sint(last_assigned_partition_id_val)) {
-			last_assigned_partition_id = yyjson_get_sint(last_assigned_partition_id_val);
+		if (yyjson_is_int(last_assigned_partition_id_val)) {
+			last_assigned_partition_id = yyjson_get_int(last_assigned_partition_id_val);
 		} else {
 			return StringUtil::Format("AssertLastAssignedPartitionId property 'last_assigned_partition_id' is not of "
 			                          "type 'integer', found '%s' instead",

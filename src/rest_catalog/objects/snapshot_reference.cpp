@@ -42,8 +42,8 @@ string SnapshotReference::TryFromJSON(yyjson_val *obj) {
 	if (!snapshot_id_val) {
 		return "SnapshotReference required property 'snapshot-id' is missing";
 	} else {
-		if (yyjson_is_sint(snapshot_id_val)) {
-			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		if (yyjson_is_int(snapshot_id_val)) {
+			snapshot_id = yyjson_get_int(snapshot_id_val);
 		} else {
 			return StringUtil::Format(
 			    "SnapshotReference property 'snapshot_id' is not of type 'integer', found '%s' instead",
@@ -53,8 +53,8 @@ string SnapshotReference::TryFromJSON(yyjson_val *obj) {
 	auto max_ref_age_ms_val = yyjson_obj_get(obj, "max-ref-age-ms");
 	if (max_ref_age_ms_val) {
 		has_max_ref_age_ms = true;
-		if (yyjson_is_sint(max_ref_age_ms_val)) {
-			max_ref_age_ms = yyjson_get_sint(max_ref_age_ms_val);
+		if (yyjson_is_int(max_ref_age_ms_val)) {
+			max_ref_age_ms = yyjson_get_int(max_ref_age_ms_val);
 		} else {
 			return StringUtil::Format(
 			    "SnapshotReference property 'max_ref_age_ms' is not of type 'integer', found '%s' instead",
@@ -64,8 +64,8 @@ string SnapshotReference::TryFromJSON(yyjson_val *obj) {
 	auto max_snapshot_age_ms_val = yyjson_obj_get(obj, "max-snapshot-age-ms");
 	if (max_snapshot_age_ms_val) {
 		has_max_snapshot_age_ms = true;
-		if (yyjson_is_sint(max_snapshot_age_ms_val)) {
-			max_snapshot_age_ms = yyjson_get_sint(max_snapshot_age_ms_val);
+		if (yyjson_is_int(max_snapshot_age_ms_val)) {
+			max_snapshot_age_ms = yyjson_get_int(max_snapshot_age_ms_val);
 		} else {
 			return StringUtil::Format(
 			    "SnapshotReference property 'max_snapshot_age_ms' is not of type 'integer', found '%s' instead",
@@ -75,8 +75,8 @@ string SnapshotReference::TryFromJSON(yyjson_val *obj) {
 	auto min_snapshots_to_keep_val = yyjson_obj_get(obj, "min-snapshots-to-keep");
 	if (min_snapshots_to_keep_val) {
 		has_min_snapshots_to_keep = true;
-		if (yyjson_is_sint(min_snapshots_to_keep_val)) {
-			min_snapshots_to_keep = yyjson_get_sint(min_snapshots_to_keep_val);
+		if (yyjson_is_int(min_snapshots_to_keep_val)) {
+			min_snapshots_to_keep = yyjson_get_int(min_snapshots_to_keep_val);
 		} else {
 			return StringUtil::Format(
 			    "SnapshotReference property 'min_snapshots_to_keep' is not of type 'integer', found '%s' instead",
