@@ -73,14 +73,21 @@ static IRCAPIColumnDefinition ParseColumnDefinition(const rest_api_objects::Stru
 
 	result.precision = -1;
 	result.scale = -1;
-	if (type->has_primitive_type && StringUtil::StartsWith(type->primitive_type.value, "decimal")) {
-		auto &decimal_type = type->primitive_type.value;
-		//! FIXME: This was 'type_precision' and 'type_scale', but 'type-precision' or 'type_precision' are not valid
-		//! fields of the spec?
-		// instead, the PrimitiveType can contain a 'value' property that can have 'decimal(10,2)' as its value)
-		if (sscanf(decimal_type.c_str(), "decimal(%lld,%lld)", &result.precision, &result.scale) != 2) {
-			throw InvalidInputException("Expected format: 'decimal(%d,%d)', got '%s'", decimal_type);
+	if (type->has_primitive_type) {
+		//! FIXME: only primitive types have 'type_text'
+		result.type_text = type->primitive_type.value;
+		auto &primitive_type = type->primitive_type;
+		if (StringUtil::StartsWith(primitive_type.value, "decimal")) {
+			auto &decimal_type = primitive_type.value;
+			//! FIXME: This was 'type_precision' and 'type_scale', but 'type-precision' or 'type_precision' are not
+			//! valid fields of the spec?
+			// instead, the PrimitiveType can contain a 'value' property that can have 'decimal(10,2)' as its value)
+			if (sscanf(decimal_type.c_str(), "decimal(%lld,%lld)", &result.precision, &result.scale) != 2) {
+				throw InvalidInputException("Expected format: 'decimal(%d,%d)', got '%s'", decimal_type);
+			}
 		}
+	} else {
+		throw NotImplementedException("Can't currently parse non-primitive types");
 	}
 	result.position = column_def.id;
 	return result;
