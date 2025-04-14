@@ -26,16 +26,16 @@
 #include "storage/authorization/sigv4.hpp"
 
 namespace duckdb {
+// namespace
+namespace {
 
 enum class IcebergEndpointType : uint8_t { AWS_S3TABLES, AWS_GLUE, INVALID };
-
-namespace {
 
 static IcebergEndpointType EndpointTypeFromString(const string &input) {
 	D_ASSERT(StringUtil::Lower(input) == input);
 
 	static const case_insensitive_map_t<IcebergEndpointType> mapping {{"glue", IcebergEndpointType::AWS_GLUE},
-																	  {"s3_tables", IcebergEndpointType::AWS_S3TABLES}};
+	                                                                  {"s3_tables", IcebergEndpointType::AWS_S3TABLES}};
 
 	for (auto &entry : mapping) {
 		if (entry.first == input) {
@@ -47,7 +47,7 @@ static IcebergEndpointType EndpointTypeFromString(const string &input) {
 		options.insert(entry.first);
 	}
 	throw InvalidConfigurationException("Unrecognized 'endpoint_type' (%s), accepted options are: %s", input,
-										StringUtil::Join(options, ", "));
+	                                    StringUtil::Join(options, ", "));
 }
 
 } // namespace
