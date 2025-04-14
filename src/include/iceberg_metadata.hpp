@@ -19,8 +19,6 @@ namespace duckdb {
 
 struct IcebergColumnDefinition {
 public:
-	static IcebergColumnDefinition ParseFromJson(yyjson_val *val);
-
 	LogicalType ToDuckDBType() {
 		return type;
 	}
