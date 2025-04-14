@@ -1,4 +1,4 @@
-# name: test/sql/cloud/glue/test_direct_keys_glue.test
+# name: test/sql/cloud/glue/test_direct_keys_glue_no_endpoint_type.test
 # description: test integration with iceberg catalog read
 # group: [glue]
 
@@ -18,21 +18,25 @@ require httpfs
 
 require aws
 
+
 # TODO: re-enable these tests once we know what account has these
 #  credentials, and we can grant them access to the glue catalog
+mode skip
+
 # test using keys directory
 statement ok
 CREATE SECRET s1 (
-      TYPE S3,
-      KEY_ID '${AWS_ACCESS_KEY_ID}',
-      SECRET '${AWS_SECRET_ACCESS_KEY}',
-      REGION 'us-east-1'
+	TYPE S3,
+	KEY_ID '${AWS_ACCESS_KEY_ID}',
+	SECRET '${AWS_SECRET_ACCESS_KEY}',
+	REGION 'us-east-1'
 );
 
 statement ok
 attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as my_datalake (
-    TYPE ICEBERG,
-    ENDPOINT_TYPE 'GLUE'
+	TYPE ICEBERG,
+	AUTHORIZATION_TYPE 'sigv4',
+	ENDPOINT 'glue.us-east-1.amazonaws.com/iceberg'
 );
 
 query T nosort tables_1
@@ -62,8 +66,9 @@ CREATE SECRET assume_role_secret (
 
 statement ok
 attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as my_datalake (
-    TYPE ICEBERG,
-    ENDPOINT_TYPE 'GLUE'
+	TYPE ICEBERG,
+	AUTHORIZATION_TYPE 'sigv4',
+	ENDPOINT 'glue.us-east-1.amazonaws.com/iceberg'
 );
 
 query T nosort tables_1
@@ -89,8 +94,9 @@ CREATE SECRET (
 
 statement ok
 attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as my_datalake (
-    TYPE ICEBERG,
-    ENDPOINT_TYPE 'GLUE'
+	TYPE ICEBERG,
+	AUTHORIZATION_TYPE 'sigv4',
+	ENDPOINT 'glue.us-east-1.amazonaws.com/iceberg'
 );
 
 query T nosort tables_1
