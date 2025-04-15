@@ -258,7 +258,7 @@ string IcebergSnapshot::PickTableVersion(vector<OpenFileInfo> &found_metadata, s
 	// For now: just sort the versions and take the largest
 	if (!found_metadata.empty()) {
 		std::sort(found_metadata.begin(), found_metadata.end(),
-		          [](const OpenFileInfo &a, const OpenFileInfo &b) { return a.path > b.path; });
+		          [](const OpenFileInfo &a, const OpenFileInfo &b) { return a.path < b.path; });
 		return found_metadata.back().path;
 	} else {
 		return string();
