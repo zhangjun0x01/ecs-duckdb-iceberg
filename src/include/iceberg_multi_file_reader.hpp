@@ -31,10 +31,11 @@ public:
 		if (count == 0) {
 			return 0;
 		}
+		result_sel.Initialize(STANDARD_VECTOR_SIZE);
 		idx_t selection_idx = 0;
-		for (row_t row_idx = start_row_index; row_idx < start_row_index + count; row_idx++) {
-			if (!temp_invalid_rows.count(row_idx)) {
-				result_sel.set_index(selection_idx++, row_idx);
+		for (idx_t i = 0; i < count; i++) {
+			if (!temp_invalid_rows.count(i + start_row_index)) {
+				result_sel.set_index(selection_idx++, i);
 			}
 		}
 		return selection_idx;
