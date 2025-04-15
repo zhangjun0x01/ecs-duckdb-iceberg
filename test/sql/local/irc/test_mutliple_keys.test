@@ -14,6 +14,9 @@ require httpfs
 
 require aws
 
+# Do not ignore 'HTTP' error messages!
+set ignore_error_messages
+
 statement ok
 CREATE SECRET amazing_secret (
     TYPE S3,
@@ -40,7 +43,7 @@ attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as glue_lake (
     ENDPOINT_TYPE 'GLUE'
 );
 ----
-IO Error
+Invalid Configuration Error
 
 statement ok
 CREATE or replace SECRET amazing_secret (
@@ -60,7 +63,7 @@ attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as glue_lake (
     ENDPOINT_TYPE 'GLUE'
 );
 ----
-IO Error
+HTTP Error
 
 # TODO: fix me. Only fails in CI
 mode skip
