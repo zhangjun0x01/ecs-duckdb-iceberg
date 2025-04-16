@@ -104,9 +104,15 @@ static unordered_map<int32_t, string> GetBounds(Vector &bounds, idx_t index) {
 	auto keys = FlatVector::GetData<int32_t>(*StructVector::GetEntries(bounds_child)[0]);
 	auto values = FlatVector::GetData<string_t>(*StructVector::GetEntries(bounds_child)[1]);
 	auto bounds_list = FlatVector::GetData<list_entry_t>(bounds);
-	auto list_entry = bounds_list[index];
 
 	unordered_map<int32_t, string> parsed_bounds;
+
+	auto &validity = FlatVector::Validity(bounds);
+	if (!validity.RowIsValid(index)) {
+		return parsed_bounds;
+	}
+
+	auto list_entry = bounds_list[index];
 	for (idx_t j = 0; j < list_entry.length; j++) {
 		auto list_idx = list_entry.offset + j;
 		parsed_bounds[keys[list_idx]] = values[list_idx].GetString();
