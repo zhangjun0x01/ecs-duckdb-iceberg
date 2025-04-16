@@ -140,7 +140,7 @@ string APIUtils::DeleteRequest(ClientContext &context, const string &url, Reques
 	request_input.SetCertPath(SELECTED_CURL_CERT_PATH);
 	request_input.SetBearerToken(token);
 
-	return request_input.DELETE(context);
+	return request_input.DeleteRequest(context);
 }
 
 string APIUtils::PostRequest(ClientContext &context, const string &url, const string &post_data,
@@ -152,7 +152,7 @@ string APIUtils::PostRequest(ClientContext &context, const string &url, const st
 	request_input.SetCertPath(SELECTED_CURL_CERT_PATH);
 	request_input.SetBearerToken(token);
 
-	return request_input.POST(context, post_data);
+	return request_input.PostRequest(context, post_data);
 }
 
 string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
@@ -165,7 +165,7 @@ string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &en
 	request_input.SetCertPath(SELECTED_CURL_CERT_PATH);
 	request_input.SetBearerToken(token);
 
-	return request_input.GET(context);
+	return request_input.GetRequest(context);
 }
 
 } // namespace duckdb

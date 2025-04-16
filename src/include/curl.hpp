@@ -11,9 +11,9 @@ public:
 	}
 
 public:
-	string GET(ClientContext &context);
-	string POST(ClientContext &context, const string &post_data);
-	string DELETE(ClientContext &context);
+	string GetRequest(ClientContext &context);
+	string PostRequest(ClientContext &context, const string &post_data);
+	string DeleteRequest(ClientContext &context);
 	void AddHeader(const string &header) {
 		headers.push_back(header);
 	}

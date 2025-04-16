@@ -11,15 +11,15 @@ namespace duckdb {
 
 #ifdef WASM_LOADABLE_EXTENSIONS
 
-string RequestInput::GET(ClientContext &context) {
+string RequestInput::GetRequest(ClientContext &context) {
 	throw NotImplementedException("GET on WASM not implemented yet");
 }
 
-string RequestInput::POST(ClientContext &context, const string &post_data) {
+string RequestInput::PostRequest(ClientContext &context, const string &post_data) {
 	throw NotImplementedException("POST on WASM not implemented yet");
 }
 
-string RequestInput::DELETE(ClientContext &context) {
+string RequestInput::DeleteRequest(ClientContext &context) {
 	throw NotImplementedException("DELETE on WASM not implemented yet");
 }
 
@@ -86,7 +86,7 @@ static size_t RequestWriteCallback(void *contents, size_t size, size_t nmemb, vo
 
 } // namespace
 
-string RequestInput::DELETE(ClientContext &context) {
+string RequestInput::DeleteRequest(ClientContext &context) {
 	CURLRequestHeaders curl_headers;
 	for (auto &header : headers) {
 		curl_headers.Add(header);
@@ -117,7 +117,7 @@ string RequestInput::DELETE(ClientContext &context) {
 	return result;
 }
 
-string RequestInput::POST(ClientContext &context, const string &post_data) {
+string RequestInput::PostRequest(ClientContext &context, const string &post_data) {
 	CURLRequestHeaders curl_headers;
 	for (auto &header : headers) {
 		curl_headers.Add(header);
@@ -149,7 +149,7 @@ string RequestInput::POST(ClientContext &context, const string &post_data) {
 	return result;
 }
 
-string RequestInput::GET(ClientContext &context) {
+string RequestInput::GetRequest(ClientContext &context) {
 	CURLRequestHeaders curl_headers;
 	for (auto &header : headers) {
 		curl_headers.Add(header);
