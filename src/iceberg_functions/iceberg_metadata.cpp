@@ -21,6 +21,7 @@
 #include "duckdb/common/file_system.hpp"
 #include "iceberg_metadata.hpp"
 #include "iceberg_functions.hpp"
+#include "iceberg_utils.hpp"
 #include "yyjson.hpp"
 
 #include <string>
@@ -67,24 +68,36 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 		} else if (loption == "version") {
 			options.table_version = StringValue::Get(kv.second);
 		} else if (loption == "version_name_format") {
-			options.version_name_format = StringValue::Get(kv.second);
+			auto value = StringValue::Get(kv.second);
+			auto string_substitutions = IcebergUtils::CountOccurrences(value, "%s");
+			if (string_substitutions != 2) {
+				throw InvalidInputException(
+				    "'version_name_format' has to contain two occurrences of '%s' in it, found %d", "%s",
+				    string_substitutions);
+			}
+			options.version_name_format = value;
 		}
 	}
 
 	auto iceberg_meta_path = IcebergSnapshot::GetMetaDataPath(context, iceberg_path, fs, options);
+	auto parse_info = IcebergMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
+
 	IcebergSnapshot snapshot_to_scan;
-	if (input.inputs.size() > 1) {
-		if (input.inputs[1].type() == LogicalType::UBIGINT) {
-			snapshot_to_scan =
-			    IcebergSnapshot::GetSnapshotById(iceberg_meta_path, fs, input.inputs[1].GetValue<uint64_t>(), options);
-		} else if (input.inputs[1].type() == LogicalType::TIMESTAMP) {
-			snapshot_to_scan = IcebergSnapshot::GetSnapshotByTimestamp(
-			    iceberg_meta_path, fs, input.inputs[1].GetValue<timestamp_t>(), options);
-		} else {
-			throw InvalidInputException("Unknown argument type in IcebergScanBindReplace.");
-		}
-	} else {
-		snapshot_to_scan = IcebergSnapshot::GetLatestSnapshot(iceberg_meta_path, fs, options);
+	switch (options.snapshot_source) {
+	case SnapshotSource::LATEST: {
+		snapshot_to_scan = IcebergSnapshot::GetLatestSnapshot(*parse_info, options);
+		break;
+	}
+	case SnapshotSource::FROM_ID: {
+		snapshot_to_scan = IcebergSnapshot::GetSnapshotById(*parse_info, options.snapshot_id, options);
+		break;
+	}
+	case SnapshotSource::FROM_TIMESTAMP: {
+		snapshot_to_scan = IcebergSnapshot::GetSnapshotByTimestamp(*parse_info, options.snapshot_timestamp, options);
+		break;
+	}
+	default:
+		throw InternalException("SnapshotSource type not implemented");
 	}
 
 	ret->iceberg_table = make_uniq<IcebergTable>(IcebergTable::Load(iceberg_path, snapshot_to_scan, context, options));

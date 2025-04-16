@@ -6,6 +6,16 @@
 
 namespace duckdb {
 
+idx_t IcebergUtils::CountOccurrences(const string &input, const string &to_find) {
+	size_t pos = input.find(to_find);
+	idx_t count = 0;
+	while (pos != std::string::npos) {
+		pos = input.find(to_find, pos + to_find.length()); // move past current match
+		count++;
+	}
+	return count;
+}
+
 string IcebergUtils::FileToString(const string &path, FileSystem &fs) {
 	auto handle = fs.OpenFile(path, FileFlags::FILE_FLAGS_READ);
 	auto file_size = handle->GetFileSize();

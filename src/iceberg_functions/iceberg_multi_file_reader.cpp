@@ -334,17 +334,19 @@ void IcebergMultiFileList::InitializeFiles() {
 	auto iceberg_path = GetPath();
 	auto &fs = FileSystem::GetFileSystem(context);
 	auto iceberg_meta_path = IcebergSnapshot::GetMetaDataPath(context, iceberg_path, fs, options);
+	auto metadata = IcebergMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
+
 	switch (options.snapshot_source) {
 	case SnapshotSource::LATEST: {
-		snapshot = IcebergSnapshot::GetLatestSnapshot(iceberg_meta_path, fs, options);
+		snapshot = IcebergSnapshot::GetLatestSnapshot(*metadata, options);
 		break;
 	}
 	case SnapshotSource::FROM_ID: {
-		snapshot = IcebergSnapshot::GetSnapshotById(iceberg_meta_path, fs, options.snapshot_id, options);
+		snapshot = IcebergSnapshot::GetSnapshotById(*metadata, options.snapshot_id, options);
 		break;
 	}
 	case SnapshotSource::FROM_TIMESTAMP: {
-		snapshot = IcebergSnapshot::GetSnapshotByTimestamp(iceberg_meta_path, fs, options.snapshot_timestamp, options);
+		snapshot = IcebergSnapshot::GetSnapshotByTimestamp(*metadata, options.snapshot_timestamp, options);
 		break;
 	}
 	default:
@@ -778,7 +780,13 @@ bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, Mu
 		return true;
 	}
 	if (loption == "version_name_format") {
-		this->options.version_name_format = StringValue::Get(val);
+		auto value = StringValue::Get(val);
+		auto string_substitutions = IcebergUtils::CountOccurrences(value, "%s");
+		if (string_substitutions != 2) {
+			throw InvalidInputException("'version_name_format' has to contain two occurrences of '%s' in it, found %d",
+			                            "%s", string_substitutions);
+		}
+		this->options.version_name_format = value;
 		return true;
 	}
 	if (loption == "snapshot_from_id") {
