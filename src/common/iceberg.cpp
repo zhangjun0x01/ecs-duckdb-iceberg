@@ -253,12 +253,13 @@ string IcebergSnapshot::GuessTableVersion(const string &meta_path, FileSystem &f
 	    version_format);
 }
 
-string IcebergSnapshot::PickTableVersion(vector<string> &found_metadata, string &version_pattern, string &glob) {
+string IcebergSnapshot::PickTableVersion(vector<OpenFileInfo> &found_metadata, string &version_pattern, string &glob) {
 	// TODO: Different "table_version" strings could customize this
 	// For now: just sort the versions and take the largest
 	if (!found_metadata.empty()) {
-		std::sort(found_metadata.begin(), found_metadata.end());
-		return found_metadata.back();
+		std::sort(found_metadata.begin(), found_metadata.end(),
+		          [](const OpenFileInfo &a, const OpenFileInfo &b) { return a.path < b.path; });
+		return found_metadata.back().path;
 	} else {
 		return string();
 	}
