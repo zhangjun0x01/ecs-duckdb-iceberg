@@ -17,7 +17,7 @@ set(EXTENSION_SOURCES
     src/manifest_reader.cpp
     src/catalog_api.cpp
     src/catalog_utils.cpp
-	src/curl.cpp
+    src/curl.cpp
     src/common/utils.cpp
     src/common/url_utils.cpp
     src/common/schema.cpp

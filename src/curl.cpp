@@ -60,6 +60,11 @@ private:
 
 class CURLRequestHeaders {
 public:
+	CURLRequestHeaders(const vector<string> &input) {
+		for (auto &header : input) {
+			Add(header);
+		}
+	}
 	~CURLRequestHeaders() {
 		if (headers) {
 			curl_slist_free_all(headers);
@@ -87,10 +92,7 @@ static size_t RequestWriteCallback(void *contents, size_t size, size_t nmemb, vo
 } // namespace
 
 string RequestInput::DeleteRequest(ClientContext &context) {
-	CURLRequestHeaders curl_headers;
-	for (auto &header : headers) {
-		curl_headers.Add(header);
-	}
+	CURLRequestHeaders curl_headers(headers);
 
 	CURLcode res;
 	string result;
@@ -118,10 +120,7 @@ string RequestInput::DeleteRequest(ClientContext &context) {
 }
 
 string RequestInput::PostRequest(ClientContext &context, const string &post_data) {
-	CURLRequestHeaders curl_headers;
-	for (auto &header : headers) {
-		curl_headers.Add(header);
-	}
+	CURLRequestHeaders curl_headers(headers);
 
 	CURLcode res;
 	string result;
@@ -150,10 +149,7 @@ string RequestInput::PostRequest(ClientContext &context, const string &post_data
 }
 
 string RequestInput::GetRequest(ClientContext &context) {
-	CURLRequestHeaders curl_headers;
-	for (auto &header : headers) {
-		curl_headers.Add(header);
-	}
+	CURLRequestHeaders curl_headers(headers);
 
 	CURLcode res;
 	string result;
