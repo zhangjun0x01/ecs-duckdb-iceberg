@@ -15,7 +15,7 @@ require parquet
 require iceberg
 
 statement ok
-select count(*) from ICEBERG_SCAN('/Users/tomebergen/duckdb-iceberg/data/generated/iceberg/spark-local/lineitem_sf1_deletes');
+select count(*) from ICEBERG_SCAN('data/generated/iceberg/spark-local/lineitem_sf1_deletes');
 
 ### Scanning latest snapshot
 query I
