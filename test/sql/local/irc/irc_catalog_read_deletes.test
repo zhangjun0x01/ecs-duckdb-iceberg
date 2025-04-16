@@ -12,6 +12,9 @@ require iceberg
 
 require httpfs
 
+# Do not ignore 'HTTP' error messages!
+set ignore_error_messages
+
 statement ok
 CREATE SECRET (
     TYPE S3,
@@ -26,8 +29,8 @@ CREATE SECRET (
 statement ok
 ATTACH '' AS my_datalake (
 	TYPE ICEBERG,
-    CLIENT_ID 'admin',
-    CLIENT_SECRET 'password',
+	CLIENT_ID 'admin',
+	CLIENT_SECRET 'password',
 	ENDPOINT 'http://127.0.0.1:8181'
 );
 

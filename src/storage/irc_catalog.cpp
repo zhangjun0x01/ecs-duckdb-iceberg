@@ -1,4 +1,3 @@
-#include "storage/irc_catalog.hpp"
 #include "storage/irc_schema_entry.hpp"
 #include "storage/irc_transaction.hpp"
 #include "catalog_api.hpp"
@@ -10,15 +9,19 @@
 #include "duckdb/parser/parsed_data/drop_info.hpp"
 #include "duckdb/parser/parsed_data/create_schema_info.hpp"
 #include "duckdb/main/attached_database.hpp"
+#include "storage/irc_catalog.hpp"
 
 using namespace duckdb_yyjson;
 
 namespace duckdb {
 
-IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, IRCCredentials credentials, string warehouse,
-                     string host, string secret_name, string version)
-    : Catalog(db_p), access_mode(access_mode), credentials(std::move(credentials)), warehouse(warehouse), host(host),
-      secret_name(secret_name), version(version), schemas(*this) {
+IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, unique_ptr<IRCAuthorization> auth_handler,
+                     const string &warehouse, const string &uri, const string &version)
+    : Catalog(db_p), access_mode(access_mode), auth_handler(std::move(auth_handler)), warehouse(warehouse), uri(uri),
+      version(version), schemas(*this) {
+	if (version.empty()) {
+		throw InternalException("version can not be empty");
+	}
 }
 
 IRCatalog::~IRCatalog() = default;
@@ -33,7 +36,7 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	D_ASSERT(prefix.empty());
 	url.AddPathComponent("config");
 	url.SetParam("warehouse", warehouse);
-	auto response = APIUtils::GetRequest(context, url, secret_name, credentials.token);
+	auto response = auth_handler->GetRequest(context, url);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(response));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto *overrides_json = yyjson_obj_get(root, "overrides");
@@ -98,21 +101,24 @@ void IRCatalog::ScanSchemas(ClientContext &context, std::function<void(SchemaCat
 	schemas.Scan(context, [&](CatalogEntry &schema) { callback(schema.Cast<IRCSchemaEntry>()); });
 }
 
-optional_ptr<SchemaCatalogEntry> IRCatalog::GetSchema(CatalogTransaction transaction, const string &schema_name,
-                                                      OnEntryNotFound if_not_found, QueryErrorContext error_context) {
+optional_ptr<SchemaCatalogEntry> IRCatalog::LookupSchema(CatalogTransaction transaction,
+                                                         const EntryLookupInfo &schema_lookup,
+                                                         OnEntryNotFound if_not_found) {
+	auto &schema_name = schema_lookup.GetEntryName();
 	if (schema_name == DEFAULT_SCHEMA) {
 		if (default_schema.empty()) {
 			if (if_not_found == OnEntryNotFound::RETURN_NULL) {
 				return nullptr;
 			}
-			throw InvalidInputException("Attempting to fetch the default schema - but no database was "
-			                            "provided in the connection string");
+			throw CatalogException(
+			    schema_lookup.GetErrorContext(),
+			    "Attempting to fetch the default schema - but no database was provided in the connection string");
 		}
-		return GetSchema(transaction, default_schema, if_not_found, error_context);
+		return GetSchema(transaction, default_schema, if_not_found);
 	}
 	auto entry = schemas.GetEntry(transaction.GetContext(), schema_name);
 	if (!entry && if_not_found != OnEntryNotFound::RETURN_NULL) {
-		throw BinderException("Schema with name \"%s\" not found", schema_name);
+		throw CatalogException(schema_lookup.GetErrorContext(), "Schema with name \"%s\" not found", schema_name);
 	}
 
 	return reinterpret_cast<SchemaCatalogEntry *>(entry.get());
@@ -137,18 +143,8 @@ DatabaseSize IRCatalog::GetDatabaseSize(ClientContext &context) {
 
 IRCEndpointBuilder IRCatalog::GetBaseUrl() const {
 	auto base_url = IRCEndpointBuilder();
-	base_url.SetVersion(version);
-	base_url.SetHost(host);
-	switch (catalog_type) {
-	case ICEBERG_CATALOG_TYPE::AWS_GLUE:
-	case ICEBERG_CATALOG_TYPE::AWS_S3TABLES: {
-		base_url.AddPathComponent("iceberg");
-		base_url.AddPathComponent(version);
-		break;
-	}
-	default:
-		break;
-	}
+	base_url.SetHost(uri);
+	base_url.AddPathComponent(version);
 	return base_url;
 }
 
@@ -156,36 +152,49 @@ void IRCatalog::ClearCache() {
 	schemas.ClearEntries();
 }
 
-unique_ptr<SecretEntry> IRCatalog::GetS3Secret(ClientContext &context, const string &secret_name) {
+unique_ptr<SecretEntry> IRCatalog::GetStorageSecret(ClientContext &context, const string &secret_name) {
 	auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
-	// make sure a secret exists to connect to an AWS catalog
-	unique_ptr<SecretEntry> secret_entry = nullptr;
-	if (secret_name.empty()) {
-		//! Lookup the default S3 secret
-		secret_entry = context.db->GetSecretManager().GetSecretByName(transaction, "__default_s3");
-	} else {
-		secret_entry = context.db->GetSecretManager().GetSecretByName(transaction, secret_name);
+
+	case_insensitive_set_t accepted_secret_types {"s3", "aws"};
+
+	if (!secret_name.empty()) {
+		auto secret_entry = context.db->GetSecretManager().GetSecretByName(transaction, secret_name);
+		if (secret_entry) {
+			auto secret_type = secret_entry->secret->GetType();
+			if (accepted_secret_types.count(secret_type)) {
+				return secret_entry;
+			}
+			throw InvalidConfigurationException(
+			    "Found a secret by the name of '%s', but it is not of an accepted type for a 'secret', "
+			    "accepted types are: 's3' or 'aws', found '%s'",
+			    secret_name, secret_type);
+		}
+		throw InvalidConfigurationException(
+		    "No secret by the name of '%s' could be found, consider changing the 'secret'", secret_name);
 	}
 
-	if (!secret_entry) {
-		auto secret_match = context.db->GetSecretManager().LookupSecret(transaction, "s3://", "s3");
-		if (!secret_match.HasMatch()) {
-			throw InvalidInputException("Failed to find an S3 secret and no explicit secret was passed!");
+	for (auto &type : accepted_secret_types) {
+		if (secret_name.empty()) {
+			//! Lookup the default secret for this type
+			auto secret_entry =
+			    context.db->GetSecretManager().GetSecretByName(transaction, StringUtil::Format("__default_%s", type));
+			if (secret_entry) {
+				return secret_entry;
+			}
 		}
-		secret_entry = std::move(secret_match.secret_entry);
+		auto secret_match = context.db->GetSecretManager().LookupSecret(transaction, type + "://", type);
+		if (secret_match.HasMatch()) {
+			return std::move(secret_match.secret_entry);
+		}
 	}
-	if (secret_entry) {
-		return secret_entry;
-	}
-	throw InvalidInputException("Could not find valid S3 secret");
+	throw InvalidConfigurationException("Could not find a valid storage secret (s3 or aws)");
 }
 
-unique_ptr<SecretEntry> IRCatalog::GetIcebergSecret(ClientContext &context, const string &secret_name,
-                                                    bool find_if_empty) {
+unique_ptr<SecretEntry> IRCatalog::GetIcebergSecret(ClientContext &context, const string &secret_name) {
 	auto transaction = CatalogTransaction::GetSystemCatalogTransaction(context);
 	unique_ptr<SecretEntry> secret_entry = nullptr;
-	if (secret_name.empty() && find_if_empty) {
-		//! Try to find any secret with the 'iceberg' type
+	if (secret_name.empty()) {
+		//! Try to find any secret with type 'iceberg'
 		auto secret_match = context.db->GetSecretManager().LookupSecret(transaction, "", "iceberg");
 		if (!secret_match.HasMatch()) {
 			return nullptr;
@@ -197,20 +206,20 @@ unique_ptr<SecretEntry> IRCatalog::GetIcebergSecret(ClientContext &context, cons
 	return secret_entry;
 }
 
-unique_ptr<PhysicalOperator> IRCatalog::PlanInsert(ClientContext &context, LogicalInsert &op,
-                                                   unique_ptr<PhysicalOperator> plan) {
+PhysicalOperator &IRCatalog::PlanInsert(ClientContext &context, PhysicalPlanGenerator &planner, LogicalInsert &op,
+                                        optional_ptr<PhysicalOperator> plan) {
 	throw NotImplementedException("ICCatalog PlanInsert");
 }
-unique_ptr<PhysicalOperator> IRCatalog::PlanCreateTableAs(ClientContext &context, LogicalCreateTable &op,
-                                                          unique_ptr<PhysicalOperator> plan) {
+PhysicalOperator &IRCatalog::PlanCreateTableAs(ClientContext &context, PhysicalPlanGenerator &planner,
+                                               LogicalCreateTable &op, PhysicalOperator &plan) {
 	throw NotImplementedException("ICCatalog PlanCreateTableAs");
 }
-unique_ptr<PhysicalOperator> IRCatalog::PlanDelete(ClientContext &context, LogicalDelete &op,
-                                                   unique_ptr<PhysicalOperator> plan) {
+PhysicalOperator &IRCatalog::PlanDelete(ClientContext &context, PhysicalPlanGenerator &planner, LogicalDelete &op,
+                                        PhysicalOperator &plan) {
 	throw NotImplementedException("ICCatalog PlanDelete");
 }
-unique_ptr<PhysicalOperator> IRCatalog::PlanUpdate(ClientContext &context, LogicalUpdate &op,
-                                                   unique_ptr<PhysicalOperator> plan) {
+PhysicalOperator &IRCatalog::PlanUpdate(ClientContext &context, PhysicalPlanGenerator &planner, LogicalUpdate &op,
+                                        PhysicalOperator &plan) {
 	throw NotImplementedException("ICCatalog PlanUpdate");
 }
 unique_ptr<LogicalOperator> IRCatalog::BindCreateIndex(Binder &binder, CreateStatement &stmt, TableCatalogEntry &table,

@@ -36,7 +36,7 @@ void IRCSchemaEntry::DropEntry(ClientContext &context, DropInfo &info) {
 }
 
 optional_ptr<CatalogEntry> IRCSchemaEntry::CreateFunction(CatalogTransaction transaction, CreateFunctionInfo &info) {
-	throw BinderException("PC databases do not support creating functions");
+	throw BinderException("Iceberg databases do not support creating functions");
 }
 
 void ICUnqualifyColumnRef(ParsedExpression &expr) {
@@ -63,30 +63,30 @@ optional_ptr<CatalogEntry> IRCSchemaEntry::CreateView(CatalogTransaction transac
 }
 
 optional_ptr<CatalogEntry> IRCSchemaEntry::CreateType(CatalogTransaction transaction, CreateTypeInfo &info) {
-	throw BinderException("PC databases do not support creating types");
+	throw BinderException("Iceberg databases do not support creating types");
 }
 
 optional_ptr<CatalogEntry> IRCSchemaEntry::CreateSequence(CatalogTransaction transaction, CreateSequenceInfo &info) {
-	throw BinderException("PC databases do not support creating sequences");
+	throw BinderException("Iceberg databases do not support creating sequences");
 }
 
 optional_ptr<CatalogEntry> IRCSchemaEntry::CreateTableFunction(CatalogTransaction transaction,
                                                                CreateTableFunctionInfo &info) {
-	throw BinderException("PC databases do not support creating table functions");
+	throw BinderException("Iceberg databases do not support creating table functions");
 }
 
 optional_ptr<CatalogEntry> IRCSchemaEntry::CreateCopyFunction(CatalogTransaction transaction,
                                                               CreateCopyFunctionInfo &info) {
-	throw BinderException("PC databases do not support creating copy functions");
+	throw BinderException("Iceberg databases do not support creating copy functions");
 }
 
 optional_ptr<CatalogEntry> IRCSchemaEntry::CreatePragmaFunction(CatalogTransaction transaction,
                                                                 CreatePragmaFunctionInfo &info) {
-	throw BinderException("PC databases do not support creating pragma functions");
+	throw BinderException("Iceberg databases do not support creating pragma functions");
 }
 
 optional_ptr<CatalogEntry> IRCSchemaEntry::CreateCollation(CatalogTransaction transaction, CreateCollationInfo &info) {
-	throw BinderException("PC databases do not support creating collations");
+	throw BinderException("Iceberg databases do not support creating collations");
 }
 
 void IRCSchemaEntry::Alter(CatalogTransaction transaction, AlterInfo &info) {
@@ -115,12 +115,13 @@ void IRCSchemaEntry::Scan(CatalogType type, const std::function<void(CatalogEntr
 	throw NotImplementedException("Scan without context not supported");
 }
 
-optional_ptr<CatalogEntry> IRCSchemaEntry::GetEntry(CatalogTransaction transaction, CatalogType type,
-                                                    const string &name) {
+optional_ptr<CatalogEntry> IRCSchemaEntry::LookupEntry(CatalogTransaction transaction,
+                                                       const EntryLookupInfo &lookup_info) {
+	auto type = lookup_info.GetCatalogType();
 	if (!CatalogTypeIsSupported(type)) {
 		return nullptr;
 	}
-	return GetCatalogSet(type).GetEntry(transaction.GetContext(), name);
+	return GetCatalogSet(type).GetEntry(transaction.GetContext(), lookup_info.GetEntryName());
 }
 
 IRCCatalogSet &IRCSchemaEntry::GetCatalogSet(CatalogType type) {
