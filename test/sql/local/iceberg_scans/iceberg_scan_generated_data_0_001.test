@@ -2,7 +2,7 @@
 # description: test iceberg extension with the sf0.001 generated test set
 # group: [iceberg_scans]
 
-
+require avro
 
 require parquet
 

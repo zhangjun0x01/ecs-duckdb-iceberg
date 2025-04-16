@@ -2,7 +2,7 @@
 # description: test connections that arent good
 # group: [cloud]
 
-
+require avro
 
 require parquet
 

@@ -2,7 +2,7 @@
 # description: test integration with iceberg catalog read
 # group: [irc]
 
-
+require avro
 
 require parquet
 

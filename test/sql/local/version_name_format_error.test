@@ -1,6 +1,8 @@
 # name: test/sql/local/version_name_format_error.test
 # group: [local]
 
+require avro 
+
 require parquet
 
 require iceberg
