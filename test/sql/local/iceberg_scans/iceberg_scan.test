@@ -14,9 +14,6 @@ require parquet
 
 require iceberg
 
-statement ok
-select count(*) from ICEBERG_SCAN('data/generated/iceberg/spark-local/lineitem_sf1_deletes');
-
 ### Scanning latest snapshot
 query I
 SELECT count(*) FROM ICEBERG_SCAN('data/persistent/iceberg/lineitem_iceberg', ALLOW_MOVED_PATHS=TRUE);
