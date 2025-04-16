@@ -26,7 +26,7 @@
 #include "storage/authorization/sigv4.hpp"
 
 namespace duckdb {
-
+// namespace
 namespace {
 
 enum class IcebergEndpointType : uint8_t { AWS_S3TABLES, AWS_GLUE, INVALID };
@@ -127,6 +127,13 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	attach_options.warehouse = info.path;
 	attach_options.name = name;
 
+	if (!__AVRO_LOADED__) {
+		auto &db_instance = context.db;
+		ExtensionHelper::AutoLoadExtension(*db_instance, "avro");
+		__AVRO_LOADED__ = true;
+	}
+	// check if we have a secret provided
+	string secret_name;
 	//! First handle generic attach options
 	for (auto &entry : info.options) {
 		auto lower_name = StringUtil::Lower(entry.first);
@@ -228,10 +235,6 @@ static void LoadInternal(DatabaseInstance &instance) {
 	Aws::SDKOptions options;
 	Aws::InitAPI(options); // Should only be called once.
 
-	ExtensionHelper::AutoLoadExtension(instance, "avro");
-	if (!instance.ExtensionIsLoaded("avro")) {
-		throw MissingExtensionException("The iceberg extension requires the avro extension to be loaded!");
-	}
 	ExtensionHelper::AutoLoadExtension(instance, "parquet");
 	if (!instance.ExtensionIsLoaded("parquet")) {
 		throw MissingExtensionException("The iceberg extension requires the parquet extension to be loaded!");

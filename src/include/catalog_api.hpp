@@ -30,8 +30,8 @@ struct IRCAPISchema {
 };
 
 struct IRCAPITableCredentials {
-	unique_ptr<CreateSecretInfo> config;
-	vector<CreateSecretInfo> storage_credentials;
+	unique_ptr<CreateSecretInput> config;
+	vector<CreateSecretInput> storage_credentials;
 };
 
 class IRCAPI {

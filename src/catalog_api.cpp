@@ -167,25 +167,30 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 		auto &storage_credentials = load_table_result.storage_credentials;
 		for (idx_t index = 0; index < storage_credentials.size(); index++) {
 			auto &credential = storage_credentials[index];
-			CreateSecretInfo create_secret_info(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
-			create_secret_info.scope.push_back(credential.prefix);
-			create_secret_info.name = StringUtil::Format("%s_%d_%s", secret_base_name, index, credential.prefix);
-			create_secret_info.type = "s3";
-			create_secret_info.provider = "config";
-			create_secret_info.storage_type = "memory";
-			create_secret_info.options = config_options;
+			CreateSecretInput create_secret_input;
+			create_secret_input.on_conflict = OnCreateConflict::REPLACE_ON_CONFLICT;
+			create_secret_input.persist_type = SecretPersistType::TEMPORARY;
 
-			ParseConfigOptions(credential.config, create_secret_info.options);
+			create_secret_input.scope.push_back(credential.prefix);
+			create_secret_input.name = StringUtil::Format("%s_%d_%s", secret_base_name, index, credential.prefix);
+			create_secret_input.type = "s3";
+			create_secret_input.provider = "config";
+			create_secret_input.storage_type = "memory";
+			create_secret_input.options = config_options;
+
+			ParseConfigOptions(credential.config, create_secret_input.options);
 			//! TODO: apply the 'overrides' retrieved from the /v1/config endpoint
-			result.storage_credentials.push_back(create_secret_info);
+			result.storage_credentials.push_back(create_secret_input);
 		}
 	}
 
 	if (result.storage_credentials.empty() && !config_options.empty()) {
 		//! Only create a secret out of the 'config' if there are no 'storage-credentials'
-		result.config =
-		    make_uniq<CreateSecretInfo>(OnCreateConflict::REPLACE_ON_CONFLICT, SecretPersistType::TEMPORARY);
+		result.config = make_uniq<CreateSecretInput>();
 		auto &config = *result.config;
+		config.on_conflict = OnCreateConflict::REPLACE_ON_CONFLICT;
+		config.persist_type = SecretPersistType::TEMPORARY;
+
 		//! TODO: apply the 'overrides' retrieved from the /v1/config endpoint
 		config.options = config_options;
 		config.name = secret_base_name;
