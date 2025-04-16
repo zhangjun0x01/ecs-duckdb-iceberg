@@ -3,7 +3,7 @@
 
 require httpfs
 
-require avro
+
 
 require parquet
 

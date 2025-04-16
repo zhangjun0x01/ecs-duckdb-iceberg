@@ -8,8 +8,6 @@ require-env POLARIS_CLIENT_SECRET
 
 require-env POLARIS_SERVER_AVAILABLE
 
-require avro
-
 require parquet
 
 require httpfs

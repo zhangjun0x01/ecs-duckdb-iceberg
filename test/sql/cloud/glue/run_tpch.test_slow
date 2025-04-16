@@ -10,7 +10,7 @@ require-env AWS_SECRET_ACCESS_KEY
 
 require httpfs
 
-require avro
+
 
 require parquet
 
