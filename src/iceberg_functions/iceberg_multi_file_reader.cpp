@@ -42,6 +42,65 @@ template <bool LOWER_BOUND = true>
 	                            bound.size(), column.name, column.type.ToString(), bound);
 }
 
+template <class VALUE_TYPE>
+static Value DeserializeDecimalBoundTemplated(const string &bound_value, uint8_t width, uint8_t scale) {
+	VALUE_TYPE ret = 0;
+	//! The blob has to be smaller or equal to the size of the type
+	D_ASSERT(bound_value.size() <= sizeof(VALUE_TYPE));
+	std::memcpy(&ret, bound_value.data(), bound_value.size());
+	return Value::DECIMAL(ret, width, scale);
+}
+
+static Value DeserializeHugeintDecimalBound(const string &bound_value, uint8_t width, uint8_t scale) {
+	hugeint_t ret;
+	//! The blob has to be smaller or equal to the size of the type
+	D_ASSERT(bound_value.size() <= sizeof(VALUE_TYPE));
+
+	int64_t upper_val = 0;
+	uint64_t lower_val = 0;
+	// Read upper and lower parts of hugeint
+
+	idx_t upper_val_size = MinValue(bound_value.size(), sizeof(int64_t));
+
+	std::memcpy(&upper_val, bound_value.data(), upper_val_size);
+	if (bound_value.size() > sizeof(int64_t)) {
+		idx_t lower_val_size = MinValue(bound_value.size() - sizeof(int64_t), sizeof(uint64_t));
+		std::memcpy(&lower_val, bound_value.data() + sizeof(int64_t), lower_val_size);
+	}
+	ret = hugeint_t(upper_val, lower_val);
+	return Value::DECIMAL(ret, width, scale);
+}
+
+template <bool LOWER_BOUND = true>
+static Value DeserializeDecimalBound(const string &bound_value, IcebergColumnDefinition &column) {
+	D_ASSERT(column.type.GetType().id() == LogicalTypeId::DECIMAL);
+
+	uint8_t width;
+	uint8_t scale;
+	if (!column.type.GetDecimalProperties(width, scale)) {
+		ThrowBoundError<LOWER_BOUND>(bound_value, column);
+	}
+
+	auto physical_type = column.type.InternalType();
+	switch (physical_type) {
+	case PhysicalType::INT16: {
+		return DeserializeDecimalBoundTemplated<int16_t>(bound_value, width, scale);
+	}
+	case PhysicalType::INT32: {
+		return DeserializeDecimalBoundTemplated<int32_t>(bound_value, width, scale);
+	}
+	case PhysicalType::INT64: {
+		return DeserializeDecimalBoundTemplated<int64_t>(bound_value, width, scale);
+	}
+	case PhysicalType::INT128: {
+		return DeserializeHugeintDecimalBound(bound_value, width, scale);
+	}
+	default:
+		throw InternalException("DeserializeDecimalBound not implemented for physical type '%s'",
+		                        TypeIdToString(physical_type));
+	}
+}
+
 template <bool LOWER_BOUND = true>
 static Value DeserializeBound(const string &bound_value, IcebergColumnDefinition &column) {
 	auto &type = column.type;
@@ -106,6 +165,9 @@ static Value DeserializeBound(const string &bound_value, IcebergColumnDefinition
 	case LogicalTypeId::VARCHAR: {
 		// Assume the bytes represent a UTF-8 string
 		return Value(bound_value);
+	}
+	case LogicalTypeId::DECIMAL: {
+		return DeserializeDecimalBound(bound_value, column);
 	}
 	// Add more types as needed
 	default:
