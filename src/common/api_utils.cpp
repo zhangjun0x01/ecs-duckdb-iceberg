@@ -7,20 +7,20 @@
 
 namespace duckdb {
 
-string &APIUtils::GetCURLCertPath() {
-	static string cert_path = "";
-	return cert_path;
-}
-
-// Look through the the above locations and if one of the files exists, set that as the location curl should use.
-bool APIUtils::SelectCurlCertPath() {
+//! Grab the first path that exists, from a list of well-known locations
+static string SelectCURLCertPath() {
 	for (string &caFile : certFileLocations) {
 		struct stat buf;
 		if (stat(caFile.c_str(), &buf) == 0) {
-			GetCURLCertPath() = caFile;
+			return caFile;
 		}
 	}
-	return false;
+	return string();
+}
+
+const string &APIUtils::GetCURLCertPath() {
+	static string cert_path = SelectCURLCertPath();
+	return cert_path;
 }
 
 string APIUtils::DeleteRequest(ClientContext &context, const string &url, RequestInput &request_input,

@@ -40,12 +40,11 @@ public:
 	                         RequestInput &request_input, const string &token = "");
 	static string DeleteRequest(ClientContext &context, const string &url, RequestInput &request_input,
 	                            const string &token = "");
-	static bool SelectCurlCertPath();
 	static string PostRequest(ClientContext &context, const string &url, const string &post_data,
 	                          RequestInput &request_input, const string &content_type = "x-www-form-urlencoded",
 	                          const string &token = "");
 	//! We use a singleton here to store the path, set by SelectCurlCertPath
-	static string &GetCURLCertPath();
+	static const string &GetCURLCertPath();
 };
 
 } // namespace duckdb

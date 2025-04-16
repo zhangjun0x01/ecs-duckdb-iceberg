@@ -46,10 +46,6 @@ static string GetTableMetadataCached(ClientContext &context, IRCatalog &catalog,
 	return GetTableMetadata(context, catalog, schema, table);
 }
 
-void IRCAPI::InitializeCurl() {
-	APIUtils::SelectCurlCertPath();
-}
-
 vector<string> IRCAPI::GetCatalogs(ClientContext &context, IRCatalog &catalog) {
 	throw NotImplementedException("ICAPI::GetCatalogs");
 }
