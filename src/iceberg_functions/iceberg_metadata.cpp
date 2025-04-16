@@ -21,6 +21,7 @@
 #include "duckdb/common/file_system.hpp"
 #include "iceberg_metadata.hpp"
 #include "iceberg_functions.hpp"
+#include "iceberg_utils.hpp"
 #include "yyjson.hpp"
 
 #include <string>
@@ -68,7 +69,14 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 		} else if (loption == "version") {
 			options.table_version = StringValue::Get(val);
 		} else if (loption == "version_name_format") {
-			options.version_name_format = StringValue::Get(val);
+			auto value = StringValue::Get(kv.second);
+			auto string_substitutions = IcebergUtils::CountOccurrences(value, "%s");
+			if (string_substitutions != 2) {
+				throw InvalidInputException(
+				    "'version_name_format' has to contain two occurrences of '%s' in it, found %d", "%s",
+				    string_substitutions);
+			}
+			options.version_name_format = value;
 		} else if (loption == "snapshot_from_id") {
 			if (options.snapshot_source != SnapshotSource::LATEST) {
 				throw InvalidInputException(
