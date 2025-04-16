@@ -1,5 +1,4 @@
 #include "api_utils.hpp"
-#include "credentials/credential_provider.hpp"
 #include "duckdb/common/exception.hpp"
 #include "duckdb/common/exception/http_exception.hpp"
 #include "duckdb/common/string_util.hpp"
@@ -44,80 +43,39 @@ string APIUtils::GetAwsService(const string &host) {
 }
 
 string APIUtils::GetRequestAws(ClientContext &context, IRCEndpointBuilder endpoint_builder, const string &secret_name) {
-	auto clientConfig = make_uniq<Aws::Client::ClientConfiguration>();
+	AWSInput aws_input;
+	aws_input.cert_path = SELECTED_CURL_CERT_PATH;
+	// Set the user Agent.
+	auto &config = DBConfig::GetConfig(context);
+	aws_input.user_agent = config.UserAgent();
 
-	if (!SELECTED_CURL_CERT_PATH.empty()) {
-		clientConfig->caFile = SELECTED_CURL_CERT_PATH;
-	}
-
-	std::shared_ptr<Aws::Http::HttpClientFactory> MyClientFactory;
-	std::shared_ptr<Aws::Http::HttpClient> MyHttpClient;
-
-	MyHttpClient = Aws::Http::CreateHttpClient(*clientConfig);
-	Aws::Http::URI uri;
-
-	// TODO move this to IRCatalog::GetBaseURL()
-	auto service = GetAwsService(endpoint_builder.GetHost());
-	auto region = GetAwsRegion(endpoint_builder.GetHost());
+	aws_input.service = GetAwsService(endpoint_builder.GetHost());
+	aws_input.region = GetAwsRegion(endpoint_builder.GetHost());
 
 	auto decomposed_host = DecomposeHost(endpoint_builder.GetHost());
-	for (auto &component : decomposed_host.path_components) {
-		uri.AddPathSegment(component);
-	}
 
+	aws_input.authority = decomposed_host.authority;
+	for (auto &component : decomposed_host.path_components) {
+		aws_input.path_segments.push_back(component);
+	}
 	for (auto &component : endpoint_builder.path_components) {
-		uri.AddPathSegment(component);
+		aws_input.path_segments.push_back(component);
 	}
 
 	for (auto &param : endpoint_builder.GetParams()) {
-		const char *key = param.first.c_str();
-		auto value = param.second.c_str();
-		uri.AddQueryStringParameter(key, value);
+		aws_input.query_string_parameters.emplace_back(param);
 	}
-
-	Aws::Http::Scheme scheme = Aws::Http::Scheme::HTTPS;
-	uri.SetScheme(scheme);
-	// set host
-	uri.SetAuthority(decomposed_host.authority);
-
-	const Aws::Http::URI uri_const = Aws::Http::URI(uri);
-	auto create_http_req = Aws::Http::CreateHttpRequest(uri_const, Aws::Http::HttpMethod::HTTP_GET,
-	                                                    Aws::Utils::Stream::DefaultResponseStreamFactoryMethod);
-
-	std::shared_ptr<Aws::Http::HttpRequest> req(create_http_req);
-
-	// Set the user Agent.
-	auto &config = DBConfig::GetConfig(context);
-	req->SetUserAgent(config.UserAgent());
 
 	// will error if no secret can be found for AWS services
 	auto secret_entry = IRCatalog::GetStorageSecret(context, secret_name);
 	auto kv_secret = dynamic_cast<const KeyValueSecret &>(*secret_entry->secret);
 
-	std::shared_ptr<Aws::Auth::AWSCredentialsProviderChain> provider;
-	provider = std::make_shared<DuckDBSecretCredentialProvider>(
-	    kv_secret.secret_map["key_id"].GetValue<string>(), kv_secret.secret_map["secret"].GetValue<string>(),
-	    kv_secret.secret_map["session_token"].IsNull() ? "" : kv_secret.secret_map["session_token"].GetValue<string>());
-	auto signer = make_uniq<Aws::Client::AWSAuthV4Signer>(provider, service.c_str(), region.c_str());
+	aws_input.key_id = kv_secret.secret_map["key_id"].GetValue<string>();
+	aws_input.secret = kv_secret.secret_map["secret"].GetValue<string>();
+	aws_input.session_token =
+	    kv_secret.secret_map["session_token"].IsNull() ? "" : kv_secret.secret_map["session_token"].GetValue<string>();
 
-	signer->SignRequest(*req);
-	std::shared_ptr<Aws::Http::HttpResponse> res = MyHttpClient->MakeRequest(req);
-	Aws::Http::HttpResponseCode resCode = res->GetResponseCode();
-	DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.Aws.HTTPRequest",
-	                 "GET %s (response %d) (signed with key_id '%s' for service '%s', in region '%s')",
-	                 uri.GetURIString(), resCode, kv_secret.secret_map["key_id"].GetValue<string>(), service.c_str(),
-	                 region.c_str());
-	if (resCode == Aws::Http::HttpResponseCode::OK) {
-		Aws::StringStream resBody;
-		resBody << res->GetResponseBody().rdbuf();
-		return resBody.str();
-	} else {
-		Aws::StringStream resBody;
-		resBody << res->GetResponseBody().rdbuf();
-		throw HTTPException(StringUtil::Format("Failed to query %s, http error %d thrown. Message: %s",
-		                                       req->GetUri().GetURIString(true), res->GetResponseCode(),
-		                                       resBody.str()));
-	}
+	return aws_input.GetRequest(context);
 }
 
 // Look through the the above locations and if one of the files exists, set that as the location curl should use.

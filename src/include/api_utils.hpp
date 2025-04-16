@@ -13,6 +13,7 @@
 #include "duckdb/common/file_system.hpp"
 #include "url_utils.hpp"
 #include "curl.hpp"
+#include "aws.hpp"
 
 using namespace duckdb_yyjson;
 

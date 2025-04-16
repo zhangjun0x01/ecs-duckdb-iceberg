@@ -5,14 +5,6 @@
 #include "iceberg_utils.hpp"
 #include "api_utils.hpp"
 #include <sys/stat.h>
-#include <aws/core/Aws.h>
-#include <aws/s3/S3Client.h>
-#include <aws/core/Aws.h>
-#include <aws/core/auth/AWSCredentials.h>
-#include <aws/core/auth/AWSCredentialsProviderChain.h>
-#include <aws/core/auth/AWSCredentialsProvider.h>
-#include <aws/core/http/HttpClient.h>
-#include <aws/core/http/HttpRequest.h>
 #include <duckdb/main/secret/secret.hpp>
 #include <duckdb/main/secret/secret_manager.hpp>
 #include "duckdb/common/error_data.hpp"
