@@ -18,6 +18,7 @@ set(EXTENSION_SOURCES
     src/catalog_api.cpp
     src/catalog_utils.cpp
     src/curl.cpp
+    src/aws.cpp
     src/common/utils.cpp
     src/common/url_utils.cpp
     src/common/schema.cpp
