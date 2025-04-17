@@ -297,6 +297,26 @@ IcebergMultiFileReader::InitializeGlobalState(ClientContext &context, const Mult
 	return std::move(res);
 }
 
+static void ApplyFieldMapping(MultiFileColumnDefinition &col, vector<IcebergFieldMapping> &mappings,
+                              case_insensitive_map_t<idx_t> &fields) {
+	if (!col.identifier.IsNull()) {
+		return;
+	}
+	auto it = fields.find(col.name);
+	if (it == fields.end()) {
+		throw InvalidConfigurationException("Column '%s' does not have a field-id, and no field-mapping exists for it!",
+		                                    col.name);
+	}
+	auto &mapping = mappings[it->second];
+	if (mapping.field_mapping_indexes.empty()) {
+		col.identifier = Value::INTEGER(mapping.field_id);
+	} else {
+		for (auto &child : col.children) {
+			ApplyFieldMapping(child, mappings, mapping.field_mapping_indexes);
+		}
+	}
+}
+
 void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, const MultiFileOptions &file_options,
                                           const MultiFileReaderBindData &options,
                                           const vector<MultiFileColumnDefinition> &global_columns,
@@ -322,31 +342,10 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	}
 
 	auto &local_columns = reader_data.reader->columns;
-	auto &mapping = multi_file_list.metadata->fields;
+	auto &mappings = multi_file_list.metadata->mappings;
+	auto &root = multi_file_list.metadata->root_field_mapping;
 	for (auto &local_column : local_columns) {
-		if (!local_column.identifier.IsNull()) {
-			continue;
-		}
-
-		bool found = false;
-		for (idx_t i = 0; i < mapping.size() && !found; i++) {
-			auto &field = mapping[i];
-			if (field.field_id == NumericLimits<int32_t>::Maximum()) {
-				throw NotImplementedException("Nested fields not supported for column-mapping currently!");
-			}
-			for (auto &name : field.names) {
-				if (name == local_column.name) {
-					local_column.identifier = Value::INTEGER(field.field_id);
-					found = true;
-					break;
-				}
-			}
-		}
-		if (!found) {
-			throw InvalidInputException("The data_file does not have a field-id for the column named ('%s'), and "
-			                            "we could not find a suitable field-mapping for it",
-			                            local_column.name);
-		}
+		ApplyFieldMapping(local_column, mappings, root.field_mapping_indexes);
 	}
 }
 

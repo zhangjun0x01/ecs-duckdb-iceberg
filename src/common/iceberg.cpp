@@ -47,8 +47,9 @@ IcebergTable IcebergTable::Load(const string &iceberg_path, IcebergSnapshot &sna
 	return ret;
 }
 
-static vector<IcebergFieldMapping> ParseFieldMappings(yyjson_val *obj) {
-	vector<IcebergFieldMapping> result;
+static void ParseFieldMappings(yyjson_val *obj, case_insensitive_map_t<idx_t> &name_to_mapping_index,
+                               vector<IcebergFieldMapping> &mappings, idx_t &mapping_index) {
+	case_insensitive_map_t<IcebergFieldMapping> result;
 	size_t idx, max;
 	yyjson_val *val;
 	yyjson_arr_foreach(obj, idx, max, val) {
@@ -56,24 +57,30 @@ static vector<IcebergFieldMapping> ParseFieldMappings(yyjson_val *obj) {
 		auto field_id = yyjson_obj_get(val, "field-id");
 		auto fields = yyjson_obj_get(val, "fields");
 
-		IcebergFieldMapping mapping;
+		//! Create a new mapping entry
+		mappings.push_back(IcebergFieldMapping());
+		auto &mapping = mappings.back();
+
 		if (!names) {
 			throw InvalidInputException("Corrupt metadata.json file, field-mapping is missing names!");
 		}
+
+		//! Map every entry in the 'names' list to the entry we created above
 		size_t names_idx, names_max;
 		yyjson_val *names_val;
 		yyjson_arr_foreach(names, names_idx, names_max, names_val) {
-			mapping.names.push_back(yyjson_get_str(names_val));
+			name_to_mapping_index[yyjson_get_str(names_val)] = mapping_index;
 		}
+		mapping_index++;
+
 		if (field_id) {
 			mapping.field_id = yyjson_get_sint(field_id);
 		}
+		//! Create mappings for the the nested fields
 		if (fields) {
-			mapping.fields = ParseFieldMappings(fields);
+			ParseFieldMappings(fields, mapping.field_mapping_indexes, mappings, mapping_index);
 		}
-		result.push_back(mapping);
 	}
-	return result;
 }
 
 unique_ptr<IcebergMetadata> IcebergMetadata::Parse(const string &path, FileSystem &fs,
@@ -126,7 +133,9 @@ unique_ptr<IcebergMetadata> IcebergMetadata::Parse(const string &path, FileSyste
 				    "Fails to parse iceberg metadata 'schema.name-mapping.default' property from %s", path);
 			}
 			auto root = yyjson_doc_get_root(doc.get());
-			metadata->fields = ParseFieldMappings(root);
+			idx_t mapping_index = 0;
+			ParseFieldMappings(root, metadata->root_field_mapping.field_mapping_indexes, metadata->mappings,
+			                   mapping_index);
 		}
 	}
 	return metadata;
