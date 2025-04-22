@@ -244,8 +244,9 @@ yyjson_doc *ICUtils::api_result_to_doc(const string &api_result) {
 			throw InvalidInputException(err_msg);
 		} catch (InvalidConfigurationException &e) {
 			// keep going, we will throw the whole api result as an error message
+			throw InvalidConfigurationException(api_result);
 		}
-		throw InvalidConfigurationException(api_result);
+		throw InvalidConfigurationException("Could not parse api_result");
 	}
 	return doc;
 }
