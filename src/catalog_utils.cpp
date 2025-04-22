@@ -242,9 +242,10 @@ yyjson_doc *ICUtils::api_result_to_doc(const string &api_result) {
 		try {
 			string err_msg = IcebergUtils::TryGetStrFromObject(error, "message");
 			throw InvalidInputException(err_msg);
-		} catch (InvalidInputException &e) {
+		} catch (InvalidConfigurationException &e) {
+			// keep going, we will throw the whole api result as an error message
 		}
-		throw InvalidInputException(api_result);
+		throw InvalidConfigurationException(api_result);
 	}
 	return doc;
 }
