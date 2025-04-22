@@ -41,7 +41,7 @@ public:
 	vector<unique_ptr<Expression>> equality_deletes;
 };
 
-struct IcebergPositionalDeleteData {
+struct IcebergPositionalDeleteData : public DeleteFilter {
 public:
 	IcebergPositionalDeleteData() {
 	}
@@ -93,7 +93,7 @@ public:
 	void ScanPositionalDeleteFile(DataChunk &result) const;
 	void ScanEqualityDeleteFile(const IcebergManifestEntry &entry, DataChunk &result) const;
 	void ScanDeleteFile(const IcebergManifestEntry &entry) const;
-	optional_ptr<IcebergPositionalDeleteData> GetPositionalDeletesForFile(const string &file_path) const;
+	unique_ptr<IcebergPositionalDeleteData> GetPositionalDeletesForFile(const string &file_path) const;
 	void ProcessDeletes() const;
 
 protected:
@@ -124,8 +124,8 @@ public:
 	mutable vector<IcebergManifest>::iterator current_delete_manifest;
 
 	//! For each file that has a delete file, the state for processing that/those delete file(s)
-	mutable case_insensitive_map_t<IcebergPositionalDeleteData> positional_delete_data;
-	mutable case_insensitive_map_t<IcebergEqualityDeleteData> equality_delete_data;
+	mutable case_insensitive_map_t<unique_ptr<IcebergPositionalDeleteData>> positional_delete_data;
+	mutable case_insensitive_map_t<unique_ptr<IcebergEqualityDeleteData>> equality_delete_data;
 	mutable mutex delete_lock;
 
 	bool initialized = false;

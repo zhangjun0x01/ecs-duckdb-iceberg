@@ -318,7 +318,7 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 		if (multi_file_list.current_delete_manifest != multi_file_list.delete_manifests.end()) {
 			multi_file_list.ProcessDeletes();
 		}
-		reader.deletion_filter = multi_file_list.GetDeletesForFile(file_path);
+		reader.deletion_filter = std::move(multi_file_list.GetPositionalDeletesForFile(file_path));
 	}
 }
 
@@ -331,7 +331,13 @@ void IcebergMultiFileList::ScanPositionalDeleteFile(DataChunk &result) const {
 		return;
 	}
 	reference<string_t> current_file_path = names[0];
-	reference<IcebergPositionalDeleteData> deletes = positional_delete_data[current_file_path.get().GetString()];
+
+	auto initial_key = current_file_path.get().GetString();
+	auto it = positional_delete_data.find(initial_key);
+	if (it == positional_delete_data.end()) {
+		it = positional_delete_data.emplace(initial_key, make_uniq<IcebergPositionalDeleteData>()).first;
+	}
+	reference<IcebergPositionalDeleteData> deletes = *it->second;
 
 	for (idx_t i = 0; i < count; i++) {
 		auto &name = names[i];
@@ -339,7 +345,12 @@ void IcebergMultiFileList::ScanPositionalDeleteFile(DataChunk &result) const {
 
 		if (name != current_file_path.get()) {
 			current_file_path = name;
-			deletes = positional_delete_data[current_file_path.get().GetString()];
+			auto key = current_file_path.get().GetString();
+			auto it = positional_delete_data.find(key);
+			if (it == positional_delete_data.end()) {
+				it = positional_delete_data.emplace(key, make_uniq<IcebergPositionalDeleteData>()).first;
+			}
+			deletes = *it->second;
 		}
 
 		deletes.get().AddRow(row_id);
@@ -414,7 +425,7 @@ void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry) con
 	}
 }
 
-optional_ptr<IcebergPositionalDeleteData>
+unique_ptr<IcebergPositionalDeleteData>
 IcebergMultiFileList::GetPositionalDeletesForFile(const string &file_path) const {
 	auto it = positional_delete_data.find(file_path);
 	if (it != positional_delete_data.end()) {
@@ -483,34 +494,8 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
                                            ExpressionExecutor &executor,
                                            optional_ptr<MultiFileReaderGlobalState> global_state) {
 	// Base class finalization first
-	MultiFileReader::FinalizeChunk(context, bind_data, reader_data, chunk, global_state);
-
-	D_ASSERT(global_state);
-	auto &iceberg_global_state = global_state->Cast<IcebergMultiFileReaderGlobalState>();
-	D_ASSERT(iceberg_global_state.file_list);
-
-	// Get the metadata for this file
-	const auto &multi_file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state->file_list);
-	auto file_id = reader_data.file_list_idx.GetIndex();
-	auto &data_file = multi_file_list.data_files[file_id];
-
-	// The path of the data file where this chunk was read from
-	auto &file_path = data_file.file_path;
-	optional_ptr<IcebergPositionalDeleteData> positional_delete_data;
-	{
-		std::lock_guard<mutex> guard(multi_file_list.delete_lock);
-		if (multi_file_list.current_delete_manifest != multi_file_list.delete_manifests.end()) {
-			multi_file_list.ProcessDeletes();
-		}
-		positional_delete_data = multi_file_list.GetPositionalDeletesForFile(file_path);
-	}
-
-	if (positional_delete_data) {
-		D_ASSERT(iceberg_global_state.file_row_number_idx.IsValid());
-		auto &file_row_number_column = chunk.data[iceberg_global_state.file_row_number_idx.GetIndex()];
-
-		positional_delete_data->Apply(chunk, file_row_number_column);
-	}
+	MultiFileReader::FinalizeChunk(context, bind_data, reader, reader_data, input_chunk, output_chunk, executor,
+	                               global_state);
 }
 
 bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, MultiFileOptions &options,
