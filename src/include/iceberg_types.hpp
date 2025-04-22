@@ -15,6 +15,10 @@
 
 namespace duckdb {
 
+using sequence_number_t = int64_t;
+
+using field_id_t = int32_t;
+
 enum class IcebergManifestContentType : uint8_t {
 	DATA = 0,
 	DELETE = 1,
@@ -67,7 +71,7 @@ public:
 	//! Path to the manifest AVRO file
 	string manifest_path;
 	//! sequence_number when manifest was added to table (0 for Iceberg v1)
-	int64_t sequence_number;
+	sequence_number_t sequence_number;
 	//! either data or deletes
 	IcebergManifestContentType content;
 
@@ -98,7 +102,7 @@ public:
 	IcebergManifestEntryContentType content;
 	string file_path;
 	string file_format;
-	vector<int32_t> equality_ids;
+	vector<field_id_t> equality_ids;
 	int64_t record_count;
 
 public:

@@ -160,13 +160,16 @@ void IcebergManifestEntryV1::PopulateNameMapping(idx_t column_id, const LogicalT
 }
 
 static vector<int32_t> GetEqualityIds(Vector &equality_ids, idx_t index) {
+	vector<int32_t> result;
 
+	if (!FlatVector::Validity(equality_ids).RowIsValid(index)) {
+		return result;
+	}
 	auto &equality_ids_child = ListVector::GetEntry(equality_ids);
 	auto equality_ids_data = FlatVector::GetData<int32_t>(equality_ids_child);
 	auto equality_ids_list = FlatVector::GetData<list_entry_t>(equality_ids);
 	auto list_entry = equality_ids_list[index];
 
-	vector<int32_t> result;
 	for (idx_t j = 0; j < list_entry.length; j++) {
 		auto list_idx = list_entry.offset + j;
 		result.push_back(equality_ids_data[list_idx]);

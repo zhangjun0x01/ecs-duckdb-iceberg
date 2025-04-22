@@ -323,8 +323,9 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 }
 
 void IcebergMultiFileList::ScanPositionalDeleteFile(DataChunk &result) const {
-	auto names = FlatVector::GetData<string_t>(result.data[0]);
-	auto row_ids = FlatVector::GetData<int64_t>(result.data[1]);
+	//! FIXME: might want to check the 'columns' of the 'reader' to check, field-ids are:
+	auto names = FlatVector::GetData<string_t>(result.data[0]);  //! 2147483546
+	auto row_ids = FlatVector::GetData<int64_t>(result.data[1]); //! 2147483545
 
 	auto count = result.size();
 	if (count == 0) {
@@ -357,13 +358,44 @@ void IcebergMultiFileList::ScanPositionalDeleteFile(DataChunk &result) const {
 	}
 }
 
-void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &entry, DataChunk &result) const {
-	throw NotImplementedException("TODO: equality deletes not supported yet");
+void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &entry, DataChunk &result_p,
+                                                  vector<MultiFileColumnDefinition> &columns) const {
+	D_ASSERT(!entry.equality_ids.empty());
+	D_ASSERT(result_p.ColumnCount() == columns.size());
+
+	auto count = result.size();
+	if (count == 0) {
+		return;
+	}
+
+	//! Map from column_id to 'columns' index
+	unordered_map<int32_t, column_t> id_to_column;
+	for (column_t i = 0; i < column.size(); i++) {
+		auto &col = columns[i];
+		D_ASSERT(!col.identifier.IsNull());
+		id_to_column[col.identifier.GetValue<int32_t>()] = i;
+	}
+
+	vector<column_t> column_ids;
+	DataChunk result;
+	for (auto id : entry.equality_ids) {
+		D_ASSERT(id_to_column.count(id));
+		column_ids.push_back(id_to_column[id]);
+	}
+
+	//! TODO: get the IcebergEqualityDeleteData for the current sequence_number (snapshot)
+
+	//! Take only the relevant columns from the result
+	result.ReferenceColumns(result_p, column_ids);
+	for (idx_t i = 0; i < count; i++) {
+	}
 }
 
 void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry) const {
 	auto &delete_file_path = entry.file_path;
 	auto &instance = DatabaseInstance::GetDatabase(context);
+	//! FIXME: delete files could also be made without row_ids,
+	//! in which case we need to rely on the `'schema.column-mapping.default'` property just like data files do.
 	auto &parquet_scan_entry = ExtensionUtil::GetTableFunction(instance, "parquet_scan");
 	auto &parquet_scan = parquet_scan_entry.functions.functions[0];
 
@@ -374,12 +406,6 @@ void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry) con
 	named_parameter_map_t named_params;
 	vector<LogicalType> input_types;
 	vector<string> input_names;
-
-	//! TODO: wrap this read in a MultiFileReader (IcebergDeleteMultiFileReader ?)
-	//! we need this because the `equality_ids` refer to the field-ids of the delete file
-	//! The parquet 'schema' named param doesn't cut it because that requires the types of the selected columns as well.
-	//! On top of that, the 'schema.name-mapping.default' could also be relevant for the delete file to discover the
-	//! field id of it.
 
 	TableFunctionRef empty;
 	TableFunction dummy_table_function;
@@ -406,6 +432,8 @@ void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry) con
 	auto global_state = parquet_scan.init_global(context, input);
 	auto local_state = parquet_scan.init_local(execution_context, input, global_state.get());
 
+	auto &multi_file_local_state = local_state->Cast<MultiFileLocalState>();
+
 	if (entry.content == IcebergManifestEntryContentType::POSITION_DELETES) {
 		do {
 			TableFunctionInput function_input(bind_data.get(), local_state.get(), global_state.get());
@@ -420,7 +448,7 @@ void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry) con
 			result.Reset();
 			parquet_scan.function(context, function_input, result);
 			result.Flatten();
-			ScanEqualityDeleteFile(entry, result);
+			ScanEqualityDeleteFile(entry, result, multi_file_local_state.reader->columns);
 		} while (result.size() != 0);
 	}
 }

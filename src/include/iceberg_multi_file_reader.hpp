@@ -17,28 +17,15 @@
 
 namespace duckdb {
 
-// struct IcebergFileMetaData {
-// public:
-//    IcebergFileMetaData() {};
-//    IcebergFileMetaData (const IcebergFileMetaData&) = delete;
-//    IcebergFileMetaData& operator= (const IcebergFileMetaData&) = delete;
-// public:
-//    optional_idx iceberg_snapshot_version;
-//    optional_idx file_number;
-//    optional_idx cardinality;
-//    case_insensitive_map_t<string> partition_map;
-//};
-
 struct IcebergEqualityDeleteData {
 public:
 	IcebergEqualityDeleteData() {
 	}
 
 public:
-	//! Every entry here is a CONJUNCTION_AND expression constructed from:
-	//! - the equality delete (parquet) file.
-	//! - the 'equality_ids' from the 'data_file' (avro).
-	vector<unique_ptr<Expression>> equality_deletes;
+	sequence_number_t sequence_number;
+	//! Map of field-id to list of equality deletes for the field
+	unordered_map<field_id_t, list<unique_ptr<ConstantFilter>>>
 };
 
 struct IcebergPositionalDeleteData : public DeleteFilter {
@@ -91,7 +78,8 @@ public:
 
 public:
 	void ScanPositionalDeleteFile(DataChunk &result) const;
-	void ScanEqualityDeleteFile(const IcebergManifestEntry &entry, DataChunk &result) const;
+	void ScanEqualityDeleteFile(const IcebergManifestEntry &entry, DataChunk &result,
+	                            vector<MultiFileColumnDefinition> &columns) const;
 	void ScanDeleteFile(const IcebergManifestEntry &entry) const;
 	unique_ptr<IcebergPositionalDeleteData> GetPositionalDeletesForFile(const string &file_path) const;
 	void ProcessDeletes() const;
@@ -125,7 +113,8 @@ public:
 
 	//! For each file that has a delete file, the state for processing that/those delete file(s)
 	mutable case_insensitive_map_t<unique_ptr<IcebergPositionalDeleteData>> positional_delete_data;
-	mutable case_insensitive_map_t<unique_ptr<IcebergEqualityDeleteData>> equality_delete_data;
+	//! All equality deletes with sequence numbers higher than that of the data_file apply to that data_file
+	mutable map<sequence_number_t, unique_ptr<IcebergEqualityDeleteData>> equality_delete_data;
 	mutable mutex delete_lock;
 
 	bool initialized = false;
