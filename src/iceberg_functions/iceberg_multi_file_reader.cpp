@@ -110,6 +110,7 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 			auto scan = make_uniq<AvroScan>("IcebergManifest", context, manifest_entry_full_path);
 			data_manifest_entry_reader->Initialize(std::move(scan));
 			data_manifest_entry_reader->SetSequenceNumber(manifest.sequence_number);
+			data_manifest_entry_reader->SetPartitionSpecID(manifest.partition_spec_id);
 		}
 
 		idx_t remaining = (file_id + 1) - data_files.size();
@@ -529,6 +530,7 @@ void IcebergMultiFileList::ProcessDeletes() const {
 			auto scan = make_uniq<AvroScan>("IcebergManifest", context, manifest_entry_full_path);
 			delete_manifest_entry_reader->Initialize(std::move(scan));
 			delete_manifest_entry_reader->SetSequenceNumber(manifest.sequence_number);
+			delete_manifest_entry_reader->SetPartitionSpecID(manifest.partition_spec_id);
 		}
 
 		delete_manifest_entry_reader->ReadEntries(

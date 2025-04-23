@@ -15,6 +15,8 @@ idx_t IcebergManifestV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
                                         vector<entry_type> &result) {
 	auto &name_to_vec = input.name_to_vec;
 	auto manifest_path = FlatVector::GetData<string_t>(chunk.data[name_to_vec.at("manifest_path").GetPrimaryIndex()]);
+	auto partition_spec_id =
+	    FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("partition_spec_id").GetPrimaryIndex()]);
 
 	for (idx_t i = 0; i < count; i++) {
 		idx_t index = i + offset;
@@ -23,6 +25,7 @@ idx_t IcebergManifestV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 		manifest.manifest_path = manifest_path[index].GetString();
 		manifest.content = IcebergManifestContentType::DATA;
 		manifest.sequence_number = 0;
+		manifest.partition_spec_id = partition_spec_id[index];
 
 		result.push_back(manifest);
 	}
@@ -48,6 +51,8 @@ idx_t IcebergManifestV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 	auto content = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("content").GetPrimaryIndex()]);
 	auto sequence_number =
 	    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("sequence_number").GetPrimaryIndex()]);
+	auto partition_spec_id =
+	    FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("partition_spec_id").GetPrimaryIndex()]);
 
 	for (idx_t i = 0; i < count; i++) {
 		idx_t index = i + offset;
@@ -56,6 +61,7 @@ idx_t IcebergManifestV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 		manifest.manifest_path = manifest_path[index].GetString();
 		manifest.content = IcebergManifestContentType(content[index]);
 		manifest.sequence_number = sequence_number[index];
+		manifest.partition_spec_id = partition_spec_id[index];
 
 		result.push_back(manifest);
 	}

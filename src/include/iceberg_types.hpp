@@ -73,6 +73,8 @@ public:
 	sequence_number_t sequence_number;
 	//! either data or deletes
 	IcebergManifestContentType content;
+	//! The id of the partition spec referenced by this manifest (and the data files that are part of it)
+	int32_t partition_spec_id;
 
 public:
 	void Print() {
