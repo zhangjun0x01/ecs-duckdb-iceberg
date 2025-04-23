@@ -11,6 +11,7 @@
 #include "duckdb/planner/expression/bound_constant_expression.hpp"
 #include "duckdb/planner/expression/bound_operator_expression.hpp"
 #include "duckdb/planner/expression/bound_reference_expression.hpp"
+#include "duckdb/planner/expression/bound_conjunction_expression.hpp"
 
 namespace duckdb {
 
@@ -565,19 +566,20 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 	MultiFileReader::FinalizeChunk(context, bind_data, reader, reader_data, input_chunk, output_chunk, executor,
 	                               global_state);
 
-	unique_ptr<Expression> equality_delete_filter;
 	D_ASSERT(global_state);
 	// Get the metadata for this file
 	const auto &multi_file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state->file_list);
 	auto file_id = reader.file_list_idx.GetIndex();
 	auto &data_file = multi_file_list.data_files[file_id];
+	auto &global_columns = bind_data.columns;
+	auto &local_columns = reader.columns;
 
 	vector<reference<IcebergEqualityDeleteRow>> delete_rows;
 
-	auto it = multi_file_list.equality_delete_data.upper_bound(data_file.sequence_number);
+	auto delete_data_it = multi_file_list.equality_delete_data.upper_bound(data_file.sequence_number);
 	//! Look through all the equality delete files with a *higher* sequence number
-	for (; it != multi_file_list.equality_delete_data.end(); it++) {
-		auto &files = it->second->files;
+	for (; delete_data_it != multi_file_list.equality_delete_data.end(); delete_data_it++) {
+		auto &files = delete_data_it->second->files;
 		for (auto &file : files) {
 			if (file.partition_spec_id != 0) {
 				if (file.partition_spec_id != data_file.partition_spec_id) {
@@ -599,8 +601,68 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 		return;
 	}
 
-	//! TODO: construct a (potentially giant) CONJUNCTION_AND out of all the rows
-	//! WHERE (a != row1.a OR b != row1.b) AND (a != row2.a OR c != row2.c OR d != row2.d) ...
+	//! Map from column_id to 'global_columns' index
+	unordered_map<int32_t, column_t> id_to_global_column;
+	for (column_t i = 0; i < global_columns.size(); i++) {
+		auto &col = global_columns[i];
+		D_ASSERT(!col.identifier.IsNull());
+		id_to_global_column[col.identifier.GetValue<int32_t>()] = i;
+	}
+
+	//! Map from column_id to 'local_columns' index
+	unordered_map<int32_t, column_t> id_to_local_column;
+	for (column_t i = 0; i < local_columns.size(); i++) {
+		auto &col = local_columns[i];
+		D_ASSERT(!col.identifier.IsNull());
+		id_to_local_column[col.identifier.GetValue<int32_t>()] = i;
+	}
+
+	vector<unique_ptr<Expression>> rows;
+	for (auto &row : delete_rows) {
+		vector<unique_ptr<Expression>> equalities;
+		for (auto &item : row.get().filters) {
+			auto &field_id = item.first;
+			auto &expression = item.second;
+
+			bool treat_as_null = !id_to_local_column.count(field_id);
+			if (treat_as_null) {
+				//! This column is not present in the file
+				//! For the purpose of the equality deletes, we are treating it as if its value is NULL (despite any
+				//! 'initial-default' that exists)
+
+				//! This means that if the expression is 'IS_NOT_NULL', the result is False for this column, otherwise
+				//! it's True (because nothing compares equal to NULL)
+				if (expression->type == ExpressionType::OPERATOR_IS_NOT_NULL) {
+					equalities.push_back(make_uniq<BoundConstantExpression>(Value::BOOLEAN(false)));
+				} else {
+					equalities.push_back(make_uniq<BoundConstantExpression>(Value::BOOLEAN(true)));
+				}
+			} else {
+				equalities.push_back(expression->Copy());
+			}
+		}
+
+		unique_ptr<Expression> filter;
+		D_ASSERT(!equalities.empty());
+		if (equalities.size() > 1) {
+			auto conjunction_or = make_uniq<BoundConjunctionExpression>(ExpressionType::CONJUNCTION_OR);
+			conjunction_or->children = std::move(equalities);
+			filter = std::move(conjunction_or);
+		} else {
+			filter = std::move(equalities[0]);
+		}
+		rows.push_back(std::move(filter));
+	}
+
+	unique_ptr<Expression> equality_delete_filter;
+	D_ASSERT(!rows.empty());
+	if (rows.size() == 1) {
+		equality_delete_filter = std::move(rows[0]);
+	} else {
+		auto conjunction_and = make_uniq<BoundConjunctionExpression>(ExpressionType::CONJUNCTION_AND);
+		conjunction_and->children = std::move(rows);
+		equality_delete_filter = std::move(conjunction_and);
+	}
 
 	//! Apply equality deletes
 	ExpressionExecutor expression_executor(context);
