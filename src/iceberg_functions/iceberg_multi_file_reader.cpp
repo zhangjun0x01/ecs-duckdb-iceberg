@@ -564,6 +564,50 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 	// Base class finalization first
 	MultiFileReader::FinalizeChunk(context, bind_data, reader, reader_data, input_chunk, output_chunk, executor,
 	                               global_state);
+
+	unique_ptr<Expression> equality_delete_filter;
+	D_ASSERT(global_state);
+	// Get the metadata for this file
+	const auto &multi_file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state->file_list);
+	auto file_id = reader.file_list_idx.GetIndex();
+	auto &data_file = multi_file_list.data_files[file_id];
+
+	vector<reference<IcebergEqualityDeleteRow>> delete_rows;
+
+	auto it = multi_file_list.equality_delete_data.upper_bound(data_file.sequence_number);
+	//! Look through all the equality delete files with a *higher* sequence number
+	for (; it != multi_file_list.equality_delete_data.end(); it++) {
+		auto &files = it->second->files;
+		for (auto &file : files) {
+			if (file.partition_spec_id != 0) {
+				if (file.partition_spec_id != data_file.partition_spec_id) {
+					//! Not unpartitioned and the data does not share the same partition spec as the delete, skip the
+					//! delete file.
+					continue;
+				}
+				if (file.partition != data_file.partition) {
+					//! Same partition spec id, but the partitioning information doesn't match, delete file doesn't
+					//! apply.
+					continue;
+				}
+			}
+			delete_rows.insert(delete_rows.end(), file.rows.begin(), file.rows.end());
+		}
+	}
+
+	if (delete_rows.empty()) {
+		return;
+	}
+
+	//! TODO: construct a (potentially giant) CONJUNCTION_AND out of all the rows
+	//! WHERE (a != row1.a OR b != row1.b) AND (a != row2.a OR c != row2.c OR d != row2.d) ...
+
+	//! Apply equality deletes
+	ExpressionExecutor expression_executor(context);
+	expression_executor.AddExpression(*equality_delete_filter);
+	SelectionVector sel_vec(STANDARD_VECTOR_SIZE);
+	idx_t count = expression_executor.SelectExpression(output_chunk, sel_vec);
+	output_chunk.Slice(sel_vec, count);
 }
 
 bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, MultiFileOptions &options,
