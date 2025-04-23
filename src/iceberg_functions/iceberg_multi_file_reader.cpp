@@ -594,7 +594,10 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 	for (; delete_data_it != multi_file_list.equality_delete_data.end(); delete_data_it++) {
 		auto &files = delete_data_it->second->files;
 		for (auto &file : files) {
-			if (file.partition_spec_id != 0) {
+			//! The spec is incredibly vague about this, but it seems that partition_spec_id 0 is reserved as the
+			//! "unpartitioned" partition spec
+			const bool is_unpartitioned = file.partition_spec_id == 0;
+			if (!is_unpartitioned) {
 				if (file.partition_spec_id != data_file.partition_spec_id) {
 					//! Not unpartitioned and the data does not share the same partition spec as the delete, skip the
 					//! delete file.
@@ -614,14 +617,6 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 		return;
 	}
 
-	//! Map from column_id to 'global_columns' index
-	unordered_map<int32_t, column_t> id_to_global_column;
-	for (column_t i = 0; i < global_columns.size(); i++) {
-		auto &col = global_columns[i];
-		D_ASSERT(!col.identifier.IsNull());
-		id_to_global_column[col.identifier.GetValue<int32_t>()] = i;
-	}
-
 	//! Map from column_id to 'local_columns' index
 	unordered_map<int32_t, column_t> id_to_local_column;
 	for (column_t i = 0; i < local_columns.size(); i++) {
@@ -629,6 +624,13 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 		D_ASSERT(!col.identifier.IsNull());
 		id_to_local_column[col.identifier.GetValue<int32_t>()] = i;
 	}
+
+	//! Create a big CONJUNCTION_AND of all the rows, illustrative example:
+	//! WHERE
+	//!	(col1 != 'A' OR col2 != 'B') AND
+	//!	(col1 != 'C' OR col2 != 'D') AND
+	//!	(col1 != 'X' OR col2 != 'Y') AND
+	//!	(col1 != 'Z' OR col2 != 'W')
 
 	vector<unique_ptr<Expression>> rows;
 	for (auto &row : delete_rows) {
