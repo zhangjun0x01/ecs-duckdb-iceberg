@@ -437,7 +437,7 @@ void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &en
 				is_not_null->children.push_back(std::move(bound_ref));
 				equality_filter = std::move(is_not_null);
 			}
-			row.filters.emplace(field_id, std::move(equality_filter));
+			row.filters.emplace(std::make_pair(field_id, std::move(equality_filter)));
 		}
 	}
 }
@@ -584,7 +584,6 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 	const auto &multi_file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state->file_list);
 	auto file_id = reader.file_list_idx.GetIndex();
 	auto &data_file = multi_file_list.data_files[file_id];
-	auto &global_columns = bind_data.columns;
 	auto &local_columns = reader.columns;
 
 	vector<reference<IcebergEqualityDeleteRow>> delete_rows;
