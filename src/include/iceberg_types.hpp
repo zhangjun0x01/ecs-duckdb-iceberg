@@ -11,13 +11,12 @@
 #include "duckdb/common/types.hpp"
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
+#include "duckdb/common/types/value.hpp"
 #include "duckdb/common/printer.hpp"
 
 namespace duckdb {
 
 using sequence_number_t = int64_t;
-
-using field_id_t = int32_t;
 
 enum class IcebergManifestContentType : uint8_t {
 	DATA = 0,
@@ -102,8 +101,13 @@ public:
 	IcebergManifestEntryContentType content;
 	string file_path;
 	string file_format;
-	vector<field_id_t> equality_ids;
+	vector<int32_t> equality_ids;
 	int64_t record_count;
+	Value partition;
+	//! Inherited from the 'manifest_file' if NULL and 'status == EXISTING'
+	sequence_number_t sequence_number;
+	//! Inherited from the 'manifest_file'
+	int32_t partition_spec_id;
 
 public:
 	void Print() {

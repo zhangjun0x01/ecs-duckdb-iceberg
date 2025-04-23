@@ -110,11 +110,14 @@ idx_t IcebergManifestEntryV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx
 	D_ASSERT(name_to_vec.at("file_format").GetPrimaryIndex());
 	D_ASSERT(name_to_vec.at("record_count").GetPrimaryIndex());
 
+	auto partition_idx = name_to_vec.at("partition");
+
 	auto file_path = FlatVector::GetData<string_t>(*child_entries[file_path_idx.GetChildIndex(0).GetPrimaryIndex()]);
 	auto file_format =
 	    FlatVector::GetData<string_t>(*child_entries[name_to_vec.at("file_format").GetChildIndex(0).GetPrimaryIndex()]);
 	auto record_count =
 	    FlatVector::GetData<int64_t>(*child_entries[name_to_vec.at("record_count").GetChildIndex(0).GetPrimaryIndex()]);
+	auto &partition_vec = *child_entries[partition_idx.GetChildIndex(0).GetPrimaryIndex()];
 
 	idx_t produced = 0;
 	for (idx_t i = 0; i < count; i++) {
@@ -127,6 +130,9 @@ idx_t IcebergManifestEntryV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx
 		entry.file_path = file_path[index].GetString();
 		entry.file_format = file_format[index].GetString();
 		entry.record_count = record_count[index];
+		entry.sequence_number = input.sequence_number;
+		entry.partition = partition_vec.GetValue(index);
+		entry.partition_spec_id = input.partition_spec_id;
 
 		if (input.skip_deleted && entry.status == IcebergManifestEntryStatusType::DELETED) {
 			//! Skip this entry, we don't care about deleted entries
@@ -190,10 +196,17 @@ idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx
 	D_ASSERT(name_to_vec.at("record_count").GetPrimaryIndex() == data_file_idx);
 	D_ASSERT(name_to_vec.at("content").GetPrimaryIndex() == data_file_idx);
 	optional_ptr<Vector> equality_ids;
+	optional_ptr<Vector> sequence_number;
 
 	auto equality_ids_it = name_to_vec.find("equality_ids");
 	if (equality_ids_it != name_to_vec.end()) {
 		equality_ids = *child_entries[equality_ids_it->second.GetChildIndex(0).GetPrimaryIndex()];
+	}
+	auto partition_idx = name_to_vec.at("partition");
+
+	auto sequence_number_it = name_to_vec.find("sequence_number");
+	if (sequence_number_it != name_to_vec.end()) {
+		sequence_number = chunk.data[sequence_number_it->second.GetPrimaryIndex()];
 	}
 
 	auto content =
@@ -203,6 +216,7 @@ idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx
 	    FlatVector::GetData<string_t>(*child_entries[name_to_vec.at("file_format").GetChildIndex(0).GetPrimaryIndex()]);
 	auto record_count =
 	    FlatVector::GetData<int64_t>(*child_entries[name_to_vec.at("record_count").GetChildIndex(0).GetPrimaryIndex()]);
+	auto &partition_vec = child_entries[partition_idx.GetChildIndex(0).GetPrimaryIndex()];
 
 	idx_t produced = 0;
 	for (idx_t i = 0; i < count; i++) {
@@ -223,6 +237,25 @@ idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx
 		if (equality_ids) {
 			entry.equality_ids = GetEqualityIds(*equality_ids, index);
 		}
+
+		if (sequence_number) {
+			auto sequence_numbers = FlatVector::GetData<int64_t>(*sequence_number);
+			if (FlatVector::Validity(*sequence_number).RowIsValid(index)) {
+				entry.sequence_number = sequence_numbers[index];
+			} else {
+				//! Value should only be NULL for ADDED manifest entries, to support inheritance
+				D_ASSERT(entry.status == IcebergManifestEntryStatusType::ADDED);
+				entry.sequence_number = input.sequence_number;
+			}
+		} else {
+			//! Default to sequence number 0
+			//! (The 'manifest_file' should also have defaulted to 0)
+			D_ASSERT(input.sequence_number == 0);
+			entry.sequence_number = 0;
+		}
+		entry.partition_spec_id = input.partition_spec_id;
+
+		entry.partition = partition_vec->GetValue(index);
 		produced++;
 		result.push_back(entry);
 	}

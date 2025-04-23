@@ -14,18 +14,44 @@
 #include "iceberg_utils.hpp"
 #include "manifest_reader.hpp"
 #include "duckdb/common/multi_file/multi_file_data.hpp"
+#include "duckdb/common/list.hpp"
+#include "duckdb/common/unordered_map.hpp"
+#include "duckdb/planner/filter/constant_filter.hpp"
+#include "duckdb/planner/filter/null_filter.hpp"
+#include "duckdb/planner/table_filter.hpp"
 
 namespace duckdb {
 
+struct IcebergEqualityDeleteRow {
+public:
+	//! Map of field-id to equality delete for the field
+	//! NOTE: these are either OPERATOR_IS_NULL or COMPARE_EQUAL
+	//! Also note: it's probably easiest to apply these to the 'output_chunk' of FinalizeChunk, so we can re-use
+	//! expressions. Otherwise the idx of the BoundReferenceExpression would have to change for every file.
+	unordered_map<int32_t, unique_ptr<Expression>> filters;
+};
+
+struct IcebergEqualityDeleteFile {
+public:
+	IcebergEqualityDeleteFile(Value partition, int32_t partition_spec_id)
+	    : partition(partition), partition_spec_id(partition_spec_id) {
+	}
+
+public:
+	//! The partition value (struct) if the equality delete has partition information
+	Value partition;
+	int32_t partition_spec_id;
+	vector<IcebergEqualityDeleteRow> rows;
+};
+
 struct IcebergEqualityDeleteData {
 public:
-	IcebergEqualityDeleteData() {
+	IcebergEqualityDeleteData(sequence_number_t sequence_number) : sequence_number(sequence_number) {
 	}
 
 public:
 	sequence_number_t sequence_number;
-	//! Map of field-id to list of equality deletes for the field
-	unordered_map<field_id_t, list<unique_ptr<ConstantFilter>>>
+	vector<IcebergEqualityDeleteFile> files;
 };
 
 struct IcebergPositionalDeleteData : public DeleteFilter {

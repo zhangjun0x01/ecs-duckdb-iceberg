@@ -7,6 +7,10 @@
 #include "duckdb/parallel/thread_context.hpp"
 #include "duckdb/parser/tableref/table_function_ref.hpp"
 #include "duckdb/parser/expression/constant_expression.hpp"
+#include "duckdb/planner/expression/bound_comparison_expression.hpp"
+#include "duckdb/planner/expression/bound_constant_expression.hpp"
+#include "duckdb/planner/expression/bound_operator_expression.hpp"
+#include "duckdb/planner/expression/bound_reference_expression.hpp"
 
 namespace duckdb {
 
@@ -104,6 +108,7 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 			                                    : manifest.manifest_path;
 			auto scan = make_uniq<AvroScan>("IcebergManifest", context, manifest_entry_full_path);
 			data_manifest_entry_reader->Initialize(std::move(scan));
+			data_manifest_entry_reader->SetSequenceNumber(manifest.sequence_number);
 		}
 
 		idx_t remaining = (file_id + 1) - data_files.size();
@@ -363,14 +368,14 @@ void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &en
 	D_ASSERT(!entry.equality_ids.empty());
 	D_ASSERT(result_p.ColumnCount() == columns.size());
 
-	auto count = result.size();
+	auto count = result_p.size();
 	if (count == 0) {
 		return;
 	}
 
 	//! Map from column_id to 'columns' index
 	unordered_map<int32_t, column_t> id_to_column;
-	for (column_t i = 0; i < column.size(); i++) {
+	for (column_t i = 0; i < columns.size(); i++) {
 		auto &col = columns[i];
 		D_ASSERT(!col.identifier.IsNull());
 		id_to_column[col.identifier.GetValue<int32_t>()] = i;
@@ -383,11 +388,45 @@ void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &en
 		column_ids.push_back(id_to_column[id]);
 	}
 
-	//! TODO: get the IcebergEqualityDeleteData for the current sequence_number (snapshot)
+	//! Get or create the equality delete data for this sequence number
+	auto it = equality_delete_data.find(entry.sequence_number);
+	if (it == equality_delete_data.end()) {
+		it = equality_delete_data
+		         .emplace(entry.sequence_number, make_uniq<IcebergEqualityDeleteData>(entry.sequence_number))
+		         .first;
+	}
+	auto &deletes = *it->second;
 
 	//! Take only the relevant columns from the result
 	result.ReferenceColumns(result_p, column_ids);
-	for (idx_t i = 0; i < count; i++) {
+	deletes.files.emplace_back(entry.partition, entry.partition_spec_id);
+	auto &rows = deletes.files.back().rows;
+	rows.resize(count);
+	D_ASSERT(result.ColumnCount() == entry.equality_ids.size());
+	for (idx_t col_idx = 0; col_idx < result.ColumnCount(); col_idx++) {
+		auto &field_id = entry.equality_ids[col_idx];
+		auto &col = columns[id_to_column[field_id]];
+		auto &vec = result.data[col_idx];
+
+		for (idx_t i = 0; i < count; i++) {
+			auto &row = rows[i];
+			auto constant = vec.GetValue(i);
+			unique_ptr<Expression> equality_filter;
+			auto bound_ref = make_uniq<BoundReferenceExpression>(col.type, i);
+			if (!constant.IsNull()) {
+				//! Create a COMPARE_NOT_EQUAL expression
+				equality_filter =
+				    make_uniq<BoundComparisonExpression>(ExpressionType::COMPARE_NOTEQUAL, std::move(bound_ref),
+				                                         make_uniq<BoundConstantExpression>(constant));
+			} else {
+				//! Construct an OPERATOR_IS_NOT_NULL expression instead
+				auto is_not_null =
+				    make_uniq<BoundOperatorExpression>(ExpressionType::OPERATOR_IS_NOT_NULL, LogicalType::BOOLEAN);
+				is_not_null->children.push_back(std::move(bound_ref));
+				equality_filter = std::move(is_not_null);
+			}
+			row.filters.emplace(field_id, std::move(equality_filter));
+		}
 	}
 }
 
@@ -488,6 +527,7 @@ void IcebergMultiFileList::ProcessDeletes() const {
 			                                    : manifest.manifest_path;
 			auto scan = make_uniq<AvroScan>("IcebergManifest", context, manifest_entry_full_path);
 			delete_manifest_entry_reader->Initialize(std::move(scan));
+			delete_manifest_entry_reader->SetSequenceNumber(manifest.sequence_number);
 		}
 
 		delete_manifest_entry_reader->ReadEntries(
