@@ -24,6 +24,14 @@ namespace duckdb {
 
 struct IcebergEqualityDeleteRow {
 public:
+	IcebergEqualityDeleteRow() {
+	}
+	IcebergEqualityDeleteRow(const IcebergEqualityDeleteRow &) = delete;
+	IcebergEqualityDeleteRow &operator=(const IcebergEqualityDeleteRow &) = delete;
+	IcebergEqualityDeleteRow(IcebergEqualityDeleteRow &&) = default;
+	IcebergEqualityDeleteRow &operator=(IcebergEqualityDeleteRow &&) = default;
+
+public:
 	//! Map of field-id to equality delete for the field
 	//! NOTE: these are either OPERATOR_IS_NULL or COMPARE_EQUAL
 	//! Also note: it's probably easiest to apply these to the 'output_chunk' of FinalizeChunk, so we can re-use
