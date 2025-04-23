@@ -323,7 +323,7 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	{
 		std::lock_guard<mutex> guard(multi_file_list.delete_lock);
 		if (multi_file_list.current_delete_manifest != multi_file_list.delete_manifests.end()) {
-			multi_file_list.ProcessDeletes();
+			multi_file_list.ProcessDeletes(global_columns);
 		}
 		reader.deletion_filter = std::move(multi_file_list.GetPositionalDeletesForFile(file_path));
 	}
@@ -366,19 +366,20 @@ void IcebergMultiFileList::ScanPositionalDeleteFile(DataChunk &result) const {
 }
 
 void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &entry, DataChunk &result_p,
-                                                  vector<MultiFileColumnDefinition> &columns) const {
+                                                  vector<MultiFileColumnDefinition> &local_columns,
+                                                  const vector<MultiFileColumnDefinition> &global_columns) const {
 	D_ASSERT(!entry.equality_ids.empty());
-	D_ASSERT(result_p.ColumnCount() == columns.size());
+	D_ASSERT(result_p.ColumnCount() == local_columns.size());
 
 	auto count = result_p.size();
 	if (count == 0) {
 		return;
 	}
 
-	//! Map from column_id to 'columns' index
+	//! Map from column_id to 'local_columns' index, to figure out which columns from the 'result_p' are relevant here
 	unordered_map<int32_t, column_t> id_to_column;
-	for (column_t i = 0; i < columns.size(); i++) {
-		auto &col = columns[i];
+	for (column_t i = 0; i < local_columns.size(); i++) {
+		auto &col = local_columns[i];
 		D_ASSERT(!col.identifier.IsNull());
 		id_to_column[col.identifier.GetValue<int32_t>()] = i;
 	}
@@ -399,6 +400,14 @@ void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &en
 	}
 	auto &deletes = *it->second;
 
+	//! Map from column_id to 'global_columns' index, so we can create a reference to the correct global index
+	unordered_map<int32_t, column_t> id_to_global_column;
+	for (column_t i = 0; i < global_columns.size(); i++) {
+		auto &col = global_columns[i];
+		D_ASSERT(!col.identifier.IsNull());
+		id_to_global_column[col.identifier.GetValue<int32_t>()] = i;
+	}
+
 	//! Take only the relevant columns from the result
 	result.ReferenceColumns(result_p, column_ids);
 	deletes.files.emplace_back(entry.partition, entry.partition_spec_id);
@@ -407,14 +416,15 @@ void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &en
 	D_ASSERT(result.ColumnCount() == entry.equality_ids.size());
 	for (idx_t col_idx = 0; col_idx < result.ColumnCount(); col_idx++) {
 		auto &field_id = entry.equality_ids[col_idx];
-		auto &col = columns[id_to_column[field_id]];
+		auto global_column_id = id_to_global_column[field_id];
+		auto &col = global_columns[global_column_id];
 		auto &vec = result.data[col_idx];
 
 		for (idx_t i = 0; i < count; i++) {
 			auto &row = rows[i];
 			auto constant = vec.GetValue(i);
 			unique_ptr<Expression> equality_filter;
-			auto bound_ref = make_uniq<BoundReferenceExpression>(col.type, i);
+			auto bound_ref = make_uniq<BoundReferenceExpression>(col.type, global_column_id);
 			if (!constant.IsNull()) {
 				//! Create a COMPARE_NOT_EQUAL expression
 				equality_filter =
@@ -432,7 +442,8 @@ void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &en
 	}
 }
 
-void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry) const {
+void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry,
+                                          const vector<MultiFileColumnDefinition> &global_columns) const {
 	auto &delete_file_path = entry.file_path;
 	auto &instance = DatabaseInstance::GetDatabase(context);
 	//! FIXME: delete files could also be made without row_ids,
@@ -489,7 +500,7 @@ void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry) con
 			result.Reset();
 			parquet_scan.function(context, function_input, result);
 			result.Flatten();
-			ScanEqualityDeleteFile(entry, result, multi_file_local_state.reader->columns);
+			ScanEqualityDeleteFile(entry, result, multi_file_local_state.reader->columns, global_columns);
 		} while (result.size() != 0);
 	}
 }
@@ -504,7 +515,7 @@ IcebergMultiFileList::GetPositionalDeletesForFile(const string &file_path) const
 	return nullptr;
 }
 
-void IcebergMultiFileList::ProcessDeletes() const {
+void IcebergMultiFileList::ProcessDeletes(const vector<MultiFileColumnDefinition> &global_columns) const {
 	// In <=v2 we now have to process *all* delete manifests
 	// before we can be certain that we have all the delete data for the current file.
 
@@ -553,7 +564,7 @@ void IcebergMultiFileList::ProcessDeletes() const {
 #endif
 
 	for (auto &entry : delete_files) {
-		ScanDeleteFile(entry);
+		ScanDeleteFile(entry, global_columns);
 	}
 
 	D_ASSERT(current_delete_manifest == delete_manifests.end());

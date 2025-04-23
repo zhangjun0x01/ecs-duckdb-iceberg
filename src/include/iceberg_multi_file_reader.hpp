@@ -105,10 +105,12 @@ public:
 public:
 	void ScanPositionalDeleteFile(DataChunk &result) const;
 	void ScanEqualityDeleteFile(const IcebergManifestEntry &entry, DataChunk &result,
-	                            vector<MultiFileColumnDefinition> &columns) const;
-	void ScanDeleteFile(const IcebergManifestEntry &entry) const;
+	                            vector<MultiFileColumnDefinition> &columns,
+	                            const vector<MultiFileColumnDefinition> &global_columns) const;
+	void ScanDeleteFile(const IcebergManifestEntry &entry,
+	                    const vector<MultiFileColumnDefinition> &global_columns) const;
 	unique_ptr<IcebergPositionalDeleteData> GetPositionalDeletesForFile(const string &file_path) const;
-	void ProcessDeletes() const;
+	void ProcessDeletes(const vector<MultiFileColumnDefinition> &global_columns) const;
 
 protected:
 	//! Get the i-th expanded file
