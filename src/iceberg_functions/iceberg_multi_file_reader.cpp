@@ -365,6 +365,14 @@ void IcebergMultiFileList::ScanPositionalDeleteFile(DataChunk &result) const {
 	}
 }
 
+static void InitializeFromOtherChunk(DataChunk &target, DataChunk &other, const vector<column_t> &column_ids) {
+	vector<LogicalType> types;
+	for (auto &id : column_ids) {
+		types.push_back(other.data[id].GetType());
+	}
+	target.InitializeEmpty(types);
+}
+
 void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &entry, DataChunk &result_p,
                                                   vector<MultiFileColumnDefinition> &local_columns,
                                                   const vector<MultiFileColumnDefinition> &global_columns) const {
@@ -409,6 +417,7 @@ void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &en
 	}
 
 	//! Take only the relevant columns from the result
+	InitializeFromOtherChunk(result, result_p, column_ids);
 	result.ReferenceColumns(result_p, column_ids);
 	deletes.files.emplace_back(entry.partition, entry.partition_spec_id);
 	auto &rows = deletes.files.back().rows;
