@@ -13,6 +13,7 @@
 #include "duckdb/planner/logical_operator.hpp"
 #include "duckdb/planner/operator/logical_get.hpp"
 #include "storage/authorization/sigv4.hpp"
+#include "duckdb/common/multi_file/multi_file_reader.hpp"
 
 namespace duckdb {
 
@@ -121,6 +122,25 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	bind_data = std::move(result);
 
 	return iceberg_scan_function;
+}
+
+virtual_column_map_t ICTableEntry::GetVirtualColumns() const {
+	virtual_column_map_t result;
+	result.insert(
+	    make_pair(MultiFileReader::COLUMN_IDENTIFIER_FILENAME, TableColumn("filename", LogicalType::VARCHAR)));
+	result.insert(make_pair(MultiFileReader::COLUMN_IDENTIFIER_FILE_ROW_NUMBER,
+	                        TableColumn("file_row_number", LogicalType::BIGINT)));
+	result.insert(make_pair(COLUMN_IDENTIFIER_ROW_ID, TableColumn("rowid", LogicalType::BIGINT)));
+	result.insert(make_pair(COLUMN_IDENTIFIER_EMPTY, TableColumn("", LogicalType::BOOLEAN)));
+	return result;
+}
+
+vector<column_t> ICTableEntry::GetRowIdColumns() const {
+	vector<column_t> result;
+	result.push_back(COLUMN_IDENTIFIER_ROW_ID);
+	result.push_back(MultiFileReader::COLUMN_IDENTIFIER_FILENAME);
+	result.push_back(MultiFileReader::COLUMN_IDENTIFIER_FILE_ROW_NUMBER);
+	return result;
 }
 
 TableStorageInfo ICTableEntry::GetStorageInfo(ClientContext &context) {
