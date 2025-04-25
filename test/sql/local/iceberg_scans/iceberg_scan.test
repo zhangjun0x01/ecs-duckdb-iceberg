@@ -8,12 +8,11 @@ SELECT * FROM ICEBERG_SCAN('data/iceberg/lineitem_iceberg');
 ----
 Catalog Error
 
+require avro
+
 require parquet
 
 require iceberg
-
-statement ok
-SELECT * FROM ICEBERG_SCAN('data/generated/iceberg/spark-local/pyspark_iceberg_table_v1') LIMIT 1;
 
 ### Scanning latest snapshot
 query I
