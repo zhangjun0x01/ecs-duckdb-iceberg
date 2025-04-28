@@ -247,7 +247,9 @@ IcebergSnapshot IcebergSnapshot::ParseSnapShot(yyjson_val *snapshot, IcebergMeta
 		ret.snapshot_id = IcebergUtils::TryGetNumFromObject(snapshot, "snapshot-id");
 		ret.timestamp_ms = Timestamp::FromEpochMs(IcebergUtils::TryGetNumFromObject(snapshot, "timestamp-ms"));
 		auto schema_id = yyjson_obj_get(snapshot, "schema-id");
-		if (schema_id && yyjson_get_type(schema_id) == YYJSON_TYPE_NUM) {
+		if (options.snapshot_source == SnapshotSource::LATEST) {
+			ret.schema_id = metadata.schema_id;
+		} else if (schema_id && yyjson_get_type(schema_id) == YYJSON_TYPE_NUM) {
 			ret.schema_id = yyjson_get_uint(schema_id);
 		} else {
 			//! 'schema-id' is optional in the V1 iceberg format.
