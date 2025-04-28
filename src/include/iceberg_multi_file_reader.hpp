@@ -57,6 +57,11 @@ public:
 public:
 	//! MultiFileList API
 	void Bind(vector<LogicalType> &return_types, vector<string> &names);
+	unique_ptr<IcebergMultiFileList> PushdownInternal(ClientContext &context, TableFilterSet &new_filters) const;
+	unique_ptr<MultiFileList> DynamicFilterPushdown(ClientContext &context, const MultiFileOptions &options,
+	                                                const vector<string> &names, const vector<LogicalType> &types,
+	                                                const vector<column_t> &column_ids,
+	                                                TableFilterSet &filters) const override;
 	unique_ptr<MultiFileList> ComplexFilterPushdown(ClientContext &context, const MultiFileOptions &options,
 	                                                MultiFilePushdownInfo &info,
 	                                                vector<unique_ptr<Expression>> &filters) override;
@@ -78,7 +83,7 @@ protected:
 	void InitializeFiles();
 
 public:
-	mutex lock;
+	mutable mutex lock;
 	// idx_t version;
 
 	//! ComplexFilterPushdown results

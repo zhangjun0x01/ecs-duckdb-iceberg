@@ -176,12 +176,67 @@ static Value DeserializeBound(const string &bound_value, IcebergColumnDefinition
 	ThrowBoundError<LOWER_BOUND>(bound_value, column);
 }
 
+unique_ptr<IcebergMultiFileList> IcebergMultiFileList::PushdownInternal(ClientContext &context,
+                                                                        TableFilterSet &new_filters) const {
+	auto filtered_list = make_uniq<IcebergMultiFileList>(context, paths[0].path, this->options);
+
+	TableFilterSet result_filter_set;
+
+	// Add pre-existing filters
+	for (auto &entry : table_filters.filters) {
+		result_filter_set.PushFilter(ColumnIndex(entry.first), entry.second->Copy());
+	}
+
+	// Add new filters
+	for (auto &entry : new_filters.filters) {
+		if (entry.first < names.size()) {
+			result_filter_set.PushFilter(ColumnIndex(entry.first), entry.second->Copy());
+		}
+	}
+
+	filtered_list->table_filters = std::move(result_filter_set);
+	filtered_list->names = names;
+
+	// Copy over the snapshot, this avoids reparsing metadata
+	{
+		unique_lock<mutex> lck(lock);
+		filtered_list->snapshot = snapshot;
+	}
+	return filtered_list;
+}
+
+unique_ptr<MultiFileList>
+IcebergMultiFileList::DynamicFilterPushdown(ClientContext &context, const MultiFileOptions &options,
+                                            const vector<string> &names, const vector<LogicalType> &types,
+                                            const vector<column_t> &column_ids, TableFilterSet &filters) const {
+	if (filters.filters.empty()) {
+		return nullptr;
+	}
+
+	TableFilterSet filters_copy;
+	for (auto &filter : filters.filters) {
+		auto column_id = column_ids[filter.first];
+		auto previously_pushed_down_filter = this->table_filters.filters.find(column_id);
+		if (previously_pushed_down_filter != this->table_filters.filters.end() &&
+		    filter.second->Equals(*previously_pushed_down_filter->second)) {
+			// Skip filters that we already have pushed down
+			continue;
+		}
+		filters_copy.PushFilter(ColumnIndex(column_id), filter.second->Copy());
+	}
+
+	if (!filters_copy.filters.empty()) {
+		auto new_snap = PushdownInternal(context, filters_copy);
+		return std::move(new_snap);
+	}
+	return nullptr;
+}
+
 unique_ptr<MultiFileList> IcebergMultiFileList::ComplexFilterPushdown(ClientContext &context,
                                                                       const MultiFileOptions &options,
                                                                       MultiFilePushdownInfo &info,
                                                                       vector<unique_ptr<Expression>> &filters) {
-	if (!table_filters.filters.empty()) {
-		//! Already performed filter pushdown
+	if (filters.empty()) {
 		return nullptr;
 	}
 
@@ -189,13 +244,13 @@ unique_ptr<MultiFileList> IcebergMultiFileList::ComplexFilterPushdown(ClientCont
 	for (const auto &filter : filters) {
 		combiner.AddFilter(filter->Copy());
 	}
-	auto filterstmp = combiner.GenerateTableScanFilters(info.column_indexes);
 
-	auto filtered_list = make_uniq<IcebergMultiFileList>(context, paths[0].path, this->options);
-	filtered_list->table_filters = std::move(filterstmp);
-	filtered_list->names = names;
+	auto filter_set = combiner.GenerateTableScanFilters(info.column_indexes);
+	if (filter_set.filters.empty()) {
+		return nullptr;
+	}
 
-	return std::move(filtered_list);
+	return PushdownInternal(context, filter_set);
 }
 
 vector<OpenFileInfo> IcebergMultiFileList::GetAllFiles() {
