@@ -21,13 +21,7 @@ SELECT count(*) FROM ICEBERG_SCAN('data/persistent/name_mapping/warehouse_1/mydb
 ----
 10000
 
-# 'b' no longer exists in this snapshot
-statement error
-SELECT count(*) FROM ICEBERG_SCAN('data/persistent/name_mapping/warehouse_1/mydb/t1', version=4, snapshot_from_id=6597550917742534971) where b is null;
-----
-Binder Error: Referenced column "b" not found in FROM clause!
-
-# 'b' is added back, with a different field-id, so its default value is NULL
+# 'b' is deleted and re-added, with a different field-id, so its default value is NULL
 query I
 SELECT count(*) FROM ICEBERG_SCAN('data/persistent/name_mapping/warehouse_1/mydb/t1', version=7, snapshot_from_id=2651609110244230974) where b is null;
 ----

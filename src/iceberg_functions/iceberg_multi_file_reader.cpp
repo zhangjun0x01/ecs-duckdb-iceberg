@@ -515,7 +515,7 @@ bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, Mu
 		return true;
 	}
 	if (loption == "skip_schema_inference") {
-		this->options.skip_schema_inference = BooleanValue::Get(val);
+		this->options.infer_schema = !BooleanValue::Get(val);
 		return true;
 	}
 	if (loption == "version") {

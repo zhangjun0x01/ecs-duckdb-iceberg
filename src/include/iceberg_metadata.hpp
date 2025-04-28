@@ -99,8 +99,8 @@ public:
 	static IcebergSnapshot GetSnapshotByTimestamp(IcebergMetadata &info, timestamp_t timestamp,
 	                                              const IcebergOptions &options);
 
-	static IcebergSnapshot ParseSnapShot(yyjson_val *snapshot, idx_t iceberg_format_version, idx_t schema_id,
-	                                     vector<yyjson_val *> &schemas, const IcebergOptions &options);
+	static IcebergSnapshot ParseSnapShot(yyjson_val *snapshot, IcebergMetadata &metadata,
+	                                     const IcebergOptions &options);
 	static string GetMetaDataPath(ClientContext &context, const string &path, FileSystem &fs,
 	                              const IcebergOptions &options);
 

@@ -143,7 +143,7 @@ unique_ptr<IcebergMetadata> IcebergMetadata::Parse(const string &path, FileSyste
 
 IcebergSnapshot IcebergSnapshot::GetLatestSnapshot(IcebergMetadata &info, const IcebergOptions &options) {
 	auto latest_snapshot = FindLatestSnapshotInternal(info.snapshots);
-	return ParseSnapShot(latest_snapshot, info.iceberg_version, info.schema_id, info.schemas, options);
+	return ParseSnapShot(latest_snapshot, info, options);
 }
 
 IcebergSnapshot IcebergSnapshot::GetSnapshotById(IcebergMetadata &info, idx_t snapshot_id,
@@ -154,7 +154,7 @@ IcebergSnapshot IcebergSnapshot::GetSnapshotById(IcebergMetadata &info, idx_t sn
 		throw InvalidConfigurationException("Could not find snapshot with id " + to_string(snapshot_id));
 	}
 
-	return ParseSnapShot(snapshot, info.iceberg_version, info.schema_id, info.schemas, options);
+	return ParseSnapShot(snapshot, info, options);
 }
 
 IcebergSnapshot IcebergSnapshot::GetSnapshotByTimestamp(IcebergMetadata &info, timestamp_t timestamp,
@@ -166,7 +166,7 @@ IcebergSnapshot IcebergSnapshot::GetSnapshotByTimestamp(IcebergMetadata &info, t
 		                                    Timestamp::ToString(timestamp));
 	}
 
-	return ParseSnapShot(snapshot, info.iceberg_version, info.schema_id, info.schemas, options);
+	return ParseSnapShot(snapshot, info, options);
 }
 
 // Function to generate a metadata file url from version and format string
@@ -230,8 +230,8 @@ string IcebergSnapshot::GetMetaDataPath(ClientContext &context, const string &pa
 	return GuessTableVersion(meta_path, fs, options);
 }
 
-IcebergSnapshot IcebergSnapshot::ParseSnapShot(yyjson_val *snapshot, idx_t iceberg_format_version, idx_t schema_id,
-                                               vector<yyjson_val *> &schemas, const IcebergOptions &options) {
+IcebergSnapshot IcebergSnapshot::ParseSnapShot(yyjson_val *snapshot, IcebergMetadata &metadata,
+                                               const IcebergOptions &options) {
 	IcebergSnapshot ret;
 	if (snapshot) {
 		auto snapshot_tag = yyjson_get_type(snapshot);
@@ -239,22 +239,29 @@ IcebergSnapshot IcebergSnapshot::ParseSnapShot(yyjson_val *snapshot, idx_t icebe
 			throw InvalidConfigurationException("Invalid snapshot field found parsing iceberg metadata.json");
 		}
 		ret.metadata_compression_codec = options.metadata_compression_codec;
-		if (iceberg_format_version == 1) {
+		if (metadata.iceberg_version == 1) {
 			ret.sequence_number = 0;
-		} else if (iceberg_format_version == 2) {
+		} else if (metadata.iceberg_version == 2) {
 			ret.sequence_number = IcebergUtils::TryGetNumFromObject(snapshot, "sequence-number");
 		}
 		ret.snapshot_id = IcebergUtils::TryGetNumFromObject(snapshot, "snapshot-id");
 		ret.timestamp_ms = Timestamp::FromEpochMs(IcebergUtils::TryGetNumFromObject(snapshot, "timestamp-ms"));
+		auto schema_id = yyjson_obj_get(snapshot, "schema-id");
+		if (schema_id && yyjson_get_type(schema_id) == YYJSON_TYPE_NUM) {
+			ret.schema_id = yyjson_get_uint(schema_id);
+		} else {
+			//! 'schema-id' is optional in the V1 iceberg format.
+			D_ASSERT(metadata.iceberg_version == 1);
+			ret.schema_id = metadata.schema_id;
+		}
 		ret.manifest_list = IcebergUtils::TryGetStrFromObject(snapshot, "manifest-list");
 	} else {
 		ret.snapshot_id = DConstants::INVALID_INDEX;
 	}
 
-	ret.iceberg_format_version = iceberg_format_version;
-	ret.schema_id = schema_id;
-	if (!options.skip_schema_inference) {
-		ret.schema = ParseSchema(schemas, ret.schema_id);
+	ret.iceberg_format_version = metadata.iceberg_version;
+	if (options.infer_schema) {
+		ret.schema = ParseSchema(metadata.schemas, ret.schema_id);
 	}
 	return ret;
 }

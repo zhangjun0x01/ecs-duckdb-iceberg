@@ -64,7 +64,7 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 		} else if (loption == "metadata_compression_codec") {
 			options.metadata_compression_codec = StringValue::Get(kv.second);
 		} else if (loption == "skip_schema_inference") {
-			options.skip_schema_inference = BooleanValue::Get(kv.second);
+			options.infer_schema = !BooleanValue::Get(kv.second);
 		} else if (loption == "version") {
 			options.table_version = StringValue::Get(kv.second);
 		} else if (loption == "version_name_format") {
