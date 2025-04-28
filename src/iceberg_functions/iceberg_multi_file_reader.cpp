@@ -71,15 +71,14 @@ idx_t IcebergMultiFileList::GetTotalFileCount() {
 }
 
 unique_ptr<NodeStatistics> IcebergMultiFileList::GetCardinality(ClientContext &context) {
-	auto total_file_count = IcebergMultiFileList::GetTotalFileCount();
-
-	if (total_file_count == 0) {
-		return make_uniq<NodeStatistics>(0, 0);
+	idx_t cardinality = 0;
+	for (idx_t i = 0; i < data_manifests.size(); i++) {
+		cardinality += data_manifests[i].added_rows_count;
 	}
-
-	// FIXME: visit metadata to get a cardinality count
-
-	return nullptr;
+	for (idx_t i = 0; i < delete_manifests.size(); i++) {
+		cardinality -= delete_manifests[i].added_rows_count;
+	}
+	return make_uniq<NodeStatistics>(cardinality, cardinality);
 }
 
 OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
@@ -312,7 +311,8 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	auto &data_file = multi_file_list.data_files[file_id];
 
 	// The path of the data file where this chunk was read from
-	auto &file_path = data_file.file_path;
+	// Copy the file path otherwise it gets overwritten somewhere
+	const auto file_path = data_file.file_path;
 	{
 		std::lock_guard<mutex> guard(multi_file_list.delete_lock);
 		if (multi_file_list.current_delete_manifest != multi_file_list.delete_manifests.end()) {

@@ -70,6 +70,8 @@ public:
 	int64_t sequence_number;
 	//! either data or deletes
 	IcebergManifestContentType content;
+	//! added rows in the manifest
+	idx_t added_rows_count;
 
 public:
 	void Print() {
