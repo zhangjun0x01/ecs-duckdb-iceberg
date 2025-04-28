@@ -50,7 +50,8 @@ idx_t IcebergManifestV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 	auto content = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("content").GetPrimaryIndex()]);
 	auto sequence_number =
 	    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("sequence_number").GetPrimaryIndex()]);
-	auto added_rows_count = FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("added_rows_count").GetPrimaryIndex()]);
+	auto added_rows_count =
+		FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("added_rows_count").GetPrimaryIndex()]);
 
 	for (idx_t i = 0; i < count; i++) {
 		idx_t index = i + offset;
