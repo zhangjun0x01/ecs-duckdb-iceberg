@@ -257,6 +257,7 @@ IcebergSnapshot IcebergSnapshot::ParseSnapShot(yyjson_val *snapshot, IcebergMeta
 		ret.manifest_list = IcebergUtils::TryGetStrFromObject(snapshot, "manifest-list");
 	} else {
 		ret.snapshot_id = DConstants::INVALID_INDEX;
+		ret.schema_id = metadata.schema_id;
 	}
 
 	ret.iceberg_format_version = metadata.iceberg_version;
