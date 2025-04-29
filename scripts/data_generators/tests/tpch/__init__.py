@@ -24,7 +24,7 @@ class Test(IcebergTest):
     def setup(self, con):
         for tbl in ['lineitem', 'customer', 'nation', 'orders', 'part', 'partsupp', 'region', 'supplier']:
             create_statement = f"""
-                CREATE or REPLACE TABLE default.{tbl}_sf1
+                CREATE or REPLACE TABLE default.{tbl}
                 TBLPROPERTIES (
                     'format-version'='2',
                     'write.update.mode'='merge-on-read'
