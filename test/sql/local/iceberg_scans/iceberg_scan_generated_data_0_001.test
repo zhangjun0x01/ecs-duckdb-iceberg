@@ -8,6 +8,8 @@ require parquet
 
 require iceberg
 
+require-env DUCKDB_ICEBERG_HAVE_GENERATED_DATA
+
 ### Invalid iceberg metadata leads to failed statement
 statement error
 SELECT count(*) FROM ICEBERG_SCAN('data/persistent/bad_data/bad_iceberg_metadata.json');
