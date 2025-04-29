@@ -58,7 +58,7 @@ class IcebergSparkLocal(IcebergConnection):
         config.set("spark.sql.catalog.quickstart_catalog.s3.region", "us-west-2")
         config.set("spark.history.fs.logDirectory", "/home/iceberg/spark-events")
 
-        spark = SparkSession.builder.config(conf=spark_config).getOrCreate()
+        spark = SparkSession.builder.config(conf=config).getOrCreate()
         spark.sql("USE quickstart_catalog")
         spark.sql("CREATE NAMESPACE IF NOT EXISTS default")
         spark.sql("USE NAMESPACE default")
