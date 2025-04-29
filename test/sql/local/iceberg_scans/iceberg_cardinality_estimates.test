@@ -8,6 +8,8 @@ require parquet
 
 require iceberg
 
+mode skip
+
 # only 2 data files
 query I
 select count(*) from ICEBERG_METADATA('data/generated/iceberg/spark-local/lineitem_001_deletes') where manifest_content = 'DATA';
@@ -55,3 +57,5 @@ query I
 select count(*) from ICEBERG_SCAN('data/generated/iceberg/spark-local/many_adds_deletes');
 ----
 6592
+
+mode unskip

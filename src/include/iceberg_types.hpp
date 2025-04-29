@@ -71,7 +71,9 @@ public:
 	//! either data or deletes
 	IcebergManifestContentType content;
 	//! added rows in the manifest
-	idx_t added_rows_count;
+	idx_t added_rows_count = 0;
+	//! existing rows in the manifest
+	idx_t existing_rows_count = 0;
 
 public:
 	void Print() {

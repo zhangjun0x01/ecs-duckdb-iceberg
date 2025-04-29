@@ -18,8 +18,6 @@ Invalid Input Error: Fails to parse iceberg metadata from data/persistent/bad_da
 
 ### Iceberg spec v1
 
-require-env DUCKDB_ICEBERG_HAVE_GENERATED_DATA
-
 # Check count matches the same as last file
 query I nosort table_v1_count
 SELECT count(*) FROM ICEBERG_SCAN('data/generated/iceberg/spark-local/pyspark_iceberg_table_v1');
