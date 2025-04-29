@@ -1,7 +1,8 @@
 from pyspark.sql import SparkSession
+from pyspark import SparkContext
+from pyspark.conf import SparkConf
 import pyspark
 import pyspark.sql
-from pyspark import SparkContext
 
 from ..base import IcebergConnection
 
