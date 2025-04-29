@@ -1,4 +1,4 @@
-CREATE OR REPLACE TABLE nested_types (
+CREATE OR REPLACE TABLE default.nested_types (
     id INT,
     name STRING,
     address STRUCT<

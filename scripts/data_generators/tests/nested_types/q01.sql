@@ -1,4 +1,4 @@
-INSERT INTO nested_types VALUES (
+INSERT INTO default.nested_types VALUES (
   1,
   'Alice',
   NAMED_STRUCT('street', '123 Main St', 'city', 'Metropolis', 'zip', '12345'),

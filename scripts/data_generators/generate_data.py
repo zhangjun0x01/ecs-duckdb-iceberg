@@ -16,18 +16,17 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-connections: Dict[str, IcebergConnection] = {}
+test_classes = IcebergTest.registry
+tests = []
+for test_class in test_classes:
+    tests.append(test_class())
+
 for target in args.targets:
     connection_class = IcebergConnection.get_class(target)
-    connections[target] = connection_class()
-
-tests = IcebergTest.registry
-for test_class in tests:
-    test = test_class()
-    print(f"Generating test '{test.table}'")
-    for con_name in connections:
-        con = connections[con_name]
-        print(f"Generating for '{con_name}'")
+    con = connection_class()
+    print(f"Generating for '{target}'")
+    for test in tests:
+        print(f"Generating test '{test.table}'")
         test.generate(con)
 
 if __name__ == "__main__":
