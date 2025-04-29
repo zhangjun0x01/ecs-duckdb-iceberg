@@ -49,8 +49,12 @@ class IcebergTest:
                 snapshot_name = os.path.basename(path)[:-4]
                 last_file = snapshot_name
                 query = file.read()
-                # Run spark query
-                con.con.sql(query)
+                try:
+                    # Run spark query
+                    con.con.sql(query)
+                except Exception as e:
+                    print(f"Error executing query from {path}: {e}")
+                    return  # Exit gracefully
 
                 # Create a parquet copy of table
                 df = con.con.read.table(f"default.{self.table}")
