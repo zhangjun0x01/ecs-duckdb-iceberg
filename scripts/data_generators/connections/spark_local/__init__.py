@@ -3,7 +3,7 @@ import pyspark
 import pyspark.sql
 from pyspark import SparkContext
 
-from . import IcebergConnection
+from ..base import IcebergConnection
 
 import sys
 import os
@@ -11,15 +11,15 @@ import os
 CONNECTION_KEY = 'local'
 
 SCRIPT_DIR = os.path.dirname(__file__)
-DATA_GENERATION_DIR = os.path.join(SCRIPT_DIR, '..', '..', '..', 'data', 'generated', 'iceberg', 'spark-local')
+DATA_GENERATION_DIR = os.path.join(SCRIPT_DIR, '..', '..', '..', '..', 'data', 'generated', 'iceberg', 'spark-local')
 SPARK_RUNTIME_PATH = os.path.join(SCRIPT_DIR, '..', '..', 'iceberg-spark-runtime-3.5_2.12-1.4.2.jar')
 
 
 @IcebergConnection.register(CONNECTION_KEY)
 class IcebergSparkLocal(IcebergConnection):
     def __init__(self):
-        super().__init__(CONNECTION_KEY)
-        self.con = get_connection(self)
+        super().__init__('spark-local', 'iceberg_catalog')
+        self.con = self.get_connection()
 
     def get_connection(self):
         conf = pyspark.SparkConf()
@@ -34,4 +34,7 @@ class IcebergSparkLocal(IcebergConnection):
         spark = pyspark.sql.SparkSession.builder.config(conf=conf).getOrCreate()
         sc = spark.sparkContext
         sc.setLogLevel("ERROR")
+        spark.sql("USE iceberg_catalog")
+        spark.sql("CREATE NAMESPACE IF NOT EXISTS default")
+        spark.sql("USE NAMESPACE default")
         return spark

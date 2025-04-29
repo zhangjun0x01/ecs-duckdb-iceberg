@@ -1,5 +1,4 @@
-DROP TABLE IF EXISTS all_types_table;
-CREATE TABLE all_types_table (
+CREATE OR REPLACE TABLE default.all_types_table (
       byte_col TINYINT,
       short_col SMALLINT,
       int_col INT,

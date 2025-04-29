@@ -22,7 +22,7 @@ import pyspark
 import pyspark.sql
 from pyspark import SparkContext
 
-from . import IcebergConnection
+from ..base import IcebergConnection
 
 import sys
 import os
@@ -35,7 +35,7 @@ SPARK_RUNTIME_PATH = os.path.join(os.path.dirname(__file__), '..', '..', 'iceber
 @IcebergConnection.register(CONNECTION_KEY)
 class IcebergSparkRest(IcebergConnection):
     def __init__(self):
-        super().__init__(CONNECTION_KEY)
+        super().__init__(CONNECTION_KEY, 'demo')
         self.con = get_connection(self)
 
     def get_connection(self):
@@ -83,5 +83,5 @@ class IcebergSparkRest(IcebergConnection):
     #            AS SELECT * FROM parquet_file_view;
     #        """
     #        duckdb_con.execute(f"copy {tbl} to '{PARQUET_SRC_FILE}' (FORMAT PARQUET)")
-    #        con.read.parquet(PARQUET_SRC_FILE).createOrReplaceTempView('parquet_file_view')
+    #        con.con.read.parquet(PARQUET_SRC_FILE).createOrReplaceTempView('parquet_file_view')
     #        con.sql(create_statement)

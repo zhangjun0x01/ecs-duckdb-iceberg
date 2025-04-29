@@ -3,7 +3,7 @@ import pyspark
 import pyspark.sql
 from pyspark import SparkContext
 
-from . import IcebergConnection
+from ..base import IcebergConnection
 
 import sys
 import os
@@ -14,8 +14,8 @@ CONNECTION_KEY = 'polaris'
 @IcebergConnection.register(CONNECTION_KEY)
 class IcebergSparkLocal(IcebergConnection):
     def __init__(self):
-        super().__init__(CONNECTION_KEY)
-        self.con = get_connection(self)
+        super().__init__(CONNECTION_KEY, 'quickstart_catalog')
+        self.con = self.get_connection()
 
     def get_connection(self):
         os.environ["PYSPARK_SUBMIT_ARGS"] = (

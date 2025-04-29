@@ -1,6 +1,6 @@
-from .. import IcebergTest
+from scripts.data_generators.tests.base import IcebergTest
 import pathlib
-import tempdir
+import tempfile
 import duckdb
 
 
@@ -19,4 +19,4 @@ class Test(IcebergTest):
         duckdb_con.execute(f"copy lineitem to '{self.parquet_file}' (FORMAT PARQUET)")
 
     def setup(self, con):
-        con.read.parquet(self.parquet_file).createOrReplaceTempView('parquet_file_view')
+        con.con.read.parquet(self.parquet_file.as_posix()).createOrReplaceTempView('parquet_file_view')

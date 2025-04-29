@@ -1,4 +1,4 @@
-from .. import IcebergTest
+from scripts.data_generators.tests.base import IcebergTest
 import pathlib
 
 

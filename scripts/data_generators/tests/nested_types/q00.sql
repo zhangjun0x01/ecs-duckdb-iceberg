@@ -1,5 +1,4 @@
-Drop table if exists nested_types;
-CREATE TABLE nested_types (
+CREATE OR REPLACE TABLE nested_types (
     id INT,
     name STRING,
     address STRUCT<
