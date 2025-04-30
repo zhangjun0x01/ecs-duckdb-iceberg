@@ -1,3 +1,16 @@
+# name: test/sql/local/irc/test_polaris.test
+# description: test integration with iceberg catalog read
+# group: [irc]
+
+require-env POLARIS_CLIENT_ID
+
+require-env POLARIS_CLIENT_SECRET
+
+require-env POLARIS_SERVER_AVAILABLE
+
+require avro
+
+require parquet
 
 require httpfs
 
@@ -5,23 +18,43 @@ require iceberg
 
 require aws
 
-mode skip
+# Do not ignore 'HTTP' error messages!
+set ignore_error_messages
 
 statement ok
 create secret polaris_secret (
-  type s3,
-  KEY_ID 'c1afe0044f87ea17',
-  SECRET 'a65907eb154abc7184d66cca48da91f3'
+	TYPE ICEBERG,
+	CLIENT_ID '${POLARIS_CLIENT_ID}',
+	CLIENT_SECRET '${POLARIS_CLIENT_SECRET}',
+	ENDPOINT 'http://0.0.0.0:8181/api/catalog'
 );
-
 
 statement ok
 attach 'quickstart_catalog' as my_datalake (
-    type ICEBERG,
-    ENDPOINT 'http://0.0.0.0:8181/api/catalog'
-)
-
+	type ICEBERG,
+	ENDPOINT 'http://0.0.0.0:8181/api/catalog'
+);
 
 statement ok
 show all tables;
+
+# tables may be added, we just want to make sure we are accurately getting the information
+query I
+select count(*) > 0 from (show all tables);
+----
+true
+
+query II
+select * from my_datalake.default.quickstart_table;
+----
+1	some data
+2	more data
+3	yet more data
+
+query IIIIIIII
+select * from my_datalake.default.all_types_table;
+----
+1	100	1000	10000000000	1.23	123.456	12345.67890	2023-01-01
+2	200	2000	20000000000	2.34	234.567	23456.78901	2023-06-15
+3	300	3000	30000000000	3.45	345.678	34567.89012	2024-12-25
 

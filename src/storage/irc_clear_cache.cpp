@@ -45,6 +45,8 @@ void ICRClearCacheFunction::ClearCacheOnSetting(ClientContext &context, SetScope
 	ClearIRCCaches(context);
 }
 
-ICRClearCacheFunction::ICRClearCacheFunction() : TableFunction("pc_clear_cache", {}, ClearCacheFunction, ClearCacheBind) {
+//! FIXME: why is this called 'pc' ??
+ICRClearCacheFunction::ICRClearCacheFunction()
+    : TableFunction("pc_clear_cache", {}, ClearCacheFunction, ClearCacheBind) {
 }
 } // namespace duckdb

@@ -50,7 +50,7 @@ string ICUtils::LogicalToIcebergType(const LogicalType &input) {
 		break;
 	}
 
-	throw std::runtime_error("Unsupported type: " + input.ToString());
+	throw InvalidInputException("Unsupported type: %s", input.ToString());
 }
 
 string ICUtils::TypeToString(const LogicalType &input) {
@@ -196,7 +196,7 @@ LogicalType ICUtils::TypeToLogicalType(ClientContext &context, const string &typ
 
 LogicalType ICUtils::ToICType(const LogicalType &input) {
 	// todo do we need this mapping?
-	throw NotImplementedException("ToUCType not yet implemented");
+	throw NotImplementedException("ToICType not yet implemented");
 	switch (input.id()) {
 	case LogicalTypeId::BOOLEAN:
 	case LogicalTypeId::SMALLINT:
@@ -217,11 +217,11 @@ LogicalType ICUtils::ToICType(const LogicalType &input) {
 	case LogicalTypeId::VARCHAR:
 		return input;
 	case LogicalTypeId::LIST:
-		throw NotImplementedException("PC does not support arrays - unsupported type \"%s\"", input.ToString());
+		throw NotImplementedException("Iceberg does not support arrays - unsupported type \"%s\"", input.ToString());
 	case LogicalTypeId::STRUCT:
 	case LogicalTypeId::MAP:
 	case LogicalTypeId::UNION:
-		throw NotImplementedException("PC does not support composite types - unsupported type \"%s\"",
+		throw NotImplementedException("Iceberg does not support composite types - unsupported type \"%s\"",
 		                              input.ToString());
 	case LogicalTypeId::TIMESTAMP_SEC:
 	case LogicalTypeId::TIMESTAMP_MS:
@@ -239,8 +239,14 @@ yyjson_doc *ICUtils::api_result_to_doc(const string &api_result) {
 	auto *root = yyjson_doc_get_root(doc);
 	auto *error = yyjson_obj_get(root, "error");
 	if (error != NULL) {
-		string err_msg = IcebergUtils::TryGetStrFromObject(error, "message");
-		throw std::runtime_error(err_msg);
+		try {
+			string err_msg = IcebergUtils::TryGetStrFromObject(error, "message");
+			throw InvalidInputException(err_msg);
+		} catch (InvalidConfigurationException &e) {
+			// keep going, we will throw the whole api result as an error message
+			throw InvalidConfigurationException(api_result);
+		}
+		throw InvalidConfigurationException("Could not parse api_result");
 	}
 	return doc;
 }

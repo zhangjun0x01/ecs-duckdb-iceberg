@@ -4,7 +4,6 @@
 #include "storage/irc_catalog.hpp"
 #include "storage/irc_table_set.hpp"
 #include "storage/irc_transaction.hpp"
-#include "duckdb/parser/parsed_data/create_table_info.hpp"
 #include "duckdb/parser/constraints/not_null_constraint.hpp"
 #include "duckdb/parser/constraints/unique_constraint.hpp"
 #include "duckdb/parser/expression/constant_expression.hpp"
@@ -36,17 +35,17 @@ unique_ptr<CatalogEntry> ICTableSet::_CreateCatalogEntry(ClientContext &context,
 
 	auto table_entry = make_uniq<ICTableEntry>(catalog, schema, info);
 	table_entry->table_data = make_uniq<IRCAPITable>(table);
-	return table_entry;
+	return std::move(table_entry);
 }
 
 void ICTableSet::FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &entry) {
-	auto* derived = static_cast<ICTableEntry*>(entry.get());
+	auto *derived = static_cast<ICTableEntry *>(entry.get());
 	if (!derived->table_data->storage_location.empty()) {
 		return;
 	}
-		
+
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
-	auto table = IRCAPI::GetTable(context, ic_catalog, schema.name, entry->name, ic_catalog.credentials);
+	auto table = IRCAPI::GetTable(context, ic_catalog, schema.name, entry->name, true);
 	entry = _CreateCatalogEntry(context, table);
 }
 
@@ -81,14 +80,14 @@ unique_ptr<ICTableInfo> ICTableSet::GetTableInfo(ClientContext &context, IRCSche
 optional_ptr<CatalogEntry> ICTableSet::CreateTable(ClientContext &context, BoundCreateTableInfo &info) {
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
 	auto *table_info = dynamic_cast<CreateTableInfo *>(info.base.get());
-	auto table = IRCAPI::CreateTable(context, ic_catalog, ic_catalog.internal_name, schema.name, ic_catalog.credentials, table_info);
+	auto table = IRCAPI::CreateTable(context, ic_catalog, ic_catalog.internal_name, schema.name, table_info);
 	auto entry = _CreateCatalogEntry(context, table);
 	return CreateEntry(std::move(entry));
 }
 
 void ICTableSet::DropTable(ClientContext &context, DropInfo &info) {
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
-	IRCAPI::DropTable(context, ic_catalog, ic_catalog.internal_name, schema.name, info.name, ic_catalog.credentials);
+	IRCAPI::DropTable(context, ic_catalog, ic_catalog.internal_name, schema.name, info.name);
 }
 
 void ICTableSet::AlterTable(ClientContext &context, RenameTableInfo &info) {

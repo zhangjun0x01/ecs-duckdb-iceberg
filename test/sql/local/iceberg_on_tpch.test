@@ -1,58 +1,62 @@
 # name: test/sql/local/iceberg_on_tpch.test
 # description: test integration with iceberg catalog read
-# group: [iceberg]
-
+# group: [local]
 
 require-env ICEBERG_SERVER_AVAILABLE
 
-require iceberg
+require avro
 
 require parquet
+
+require iceberg
 
 require httpfs
 
 require tpch
 
 statement ok
-CREATE SECRET (
+CREATE SECRET my_datalake_storage (
     TYPE S3,
-    KEY_ID 'admin',
-    SECRET 'password',
     ENDPOINT '127.0.0.1:9000',
     URL_STYLE 'path',
+    KEY_ID 'admin',
+    SECRET 'password',
     USE_SSL 0
-  );
+);
 
+# Note: the 'CLIENT_SECRET' is not verified at all by the authorization server,
+# so it's not actually testing authorization
 statement ok
 ATTACH '' AS my_datalake (
     TYPE ICEBERG,
-    ENDPOINT 'http://127.0.0.1:8181'
+    CLIENT_ID 'admin',
+    CLIENT_SECRET 'password',
+    ENDPOINT '127.0.0.1:8181'
 );
 
+statement ok
+create view customer as select * from my_datalake.default.customer;
 
 statement ok
-create view customer as select * from my_datalake.default.customer_sf1;
+create view lineitem as select * from my_datalake.default.lineitem;
 
 statement ok
-create view lineitem as select * from my_datalake.default.lineitem_sf1;
+create view nation as select * from my_datalake.default.nation;
 
 statement ok
-create view nation as select * from my_datalake.default.nation_sf1;
+create view orders as select * from my_datalake.default.orders;
 
 statement ok
-create view orders as select * from my_datalake.default.orders_sf1;
+create view part as select * from my_datalake.default.part;
 
 statement ok
-create view part as select * from my_datalake.default.part_sf1;
+create view partsupp as select * from my_datalake.default.partsupp;
 
 statement ok
-create view partsupp as select * from my_datalake.default.partsupp_sf1;
+create view region as select * from my_datalake.default.region;
 
 statement ok
-create view region as select * from my_datalake.default.region_sf1;
-
-statement ok
-create view supplier as select * from my_datalake.default.supplier_sf1;
+create view supplier as select * from my_datalake.default.supplier;
 
 
 loop i 1 9

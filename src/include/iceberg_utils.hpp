@@ -11,6 +11,7 @@
 #include "duckdb/common/printer.hpp"
 #include "iceberg_types.hpp"
 #include "yyjson.hpp"
+#include "duckdb/common/file_system.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -33,11 +34,13 @@ public:
 	static bool TryGetBoolFromObject(yyjson_val *obj, const string &field);
 
 	static uint64_t TryGetNumFromObject(yyjson_val *obj, const string &field, bool fail_on_missing,
-									uint64_t default_val = 0);
+	                                    uint64_t default_val = 0);
 	static bool TryGetBoolFromObject(yyjson_val *obj, const string &field, bool fail_on_missing,
-								 bool default_val = false);
+	                                 bool default_val = false);
 	static string TryGetStrFromObject(yyjson_val *obj, const string &field, bool fail_on_missing,
-								  const char *default_val = "");
+	                                  const char *default_val = "");
+
+	static idx_t CountOccurrences(const string &input, const string &to_find);
 };
 
 } // namespace duckdb

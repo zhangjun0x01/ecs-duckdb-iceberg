@@ -1,8 +1,10 @@
-# name: test/sql/local/irc/test_multiple_keys.test
+# name: test/sql/local/irc/test_mutliple_keys.test
 # description: test integration with iceberg catalog read
-# group: [iceberg]
+# group: [irc]
 
 require-env ICEBERG_SERVER_AVAILABLE
+
+require avro
 
 require parquet
 
@@ -11,6 +13,9 @@ require iceberg
 require httpfs
 
 require aws
+
+# Do not ignore 'HTTP' error messages!
+set ignore_error_messages
 
 statement ok
 CREATE SECRET amazing_secret (
@@ -38,7 +43,7 @@ attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as glue_lake (
     ENDPOINT_TYPE 'GLUE'
 );
 ----
-IO Error
+Invalid Configuration Error
 
 statement ok
 CREATE or replace SECRET amazing_secret (
@@ -51,14 +56,26 @@ CREATE or replace SECRET amazing_secret (
     REGION 'us-east-1'
 );
 
-# new secret has a region, so this passes since no request is made
-statement ok
+# new secret has a region, but amazing secret is still used. The call to /config? has invalid credentials
+statement error
 attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as glue_lake (
     TYPE ICEBERG,
     ENDPOINT_TYPE 'GLUE'
 );
-
-statement error
-select * from glue_lake.myblognamespace.region_sf1;
 ----
-IO Error
+HTTP Error
+
+# TODO: fix me. Only fails in CI
+mode skip
+
+statement ok
+attach '840140254803:s3tablescatalog/pyiceberg-blog-bucket' as glue_lake (
+    TYPE ICEBERG,
+    SECRET 'glue_secret',
+    ENDPOINT_TYPE 'GLUE'
+);
+
+query I
+select count(*) from glue_lake.myblognamespace.region;
+----
+5

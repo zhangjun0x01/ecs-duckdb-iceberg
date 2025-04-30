@@ -1,14 +1,14 @@
-# name: test/sql/cloud/test_s3tables_and_glue.test
+# name: test/sql/cloud/test_multiple_catalogs.test
 # description: test integration with iceberg catalog read
-# group: [iceberg]
+# group: [cloud]
 
-require-env ICEBERG_SERVER_AVAILABLE
-
-require-env AWS_DEFAULT_REGION
+require-env ICEBERG_AWS_REMOTE_AVAILABLE
 
 require-env AWS_ACCESS_KEY_ID
 
 require-env AWS_SECRET_ACCESS_KEY
+
+require avro
 
 require parquet
 

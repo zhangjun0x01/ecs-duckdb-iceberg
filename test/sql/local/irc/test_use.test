@@ -1,8 +1,10 @@
 # name: test/sql/local/irc/test_use.test
 # description: test integration with iceberg catalog read
-# group: [iceberg]
+# group: [irc]
 
 require-env ICEBERG_SERVER_AVAILABLE
+
+require avro
 
 require parquet
 
@@ -11,6 +13,9 @@ require iceberg
 require httpfs
 
 require aws
+
+# Do not ignore 'HTTP' error messages!
+set ignore_error_messages
 
 statement ok
 CREATE SECRET local_catalog_secret (
@@ -25,6 +30,8 @@ CREATE SECRET local_catalog_secret (
 statement ok
 ATTACH '' AS my_datalake (
     TYPE ICEBERG,
+    CLIENT_ID 'admin',
+    CLIENT_SECRET 'password',
     ENDPOINT 'http://127.0.0.1:8181'
 );
 

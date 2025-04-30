@@ -1,60 +1,55 @@
-
 #include "url_utils.hpp"
+#include "duckdb/common/string_util.hpp"
 
 namespace duckdb {
 
-void IRCEndpointBuilder::AddPathComponent(std::string component) {
-	path_components.push_back(component);
+void IRCEndpointBuilder::AddPathComponent(const string &component) {
+	if (!component.empty()) {
+		path_components.push_back(component);
+	}
 }
 
-void IRCEndpointBuilder::SetPrefix(std::string prefix_) {
-	prefix = prefix_;
-}
-
-std::string IRCEndpointBuilder::GetHost() const {
+string IRCEndpointBuilder::GetHost() const {
 	return host;
 }
 
-void IRCEndpointBuilder::SetVersion(std::string version_) {
-	version = version_;
-}
-
-std::string IRCEndpointBuilder::GetVersion() const {
-	return version;
-}
-
-void IRCEndpointBuilder::SetWarehouse(std::string warehouse_) {
-	warehouse = warehouse_;
-}
-
-std::string IRCEndpointBuilder::GetWarehouse() const {
-	return warehouse;
-}
-
-void IRCEndpointBuilder::SetHost(std::string host_) {
+void IRCEndpointBuilder::SetHost(const string &host_) {
 	host = host_;
 }
 
-std::string IRCEndpointBuilder::GetPrefix() const {
-	return prefix;
+void IRCEndpointBuilder::SetParam(const string &key, const string &value) {
+	params[key] = value;
 }
 
-std::string IRCEndpointBuilder::GetURL() const {
-	std::string ret = host;
-	if (!version.empty()) {
-		ret = ret + "/" + version;
+string IRCEndpointBuilder::GetParam(const string &key) const {
+	if (params.find(key) != params.end()) {
+		return params.at(key);
 	}
-	// usually the warehouse is the prefix.
-	if (prefix.empty() && !warehouse.empty()) {
-		ret = ret + "/" + warehouse;
-	}
-	else if (!prefix.empty()) {
-		ret = ret + "/" + prefix;
-	}
+	return "";
+}
+
+const std::unordered_map<string, string> IRCEndpointBuilder::GetParams() const {
+	return params;
+}
+
+string IRCEndpointBuilder::GetURL() const {
+	//! {host}[/{version}][/{prefix}]/{path_component[0]}/{path_component[1]}
+	string ret = host;
 	for (auto &component : path_components) {
 		ret += "/" + component;
+	}
+
+	// encode params
+	auto sep = "?";
+	if (params.size() > 0) {
+		for (auto &param : params) {
+			auto key = StringUtil::URLEncode(param.first);
+			auto value = StringUtil::URLEncode(param.second);
+			ret += sep + key + "=" + value;
+			sep = "&";
+		}
 	}
 	return ret;
 }
 
-}
+} // namespace duckdb

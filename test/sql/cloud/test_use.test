@@ -1,14 +1,14 @@
-# name: test/sql/cloud/irc/test_use.test
+# name: test/sql/cloud/test_use.test
 # description: test use
-# group: [iceberg]
+# group: [cloud]
 
-require-env ICEBERG_SERVER_AVAILABLE
-
-require-env AWS_DEFAULT_REGION
+require-env ICEBERG_AWS_REMOTE_AVAILABLE
 
 require-env AWS_ACCESS_KEY_ID
 
 require-env AWS_SECRET_ACCESS_KEY
+
+require avro
 
 require parquet
 
