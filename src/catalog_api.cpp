@@ -75,8 +75,8 @@ static void ParseConfigOptions(const case_insensitive_map_t<string> &config, cas
 		}
 	}
 
-	auto it = config_to_option.find("s3.path-style-access");
-	if (it != config_to_option.end()) {
+	auto it = config.find("s3.path-style-access");
+	if (it != config.end()) {
 		bool path_style;
 		if (it->second == "true") {
 			path_style = true;
