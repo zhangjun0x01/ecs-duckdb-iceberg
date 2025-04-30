@@ -71,7 +71,7 @@ static void ParseConfigOptions(const case_insensitive_map_t<string> &config, cas
 	for (auto &entry : config) {
 		auto it = config_to_option.find(entry.first);
 		if (it != config_to_option.end()) {
-			options.emplace(it->second, entry.second);
+			options[it->second] = entry.second;
 		}
 	}
 
