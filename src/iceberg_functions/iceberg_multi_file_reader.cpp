@@ -250,7 +250,8 @@ unique_ptr<MultiFileList> IcebergMultiFileList::ComplexFilterPushdown(ClientCont
 		combiner.AddFilter(filter->Copy());
 	}
 
-	auto filter_set = combiner.GenerateTableScanFilters(info.column_indexes);
+	vector<FilterPushdownResult> unused;
+	auto filter_set = combiner.GenerateTableScanFilters(info.column_indexes, unused);
 	if (filter_set.filters.empty()) {
 		return nullptr;
 	}
