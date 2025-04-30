@@ -11,6 +11,7 @@
 #include "duckdb/main/attached_database.hpp"
 #include "rest_catalog/objects/catalog_config.hpp"
 #include "storage/irc_catalog.hpp"
+#include "curl.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -37,7 +38,8 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	D_ASSERT(prefix.empty());
 	url.AddPathComponent("config");
 	url.SetParam("warehouse", warehouse);
-	auto response = auth_handler->GetRequest(context, url);
+	RequestInput request_input;
+	auto response = auth_handler->GetRequest(context, url, request_input);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(response));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto catalog_config = rest_api_objects::CatalogConfig::FromJSON(root);
