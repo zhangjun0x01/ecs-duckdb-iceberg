@@ -579,22 +579,10 @@ void IcebergMultiFileList::ProcessDeletes(const vector<MultiFileColumnDefinition
 	D_ASSERT(current_delete_manifest == delete_manifests.end());
 }
 
-void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFileBindData &bind_data,
-                                           BaseFileReader &reader, const MultiFileReaderData &reader_data,
-                                           DataChunk &input_chunk, DataChunk &output_chunk,
-                                           ExpressionExecutor &executor,
-                                           optional_ptr<MultiFileReaderGlobalState> global_state) {
-	// Base class finalization first
-	MultiFileReader::FinalizeChunk(context, bind_data, reader, reader_data, input_chunk, output_chunk, executor,
-	                               global_state);
-
-	D_ASSERT(global_state);
-	// Get the metadata for this file
-	const auto &multi_file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state->file_list);
-	auto file_id = reader.file_list_idx.GetIndex();
-	auto &data_file = multi_file_list.data_files[file_id];
-	auto &local_columns = reader.columns;
-
+void IcebergMultiFileReader::ApplyEqualityDeletes(ClientContext &context, DataChunk &output_chunk,
+                                                  const IcebergMultiFileList &multi_file_list,
+                                                  const IcebergManifestEntry &data_file,
+                                                  const vector<MultiFileColumnDefinition> &local_columns) {
 	vector<reference<IcebergEqualityDeleteRow>> delete_rows;
 
 	auto delete_data_it = multi_file_list.equality_delete_data.upper_bound(data_file.sequence_number);
@@ -693,6 +681,25 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 	SelectionVector sel_vec(STANDARD_VECTOR_SIZE);
 	idx_t count = expression_executor.SelectExpression(output_chunk, sel_vec);
 	output_chunk.Slice(sel_vec, count);
+}
+
+void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFileBindData &bind_data,
+                                           BaseFileReader &reader, const MultiFileReaderData &reader_data,
+                                           DataChunk &input_chunk, DataChunk &output_chunk,
+                                           ExpressionExecutor &executor,
+                                           optional_ptr<MultiFileReaderGlobalState> global_state) {
+	// Base class finalization first
+	MultiFileReader::FinalizeChunk(context, bind_data, reader, reader_data, input_chunk, output_chunk, executor,
+	                               global_state);
+
+	D_ASSERT(global_state);
+	// Get the metadata for this file
+	const auto &multi_file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state->file_list);
+	auto file_id = reader.file_list_idx.GetIndex();
+	auto &data_file = multi_file_list.data_files[file_id];
+	auto &local_columns = reader.columns;
+
+	ApplyEqualityDeletes(context, output_chunk, multi_file_list, data_file, local_columns);
 }
 
 bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, MultiFileOptions &options,
