@@ -87,6 +87,6 @@ WITH result as (
 	JOIN ICEBERG_METADATA('data/generated/iceberg/spark-local/default/filtering_on_bounds') meta
 	ON logs.msg = meta.file_path
 )
-select total_record_count >= 3500 AND total_record_count <= 4000 from result
+select total_record_count >= 3500 AND total_record_count <= 3800 from result
 ----
 true
