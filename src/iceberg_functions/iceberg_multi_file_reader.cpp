@@ -7,6 +7,8 @@
 #include "duckdb/parallel/thread_context.hpp"
 #include "duckdb/parser/tableref/table_function_ref.hpp"
 #include "duckdb/parser/expression/constant_expression.hpp"
+#include "duckdb/planner/filter/constant_filter.hpp"
+#include "duckdb/planner/filter/conjunction_filter.hpp"
 #include "duckdb/planner/expression/bound_comparison_expression.hpp"
 #include "duckdb/planner/expression/bound_constant_expression.hpp"
 #include "duckdb/planner/expression/bound_operator_expression.hpp"
@@ -28,8 +30,16 @@ string IcebergMultiFileList::GetPath() const {
 }
 
 void IcebergMultiFileList::Bind(vector<LogicalType> &return_types, vector<string> &names) {
+	lock_guard<mutex> guard(lock);
+
+	if (have_bound) {
+		names = this->names;
+		return_types = this->types;
+		return;
+	}
+
 	if (!initialized) {
-		InitializeFiles();
+		InitializeFiles(guard);
 	}
 
 	auto &schema = snapshot.schema;
@@ -37,15 +47,231 @@ void IcebergMultiFileList::Bind(vector<LogicalType> &return_types, vector<string
 		names.push_back(schema_entry.name);
 		return_types.push_back(schema_entry.type);
 	}
+
+	have_bound = true;
+	this->names = names;
+	this->types = return_types;
+}
+
+template <bool LOWER_BOUND = true>
+[[noreturn]] static void ThrowBoundError(const string &bound, IcebergColumnDefinition &column) {
+	auto bound_type = LOWER_BOUND ? "'lower_bound'" : "'upper_bound'";
+	throw InvalidInputException("Invalid %s size (%d) for column %s with type '%s', bound value: '%s'", bound_type,
+	                            bound.size(), column.name, column.type.ToString(), bound);
+}
+
+template <class VALUE_TYPE>
+static Value DeserializeDecimalBoundTemplated(const string &bound_value, uint8_t width, uint8_t scale) {
+	VALUE_TYPE ret = 0;
+	//! The blob has to be smaller or equal to the size of the type
+	D_ASSERT(bound_value.size() <= sizeof(VALUE_TYPE));
+	std::memcpy(&ret, bound_value.data(), bound_value.size());
+	return Value::DECIMAL(ret, width, scale);
+}
+
+static Value DeserializeHugeintDecimalBound(const string &bound_value, uint8_t width, uint8_t scale) {
+	hugeint_t ret;
+
+	//! The blob has to be smaller or equal to the size of the type
+	D_ASSERT(bound_value.size() <= sizeof(hugeint_t));
+	int64_t upper_val = 0;
+	uint64_t lower_val = 0;
+	// Read upper and lower parts of hugeint
+
+	idx_t upper_val_size = MinValue(bound_value.size(), sizeof(int64_t));
+
+	std::memcpy(&upper_val, bound_value.data(), upper_val_size);
+	if (bound_value.size() > sizeof(int64_t)) {
+		idx_t lower_val_size = MinValue(bound_value.size() - sizeof(int64_t), sizeof(uint64_t));
+		std::memcpy(&lower_val, bound_value.data() + sizeof(int64_t), lower_val_size);
+	}
+	ret = hugeint_t(upper_val, lower_val);
+	return Value::DECIMAL(ret, width, scale);
+}
+
+template <bool LOWER_BOUND = true>
+static Value DeserializeDecimalBound(const string &bound_value, IcebergColumnDefinition &column) {
+	D_ASSERT(column.type.id() == LogicalTypeId::DECIMAL);
+
+	uint8_t width;
+	uint8_t scale;
+	if (!column.type.GetDecimalProperties(width, scale)) {
+		ThrowBoundError<LOWER_BOUND>(bound_value, column);
+	}
+
+	auto physical_type = column.type.InternalType();
+	switch (physical_type) {
+	case PhysicalType::INT16: {
+		return DeserializeDecimalBoundTemplated<int16_t>(bound_value, width, scale);
+	}
+	case PhysicalType::INT32: {
+		return DeserializeDecimalBoundTemplated<int32_t>(bound_value, width, scale);
+	}
+	case PhysicalType::INT64: {
+		return DeserializeDecimalBoundTemplated<int64_t>(bound_value, width, scale);
+	}
+	case PhysicalType::INT128: {
+		return DeserializeHugeintDecimalBound(bound_value, width, scale);
+	}
+	default:
+		throw InternalException("DeserializeDecimalBound not implemented for physical type '%s'",
+		                        TypeIdToString(physical_type));
+	}
+}
+
+template <bool LOWER_BOUND = true>
+static Value DeserializeBound(const string &bound_value, IcebergColumnDefinition &column) {
+	auto &type = column.type;
+
+	switch (type.id()) {
+	case LogicalTypeId::INTEGER: {
+		if (bound_value.size() != sizeof(int32_t)) {
+			ThrowBoundError<LOWER_BOUND>(bound_value, column);
+		}
+		int32_t val;
+		std::memcpy(&val, bound_value.data(), sizeof(int32_t));
+		return Value::INTEGER(val);
+	}
+	case LogicalTypeId::BIGINT: {
+		if (bound_value.size() != sizeof(int64_t)) {
+			ThrowBoundError<LOWER_BOUND>(bound_value, column);
+		}
+		int64_t val;
+		std::memcpy(&val, bound_value.data(), sizeof(int64_t));
+		return Value::BIGINT(val);
+	}
+	case LogicalTypeId::DATE: {
+		if (bound_value.size() != sizeof(int32_t)) { // Dates are typically stored as int32 (days since epoch)
+			ThrowBoundError<LOWER_BOUND>(bound_value, column);
+		}
+		int32_t days_since_epoch;
+		std::memcpy(&days_since_epoch, bound_value.data(), sizeof(int32_t));
+		// Convert to DuckDB date
+		date_t date = Date::EpochDaysToDate(days_since_epoch);
+		return Value::DATE(date);
+	}
+	case LogicalTypeId::TIMESTAMP: {
+		if (bound_value.size() !=
+		    sizeof(int64_t)) { // Timestamps are typically stored as int64 (microseconds since epoch)
+			ThrowBoundError<LOWER_BOUND>(bound_value, column);
+		}
+		int64_t micros_since_epoch;
+		std::memcpy(&micros_since_epoch, bound_value.data(), sizeof(int64_t));
+		// Convert to DuckDB timestamp using microseconds
+		timestamp_t timestamp = Timestamp::FromEpochMicroSeconds(micros_since_epoch);
+		return Value::TIMESTAMP(timestamp);
+	}
+	case LogicalTypeId::TIMESTAMP_TZ: {
+		if (bound_value.size() != sizeof(int64_t)) { // Assuming stored as int64 (microseconds since epoch)
+			ThrowBoundError<LOWER_BOUND>(bound_value, column);
+		}
+		int64_t micros_since_epoch;
+		std::memcpy(&micros_since_epoch, bound_value.data(), sizeof(int64_t));
+		// Convert to DuckDB timestamp using microseconds
+		timestamp_t timestamp = Timestamp::FromEpochMicroSeconds(micros_since_epoch);
+		// Create a TIMESTAMPTZ Value
+		return Value::TIMESTAMPTZ(timestamp_tz_t(timestamp));
+	}
+	case LogicalTypeId::DOUBLE: {
+		if (bound_value.size() != sizeof(double)) {
+			ThrowBoundError<LOWER_BOUND>(bound_value, column);
+		}
+		double val;
+		std::memcpy(&val, bound_value.data(), sizeof(double));
+		return Value::DOUBLE(val);
+	}
+	case LogicalTypeId::VARCHAR: {
+		// Assume the bytes represent a UTF-8 string
+		return Value(bound_value);
+	}
+	case LogicalTypeId::DECIMAL: {
+		return DeserializeDecimalBound(bound_value, column);
+	}
+	// Add more types as needed
+	default:
+		break;
+	}
+	ThrowBoundError<LOWER_BOUND>(bound_value, column);
+}
+
+unique_ptr<IcebergMultiFileList> IcebergMultiFileList::PushdownInternal(ClientContext &context,
+                                                                        TableFilterSet &new_filters) const {
+	auto filtered_list = make_uniq<IcebergMultiFileList>(context, paths[0].path, this->options);
+
+	TableFilterSet result_filter_set;
+
+	// Add pre-existing filters
+	for (auto &entry : table_filters.filters) {
+		result_filter_set.PushFilter(ColumnIndex(entry.first), entry.second->Copy());
+	}
+
+	// Add new filters
+	for (auto &entry : new_filters.filters) {
+		if (entry.first < names.size()) {
+			result_filter_set.PushFilter(ColumnIndex(entry.first), entry.second->Copy());
+		}
+	}
+
+	filtered_list->table_filters = std::move(result_filter_set);
+	filtered_list->names = names;
+	filtered_list->types = types;
+	filtered_list->have_bound = true;
+
+	// Copy over the snapshot, this avoids reparsing metadata
+	{
+		unique_lock<mutex> lck(lock);
+		filtered_list->snapshot = snapshot;
+	}
+	return filtered_list;
+}
+
+unique_ptr<MultiFileList>
+IcebergMultiFileList::DynamicFilterPushdown(ClientContext &context, const MultiFileOptions &options,
+                                            const vector<string> &names, const vector<LogicalType> &types,
+                                            const vector<column_t> &column_ids, TableFilterSet &filters) const {
+	if (filters.filters.empty()) {
+		return nullptr;
+	}
+
+	TableFilterSet filters_copy;
+	for (auto &filter : filters.filters) {
+		auto column_id = column_ids[filter.first];
+		auto previously_pushed_down_filter = this->table_filters.filters.find(column_id);
+		if (previously_pushed_down_filter != this->table_filters.filters.end() &&
+		    filter.second->Equals(*previously_pushed_down_filter->second)) {
+			// Skip filters that we already have pushed down
+			continue;
+		}
+		filters_copy.PushFilter(ColumnIndex(column_id), filter.second->Copy());
+	}
+
+	if (!filters_copy.filters.empty()) {
+		auto new_snap = PushdownInternal(context, filters_copy);
+		return std::move(new_snap);
+	}
+	return nullptr;
 }
 
 unique_ptr<MultiFileList> IcebergMultiFileList::ComplexFilterPushdown(ClientContext &context,
                                                                       const MultiFileOptions &options,
                                                                       MultiFilePushdownInfo &info,
                                                                       vector<unique_ptr<Expression>> &filters) {
-	//! FIXME: We don't handle filter pushdown yet into the file list
-	//! Leaving the skeleton here because we want to add this relatively soon anyways
-	return nullptr;
+	if (filters.empty()) {
+		return nullptr;
+	}
+
+	FilterCombiner combiner(context);
+	for (const auto &filter : filters) {
+		combiner.AddFilter(filter->Copy());
+	}
+
+	vector<FilterPushdownResult> unused;
+	auto filter_set = combiner.GenerateTableScanFilters(info.column_indexes, unused);
+	if (filter_set.filters.empty()) {
+		return nullptr;
+	}
+
+	return PushdownInternal(context, filter_set);
 }
 
 vector<OpenFileInfo> IcebergMultiFileList::GetAllFiles() {
@@ -87,9 +313,98 @@ unique_ptr<NodeStatistics> IcebergMultiFileList::GetCardinality(ClientContext &c
 	return nullptr;
 }
 
+static bool BoundsMatchFilter(TableFilter &table_filter, const Value &lower_bound, const Value &upper_bound);
+
+static bool BoundsMatchConstantFilter(ConstantFilter &constant_filter, const Value &lower_bound,
+                                      const Value &upper_bound) {
+	auto &constant_value = constant_filter.constant;
+	switch (constant_filter.comparison_type) {
+	case ExpressionType::COMPARE_EQUAL:
+		return constant_value >= lower_bound && constant_value <= upper_bound;
+	case ExpressionType::COMPARE_GREATERTHAN:
+		return !(upper_bound <= constant_value);
+	case ExpressionType::COMPARE_GREATERTHANOREQUALTO:
+		return !(upper_bound < constant_value);
+	case ExpressionType::COMPARE_LESSTHAN:
+		return !(lower_bound >= constant_value);
+	case ExpressionType::COMPARE_LESSTHANOREQUALTO:
+		return !(lower_bound > constant_value);
+	default:
+		//! Conservative approach: we don't know, so we just say it's not filtered out
+		return true;
+	}
+}
+
+static bool BoundsMatchConjunctionAndFilter(ConjunctionAndFilter &conjunction_and, const Value &lower_bound,
+                                            const Value &upper_bound) {
+	for (auto &child : conjunction_and.child_filters) {
+		if (!BoundsMatchFilter(*child, lower_bound, upper_bound)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool BoundsMatchFilter(TableFilter &filter, const Value &lower_bound, const Value &upper_bound) {
+	//! TODO: support more filter types
+	switch (filter.filter_type) {
+	case TableFilterType::CONSTANT_COMPARISON: {
+		auto &constant_filter = filter.Cast<ConstantFilter>();
+		return BoundsMatchConstantFilter(constant_filter, lower_bound, upper_bound);
+	}
+	case TableFilterType::CONJUNCTION_AND: {
+		//! TODO: If anything fails, return false
+		auto &conjunction_and_filter = filter.Cast<ConjunctionAndFilter>();
+		return BoundsMatchConjunctionAndFilter(conjunction_and_filter, lower_bound, upper_bound);
+	}
+	default:
+		//! Conservative approach: we don't know what this is, just say it doesn't filter anything
+		return true;
+	}
+}
+
+bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
+	D_ASSERT(!table_filters.filters.empty());
+
+	auto &filters = table_filters.filters;
+	auto &schema = snapshot.schema;
+
+	for (idx_t column_id = 0; column_id < schema.size(); column_id++) {
+		// FIXME: is there a potential mismatch between column_id / field_id lurking here?
+		auto &column = schema[column_id];
+		auto it = filters.find(column_id);
+
+		if (it == filters.end()) {
+			continue;
+		}
+		if (file.lower_bounds.empty() || file.upper_bounds.empty()) {
+			//! There are no bounds statistics for the file, can't filter
+			continue;
+		}
+
+		auto &field_id = column.id;
+		auto lower_bound_it = file.lower_bounds.find(field_id);
+		auto upper_bound_it = file.upper_bounds.find(field_id);
+		if (lower_bound_it == file.lower_bounds.end() || upper_bound_it == file.upper_bounds.end()) {
+			//! There are no bound statistics for this column
+			continue;
+		}
+
+		auto lower_bound = DeserializeBound<true>(lower_bound_it->second, column);
+		auto upper_bound = DeserializeBound<false>(upper_bound_it->second, column);
+		auto &filter = *it->second;
+		if (!BoundsMatchFilter(filter, lower_bound, upper_bound)) {
+			//! If any predicate fails, exclude the file
+			return false;
+		}
+	}
+	return true;
+}
+
 OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
+	lock_guard<mutex> guard(lock);
 	if (!initialized) {
-		InitializeFiles();
+		InitializeFiles(guard);
 	}
 
 	auto iceberg_path = GetPath();
@@ -114,11 +429,33 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 		}
 
 		idx_t remaining = (file_id + 1) - data_files.size();
-		data_manifest_entry_reader->ReadEntries(
-		    remaining, [&data_files, &entry_producer](DataChunk &chunk, idx_t offset, idx_t count,
-		                                              const ManifestReaderInput &input) {
-			    return entry_producer(chunk, offset, count, input, data_files);
-		    });
+		if (!table_filters.filters.empty()) {
+			// FIXME: push down the filter into the 'read_avro' scan, so the entries that don't match are just filtered
+			// out
+			vector<IcebergManifestEntry> intermediate_entries;
+			data_manifest_entry_reader->ReadEntries(
+			    remaining, [&intermediate_entries, &entry_producer](DataChunk &chunk, idx_t offset, idx_t count,
+			                                                        const ManifestReaderInput &input) {
+				    return entry_producer(chunk, offset, count, input, intermediate_entries);
+			    });
+
+			for (auto &entry : intermediate_entries) {
+				if (!FileMatchesFilter(entry)) {
+					DUCKDB_LOG_INFO(context, "duckdb.Extensions.Iceberg",
+					                "Iceberg Filter Pushdown, skipped 'data_file': '%s'", entry.file_path);
+					//! Skip this file
+					continue;
+				}
+				data_files.push_back(entry);
+			}
+		} else {
+			data_manifest_entry_reader->ReadEntries(
+			    remaining, [&data_files, &entry_producer](DataChunk &chunk, idx_t offset, idx_t count,
+			                                              const ManifestReaderInput &input) {
+				    return entry_producer(chunk, offset, count, input, data_files);
+			    });
+		}
+
 		if (data_manifest_entry_reader->Finished()) {
 			current_data_manifest++;
 			continue;
@@ -153,8 +490,7 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 	return OpenFileInfo(file_path);
 }
 
-void IcebergMultiFileList::InitializeFiles() {
-	lock_guard<mutex> guard(lock);
+void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	if (initialized) {
 		return;
 	}
