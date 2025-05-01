@@ -492,8 +492,8 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 
 bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 	auto spec_id = manifest.partition_spec_id;
-	auto partition_spec_it = partition_specs.find(spec_id);
-	if (partition_spec_it == partition_specs.end()) {
+	auto partition_spec_it = metadata->partition_specs.find(spec_id);
+	if (partition_spec_it == metadata->partition_specs.end()) {
 		throw InvalidInputException("Manifest %s references 'partition_spec_id' %d which doesn't exist",
 		                            manifest.manifest_path, spec_id);
 	}
@@ -577,8 +577,6 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	default:
 		throw InternalException("SnapshotSource type not implemented");
 	}
-
-	partition_specs = metadata->ParsePartitionSpecs();
 
 	//! Set up the manifest + manifest entry readers
 	if (snapshot.iceberg_format_version == 1) {
@@ -1024,12 +1022,13 @@ void IcebergMultiFileReader::ApplyEqualityDeletes(ClientContext &context, DataCh
                                                   const vector<MultiFileColumnDefinition> &local_columns) {
 	vector<reference<IcebergEqualityDeleteRow>> delete_rows;
 
+	auto &metadata = *multi_file_list.metadata;
 	auto delete_data_it = multi_file_list.equality_delete_data.upper_bound(data_file.sequence_number);
 	//! Look through all the equality delete files with a *higher* sequence number
 	for (; delete_data_it != multi_file_list.equality_delete_data.end(); delete_data_it++) {
 		auto &files = delete_data_it->second->files;
 		for (auto &file : files) {
-			auto &partition_spec = multi_file_list.partition_specs.at(file.partition_spec_id);
+			auto &partition_spec = metadata.partition_specs.at(file.partition_spec_id);
 			if (partition_spec.IsPartitioned()) {
 				if (file.partition_spec_id != data_file.partition_spec_id) {
 					//! Not unpartitioned and the data does not share the same partition spec as the delete, skip the

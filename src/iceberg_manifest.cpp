@@ -3,7 +3,6 @@
 #include "iceberg_extension.hpp"
 #include "duckdb/main/extension_helper.hpp"
 #include "duckdb/main/database.hpp"
-#include "duckdb/common/type_visitor.hpp"
 
 //! Iceberg Manifest scan routines
 
@@ -59,7 +58,6 @@ idx_t IcebergManifestV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 		manifest.content = IcebergManifestContentType::DATA;
 		manifest.partition_spec_id = partition_spec_id[index];
 		manifest.sequence_number = 0;
-		manifest.partition_spec_id = partition_spec_id[index];
 
 		if (field_summary) {
 			auto list_entry = field_summary[index];
@@ -113,10 +111,16 @@ idx_t IcebergManifestV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 	    FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("partition_spec_id").GetPrimaryIndex()]);
 
 	list_entry_t *field_summary;
-	bool *contains_null = nullptr;
-	bool *contains_nan = nullptr;
-	string_t *lower_bound = nullptr;
-	string_t *upper_bound = nullptr;
+
+	optional_ptr<Vector> contains_null = nullptr;
+	optional_ptr<Vector> contains_nan = nullptr;
+	optional_ptr<Vector> lower_bound = nullptr;
+	optional_ptr<Vector> upper_bound = nullptr;
+
+	bool *contains_null_data = nullptr;
+	bool *contains_nan_data = nullptr;
+	string_t *lower_bound_data = nullptr;
+	string_t *upper_bound_data = nullptr;
 
 	auto partitions_it = name_to_vec.find("partitions");
 	if (partitions_it != name_to_vec.end()) {
@@ -131,13 +135,17 @@ idx_t IcebergManifestV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 			auto &name = kv.first;
 
 			if (StringUtil::CIEquals(name, "contains_null")) {
-				contains_null = FlatVector::GetData<bool>(*child_vectors[i]);
+				contains_null = child_vectors[i].get();
+				contains_null_data = FlatVector::GetData<bool>(*child_vectors[i]);
 			} else if (StringUtil::CIEquals(name, "contains_nan")) {
-				contains_nan = FlatVector::GetData<bool>(*child_vectors[i]);
+				contains_nan = child_vectors[i].get();
+				contains_nan_data = FlatVector::GetData<bool>(*child_vectors[i]);
 			} else if (StringUtil::CIEquals(name, "lower_bound")) {
-				lower_bound = FlatVector::GetData<string_t>(*child_vectors[i]);
+				lower_bound = child_vectors[i].get();
+				lower_bound_data = FlatVector::GetData<string_t>(*child_vectors[i]);
 			} else if (StringUtil::CIEquals(name, "upper_bound")) {
-				upper_bound = FlatVector::GetData<string_t>(*child_vectors[i]);
+				upper_bound = child_vectors[i].get();
+				upper_bound_data = FlatVector::GetData<string_t>(*child_vectors[i]);
 			}
 		}
 	}
@@ -150,24 +158,23 @@ idx_t IcebergManifestV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 		manifest.content = IcebergManifestContentType(content[index]);
 		manifest.partition_spec_id = partition_spec_id[index];
 		manifest.sequence_number = sequence_number[index];
-		manifest.partition_spec_id = partition_spec_id[index];
 
 		if (field_summary) {
 			auto list_entry = field_summary[index];
 			for (idx_t j = 0; j < list_entry.length; j++) {
 				FieldSummary summary;
 				auto list_idx = list_entry.offset + j;
-				if (contains_null) {
-					summary.contains_null = contains_null[list_idx];
+				if (contains_null && FlatVector::Validity(*contains_null).RowIsValid(list_idx)) {
+					summary.contains_null = contains_null_data[list_idx];
 				}
-				if (contains_nan) {
-					summary.contains_nan = contains_nan[list_idx];
+				if (contains_nan && FlatVector::Validity(*contains_nan).RowIsValid(list_idx)) {
+					summary.contains_nan = contains_nan_data[list_idx];
 				}
-				if (lower_bound) {
-					summary.lower_bound = lower_bound[list_idx].GetString();
+				if (lower_bound && FlatVector::Validity(*lower_bound).RowIsValid(list_idx)) {
+					summary.lower_bound = lower_bound_data[list_idx].GetString();
 				}
-				if (upper_bound) {
-					summary.upper_bound = upper_bound[list_idx].GetString();
+				if (upper_bound && FlatVector::Validity(*upper_bound).RowIsValid(list_idx)) {
+					summary.upper_bound = upper_bound_data[list_idx].GetString();
 				}
 				manifest.field_summary.push_back(summary);
 			}
@@ -414,7 +421,8 @@ idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx
 				entry.sequence_number = sequence_numbers[index];
 			} else {
 				//! Value should only be NULL for ADDED manifest entries, to support inheritance
-				D_ASSERT(entry.status == IcebergManifestEntryStatusType::ADDED);
+				//! FIXME: the 'persistent' tables have DELETED entries with no sequence number, while the metadata says
+				//! v2 According to the iceberg spec, those tables are corrupt
 				entry.sequence_number = input.sequence_number;
 			}
 		} else {

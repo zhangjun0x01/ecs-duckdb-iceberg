@@ -98,16 +98,13 @@ public:
 	}
 
 public:
-	unordered_map<int64_t, IcebergPartitionSpec> ParsePartitionSpecs();
-
-public:
 	// Ownership of parse data
 	yyjson_doc *doc = nullptr;
 	string document;
 
 	//! Parsed info
 	yyjson_val *snapshots;
-	yyjson_val *partition_specs;
+	unordered_map<int64_t, IcebergPartitionSpec> partition_specs;
 	vector<yyjson_val *> schemas;
 	uint64_t iceberg_version;
 	uint64_t schema_id;

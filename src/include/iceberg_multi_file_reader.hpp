@@ -168,7 +168,6 @@ public:
 	const IcebergOptions &options;
 	unique_ptr<IcebergMetadata> metadata;
 	IcebergSnapshot snapshot;
-	unordered_map<int64_t, IcebergPartitionSpec> partition_specs;
 };
 
 struct IcebergMultiFileReaderGlobalState : public MultiFileReaderGlobalState {
