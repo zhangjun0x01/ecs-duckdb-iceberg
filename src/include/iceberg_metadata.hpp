@@ -57,6 +57,10 @@ public:
 	static IcebergPartitionSpec ParseFromJson(yyjson_val *val);
 
 public:
+	bool IsUnpartitioned() const;
+	bool IsPartitioned() const;
+
+public:
 	uint64_t spec_id;
 	vector<IcebergPartitionSpecField> fields;
 };

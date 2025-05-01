@@ -1029,10 +1029,8 @@ void IcebergMultiFileReader::ApplyEqualityDeletes(ClientContext &context, DataCh
 	for (; delete_data_it != multi_file_list.equality_delete_data.end(); delete_data_it++) {
 		auto &files = delete_data_it->second->files;
 		for (auto &file : files) {
-			//! The spec is incredibly vague about this, but it seems that partition_spec_id 0 is reserved as the
-			//! "unpartitioned" partition spec
-			const bool is_unpartitioned = file.partition_spec_id == 0;
-			if (!is_unpartitioned) {
+			auto &partition_spec = multi_file_list.partition_specs.at(file.partition_spec_id);
+			if (partition_spec.IsPartitioned()) {
 				if (file.partition_spec_id != data_file.partition_spec_id) {
 					//! Not unpartitioned and the data does not share the same partition spec as the delete, skip the
 					//! delete file.

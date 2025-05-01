@@ -73,6 +73,21 @@ IcebergPartitionSpec IcebergPartitionSpec::ParseFromJson(yyjson_val *partition_s
 	return result;
 }
 
+bool IcebergPartitionSpec::IsPartitioned() const {
+	//! A partition spec is considered partitioned if it has at least one field that doesn't have a 'void' transform
+	for (const auto &field : fields) {
+		if (!StringUtil::CIEquals(field.transform, "void")) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool IcebergPartitionSpec::IsUnpartitioned() const {
+	return !IsPartitioned();
+}
+
 unordered_map<int64_t, IcebergPartitionSpec> IcebergMetadata::ParsePartitionSpecs() {
 	unordered_map<int64_t, IcebergPartitionSpec> result;
 
