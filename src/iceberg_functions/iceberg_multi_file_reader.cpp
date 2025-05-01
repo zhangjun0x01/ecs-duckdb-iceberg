@@ -438,6 +438,11 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 	auto &data_file = data_files[file_id];
 	auto &path = data_file.file_path;
 
+	if (!StringUtil::CIEquals(data_file.file_format, "parquet")) {
+		throw NotImplementedException("File format '%s' not supported, only supports 'parquet' currently",
+		                              data_file.file_format);
+	}
+
 	string file_path = path;
 	if (options.allow_moved_paths) {
 		auto iceberg_path = GetPath();
@@ -899,6 +904,10 @@ void IcebergMultiFileList::ProcessDeletes(const vector<MultiFileColumnDefinition
 #endif
 
 	for (auto &entry : delete_files) {
+		if (!StringUtil::CIEquals(entry.file_format, "parquet")) {
+			throw NotImplementedException(
+			    "File format '%s' not supported for deletes, only supports 'parquet' currently", entry.file_format);
+		}
 		ScanDeleteFile(entry, global_columns);
 	}
 
