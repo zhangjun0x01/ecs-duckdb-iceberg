@@ -322,13 +322,13 @@ static bool BoundsMatchConstantFilter(ConstantFilter &constant_filter, const Val
 	case ExpressionType::COMPARE_EQUAL:
 		return constant_value >= lower_bound && constant_value <= upper_bound;
 	case ExpressionType::COMPARE_GREATERTHAN:
-		return constant_value <= upper_bound;
+		return !(upper_bound <= constant_value);
 	case ExpressionType::COMPARE_GREATERTHANOREQUALTO:
-		return constant_value <= upper_bound;
+		return !(upper_bound < constant_value);
 	case ExpressionType::COMPARE_LESSTHAN:
-		return constant_value >= lower_bound;
+		return !(lower_bound >= constant_value);
 	case ExpressionType::COMPARE_LESSTHANOREQUALTO:
-		return constant_value >= lower_bound;
+		return !(lower_bound > constant_value);
 	default:
 		//! Conservative approach: we don't know, so we just say it's not filtered out
 		return true;
