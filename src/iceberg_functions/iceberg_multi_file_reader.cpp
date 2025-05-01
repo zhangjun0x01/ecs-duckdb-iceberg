@@ -8,6 +8,7 @@
 #include "duckdb/parser/tableref/table_function_ref.hpp"
 #include "duckdb/parser/expression/constant_expression.hpp"
 #include "duckdb/planner/filter/constant_filter.hpp"
+#include "duckdb/planner/filter/conjunction_filter.hpp"
 #include "duckdb/planner/expression/bound_comparison_expression.hpp"
 #include "duckdb/planner/expression/bound_constant_expression.hpp"
 #include "duckdb/planner/expression/bound_operator_expression.hpp"
@@ -29,8 +30,16 @@ string IcebergMultiFileList::GetPath() const {
 }
 
 void IcebergMultiFileList::Bind(vector<LogicalType> &return_types, vector<string> &names) {
+	lock_guard<mutex> guard(lock);
+
+	if (have_bound) {
+		names = this->names;
+		return_types = this->types;
+		return;
+	}
+
 	if (!initialized) {
-		InitializeFiles();
+		InitializeFiles(guard);
 	}
 
 	auto &schema = snapshot.schema;
@@ -38,6 +47,10 @@ void IcebergMultiFileList::Bind(vector<LogicalType> &return_types, vector<string
 		names.push_back(schema_entry.name);
 		return_types.push_back(schema_entry.type);
 	}
+
+	have_bound = true;
+	this->names = names;
+	this->types = return_types;
 }
 
 template <bool LOWER_BOUND = true>
@@ -201,6 +214,8 @@ unique_ptr<IcebergMultiFileList> IcebergMultiFileList::PushdownInternal(ClientCo
 
 	filtered_list->table_filters = std::move(result_filter_set);
 	filtered_list->names = names;
+	filtered_list->types = types;
+	filtered_list->have_bound = true;
 
 	// Copy over the snapshot, this avoids reparsing metadata
 	{
@@ -298,6 +313,56 @@ unique_ptr<NodeStatistics> IcebergMultiFileList::GetCardinality(ClientContext &c
 	return nullptr;
 }
 
+static bool BoundsMatchFilter(TableFilter &table_filter, const Value &lower_bound, const Value &upper_bound);
+
+static bool BoundsMatchConstantFilter(ConstantFilter &constant_filter, const Value &lower_bound,
+                                      const Value &upper_bound) {
+	auto &constant_value = constant_filter.constant;
+	switch (constant_filter.comparison_type) {
+	case ExpressionType::COMPARE_EQUAL:
+		return constant_value >= lower_bound && constant_value <= upper_bound;
+	case ExpressionType::COMPARE_GREATERTHAN:
+		return constant_value <= upper_bound;
+	case ExpressionType::COMPARE_GREATERTHANOREQUALTO:
+		return constant_value <= upper_bound;
+	case ExpressionType::COMPARE_LESSTHAN:
+		return constant_value >= lower_bound;
+	case ExpressionType::COMPARE_LESSTHANOREQUALTO:
+		return constant_value >= lower_bound;
+	default:
+		//! Conservative approach: we don't know, so we just say it's not filtered out
+		return true;
+	}
+}
+
+static bool BoundsMatchConjunctionAndFilter(ConjunctionAndFilter &conjunction_and, const Value &lower_bound,
+                                            const Value &upper_bound) {
+	for (auto &child : conjunction_and.child_filters) {
+		if (!BoundsMatchFilter(*child, lower_bound, upper_bound)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool BoundsMatchFilter(TableFilter &filter, const Value &lower_bound, const Value &upper_bound) {
+	//! TODO: support more filter types
+	switch (filter.filter_type) {
+	case TableFilterType::CONSTANT_COMPARISON: {
+		auto &constant_filter = filter.Cast<ConstantFilter>();
+		return BoundsMatchConstantFilter(constant_filter, lower_bound, upper_bound);
+	}
+	case TableFilterType::CONJUNCTION_AND: {
+		//! TODO: If anything fails, return false
+		auto &conjunction_and_filter = filter.Cast<ConjunctionAndFilter>();
+		return BoundsMatchConjunctionAndFilter(conjunction_and_filter, lower_bound, upper_bound);
+	}
+	default:
+		//! Conservative approach: we don't know what this is, just say it doesn't filter anything
+		return true;
+	}
+}
+
 bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 	D_ASSERT(!table_filters.filters.empty());
 
@@ -328,35 +393,7 @@ bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 		auto lower_bound = DeserializeBound<true>(lower_bound_it->second, column);
 		auto upper_bound = DeserializeBound<false>(upper_bound_it->second, column);
 		auto &filter = *it->second;
-		//! TODO: support more filter types
-		if (filter.filter_type != TableFilterType::CONSTANT_COMPARISON) {
-			continue;
-		}
-		auto &constant_filter = filter.Cast<ConstantFilter>();
-		auto &constant_value = constant_filter.constant;
-		bool result = true;
-		switch (constant_filter.comparison_type) {
-		case ExpressionType::COMPARE_EQUAL:
-			result = constant_value >= lower_bound && constant_value <= upper_bound;
-			break;
-		case ExpressionType::COMPARE_GREATERTHAN:
-			result = constant_value <= upper_bound;
-			break;
-		case ExpressionType::COMPARE_GREATERTHANOREQUALTO:
-			result = constant_value <= upper_bound;
-			break;
-		case ExpressionType::COMPARE_LESSTHAN:
-			result = constant_value >= lower_bound;
-			break;
-		case ExpressionType::COMPARE_LESSTHANOREQUALTO:
-			result = constant_value >= lower_bound;
-			break;
-		default:
-			// For other types of comparisons, we can't make a decision based on bounds
-			result = true; // Conservative approach
-			break;
-		}
-		if (!result) {
+		if (!BoundsMatchFilter(filter, lower_bound, upper_bound)) {
 			//! If any predicate fails, exclude the file
 			return false;
 		}
@@ -365,8 +402,9 @@ bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 }
 
 OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
+	lock_guard<mutex> guard(lock);
 	if (!initialized) {
-		InitializeFiles();
+		InitializeFiles(guard);
 	}
 
 	auto iceberg_path = GetPath();
@@ -452,8 +490,7 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 	return OpenFileInfo(file_path);
 }
 
-void IcebergMultiFileList::InitializeFiles() {
-	lock_guard<mutex> guard(lock);
+void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	if (initialized) {
 		return;
 	}

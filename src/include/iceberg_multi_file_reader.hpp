@@ -131,14 +131,16 @@ protected:
 	OpenFileInfo GetFile(idx_t i) override;
 
 	// TODO: How to guarantee we only call this after the filter pushdown?
-	void InitializeFiles();
+	void InitializeFiles(lock_guard<mutex> &guard);
 
 public:
 	mutable mutex lock;
 	// idx_t version;
 
 	//! ComplexFilterPushdown results
+	bool have_bound = false;
 	vector<string> names;
+	vector<LogicalType> types;
 	TableFilterSet table_filters;
 
 	unique_ptr<ManifestReader> manifest_reader;
