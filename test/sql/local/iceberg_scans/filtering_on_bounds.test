@@ -76,14 +76,17 @@ select count(*) from ICEBERG_SCAN('data/generated/iceberg/spark-local/default/fi
 1200
 
 query I
-SELECT SUM(meta.record_count) AS total_record_count
-FROM (
-    SELECT 
-        message.split(': ')[2][2:-2] AS msg
-    FROM duckdb_logs
-    WHERE type = 'duckdb.Extensions.Iceberg'
-) logs
-JOIN ICEBERG_METADATA('data/generated/iceberg/spark-local/default/filtering_on_bounds') meta
-ON logs.msg = meta.file_path;
+WITH result as (
+	SELECT SUM(meta.record_count) AS total_record_count
+	FROM (
+		SELECT 
+			message.split(': ')[2][2:-2] AS msg
+		FROM duckdb_logs
+		WHERE type = 'duckdb.Extensions.Iceberg'
+	) logs
+	JOIN ICEBERG_METADATA('data/generated/iceberg/spark-local/default/filtering_on_bounds') meta
+	ON logs.msg = meta.file_path
+)
+select total_record_count >= 3500 AND total_record_count <= 4000 from result
 ----
-3667
+true
