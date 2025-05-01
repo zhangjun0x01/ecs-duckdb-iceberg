@@ -38,7 +38,6 @@ idx_t IcebergManifestV1::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 		for (idx_t i = 0; i < child_types.size(); i++) {
 			auto &kv = child_types[i];
 			auto &name = kv.first;
-			auto &type = kv.second;
 
 			if (StringUtil::CIEquals(name, "contains_null")) {
 				contains_null = FlatVector::GetData<bool>(*child_vectors[i]);
@@ -130,7 +129,6 @@ idx_t IcebergManifestV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 		for (idx_t i = 0; i < child_types.size(); i++) {
 			auto &kv = child_types[i];
 			auto &name = kv.first;
-			auto &type = kv.second;
 
 			if (StringUtil::CIEquals(name, "contains_null")) {
 				contains_null = FlatVector::GetData<bool>(*child_vectors[i]);
