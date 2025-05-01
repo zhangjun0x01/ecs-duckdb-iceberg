@@ -8,6 +8,8 @@ require parquet
 
 require iceberg
 
+require-env DUCKDB_ICEBERG_HAVE_GENERATED_DATA
+
 # only 2 data files
 query I
 select count(*) from ICEBERG_METADATA('data/generated/iceberg/spark-local/default/lineitem_001_deletes') where manifest_content = 'DATA';
