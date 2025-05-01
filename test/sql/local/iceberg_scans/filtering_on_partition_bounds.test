@@ -71,9 +71,9 @@ statement ok
 pragma truncate_duckdb_logs;
 
 query I
-select count(*) from ICEBERG_SCAN('data/generated/iceberg/spark-local/default/filtering_on_partition_bounds') where col1 >= 2300 and col1 < 3500;
+select count(*) from ICEBERG_SCAN('data/generated/iceberg/spark-local/default/filtering_on_partition_bounds') where seq >= 2 and seq <= 3;
 ----
-1200
+2000
 
 query I
 WITH result as (
@@ -87,6 +87,6 @@ WITH result as (
 	JOIN ICEBERG_METADATA('data/generated/iceberg/spark-local/default/filtering_on_partition_bounds') meta
 	ON logs.msg = meta.manifest_path
 )
-select total_record_count >= 3500 AND total_record_count <= 3800 from result
+select total_record_count from result;
 ----
-true
+3000
