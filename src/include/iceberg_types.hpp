@@ -64,6 +64,16 @@ static string IcebergManifestEntryContentTypeToString(IcebergManifestEntryConten
 	}
 }
 
+struct FieldSummary {
+	bool contains_null = false;
+	//! Optional
+	bool contains_nan = false;
+	//! Optional
+	string lower_bound;
+	//! Optional
+	string upper_bound;
+};
+
 //! An entry in the manifest list file (top level AVRO file)
 struct IcebergManifest {
 public:
@@ -79,6 +89,8 @@ public:
 	idx_t existing_rows_count = 0;
 	//! The id of the partition spec referenced by this manifest (and the data files that are part of it)
 	int32_t partition_spec_id;
+
+	vector<FieldSummary> field_summary;
 
 public:
 	void Print() {

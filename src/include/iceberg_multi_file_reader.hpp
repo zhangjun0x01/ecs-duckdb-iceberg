@@ -126,6 +126,7 @@ public:
 	void ProcessDeletes(const vector<MultiFileColumnDefinition> &global_columns) const;
 
 protected:
+	bool ManifestMatchesFilter(IcebergManifest &manifest);
 	bool FileMatchesFilter(IcebergManifestEntry &file);
 	//! Get the i-th expanded file
 	OpenFileInfo GetFile(idx_t i) override;

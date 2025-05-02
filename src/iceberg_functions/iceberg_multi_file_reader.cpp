@@ -54,7 +54,7 @@ void IcebergMultiFileList::Bind(vector<LogicalType> &return_types, vector<string
 }
 
 template <bool LOWER_BOUND = true>
-[[noreturn]] static void ThrowBoundError(const string &bound, IcebergColumnDefinition &column) {
+[[noreturn]] static void ThrowBoundError(const string &bound, const IcebergColumnDefinition &column) {
 	auto bound_type = LOWER_BOUND ? "'lower_bound'" : "'upper_bound'";
 	throw InvalidInputException("Invalid %s size (%d) for column %s with type '%s', bound value: '%s'", bound_type,
 	                            bound.size(), column.name, column.type.ToString(), bound);
@@ -90,7 +90,7 @@ static Value DeserializeHugeintDecimalBound(const string &bound_value, uint8_t w
 }
 
 template <bool LOWER_BOUND = true>
-static Value DeserializeDecimalBound(const string &bound_value, IcebergColumnDefinition &column) {
+static Value DeserializeDecimalBound(const string &bound_value, const IcebergColumnDefinition &column) {
 	D_ASSERT(column.type.id() == LogicalTypeId::DECIMAL);
 
 	uint8_t width;
@@ -120,7 +120,7 @@ static Value DeserializeDecimalBound(const string &bound_value, IcebergColumnDef
 }
 
 template <bool LOWER_BOUND = true>
-static Value DeserializeBound(const string &bound_value, IcebergColumnDefinition &column) {
+static Value DeserializeBound(const string &bound_value, const IcebergColumnDefinition &column) {
 	auto &type = column.type;
 
 	switch (type.id()) {
@@ -499,6 +499,64 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 	return OpenFileInfo(file_path);
 }
 
+bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
+	auto spec_id = manifest.partition_spec_id;
+	auto partition_spec_it = metadata->partition_specs.find(spec_id);
+	if (partition_spec_it == metadata->partition_specs.end()) {
+		throw InvalidInputException("Manifest %s references 'partition_spec_id' %d which doesn't exist",
+		                            manifest.manifest_path, spec_id);
+	}
+	auto &partition_spec = partition_spec_it->second;
+	if (partition_spec.fields.size() != manifest.field_summary.size()) {
+		throw InvalidInputException(
+		    "Manifest has %d 'field_summary' entries but the referenced partition spec has %d fields",
+		    manifest.field_summary.size(), partition_spec.fields.size());
+	}
+
+	if (table_filters.filters.empty()) {
+		//! There are no filters
+		return true;
+	}
+
+	auto &schema = snapshot.schema;
+	unordered_map<uint64_t, idx_t> source_to_column_id;
+	for (idx_t i = 0; i < schema.size(); i++) {
+		auto &column = schema[i];
+		source_to_column_id[static_cast<uint64_t>(column.id)] = i;
+	}
+
+	for (idx_t i = 0; i < manifest.field_summary.size(); i++) {
+		auto &field_summary = manifest.field_summary[i];
+		auto &field = partition_spec.fields[i];
+
+		if (field.transform != "identity") {
+			//! FIXME: add support for different transformations
+			continue;
+		}
+		auto column_id = source_to_column_id.at(field.source_id);
+
+		// Find if we have a filter for this source column
+		auto filter_it = table_filters.filters.find(column_id);
+		if (filter_it == table_filters.filters.end()) {
+			continue;
+		}
+		// Skip if no bounds available
+		if (field_summary.lower_bound.empty() || field_summary.upper_bound.empty()) {
+			continue;
+		}
+
+		auto &column = schema[column_id];
+		auto lower_bound = DeserializeBound<true>(field_summary.lower_bound, column);
+		auto upper_bound = DeserializeBound<false>(field_summary.upper_bound, column);
+
+		auto &filter = *filter_it->second;
+		if (!BoundsMatchFilter(filter, lower_bound, upper_bound)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	if (initialized) {
 		return;
@@ -584,6 +642,13 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	}
 
 	for (auto &manifest : all_manifests) {
+		if (!ManifestMatchesFilter(manifest)) {
+			DUCKDB_LOG_INFO(context, "duckdb.Extensions.Iceberg",
+			                "Iceberg Filter Pushdown, skipped 'manifest_file': '%s'", manifest.manifest_path);
+			//! Skip this manifest
+			continue;
+		}
+
 		if (manifest.content == IcebergManifestContentType::DATA) {
 			data_manifests.push_back(std::move(manifest));
 		} else {
@@ -966,15 +1031,14 @@ void IcebergMultiFileReader::ApplyEqualityDeletes(ClientContext &context, DataCh
                                                   const vector<MultiFileColumnDefinition> &local_columns) {
 	vector<reference<IcebergEqualityDeleteRow>> delete_rows;
 
+	auto &metadata = *multi_file_list.metadata;
 	auto delete_data_it = multi_file_list.equality_delete_data.upper_bound(data_file.sequence_number);
 	//! Look through all the equality delete files with a *higher* sequence number
 	for (; delete_data_it != multi_file_list.equality_delete_data.end(); delete_data_it++) {
 		auto &files = delete_data_it->second->files;
 		for (auto &file : files) {
-			//! The spec is incredibly vague about this, but it seems that partition_spec_id 0 is reserved as the
-			//! "unpartitioned" partition spec
-			const bool is_unpartitioned = file.partition_spec_id == 0;
-			if (!is_unpartitioned) {
+			auto &partition_spec = metadata.partition_specs.at(file.partition_spec_id);
+			if (partition_spec.IsPartitioned()) {
 				if (file.partition_spec_id != data_file.partition_spec_id) {
 					//! Not unpartitioned and the data does not share the same partition spec as the delete, skip the
 					//! delete file.

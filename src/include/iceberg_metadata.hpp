@@ -26,11 +26,42 @@ public:
 		return type;
 	}
 
+public:
 	int32_t id;
 	string name;
 	LogicalType type;
 	Value default_value;
 	bool required;
+};
+
+struct IcebergPartitionSpecField {
+public:
+	static IcebergPartitionSpecField ParseFromJson(yyjson_val *val);
+
+public:
+	string name;
+	//! FIXME: parse this, there are a set amount of valid transforms
+	//! See: https://iceberg.apache.org/spec/#partition-specs
+	//! "Applied to the source column(s) to produce a partition value"
+	string transform;
+	//! NOTE: v3 replaces 'source-id' with 'source-ids'
+	//! "A source column id or a list of source column ids from the table’s schema"
+	uint64_t source_id;
+	//! "Used to identify a partition field and is unique within a partition spec"
+	uint64_t partition_field_id;
+};
+
+struct IcebergPartitionSpec {
+public:
+	static IcebergPartitionSpec ParseFromJson(yyjson_val *val);
+
+public:
+	bool IsUnpartitioned() const;
+	bool IsPartitioned() const;
+
+public:
+	uint64_t spec_id;
+	vector<IcebergPartitionSpecField> fields;
 };
 
 struct IcebergFieldMapping {
@@ -72,6 +103,7 @@ public:
 
 	//! Parsed info
 	yyjson_val *snapshots;
+	unordered_map<int64_t, IcebergPartitionSpec> partition_specs;
 	vector<yyjson_val *> schemas;
 	uint64_t iceberg_version;
 	uint64_t schema_id;
