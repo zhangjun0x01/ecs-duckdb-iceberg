@@ -353,7 +353,6 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	auto &data_file = multi_file_list.data_files[file_id];
 
 	// The path of the data file where this chunk was read from
-	// Copy the file path otherwise it gets overwritten somewhere
 	const auto &file_path = data_file.file_path;
 	{
 		std::lock_guard<mutex> guard(multi_file_list.delete_lock);
