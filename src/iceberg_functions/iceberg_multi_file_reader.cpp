@@ -302,15 +302,24 @@ idx_t IcebergMultiFileList::GetTotalFileCount() {
 }
 
 unique_ptr<NodeStatistics> IcebergMultiFileList::GetCardinality(ClientContext &context) {
-	auto total_file_count = IcebergMultiFileList::GetTotalFileCount();
+	idx_t cardinality = 0;
 
-	if (total_file_count == 0) {
-		return make_uniq<NodeStatistics>(0, 0);
+	if (snapshot.iceberg_format_version == 1) {
+		//! We collect no cardinality information from manifests for V1 tables.
+		return nullptr;
 	}
 
-	// FIXME: visit metadata to get a cardinality count
+	//! Make sure we have fetched all manifests
+	(void)GetTotalFileCount();
 
-	return nullptr;
+	for (idx_t i = 0; i < data_manifests.size(); i++) {
+		cardinality += data_manifests[i].added_rows_count;
+		cardinality += data_manifests[i].existing_rows_count;
+	}
+	for (idx_t i = 0; i < delete_manifests.size(); i++) {
+		cardinality -= delete_manifests[i].added_rows_count;
+	}
+	return make_uniq<NodeStatistics>(cardinality, cardinality);
 }
 
 static bool BoundsMatchFilter(TableFilter &table_filter, const Value &lower_bound, const Value &upper_bound);
@@ -474,7 +483,7 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 
 	D_ASSERT(file_id < data_files.size());
 	auto &data_file = data_files[file_id];
-	auto &path = data_file.file_path;
+	const auto &path = data_file.file_path;
 
 	if (!StringUtil::CIEquals(data_file.file_format, "parquet")) {
 		throw NotImplementedException("File format '%s' not supported, only supports 'parquet' currently",
@@ -680,7 +689,7 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	auto &data_file = multi_file_list.data_files[file_id];
 
 	// The path of the data file where this chunk was read from
-	auto &file_path = data_file.file_path;
+	const auto &file_path = data_file.file_path;
 	{
 		std::lock_guard<mutex> guard(multi_file_list.delete_lock);
 		if (multi_file_list.current_delete_manifest != multi_file_list.delete_manifests.end()) {
