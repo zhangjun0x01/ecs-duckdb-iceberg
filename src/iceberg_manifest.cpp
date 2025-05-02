@@ -421,8 +421,7 @@ idx_t IcebergManifestEntryV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx
 				entry.sequence_number = sequence_numbers[index];
 			} else {
 				//! Value should only be NULL for ADDED manifest entries, to support inheritance
-				//! FIXME: the 'persistent' tables have DELETED entries with no sequence number, while the metadata says
-				//! v2 According to the iceberg spec, those tables are corrupt
+				D_ASSERT(entry.status == IcebergManifestEntryStatusType::ADDED);
 				entry.sequence_number = input.sequence_number;
 			}
 		} else {
