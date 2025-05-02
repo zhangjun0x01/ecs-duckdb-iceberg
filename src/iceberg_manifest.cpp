@@ -107,6 +107,10 @@ idx_t IcebergManifestV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 	auto content = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("content").GetPrimaryIndex()]);
 	auto sequence_number =
 	    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("sequence_number").GetPrimaryIndex()]);
+	auto added_rows_count =
+	    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("added_rows_count").GetPrimaryIndex()]);
+	auto existing_rows_count =
+	    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("existing_rows_count").GetPrimaryIndex()]);
 	auto partition_spec_id =
 	    FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("partition_spec_id").GetPrimaryIndex()]);
 
@@ -156,6 +160,8 @@ idx_t IcebergManifestV2::ProduceEntries(DataChunk &chunk, idx_t offset, idx_t co
 		IcebergManifest manifest;
 		manifest.manifest_path = manifest_path[index].GetString();
 		manifest.content = IcebergManifestContentType(content[index]);
+		manifest.added_rows_count = added_rows_count[index];
+		manifest.existing_rows_count = existing_rows_count[index];
 		manifest.partition_spec_id = partition_spec_id[index];
 		manifest.sequence_number = sequence_number[index];
 
