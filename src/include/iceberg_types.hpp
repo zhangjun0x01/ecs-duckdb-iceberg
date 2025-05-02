@@ -105,6 +105,8 @@ public:
 	string file_format;
 	vector<int32_t> equality_ids;
 	int64_t record_count;
+	unordered_map<int32_t, string> lower_bounds;
+	unordered_map<int32_t, string> upper_bounds;
 	Value partition;
 	//! Inherited from the 'manifest_file' if NULL and 'status == EXISTING'
 	sequence_number_t sequence_number;
