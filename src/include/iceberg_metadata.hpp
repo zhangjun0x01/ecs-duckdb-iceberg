@@ -107,8 +107,6 @@ public:
 	vector<yyjson_val *> schemas;
 	uint64_t iceberg_version;
 	uint64_t schema_id;
-
-	IcebergFieldMapping root_field_mapping;
 	vector<IcebergFieldMapping> mappings;
 };
 

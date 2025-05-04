@@ -720,22 +720,38 @@ IcebergMultiFileReader::InitializeGlobalState(ClientContext &context, const Mult
 }
 
 static void ApplyFieldMapping(MultiFileColumnDefinition &col, vector<IcebergFieldMapping> &mappings,
-                              case_insensitive_map_t<idx_t> &fields) {
+                              case_insensitive_map_t<idx_t> &fields,
+                              optional_ptr<MultiFileColumnDefinition> parent = nullptr) {
 	if (!col.identifier.IsNull()) {
 		return;
 	}
-	auto it = fields.find(col.name);
+
+	auto name = col.name;
+	if (parent && parent->type.id() == LogicalTypeId::MAP && StringUtil::CIEquals(name, "key_value")) {
+		//! Deal with MAP, it has a 'key_value' child, which holds the 'key' + 'value' columns
+		for (auto &child : col.children) {
+			ApplyFieldMapping(child, mappings, fields, parent);
+		}
+		return;
+	}
+	if (parent && parent->type.id() == LogicalTypeId::LIST && StringUtil::CIEquals(name, "list")) {
+		//! Deal with LIST, it has a 'element' child, which has the column for the underlying list data
+		name = "element";
+	}
+
+	auto it = fields.find(name);
 	if (it == fields.end()) {
 		throw InvalidConfigurationException("Column '%s' does not have a field-id, and no field-mapping exists for it!",
-		                                    col.name);
+		                                    name);
 	}
 	auto &mapping = mappings[it->second];
-	if (mapping.field_mapping_indexes.empty()) {
+
+	if (mapping.field_id != NumericLimits<int32_t>::Maximum()) {
 		col.identifier = Value::INTEGER(mapping.field_id);
-	} else {
-		for (auto &child : col.children) {
-			ApplyFieldMapping(child, mappings, mapping.field_mapping_indexes);
-		}
+	}
+
+	for (auto &child : col.children) {
+		ApplyFieldMapping(child, mappings, mapping.field_mapping_indexes, col);
 	}
 }
 
@@ -765,7 +781,7 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 
 	auto &local_columns = reader_data.reader->columns;
 	auto &mappings = multi_file_list.metadata->mappings;
-	auto &root = multi_file_list.metadata->root_field_mapping;
+	auto &root = multi_file_list.metadata->mappings[0];
 	for (auto &local_column : local_columns) {
 		ApplyFieldMapping(local_column, mappings, root.field_mapping_indexes);
 	}
