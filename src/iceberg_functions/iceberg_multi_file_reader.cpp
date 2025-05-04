@@ -781,9 +781,11 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 
 	auto &local_columns = reader_data.reader->columns;
 	auto &mappings = multi_file_list.metadata->mappings;
-	auto &root = multi_file_list.metadata->mappings[0];
-	for (auto &local_column : local_columns) {
-		ApplyFieldMapping(local_column, mappings, root.field_mapping_indexes);
+	if (!multi_file_list.metadata->mappings.empty()) {
+		auto &root = multi_file_list.metadata->mappings[0];
+		for (auto &local_column : local_columns) {
+			ApplyFieldMapping(local_column, mappings, root.field_mapping_indexes);
+		}
 	}
 }
 
