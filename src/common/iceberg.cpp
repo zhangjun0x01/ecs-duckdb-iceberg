@@ -123,8 +123,8 @@ bool IcebergPartitionSpec::IsUnpartitioned() const {
 	return !IsPartitioned();
 }
 
-static void ParseFieldMappings(yyjson_val *obj, case_insensitive_map_t<idx_t> &name_to_mapping_index,
-                               vector<IcebergFieldMapping> &mappings, idx_t &mapping_index) {
+static void ParseFieldMappings(yyjson_val *obj, vector<IcebergFieldMapping> &mappings, idx_t &mapping_index,
+                               idx_t parent_mapping_index) {
 	case_insensitive_map_t<IcebergFieldMapping> result;
 	size_t idx, max;
 	yyjson_val *val;
@@ -134,18 +134,21 @@ static void ParseFieldMappings(yyjson_val *obj, case_insensitive_map_t<idx_t> &n
 		auto fields = yyjson_obj_get(val, "fields");
 
 		//! Create a new mapping entry
-		mappings.push_back(IcebergFieldMapping());
+		mappings.emplace_back();
 		auto &mapping = mappings.back();
 
 		if (!names) {
 			throw InvalidInputException("Corrupt metadata.json file, field-mapping is missing names!");
 		}
+		auto current_mapping_index = mapping_index;
 
+		auto &name_to_mapping_index = mappings[parent_mapping_index].field_mapping_indexes;
 		//! Map every entry in the 'names' list to the entry we created above
 		size_t names_idx, names_max;
 		yyjson_val *names_val;
 		yyjson_arr_foreach(names, names_idx, names_max, names_val) {
-			name_to_mapping_index[yyjson_get_str(names_val)] = mapping_index;
+			auto name = yyjson_get_str(names_val);
+			name_to_mapping_index[name] = current_mapping_index;
 		}
 		mapping_index++;
 
@@ -154,7 +157,7 @@ static void ParseFieldMappings(yyjson_val *obj, case_insensitive_map_t<idx_t> &n
 		}
 		//! Create mappings for the the nested fields
 		if (fields) {
-			ParseFieldMappings(fields, mapping.field_mapping_indexes, mappings, mapping_index);
+			ParseFieldMappings(fields, mappings, mapping_index, current_mapping_index);
 		}
 	}
 }
@@ -227,8 +230,9 @@ unique_ptr<IcebergMetadata> IcebergMetadata::Parse(const string &path, FileSyste
 			}
 			auto root = yyjson_doc_get_root(doc.get());
 			idx_t mapping_index = 0;
-			ParseFieldMappings(root, metadata->root_field_mapping.field_mapping_indexes, metadata->mappings,
-			                   mapping_index);
+			metadata->mappings.emplace_back();
+			mapping_index++;
+			ParseFieldMappings(root, metadata->mappings, mapping_index, 0);
 		}
 	}
 	return metadata;

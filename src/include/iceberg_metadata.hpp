@@ -67,20 +67,10 @@ public:
 struct IcebergFieldMapping {
 public:
 	//! field-id can be omitted for the root of a struct
+	//! "Fields that exist in imported files but not in the Iceberg schema may omit field-id."
 	int32_t field_id = NumericLimits<int32_t>::Maximum();
+	//! "Fields which exist only in the Iceberg schema and not in imported data files may use an empty names list."
 	case_insensitive_map_t<idx_t> field_mapping_indexes;
-
-public:
-public:
-	void Verify() {
-		if (field_id != NumericLimits<int32_t>::Maximum()) {
-			return;
-		}
-		if (field_mapping_indexes.empty()) {
-			throw InvalidInputException(
-			    "Parsed 'schema.name-mapping.default' field mapping is invalid, has no 'field-id' and no 'fields'");
-		}
-	}
 };
 
 struct IcebergMetadata {
@@ -107,8 +97,6 @@ public:
 	vector<yyjson_val *> schemas;
 	uint64_t iceberg_version;
 	uint64_t schema_id;
-
-	IcebergFieldMapping root_field_mapping;
 	vector<IcebergFieldMapping> mappings;
 };
 
