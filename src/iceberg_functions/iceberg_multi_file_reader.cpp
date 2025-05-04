@@ -499,6 +499,7 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 	OpenFileInfo res(file_path);
 	auto extended_info = make_shared_ptr<ExtendedOpenFileInfo>();
 	extended_info->options["file_size"] = Value::UBIGINT(data_file.file_size_in_bytes);
+	extended_info->options["partitions"] = data_file.partition;
 	res.extended_info = extended_info;
 	return res;
 }
@@ -705,8 +706,8 @@ void IcebergMultiFileReader::BindOptions(MultiFileOptions &options, MultiFileLis
                                          vector<LogicalType> &return_types, vector<string> &names,
                                          MultiFileReaderBindData &bind_data) {
 	// Disable all other multifilereader options
-	options.auto_detect_hive_partitioning = false;
-	options.hive_partitioning = false;
+	options.auto_detect_hive_partitioning = true;
+	options.hive_partitioning = true;
 	options.union_by_name = false;
 
 	MultiFileReader::BindOptions(options, files, return_types, names, bind_data);
@@ -1167,6 +1168,14 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 	auto &local_columns = reader.columns;
 
 	ApplyEqualityDeletes(context, output_chunk, multi_file_list, data_file, local_columns);
+}
+
+map<string, string> IcebergMultiFileReader::ParseHivePartitioning(const OpenFileInfo &file_info) const {
+	D_ASSERT(file_info.extended_info);
+	auto &extended_info = *file_info.extended_info;
+	D_ASSERT(extended_info.options.count("partitions"));
+	auto &partitions = extended_info.options.at("partitions");
+	throw NotImplementedException("PARSE HIVE PARTITIONING NOT IMPLEMENTED");
 }
 
 bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, MultiFileOptions &options,
