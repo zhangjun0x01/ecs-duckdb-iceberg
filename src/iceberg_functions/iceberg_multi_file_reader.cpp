@@ -496,7 +496,11 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 		auto &fs = FileSystem::GetFileSystem(context);
 		file_path = IcebergUtils::GetFullPath(iceberg_path, path, fs);
 	}
-	return OpenFileInfo(file_path);
+	OpenFileInfo res(file_path);
+	auto extended_info = make_shared_ptr<ExtendedOpenFileInfo>();
+	extended_info->options["file_size"] = Value::UBIGINT(data_file.file_size_in_bytes);
+	res.extended_info = extended_info;
+	return res;
 }
 
 bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {

@@ -264,6 +264,8 @@ idx_t ProduceManifestEntries(DataChunk &chunk, idx_t offset, idx_t count, const 
 	    FlatVector::GetData<string_t>(*child_entries[name_to_vec.at("file_format").GetChildIndex(0).GetPrimaryIndex()]);
 	auto record_count =
 	    FlatVector::GetData<int64_t>(*child_entries[name_to_vec.at("record_count").GetChildIndex(0).GetPrimaryIndex()]);
+	auto file_size_in_bytes = FlatVector::GetData<int64_t>(
+	    *child_entries[name_to_vec.at("file_size_in_bytes").GetChildIndex(0).GetPrimaryIndex()]);
 	optional_ptr<Vector> lower_bounds;
 	optional_ptr<Vector> upper_bounds;
 
@@ -292,6 +294,7 @@ idx_t ProduceManifestEntries(DataChunk &chunk, idx_t offset, idx_t count, const 
 		entry.file_path = file_path[index].GetString();
 		entry.file_format = file_format[index].GetString();
 		entry.record_count = record_count[index];
+		entry.file_size_in_bytes = file_size_in_bytes[index];
 
 		if (lower_bounds && upper_bounds) {
 			entry.lower_bounds = GetBounds(*lower_bounds, index);
