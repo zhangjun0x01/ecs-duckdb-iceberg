@@ -128,6 +128,7 @@ public:
 	sequence_number_t sequence_number;
 	//! Inherited from the 'manifest_file'
 	int32_t partition_spec_id;
+	int64_t file_size_in_bytes;
 
 public:
 	void Print() {
