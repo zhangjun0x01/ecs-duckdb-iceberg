@@ -696,7 +696,6 @@ bool IcebergMultiFileReader::Bind(MultiFileOptions &options, MultiFileList &file
 
 		columns.push_back(column);
 	}
-	//! FIXME: check if 'schema.name-mapping.default' is set, act on it to support "column-mapping"
 	bind_data.mapping = MultiFileColumnMappingMode::BY_FIELD_ID;
 	return true;
 }
@@ -841,7 +840,6 @@ static void ApplyPartitionConstants(const IcebergMultiFileList &multi_file_list,
 			auto &name = StructType::GetChildName(struct_type, i);
 			if (name == field.name) {
 				// Add to constant map - this will be used instead of reading from the file
-				//! FIXME: this is bullshit
 				reader_data.constant_map.Add(global_idx,
 				                             TransformPartitionValue(struct_children[i], global_column.type));
 				break;
