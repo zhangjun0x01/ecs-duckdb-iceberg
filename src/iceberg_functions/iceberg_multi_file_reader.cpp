@@ -14,6 +14,8 @@
 #include "duckdb/planner/expression/bound_operator_expression.hpp"
 #include "duckdb/planner/expression/bound_reference_expression.hpp"
 #include "duckdb/planner/expression/bound_conjunction_expression.hpp"
+#include "storage/irc_table_entry.hpp"
+#include "duckdb/catalog/catalog_entry/view_catalog_entry.hpp"
 
 namespace duckdb {
 
@@ -672,12 +674,56 @@ unique_ptr<MultiFileReader> IcebergMultiFileReader::CreateInstance(const TableFu
 	return make_uniq<IcebergMultiFileReader>();
 }
 
+static string ExtractIcebergScanPath(const string &sql) {
+	auto lower_sql = StringUtil::Lower(sql);
+	auto start = lower_sql.find("iceberg_scan('");
+	if (start == std::string::npos) {
+		throw InvalidInputException("Could not find ICEBERG_SCAN in referenced view");
+	}
+	start += 14;
+	auto end = sql.find("\'", start);
+	if (end == std::string::npos) {
+		throw InvalidInputException("Could not find end of the ICEBERG_SCAN in referenced view");
+	}
+	return sql.substr(start, end - start);
+}
+
 shared_ptr<MultiFileList> IcebergMultiFileReader::CreateFileList(ClientContext &context, const vector<string> &paths,
                                                                  FileGlobOptions options) {
 	if (paths.size() != 1) {
 		throw BinderException("'iceberg_scan' only supports single path as input");
 	}
-	return make_shared_ptr<IcebergMultiFileList>(context, paths[0], this->options);
+	auto qualified_name = QualifiedName::Parse(paths[0]);
+	string storage_location = paths[0];
+
+	do {
+		if (qualified_name.catalog.empty() || qualified_name.schema.empty() || qualified_name.name.empty()) {
+			break;
+		}
+		//! Fully qualified table reference, let's do a lookup
+		EntryLookupInfo table_info(CatalogType::TABLE_ENTRY, qualified_name.name);
+		auto catalog_entry = Catalog::GetEntry(context, qualified_name.catalog, qualified_name.schema, table_info,
+		                                       OnEntryNotFound::RETURN_NULL);
+		if (!catalog_entry) {
+			break;
+		}
+
+		if (catalog_entry->type == CatalogType::VIEW_ENTRY) {
+			//! This is a view, which we will assume is wrapping an ICEBERG_SCAN(...) query
+			auto &view_entry = catalog_entry->Cast<ViewCatalogEntry>();
+			auto &sql = view_entry.sql;
+			storage_location = ExtractIcebergScanPath(sql);
+			break;
+		}
+		if (catalog_entry->type == CatalogType::TABLE_ENTRY) {
+			//! This is a IRCTableEntry, set up the scan from this
+			auto &table_entry = catalog_entry->Cast<ICTableEntry>();
+			storage_location = table_entry.PrepareIcebergScanFromEntry(context);
+			break;
+		}
+	} while (false);
+
+	return make_shared_ptr<IcebergMultiFileList>(context, storage_location, this->options);
 }
 
 bool IcebergMultiFileReader::Bind(MultiFileOptions &options, MultiFileList &files, vector<LogicalType> &return_types,

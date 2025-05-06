@@ -35,6 +35,7 @@ public:
 public:
 	unique_ptr<BaseStatistics> GetStatistics(ClientContext &context, column_t column_id) override;
 
+	string PrepareIcebergScanFromEntry(ClientContext &context);
 	TableFunction GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) override;
 
 	TableStorageInfo GetStorageInfo(ClientContext &context) override;
