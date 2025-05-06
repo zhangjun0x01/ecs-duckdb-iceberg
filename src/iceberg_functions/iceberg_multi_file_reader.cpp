@@ -499,7 +499,6 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 	OpenFileInfo res(file_path);
 	auto extended_info = make_shared_ptr<ExtendedOpenFileInfo>();
 	extended_info->options["file_size"] = Value::UBIGINT(data_file.file_size_in_bytes);
-	extended_info->options["partitions"] = data_file.partition;
 	res.extended_info = extended_info;
 	return res;
 }
@@ -760,6 +759,97 @@ static void ApplyFieldMapping(MultiFileColumnDefinition &col, vector<IcebergFiel
 	}
 }
 
+static Value TransformPartitionValue(const Value &value, const LogicalType &type) {
+	switch (type.id()) {
+	case LogicalTypeId::DATE: {
+		D_ASSERT(value.type().id() == LogicalTypeId::INTEGER);
+		return Value::DATE(Date::EpochDaysToDate(value.GetValue<int32_t>()));
+	}
+	default:
+		throw NotImplementedException("Can't cast partition value (%s) of type '%s' to type '%s'", value.ToString(),
+		                              value.type().ToString(), type.ToString());
+	}
+}
+
+static void ApplyPartitionConstants(const IcebergMultiFileList &multi_file_list, MultiFileReaderData &reader_data,
+                                    const vector<MultiFileColumnDefinition> &global_columns,
+                                    const vector<ColumnIndex> &global_column_ids) {
+	// Get the metadata for this file
+	auto &reader = *reader_data.reader;
+	auto file_id = reader.file_list_idx.GetIndex();
+	auto &data_file = multi_file_list.data_files[file_id];
+
+	// Get the partition spec for this file
+	auto &partition_specs = multi_file_list.metadata->partition_specs;
+	auto spec_id = data_file.partition_spec_id;
+	auto partition_spec_it = partition_specs.find(spec_id);
+	if (partition_spec_it == partition_specs.end()) {
+		throw InvalidConfigurationException("'partition_spec_id' %d doesn't exist in the metadata", spec_id);
+	}
+
+	auto &partition_spec = partition_spec_it->second;
+	if (partition_spec.fields.empty()) {
+		return; // No partition fields, continue with normal mapping
+	}
+
+	unordered_map<uint64_t, idx_t> identifier_to_field_id;
+	for (idx_t i = 0; i < partition_spec.fields.size(); i++) {
+		auto &field = partition_spec.fields[i];
+		identifier_to_field_id[field.source_id] = i;
+	}
+
+	auto &local_columns = reader.columns;
+	unordered_map<uint64_t, idx_t> local_field_id_to_index;
+	for (idx_t i = 0; i < local_columns.size(); i++) {
+		auto &local_column = local_columns[i];
+		auto field_identifier = local_column.identifier.GetValue<int32_t>();
+		auto field_id = static_cast<uint64_t>(field_identifier);
+		local_field_id_to_index[field_id] = i;
+	}
+
+	for (idx_t i = 0; i < global_column_ids.size(); i++) {
+		auto global_id = global_column_ids[i];
+		auto &global_column = global_columns[global_id.GetPrimaryIndex()];
+		auto field_id = static_cast<uint64_t>(global_column.identifier.GetValue<int32_t>());
+		if (local_field_id_to_index.count(field_id)) {
+			//! Column exists in the local columns of the file
+			continue;
+		}
+
+		auto it = identifier_to_field_id.find(field_id);
+		if (it == identifier_to_field_id.end()) {
+			continue;
+		}
+
+		auto &field = partition_spec.fields[it->second];
+		if (field.transform != "identity") {
+			continue; // Skip non-identity transforms
+		}
+
+		// Get the partition value from the data file's partition struct
+		auto partition_value = data_file.partition;
+		if (partition_value.IsNull()) {
+			continue; // No partition value available
+		}
+
+		// Extract the field value from the partition struct
+		const auto &struct_type = partition_value.type();
+		const auto &struct_children = StructValue::GetChildren(partition_value);
+
+		auto global_idx = MultiFileGlobalIndex(i);
+		for (idx_t i = 0; i < StructType::GetChildCount(struct_type); i++) {
+			auto &name = StructType::GetChildName(struct_type, i);
+			if (name == field.name) {
+				// Add to constant map - this will be used instead of reading from the file
+				//! FIXME: this is bullshit
+				reader_data.constant_map.Add(global_idx,
+				                             TransformPartitionValue(struct_children[i], global_column.type));
+				break;
+			}
+		}
+	}
+}
+
 void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, const MultiFileOptions &file_options,
                                           const MultiFileReaderBindData &options,
                                           const vector<MultiFileColumnDefinition> &global_columns,
@@ -792,6 +882,7 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 			ApplyFieldMapping(local_column, mappings, root.field_mapping_indexes);
 		}
 	}
+	ApplyPartitionConstants(multi_file_list, reader_data, global_columns, global_column_ids);
 }
 
 void IcebergMultiFileList::ScanPositionalDeleteFile(DataChunk &result) const {
@@ -1168,14 +1259,6 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 	auto &local_columns = reader.columns;
 
 	ApplyEqualityDeletes(context, output_chunk, multi_file_list, data_file, local_columns);
-}
-
-map<string, string> IcebergMultiFileReader::ParseHivePartitioning(const OpenFileInfo &file_info) const {
-	D_ASSERT(file_info.extended_info);
-	auto &extended_info = *file_info.extended_info;
-	D_ASSERT(extended_info.options.count("partitions"));
-	auto &partitions = extended_info.options.at("partitions");
-	throw NotImplementedException("PARSE HIVE PARTITIONING NOT IMPLEMENTED");
 }
 
 bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, MultiFileOptions &options,

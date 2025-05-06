@@ -216,8 +216,6 @@ public:
 	//! Override the ParseOption call to parse iceberg_scan specific options
 	bool ParseOption(const string &key, const Value &val, MultiFileOptions &options, ClientContext &context) override;
 
-	map<string, string> ParseHivePartitioning(const OpenFileInfo &file_info) const override;
-
 public:
 	IcebergOptions options;
 };
