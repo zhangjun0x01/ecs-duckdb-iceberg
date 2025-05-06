@@ -1,0 +1,87 @@
+{
+  "format-version" : 2,
+  "table-uuid" : "a0ce9b5c-4485-4e2e-964c-6f6388879477",
+  "location" : "data/persistent/hive_partitioned_table",
+  "last-sequence-number" : 1,
+  "last-updated-ms" : 1746527601334,
+  "last-column-id" : 3,
+  "current-schema-id" : 0,
+  "schemas" : [ {
+    "type" : "struct",
+    "schema-id" : 0,
+    "fields" : [ {
+      "id" : 1,
+      "name" : "event_date",
+      "required" : false,
+      "type" : "date"
+    }, {
+      "id" : 2,
+      "name" : "user_id",
+      "required" : false,
+      "type" : "long"
+    }, {
+      "id" : 3,
+      "name" : "event_type",
+      "required" : false,
+      "type" : "string"
+    } ]
+  } ],
+  "default-spec-id" : 0,
+  "partition-specs" : [ {
+    "spec-id" : 0,
+    "fields" : [ {
+      "name" : "event_date",
+      "transform" : "identity",
+      "source-id" : 1,
+      "field-id" : 1000
+    } ]
+  } ],
+  "last-partition-id" : 1000,
+  "default-sort-order-id" : 0,
+  "sort-orders" : [ {
+    "order-id" : 0,
+    "fields" : [ ]
+  } ],
+  "properties" : {
+    "owner" : "thijs",
+    "write.parquet.compression-codec" : "zstd",
+    "write.update.mode" : "merge-on-read"
+  },
+  "current-snapshot-id" : 6660974982385671284,
+  "refs" : {
+    "main" : {
+      "snapshot-id" : 6660974982385671284,
+      "type" : "branch"
+    }
+  },
+  "snapshots" : [ {
+    "sequence-number" : 1,
+    "snapshot-id" : 6660974982385671284,
+    "timestamp-ms" : 1746527601334,
+    "summary" : {
+      "operation" : "append",
+      "spark.app.id" : "local-1746527598379",
+      "added-data-files" : "2",
+      "added-records" : "2",
+      "added-files-size" : "1876",
+      "changed-partition-count" : "2",
+      "total-records" : "2",
+      "total-files-size" : "1876",
+      "total-data-files" : "2",
+      "total-delete-files" : "0",
+      "total-position-deletes" : "0",
+      "total-equality-deletes" : "0"
+    },
+    "manifest-list" : "data/persistent/hive_partitioned_table/metadata/snap-6660974982385671284-1-0aa9b9cc-5e23-466f-b8c9-2838235a8e79.avro",
+    "schema-id" : 0
+  } ],
+  "statistics" : [ ],
+  "snapshot-log" : [ {
+    "timestamp-ms" : 1746527601334,
+    "snapshot-id" : 6660974982385671284
+  } ],
+  "metadata-log" : [ {
+    "timestamp-ms" : 1746527600250,
+    "metadata-file" : "data/persistent/hive_partitioned_table/metadata/v1.metadata.json"
+  } ]
+}
