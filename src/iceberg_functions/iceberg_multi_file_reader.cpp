@@ -704,8 +704,8 @@ void IcebergMultiFileReader::BindOptions(MultiFileOptions &options, MultiFileLis
                                          vector<LogicalType> &return_types, vector<string> &names,
                                          MultiFileReaderBindData &bind_data) {
 	// Disable all other multifilereader options
-	options.auto_detect_hive_partitioning = true;
-	options.hive_partitioning = true;
+	options.auto_detect_hive_partitioning = false;
+	options.hive_partitioning = false;
 	options.union_by_name = false;
 
 	MultiFileReader::BindOptions(options, files, return_types, names, bind_data);
@@ -808,6 +808,9 @@ static void ApplyPartitionConstants(const IcebergMultiFileList &multi_file_list,
 
 	for (idx_t i = 0; i < global_column_ids.size(); i++) {
 		auto global_id = global_column_ids[i];
+		if (global_id.IsVirtualColumn()) {
+			continue;
+		}
 		auto &global_column = global_columns[global_id.GetPrimaryIndex()];
 		auto field_id = static_cast<uint64_t>(global_column.identifier.GetValue<int32_t>());
 		if (local_field_id_to_index.count(field_id)) {
