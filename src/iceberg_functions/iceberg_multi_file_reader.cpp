@@ -484,7 +484,7 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 	}
 
 	D_ASSERT(file_id < data_files.size());
-	auto &data_file = data_files[file_id];
+	const auto &data_file = data_files[file_id];
 	const auto &path = data_file.file_path;
 
 	if (!StringUtil::CIEquals(data_file.file_format, "parquet")) {
@@ -815,9 +815,13 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	D_ASSERT(global_state);
 	// Get the metadata for this file
 	const auto &multi_file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state->file_list);
+	{
+		lock_guard<mutex> guard(multi_file_list.lock);
+		D_ASSERT(multi_file_list.initialized);
+	}
 	auto &reader = *reader_data.reader;
 	auto file_id = reader.file_list_idx.GetIndex();
-	auto &data_file = multi_file_list.data_files[file_id];
+	const auto &data_file = multi_file_list.data_files[file_id];
 
 	// The path of the data file where this chunk was read from
 	const auto &file_path = data_file.file_path;
@@ -963,7 +967,7 @@ void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &en
 
 void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry,
                                           const vector<MultiFileColumnDefinition> &global_columns) const {
-	auto &delete_file_path = entry.file_path;
+	const auto &delete_file_path = entry.file_path;
 	auto &instance = DatabaseInstance::GetDatabase(context);
 	//! FIXME: delete files could also be made without row_ids,
 	//! in which case we need to rely on the `'schema.column-mapping.default'` property just like data files do.

@@ -10,6 +10,16 @@ require iceberg
 
 require-env DUCKDB_ICEBERG_HAVE_GENERATED_DATA
 
+statement ok
+attach ':memory:' as my_datalake;
+
+statement ok
+create schema my_datalake.default;
+
+statement ok
+create view my_datalake.default.lineitem_001_deletes as select * from ICEBERG_SCAN('data/generated/iceberg/spark-local/default/lineitem_001_deletes');
+
+
 # only 2 data files
 query I
 select count(*) from ICEBERG_METADATA('data/generated/iceberg/spark-local/default/lineitem_001_deletes') where manifest_content = 'DATA';
@@ -23,14 +33,14 @@ select count(*) from ICEBERG_METADATA('data/generated/iceberg/spark-local/defaul
 1
 
 query II
-explain select * from ICEBERG_SCAN('data/generated/iceberg/spark-local/default/lineitem_001_deletes');
+explain select * from my_datalake.default.lineitem_001_deletes;
 ----
 physical_plan	<REGEX>:.*~60175.*
 
 
 # check we estimated it correctlry
 query I
-select count(*) from ICEBERG_SCAN('data/generated/iceberg/spark-local/default/lineitem_001_deletes');
+select count(*) from my_datalake.default.lineitem_001_deletes;
 ----
 60175
 
