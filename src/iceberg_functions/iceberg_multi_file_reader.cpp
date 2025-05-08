@@ -14,6 +14,8 @@
 #include "duckdb/planner/expression/bound_operator_expression.hpp"
 #include "duckdb/planner/expression/bound_reference_expression.hpp"
 #include "duckdb/planner/expression/bound_conjunction_expression.hpp"
+#include "storage/irc_table_entry.hpp"
+#include "duckdb/catalog/catalog_entry/view_catalog_entry.hpp"
 
 namespace duckdb {
 
@@ -275,7 +277,11 @@ unique_ptr<MultiFileList> IcebergMultiFileList::ComplexFilterPushdown(ClientCont
 }
 
 vector<OpenFileInfo> IcebergMultiFileList::GetAllFiles() {
-	throw NotImplementedException("NOT IMPLEMENTED");
+	vector<OpenFileInfo> file_list;
+	for (idx_t i = 0; i < data_files.size(); i++) {
+		file_list.push_back(GetFile(i));
+	}
+	return file_list;
 }
 
 FileExpandResult IcebergMultiFileList::GetExpandResult() {
@@ -482,7 +488,7 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 	}
 
 	D_ASSERT(file_id < data_files.size());
-	auto &data_file = data_files[file_id];
+	const auto &data_file = data_files[file_id];
 	const auto &path = data_file.file_path;
 
 	if (!StringUtil::CIEquals(data_file.file_format, "parquet")) {
@@ -672,12 +678,56 @@ unique_ptr<MultiFileReader> IcebergMultiFileReader::CreateInstance(const TableFu
 	return make_uniq<IcebergMultiFileReader>();
 }
 
+static string ExtractIcebergScanPath(const string &sql) {
+	auto lower_sql = StringUtil::Lower(sql);
+	auto start = lower_sql.find("iceberg_scan('");
+	if (start == std::string::npos) {
+		throw InvalidInputException("Could not find ICEBERG_SCAN in referenced view");
+	}
+	start += 14;
+	auto end = sql.find("\'", start);
+	if (end == std::string::npos) {
+		throw InvalidInputException("Could not find end of the ICEBERG_SCAN in referenced view");
+	}
+	return sql.substr(start, end - start);
+}
+
 shared_ptr<MultiFileList> IcebergMultiFileReader::CreateFileList(ClientContext &context, const vector<string> &paths,
                                                                  FileGlobOptions options) {
 	if (paths.size() != 1) {
 		throw BinderException("'iceberg_scan' only supports single path as input");
 	}
-	return make_shared_ptr<IcebergMultiFileList>(context, paths[0], this->options);
+	auto qualified_name = QualifiedName::ParseComponents(paths[0]);
+	string storage_location = paths[0];
+
+	do {
+		if (qualified_name.size() != 3) {
+			break;
+		}
+		//! Fully qualified table reference, let's do a lookup
+		EntryLookupInfo table_info(CatalogType::TABLE_ENTRY, qualified_name[2]);
+		auto catalog_entry =
+		    Catalog::GetEntry(context, qualified_name[0], qualified_name[1], table_info, OnEntryNotFound::RETURN_NULL);
+		if (!catalog_entry) {
+			break;
+		}
+
+		if (catalog_entry->type == CatalogType::VIEW_ENTRY) {
+			//! This is a view, which we will assume is wrapping an ICEBERG_SCAN(...) query
+			auto &view_entry = catalog_entry->Cast<ViewCatalogEntry>();
+			auto &sql = view_entry.sql;
+			storage_location = ExtractIcebergScanPath(sql);
+			break;
+		}
+		if (catalog_entry->type == CatalogType::TABLE_ENTRY) {
+			//! This is a IRCTableEntry, set up the scan from this
+			auto &table_entry = catalog_entry->Cast<ICTableEntry>();
+			storage_location = table_entry.PrepareIcebergScanFromEntry(context);
+			break;
+		}
+	} while (false);
+
+	return make_shared_ptr<IcebergMultiFileList>(context, storage_location, this->options);
 }
 
 bool IcebergMultiFileReader::Bind(MultiFileOptions &options, MultiFileList &files, vector<LogicalType> &return_types,
@@ -769,9 +819,13 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	D_ASSERT(global_state);
 	// Get the metadata for this file
 	const auto &multi_file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state->file_list);
+	{
+		lock_guard<mutex> guard(multi_file_list.lock);
+		D_ASSERT(multi_file_list.initialized);
+	}
 	auto &reader = *reader_data.reader;
 	auto file_id = reader.file_list_idx.GetIndex();
-	auto &data_file = multi_file_list.data_files[file_id];
+	const auto &data_file = multi_file_list.data_files[file_id];
 
 	// The path of the data file where this chunk was read from
 	const auto &file_path = data_file.file_path;
@@ -917,7 +971,7 @@ void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &en
 
 void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry,
                                           const vector<MultiFileColumnDefinition> &global_columns) const {
-	auto &delete_file_path = entry.file_path;
+	const auto &delete_file_path = entry.file_path;
 	auto &instance = DatabaseInstance::GetDatabase(context);
 	//! FIXME: delete files could also be made without row_ids,
 	//! in which case we need to rely on the `'schema.column-mapping.default'` property just like data files do.

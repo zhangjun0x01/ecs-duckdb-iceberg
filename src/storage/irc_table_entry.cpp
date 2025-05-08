@@ -38,20 +38,14 @@ void ICTableEntry::BindUpdateConstraints(Binder &binder, LogicalGet &, LogicalPr
 	throw NotImplementedException("BindUpdateConstraints");
 }
 
-TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) {
-	auto &db = DatabaseInstance::GetDatabase(context);
-	auto &iceberg_scan_function_set = ExtensionUtil::GetTableFunction(db, "iceberg_scan");
-	auto iceberg_scan_function =
-	    iceberg_scan_function_set.functions.GetFunctionByArguments(context, {LogicalType::VARCHAR});
-	auto &ic_catalog = catalog.Cast<IRCatalog>();
-
+string ICTableEntry::PrepareIcebergScanFromEntry(ClientContext &context) {
 	D_ASSERT(table_data);
-
 	if (table_data->data_source_format != "ICEBERG") {
 		throw NotImplementedException("Table '%s' is of unsupported format '%s', ", table_data->name,
 		                              table_data->data_source_format);
 	}
 
+	auto &ic_catalog = catalog.Cast<IRCatalog>();
 	auto &secret_manager = SecretManager::Get(context);
 
 	// Get Credentials from IRC API
@@ -108,6 +102,15 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	for (auto &info : table_credentials.storage_credentials) {
 		(void)secret_manager.CreateSecret(context, info);
 	}
+	return table_data->storage_location;
+}
+
+TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) {
+	auto &db = DatabaseInstance::GetDatabase(context);
+	auto &iceberg_scan_function_set = ExtensionUtil::GetTableFunction(db, "iceberg_scan");
+	auto iceberg_scan_function =
+	    iceberg_scan_function_set.functions.GetFunctionByArguments(context, {LogicalType::VARCHAR});
+	auto storage_location = PrepareIcebergScanFromEntry(context);
 
 	named_parameter_map_t param_map;
 	vector<LogicalType> return_types;
@@ -115,7 +118,7 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	TableFunctionRef empty_ref;
 
 	// Set the S3 path as input to table function
-	vector<Value> inputs = {table_data->storage_location};
+	vector<Value> inputs = {storage_location};
 
 	TableFunctionBindInput bind_input(inputs, param_map, return_types, names, nullptr, nullptr, iceberg_scan_function,
 	                                  empty_ref);
@@ -128,20 +131,18 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 
 virtual_column_map_t ICTableEntry::GetVirtualColumns() const {
 	virtual_column_map_t result;
-	result.insert(
-	    make_pair(MultiFileReader::COLUMN_IDENTIFIER_FILENAME, TableColumn("filename", LogicalType::VARCHAR)));
 	result.insert(make_pair(MultiFileReader::COLUMN_IDENTIFIER_FILE_ROW_NUMBER,
 	                        TableColumn("file_row_number", LogicalType::BIGINT)));
-	result.insert(make_pair(COLUMN_IDENTIFIER_ROW_ID, TableColumn("rowid", LogicalType::BIGINT)));
+	result.insert(
+	    make_pair(MultiFileReader::COLUMN_IDENTIFIER_FILE_INDEX, TableColumn("file_index", LogicalType::UBIGINT)));
 	result.insert(make_pair(COLUMN_IDENTIFIER_EMPTY, TableColumn("", LogicalType::BOOLEAN)));
 	return result;
 }
 
 vector<column_t> ICTableEntry::GetRowIdColumns() const {
 	vector<column_t> result;
-	result.push_back(COLUMN_IDENTIFIER_ROW_ID);
-	result.push_back(MultiFileReader::COLUMN_IDENTIFIER_FILENAME);
-	result.push_back(MultiFileReader::COLUMN_IDENTIFIER_FILE_ROW_NUMBER);
+	result.emplace_back(MultiFileReader::COLUMN_IDENTIFIER_FILE_INDEX);
+	result.emplace_back(MultiFileReader::COLUMN_IDENTIFIER_FILE_ROW_NUMBER);
 	return result;
 }
 
