@@ -28,6 +28,8 @@ public:
 	//! were moved without their paths updated
 	static string GetFullPath(const string &iceberg_path, const string &relative_file_path, FileSystem &fs);
 
+	static string GetStorageLocation(ClientContext &context, const string &input);
+
 	//! YYJSON utility functions
 	static uint64_t TryGetNumFromObject(yyjson_val *obj, const string &field);
 	static string TryGetStrFromObject(yyjson_val *obj, const string &field);

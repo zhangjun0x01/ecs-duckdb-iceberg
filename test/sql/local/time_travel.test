@@ -1,0 +1,71 @@
+# name: test/sql/local/time_travel.test
+# description: test delete and add of a column with name-mapping
+# group: [local]
+
+require avro
+
+require parquet
+
+require iceberg
+
+require httpfs
+
+require-env ICEBERG_SERVER_AVAILABLE
+
+# Do not ignore 'HTTP' error messages!
+set ignore_error_messages
+
+statement ok
+CREATE SECRET (
+    TYPE S3,
+    KEY_ID 'admin',
+    SECRET 'password',
+    ENDPOINT '127.0.0.1:9000',
+    URL_STYLE 'path',
+    USE_SSL 0
+);
+
+
+statement ok
+ATTACH 'demo' AS my_datalake (
+	TYPE ICEBERG,
+	CLIENT_ID 'admin',
+	CLIENT_SECRET 'password',
+	ENDPOINT 'http://127.0.0.1:8181'
+);
+
+# Retrieve the snapshot_ids
+
+statement ok
+set variable snapshot_id_1 = (select snapshot_id from iceberg_snapshots(my_datalake.default.filtering_on_bounds) order by timestamp_ms offset 0 limit 1);
+
+statement ok
+set variable snapshot_id_2 = (select snapshot_id from iceberg_snapshots(my_datalake.default.filtering_on_bounds) order by timestamp_ms offset 1 limit 1);
+
+statement ok
+set variable snapshot_id_3 = (select snapshot_id from iceberg_snapshots(my_datalake.default.filtering_on_bounds) order by timestamp_ms offset 2 limit 1);
+
+statement ok
+set variable snapshot_id_4 = (select snapshot_id from iceberg_snapshots(my_datalake.default.filtering_on_bounds) order by timestamp_ms offset 3 limit 1);
+
+# Using 'query' we can dynamically construct a query, where we do `AT (VERSION => ${SNAPSHOT_ID})` using the snapshot ids from above
+
+query I
+select * from query($$select count(*) from my_datalake.default.filtering_on_bounds AT (VERSION => $$ || getvariable('snapshot_id_1') ||')')
+----
+1000
+
+query I
+select * from query($$select count(*) from my_datalake.default.filtering_on_bounds AT (VERSION => $$ || getvariable('snapshot_id_2') ||')')
+----
+2000
+
+query I
+select * from query($$select count(*) from my_datalake.default.filtering_on_bounds AT (VERSION => $$ || getvariable('snapshot_id_3') ||')')
+----
+3000
+
+query I
+select * from query($$select count(*) from my_datalake.default.filtering_on_bounds AT (VERSION => $$ || getvariable('snapshot_id_4') ||')')
+----
+4000
