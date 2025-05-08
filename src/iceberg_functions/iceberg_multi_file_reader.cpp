@@ -277,7 +277,11 @@ unique_ptr<MultiFileList> IcebergMultiFileList::ComplexFilterPushdown(ClientCont
 }
 
 vector<OpenFileInfo> IcebergMultiFileList::GetAllFiles() {
-	throw NotImplementedException("NOT IMPLEMENTED");
+	vector<OpenFileInfo> file_list;
+	for (idx_t i = 0; i < data_files.size(); i++) {
+		file_list.push_back(GetFile(i));
+	}
+	return file_list;
 }
 
 FileExpandResult IcebergMultiFileList::GetExpandResult() {

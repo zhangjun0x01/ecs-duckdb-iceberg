@@ -32,6 +32,9 @@ public:
 
 	unique_ptr<IRCAPITable> table_data;
 
+	virtual_column_map_t GetVirtualColumns() const override;
+	vector<column_t> GetRowIdColumns() const override;
+
 public:
 	unique_ptr<BaseStatistics> GetStatistics(ClientContext &context, column_t column_id) override;
 
@@ -39,10 +42,6 @@ public:
 	TableFunction GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) override;
 
 	TableStorageInfo GetStorageInfo(ClientContext &context) override;
-
-	virtual_column_map_t GetVirtualColumns() const override;
-
-	vector<column_t> GetRowIdColumns() const override;
 
 	void BindUpdateConstraints(Binder &binder, LogicalGet &get, LogicalProjection &proj, LogicalUpdate &update,
 	                           ClientContext &context) override;
