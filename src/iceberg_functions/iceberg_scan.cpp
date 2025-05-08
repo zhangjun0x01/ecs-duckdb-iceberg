@@ -25,6 +25,7 @@
 #include "iceberg_multi_file_reader.hpp"
 #include "iceberg_functions.hpp"
 #include "yyjson.hpp"
+#include "storage/irc_table_entry.hpp"
 
 #include <string>
 #include <numeric>
@@ -40,20 +41,6 @@ static void AddNamedParameters(TableFunction &fun) {
 	fun.named_parameters["version_name_format"] = LogicalType::VARCHAR;
 	fun.named_parameters["snapshot_from_timestamp"] = LogicalType::TIMESTAMP;
 	fun.named_parameters["snapshot_from_id"] = LogicalType::UBIGINT;
-}
-
-virtual_column_map_t IcebergVirtualColumns(ClientContext &, optional_ptr<FunctionData> bind_data_p) {
-	virtual_column_map_t result;
-	result.insert(
-	    make_pair(MultiFileReader::COLUMN_IDENTIFIER_FILENAME, TableColumn("filename", LogicalType::VARCHAR)));
-	result.insert(make_pair(MultiFileReader::COLUMN_IDENTIFIER_FILE_ROW_NUMBER,
-	                        TableColumn("file_row_number", LogicalType::BIGINT)));
-	result.insert(make_pair(COLUMN_IDENTIFIER_ROW_ID, TableColumn("rowid", LogicalType::BIGINT)));
-	result.insert(make_pair(COLUMN_IDENTIFIER_EMPTY, TableColumn("", LogicalType::BOOLEAN)));
-
-	auto &bind_data = bind_data_p->Cast<MultiFileBindData>();
-	bind_data.virtual_columns = result;
-	return result;
 }
 
 TableFunctionSet IcebergFunctions::GetIcebergScanFunction(DatabaseInstance &instance) {
@@ -74,7 +61,6 @@ TableFunctionSet IcebergFunctions::GetIcebergScanFunction(DatabaseInstance &inst
 		function.statistics = nullptr;
 		function.table_scan_progress = nullptr;
 		function.get_bind_info = nullptr;
-		function.get_virtual_columns = IcebergVirtualColumns;
 
 		// Schema param is just confusing here
 		function.named_parameters.erase("schema");

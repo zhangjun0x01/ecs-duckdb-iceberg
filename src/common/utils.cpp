@@ -41,17 +41,17 @@ static string ExtractIcebergScanPath(const string &sql) {
 }
 
 string IcebergUtils::GetStorageLocation(ClientContext &context, const string &input) {
-	auto qualified_name = QualifiedName::Parse(input);
+	auto qualified_name = QualifiedName::ParseComponents(input);
 	string storage_location = input;
 
 	do {
-		if (qualified_name.catalog.empty() || qualified_name.schema.empty() || qualified_name.name.empty()) {
+		if (qualified_name.size() != 3) {
 			break;
 		}
 		//! Fully qualified table reference, let's do a lookup
-		EntryLookupInfo table_info(CatalogType::TABLE_ENTRY, qualified_name.name);
-		auto catalog_entry = Catalog::GetEntry(context, qualified_name.catalog, qualified_name.schema, table_info,
-		                                       OnEntryNotFound::RETURN_NULL);
+		EntryLookupInfo table_info(CatalogType::TABLE_ENTRY, qualified_name[2]);
+		auto catalog_entry =
+		    Catalog::GetEntry(context, qualified_name[0], qualified_name[1], table_info, OnEntryNotFound::RETURN_NULL);
 		if (!catalog_entry) {
 			break;
 		}
