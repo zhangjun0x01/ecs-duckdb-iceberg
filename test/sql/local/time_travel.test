@@ -1,5 +1,5 @@
 # name: test/sql/local/time_travel.test
-# description: test delete and add of a column with name-mapping
+# description: Test time travel using both snapshot id and timestamp
 # group: [local]
 
 require avro
@@ -34,38 +34,91 @@ ATTACH 'demo' AS my_datalake (
 	ENDPOINT 'http://127.0.0.1:8181'
 );
 
-# Retrieve the snapshot_ids
+# Retrieve the (snapshot_id + timestamp_ms) pairs, using offset and limit
+
+loop i 0 4
 
 statement ok
-set variable snapshot_id_1 = (select snapshot_id from iceberg_snapshots(my_datalake.default.filtering_on_bounds) order by timestamp_ms offset 0 limit 1);
+set variable snapshot${i} = (
+	select {
+		'snapshot_id': snapshot_id,
+		'timestamp_ms': timestamp_ms
+	} from iceberg_snapshots(
+		my_datalake.default.filtering_on_bounds
+	) order by timestamp_ms
+	offset ${i} limit 1
+);
+
+endloop
+
+# Create these time travel queries:
+# - `AT (VERSION => <snapshot_id>)`
+# - `AT (TIMESTAMP => TIMESTAMP '<timestamp_ms>')`
 
 statement ok
-set variable snapshot_id_2 = (select snapshot_id from iceberg_snapshots(my_datalake.default.filtering_on_bounds) order by timestamp_ms offset 1 limit 1);
+set variable time_travel_snapshot_id = $$
+	select
+		count(*)
+	from my_datalake.default.filtering_on_bounds
+		AT (VERSION => COMPONENT)
+$$
 
 statement ok
-set variable snapshot_id_3 = (select snapshot_id from iceberg_snapshots(my_datalake.default.filtering_on_bounds) order by timestamp_ms offset 2 limit 1);
+set variable time_travel_timestamp_ms = $$
+	select
+		count(*)
+	from my_datalake.default.filtering_on_bounds
+		AT (TIMESTAMP => TIMESTAMP 'COMPONENT')
+$$
 
-statement ok
-set variable snapshot_id_4 = (select snapshot_id from iceberg_snapshots(my_datalake.default.filtering_on_bounds) order by timestamp_ms offset 3 limit 1);
+foreach component snapshot_id timestamp_ms
 
-# Using 'query' we can dynamically construct a query, where we do `AT (VERSION => ${SNAPSHOT_ID})` using the snapshot ids from above
+# Using the 'query' table function
+# we can dynamically construct a query
+# where we use both:
+# - `AT (VERSION => <snapshot_id>)`
+# - `AT (TIMESTAMP => TIMESTAMP '<timestamp_ms>')`
+
+# To test both snapshot-id and timestamp based time travel
 
 query I
-select * from query($$select count(*) from my_datalake.default.filtering_on_bounds AT (VERSION => $$ || getvariable('snapshot_id_1') ||')')
+select * from query(
+	getvariable('time_travel_${component}').replace(
+		'COMPONENT'::VARCHAR,
+		getvariable('snapshot0').${component}::VARCHAR
+	)
+)
 ----
 1000
 
 query I
-select * from query($$select count(*) from my_datalake.default.filtering_on_bounds AT (VERSION => $$ || getvariable('snapshot_id_2') ||')')
+select * from query(
+	getvariable('time_travel_${component}').replace(
+		'COMPONENT'::VARCHAR,
+		getvariable('snapshot1').${component}::VARCHAR
+	)
+)
 ----
 2000
 
 query I
-select * from query($$select count(*) from my_datalake.default.filtering_on_bounds AT (VERSION => $$ || getvariable('snapshot_id_3') ||')')
+select * from query(
+	getvariable('time_travel_${component}').replace(
+		'COMPONENT'::VARCHAR,
+		getvariable('snapshot2').${component}::VARCHAR
+	)
+)
 ----
 3000
 
 query I
-select * from query($$select count(*) from my_datalake.default.filtering_on_bounds AT (VERSION => $$ || getvariable('snapshot_id_4') ||')')
+select * from query(
+	getvariable('time_travel_${component}').replace(
+		'COMPONENT'::VARCHAR,
+		getvariable('snapshot3').${component}::VARCHAR
+	)
+)
 ----
 4000
+
+endloop
