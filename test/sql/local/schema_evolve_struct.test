@@ -1,0 +1,24 @@
+# name: test/sql/local/schema_evolve_struct.test
+# group: [local]
+
+require avro
+
+require parquet
+
+require iceberg
+
+require httpfs
+
+require-env DUCKDB_ICEBERG_HAVE_GENERATED_DATA
+
+query II
+select * from ICEBERG_SCAN('data/generated/iceberg/spark-local/default/schema_evolve_struct') order by all;
+----
+1	{'given_name': Alice, 'email': NULL, 'age': NULL}
+2	{'given_name': Bob, 'email': NULL, 'age': NULL}
+3	{'given_name': Charlie, 'email': charlie@example.com, 'age': NULL}
+4	{'given_name': Diana, 'email': diana@example.com, 'age': NULL}
+5	{'given_name': Eve, 'email': eve@example.com, 'age': NULL}
+6	{'given_name': Frank, 'email': frank@example.com, 'age': 42}
+7	{'given_name': Grace, 'email': grace@example.com, 'age': 9223372036854775806}
+8	{'given_name': Heidi, 'email': heidi@example.com, 'age': 30}
