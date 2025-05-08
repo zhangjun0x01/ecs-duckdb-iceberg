@@ -14,6 +14,7 @@
 #include "duckdb/planner/operator/logical_get.hpp"
 #include "storage/authorization/sigv4.hpp"
 #include "duckdb/common/multi_file/multi_file_reader.hpp"
+#include "duckdb/planner/tableref/bound_at_clause.hpp"
 
 #include "rest_catalog/objects/list.hpp"
 
@@ -36,6 +37,20 @@ unique_ptr<BaseStatistics> ICTableEntry::GetStatistics(ClientContext &context, c
 void ICTableEntry::BindUpdateConstraints(Binder &binder, LogicalGet &, LogicalProjection &, LogicalUpdate &,
                                          ClientContext &) {
 	throw NotImplementedException("BindUpdateConstraints");
+}
+
+static void AddTimeTravelInformation(named_parameter_map_t &param_map, BoundAtClause &at) {
+	auto &unit = at.Unit();
+	auto &value = at.GetValue();
+
+	if (StringUtil::CIEquals(unit, "version")) {
+		param_map.emplace("snapshot_from_id", value);
+	} else if (StringUtil::CIEquals(unit, "timestamp")) {
+		param_map.emplace("snapshot_from_timestamp", value);
+	} else {
+		throw InvalidInputException(
+		    "Unit '%s' for time travel is not valid, supported options are 'version' and 'timestamp'", unit);
+	}
 }
 
 string ICTableEntry::PrepareIcebergScanFromEntry(ClientContext &context) {
@@ -105,7 +120,8 @@ string ICTableEntry::PrepareIcebergScanFromEntry(ClientContext &context) {
 	return table_data->storage_location;
 }
 
-TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) {
+TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data,
+                                            const EntryLookupInfo &lookup) {
 	auto &db = DatabaseInstance::GetDatabase(context);
 	auto &iceberg_scan_function_set = ExtensionUtil::GetTableFunction(db, "iceberg_scan");
 	auto iceberg_scan_function =
@@ -118,8 +134,11 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	TableFunctionRef empty_ref;
 
 	// Set the S3 path as input to table function
+	auto at = lookup.GetAtClause();
+	if (at) {
+		AddTimeTravelInformation(param_map, *at);
+	}
 	vector<Value> inputs = {storage_location};
-
 	TableFunctionBindInput bind_input(inputs, param_map, return_types, names, nullptr, nullptr, iceberg_scan_function,
 	                                  empty_ref);
 
@@ -127,6 +146,10 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	bind_data = std::move(result);
 
 	return iceberg_scan_function;
+}
+
+TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) {
+	throw InternalException("ICTableEntry::GetScanFunction called without entry lookup info");
 }
 
 virtual_column_map_t ICTableEntry::GetVirtualColumns() const {

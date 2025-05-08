@@ -40,6 +40,8 @@ public:
 
 	string PrepareIcebergScanFromEntry(ClientContext &context);
 	TableFunction GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data) override;
+	TableFunction GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data,
+	                              const EntryLookupInfo &lookup) override;
 
 	TableStorageInfo GetStorageInfo(ClientContext &context) override;
 

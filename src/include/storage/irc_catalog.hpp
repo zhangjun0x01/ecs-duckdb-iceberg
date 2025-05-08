@@ -64,6 +64,10 @@ public:
 
 	void GetConfig(ClientContext &context);
 
+	bool SupportsTimeTravel() const override {
+		return true;
+	}
+
 	optional_ptr<CatalogEntry> CreateSchema(CatalogTransaction transaction, CreateSchemaInfo &info) override;
 
 	void ScanSchemas(ClientContext &context, std::function<void(SchemaCatalogEntry &)> callback) override;
