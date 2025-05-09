@@ -45,10 +45,12 @@ static string GetTableMetadataCached(ClientContext &context, IRCatalog &catalog,
 	url.AddPathComponent(schema);
 	url.AddPathComponent("tables");
 	url.AddPathComponent(table);
-	if (catalog.HasCachedValue(url.GetURL())) {
-		return catalog.GetCachedValue(url.GetURL());
+	auto cached_value = catalog.OptionalGetCachedValue(url.GetURL());
+	if (!cached_value.empty()) {
+		return cached_value;
+	} else {
+		return GetTableMetadata(context, catalog, schema, table);
 	}
-	return GetTableMetadata(context, catalog, schema, table);
 }
 
 vector<string> IRCAPI::GetCatalogs(ClientContext &context, IRCatalog &catalog) {
