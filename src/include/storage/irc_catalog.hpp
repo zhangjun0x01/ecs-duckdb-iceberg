@@ -97,7 +97,7 @@ public:
 
 	void ClearCache();
 
-	string OptionalGetCachedValue(const string &url) const;
+	string OptionalGetCachedValue(const string &url);
 	bool SetCachedValue(const string &url, const string &value, const rest_api_objects::LoadTableResult &result);
 
 private:
@@ -111,6 +111,7 @@ private:
 	case_insensitive_map_t<string> defaults;
 	case_insensitive_map_t<string> overrides;
 
+	std::mutex metadata_cache_mutex;
 	unordered_map<string, unique_ptr<MetadataCacheValue>> metadata_cache;
 };
 

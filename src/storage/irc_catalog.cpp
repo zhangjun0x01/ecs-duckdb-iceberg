@@ -218,7 +218,8 @@ unique_ptr<LogicalOperator> IRCatalog::BindCreateIndex(Binder &binder, CreateSta
 	throw NotImplementedException("ICCatalog BindCreateIndex");
 }
 
-string IRCatalog::OptionalGetCachedValue(const string &url) const {
+string IRCatalog::OptionalGetCachedValue(const string &url) {
+	std::lock_guard<std::mutex> lock(metadata_cache_mutex);
 	auto value = metadata_cache.find(url);
 	if (value != metadata_cache.end()) {
 		auto now = system_clock::now();
@@ -245,7 +246,10 @@ bool IRCatalog::SetCachedValue(const string &url, const string &value,
 	auto epochMillis = std::stoll(expires_at);
 	auto expired_time = system_clock::time_point(milliseconds(epochMillis));
 	auto val = make_uniq<MetadataCacheValue>(value, expired_time);
-	metadata_cache[url] = std::move(val);
+	{
+		std::lock_guard<std::mutex> lock(metadata_cache_mutex);
+		metadata_cache[url] = std::move(val);
+	}
 	return true;
 }
 
