@@ -1,9 +1,9 @@
 {
   "format-version" : 2,
-  "table-uuid" : "a0ce9b5c-4485-4e2e-964c-6f6388879477",
+  "table-uuid" : "86d0c44c-b287-47c1-b9bb-cbff310b393f",
   "location" : "data/persistent/hive_partitioned_table",
   "last-sequence-number" : 0,
-  "last-updated-ms" : 1746527600250,
+  "last-updated-ms" : 1746793270313,
   "last-column-id" : 3,
   "current-schema-id" : 0,
   "schemas" : [ {
@@ -44,8 +44,10 @@
   } ],
   "properties" : {
     "owner" : "thijs",
+    "write.update.mode" : "merge-on-read",
+    "write.parquet.write-partition-values" : "false",
     "write.parquet.compression-codec" : "zstd",
-    "write.update.mode" : "merge-on-read"
+    "write.data.partition-columns" : "false"
   },
   "current-snapshot-id" : -1,
   "refs" : { },

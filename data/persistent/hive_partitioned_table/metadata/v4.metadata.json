@@ -2,8 +2,8 @@
   "format-version" : 2,
   "table-uuid" : "86d0c44c-b287-47c1-b9bb-cbff310b393f",
   "location" : "data/persistent/hive_partitioned_table",
-  "last-sequence-number" : 1,
-  "last-updated-ms" : 1746793271358,
+  "last-sequence-number" : 2,
+  "last-updated-ms" : 1746793271644,
   "last-column-id" : 3,
   "current-schema-id" : 0,
   "schemas" : [ {
@@ -26,7 +26,7 @@
       "type" : "string"
     } ]
   } ],
-  "default-spec-id" : 0,
+  "default-spec-id" : 1,
   "partition-specs" : [ {
     "spec-id" : 0,
     "fields" : [ {
@@ -35,8 +35,21 @@
       "source-id" : 1,
       "field-id" : 1000
     } ]
+  }, {
+    "spec-id" : 1,
+    "fields" : [ {
+      "name" : "event_date",
+      "transform" : "identity",
+      "source-id" : 1,
+      "field-id" : 1000
+    }, {
+      "name" : "event_type",
+      "transform" : "identity",
+      "source-id" : 3,
+      "field-id" : 1001
+    } ]
   } ],
-  "last-partition-id" : 1000,
+  "last-partition-id" : 1001,
   "default-sort-order-id" : 0,
   "sort-orders" : [ {
     "order-id" : 0,
@@ -49,10 +62,10 @@
     "write.parquet.compression-codec" : "zstd",
     "write.data.partition-columns" : "false"
   },
-  "current-snapshot-id" : 2541674261311761067,
+  "current-snapshot-id" : 5128628767169163501,
   "refs" : {
     "main" : {
-      "snapshot-id" : 2541674261311761067,
+      "snapshot-id" : 5128628767169163501,
       "type" : "branch"
     }
   },
@@ -76,14 +89,44 @@
     },
     "manifest-list" : "data/persistent/hive_partitioned_table/metadata/snap-2541674261311761067-1-8f7c6cdd-f7e6-4743-857e-021adfe0b999.avro",
     "schema-id" : 0
+  }, {
+    "sequence-number" : 2,
+    "snapshot-id" : 5128628767169163501,
+    "parent-snapshot-id" : 2541674261311761067,
+    "timestamp-ms" : 1746793271644,
+    "summary" : {
+      "operation" : "append",
+      "spark.app.id" : "local-1746793268518",
+      "added-data-files" : "4",
+      "added-records" : "4",
+      "added-files-size" : "3718",
+      "changed-partition-count" : "4",
+      "total-records" : "6",
+      "total-files-size" : "5594",
+      "total-data-files" : "6",
+      "total-delete-files" : "0",
+      "total-position-deletes" : "0",
+      "total-equality-deletes" : "0"
+    },
+    "manifest-list" : "data/persistent/hive_partitioned_table/metadata/snap-5128628767169163501-1-fee93099-6425-4d83-bd7c-0aa646533090.avro",
+    "schema-id" : 0
   } ],
   "statistics" : [ ],
   "snapshot-log" : [ {
     "timestamp-ms" : 1746793271358,
     "snapshot-id" : 2541674261311761067
+  }, {
+    "timestamp-ms" : 1746793271644,
+    "snapshot-id" : 5128628767169163501
   } ],
   "metadata-log" : [ {
     "timestamp-ms" : 1746793270313,
     "metadata-file" : "data/persistent/hive_partitioned_table/metadata/v1.metadata.json"
+  }, {
+    "timestamp-ms" : 1746793271358,
+    "metadata-file" : "data/persistent/hive_partitioned_table/metadata/v2.metadata.json"
+  }, {
+    "timestamp-ms" : 1746793271427,
+    "metadata-file" : "data/persistent/hive_partitioned_table/metadata/v3.metadata.json"
   } ]
 }

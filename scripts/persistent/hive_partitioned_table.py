@@ -20,6 +20,7 @@ conf.set('spark.sql.parquet.outputTimestampType', 'TIMESTAMP_MICROS')
 conf.set('spark.driver.memory', '10g')
 conf.set('spark.jars', SPARK_RUNTIME_PATH)
 conf.set('spark.sql.extensions', 'org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions')
+conf.set("spark.sql.iceberg.write.parquet.write-partition-values", False)
 spark = pyspark.sql.SparkSession.builder.config(conf=conf).getOrCreate()
 sc = spark.sparkContext
 sc.setLogLevel("ERROR")
@@ -49,10 +50,12 @@ CREATE OR REPLACE TABLE hive_partitioned_table (
     event_type STRING
 )
 USING iceberg
-PARTITIONED BY (event_date) -- Identity transform on event_date
+PARTITIONED BY (event_date)
 TBLPROPERTIES (
     'format-version' = '2',
-    'write.update.mode' = 'merge-on-read'
+    'write.update.mode' = 'merge-on-read',
+    'write.data.partition-columns' = false,
+    'write.parquet.write-partition-values' = false
 );
 
 """
@@ -63,6 +66,27 @@ spark.sql(
 INSERT INTO hive_partitioned_table VALUES
   (DATE'2024-01-01', 12345, 'click'),
   (DATE'2024-01-02', 67890, 'purchase');
+"""
+)
+
+spark.sql(
+    """
+ALTER TABLE hive_partitioned_table 
+ADD PARTITION FIELD event_type
+"""
+)
+
+# Refresh the table to ensure the new partition spec is used
+spark.sql("REFRESH TABLE hive_partitioned_table")
+
+# Now insert new data that will be partitioned by both event_date and event_type
+spark.sql(
+    """
+INSERT INTO hive_partitioned_table VALUES
+  (DATE'2024-01-03', 13579, 'view'),
+  (DATE'2024-01-03', 24680, 'click'),
+  (DATE'2024-01-04', 97531, 'purchase'),
+  (DATE'2024-01-04', 86420, 'view');
 """
 )
 
@@ -80,6 +104,24 @@ for file in parquet_files:
 		(
 			FIELD_IDS {{
 				user_id: 2, event_type: 3
+			}}
+		);
+	"""
+    )
+
+parquet_files = glob.glob("data/persistent/hive_partitioned_table/data/event_date=2024-01-0*/event_type=*/*.parquet")
+for file in parquet_files:
+    duckdb.execute(
+        f"""
+		copy (
+			select
+				*
+			EXCLUDE (event_date, event_type)
+			from '{file}'
+		) to '{file}'
+		(
+			FIELD_IDS {{
+				user_id: 2
 			}}
 		);
 	"""

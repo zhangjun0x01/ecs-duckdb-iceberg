@@ -12,6 +12,10 @@ require httpfs
 query III
 select * from ICEBERG_SCAN('data/persistent/hive_partitioned_table');
 ----
+2024-01-03	13579	view
+2024-01-03	24680	click
+2024-01-04	97531	purchase
+2024-01-04	86420	view
 2024-01-02	67890	purchase
 2024-01-01	12345	click
 
