@@ -34,8 +34,8 @@ import duckdb
 
 spark.sql(
     """
-CREATE OR REPLACE TABLE partition_integer (
-    partition_col INTEGER,
+CREATE OR REPLACE TABLE partition_timestamp_ns (
+    partition_col TIMESTAMP_NTZ,
     user_id BIGINT,
     event_type STRING
 )
@@ -44,23 +44,21 @@ PARTITIONED BY (partition_col)
 TBLPROPERTIES (
     'format-version' = '2',
     'write.update.mode' = 'merge-on-read',
-    'write.data.partition-columns' = false,
-    'write.parquet.write-partition-values' = false
+    'write.timestamp.type.nanos' = 'true'
 );
-
 """
 )
 
 spark.sql(
     """
-INSERT INTO partition_integer VALUES
-  (42, 12345, 'click'),
-  (1337, 67890, 'purchase');
+INSERT INTO partition_timestamp_ns VALUES
+  (TIMESTAMP_NTZ '2023-05-15T14:30:45', 12345, 'click'),
+  (TIMESTAMP_NTZ '2023-08-22T09:15:20', 67890, 'purchase');
 """
 )
 
 # Strip the column that we're partitioned on from the data files
-parquet_files = glob.glob("data/persistent/partition_integer/data/partition_col=*/*.parquet")
+parquet_files = glob.glob("data/persistent/partition_timestamp_ns/data/partition_col=*/*.parquet")
 for file in parquet_files:
     duckdb.execute(
         f"""

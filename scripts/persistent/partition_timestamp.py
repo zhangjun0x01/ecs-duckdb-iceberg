@@ -84,3 +84,24 @@ table = catalog.create_table(
 
 # Write records
 table.append(table_data)
+
+# Strip the column that we're partitioned on from the data files
+parquet_files = glob.glob(
+    "data/persistent/partition_timestamp/default.db/partition_timestamp/data/partition_col=*/*.parquet"
+)
+for file in parquet_files:
+    duckdb.execute(
+        f"""
+		copy (
+			select
+				*
+			EXCLUDE partition_col
+			from '{file}'
+		) to '{file}'
+		(
+			FIELD_IDS {{
+				user_id: 2, event_type: 3
+			}}
+		);
+	"""
+    )

@@ -802,6 +802,10 @@ static Value TransformPartitionValue(const Value &value, const LogicalType &type
 		D_ASSERT(value.type().id() == LogicalTypeId::INTEGER);
 		return Value::DATE(Date::EpochDaysToDate(value.GetValue<int32_t>()));
 	}
+	case LogicalTypeId::TIMESTAMP: {
+		D_ASSERT(value.type().id() == LogicalTypeId::BIGINT);
+		return Value::TIMESTAMP(Timestamp::FromEpochMicroSeconds(value.GetValue<int64_t>()));
+	}
 	case LogicalTypeId::VARCHAR:
 	case LogicalTypeId::BLOB:
 	case LogicalTypeId::FLOAT:
