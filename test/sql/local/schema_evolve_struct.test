@@ -11,8 +11,8 @@ require httpfs
 
 require-env DUCKDB_ICEBERG_HAVE_GENERATED_DATA
 
-query II
-select * from ICEBERG_SCAN('data/generated/iceberg/spark-local/default/schema_evolve_struct') order by user_id;
+query IIII
+select * from ICEBERG_SCAN('data/generated/iceberg/spark-local/default/schema_evolve_struct') order by all;
 ----
 1	{'given_name': Alice, 'email': NULL, 'age': NULL}	[21, 42]	{theme=131, language=115}
 2	{'given_name': Bob, 'email': NULL, 'age': NULL}	[13, 24]	{theme=1, language=1337}
