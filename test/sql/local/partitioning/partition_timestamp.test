@@ -1,0 +1,21 @@
+# name: test/sql/local/partitioning/partition_timestamp.test
+# group: [partitioning]
+
+require avro
+
+require parquet
+
+require iceberg
+
+require httpfs
+
+query III
+select * from ICEBERG_SCAN('data/persistent/partition_timestamp/default.db/partition_timestamp/metadata/00001-0fdda8c3-4854-421c-825d-8de11168fc45.metadata.json');
+----
+2023-05-15 14:30:45	12345	click
+2023-08-22 09:15:20	67890	purchase
+
+query I
+select user_id from ICEBERG_SCAN('data/persistent/partition_timestamp/default.db/partition_timestamp/metadata/00001-0fdda8c3-4854-421c-825d-8de11168fc45.metadata.json') WHERE partition_col = '2023-05-15T14:30:45';
+----
+12345
