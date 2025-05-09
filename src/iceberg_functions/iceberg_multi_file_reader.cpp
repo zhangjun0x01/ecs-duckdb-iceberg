@@ -120,6 +120,8 @@ static Value DeserializeDecimalBound(const string &bound_value, const IcebergCol
 	}
 }
 
+//! FIXME: because of schema evolution, there are rules for inferring the correct type that we need to apply:
+//! See https://iceberg.apache.org/spec/#schema-evolution
 template <bool LOWER_BOUND = true>
 static Value DeserializeBound(const string &bound_value, const IcebergColumnDefinition &column) {
 	auto &type = column.type;
@@ -194,6 +196,23 @@ static Value DeserializeBound(const string &bound_value, const IcebergColumnDefi
 		}
 		const bool val = bound_value[0] != '\0';
 		return Value::BOOLEAN(val);
+	}
+	case LogicalTypeId::FLOAT: {
+		if (bound_value.size() != sizeof(float)) {
+			ThrowBoundError<LOWER_BOUND>(bound_value, column);
+		}
+		float val;
+		std::memcpy(&val, bound_value.data(), sizeof(float));
+		return Value::FLOAT(val);
+	}
+	case LogicalTypeId::TIME: {
+		throw NotImplementedException("time");
+	}
+	case LogicalTypeId::TIMESTAMP_NS: {
+		throw NotImplementedException("timestamp_ns");
+	}
+	case LogicalTypeId::UUID: {
+		throw NotImplementedException("uuid");
 	}
 	// Add more types as needed
 	default:
