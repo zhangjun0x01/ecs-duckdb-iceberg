@@ -1,0 +1,29 @@
+# name: test/sql/local/partitioning/partition_timestamptz.test
+# group: [partitioning]
+
+require avro
+
+require parquet
+
+require iceberg
+
+require httpfs
+
+require icu
+
+statement ok
+SET Calendar='gregorian';
+
+statement ok
+SET TimeZone='Europe/Amsterdam';
+
+query III
+select * from ICEBERG_SCAN('data/persistent/partition_timestamptz/default.db/partition_timestamptz/metadata/00001-230940f1-a86c-40a3-86a7-5b7148e223de.metadata.json');
+----
+2023-05-15 16:30:45+02	12345	click
+2023-08-22 11:15:20+02	67890	purchase
+
+query I
+select user_id from ICEBERG_SCAN('data/persistent/partition_timestamptz/default.db/partition_timestamptz/metadata/00001-230940f1-a86c-40a3-86a7-5b7148e223de.metadata.json') WHERE partition_col = '2023-05-15T16:30:45+02';
+----
+12345
