@@ -206,7 +206,13 @@ static Value DeserializeBound(const string &bound_value, const IcebergColumnDefi
 		return Value::FLOAT(val);
 	}
 	case LogicalTypeId::TIME: {
-		throw NotImplementedException("time");
+		if (bound_value.size() != sizeof(int64_t)) {
+			ThrowBoundError<LOWER_BOUND>(bound_value, column);
+		}
+		//! bound stores microseconds since midnight
+		dtime_t val;
+		std::memcpy(&val.micros, bound_value.data(), sizeof(int64_t));
+		return Value::TIME(val);
 	}
 	case LogicalTypeId::TIMESTAMP_NS: {
 		throw NotImplementedException("timestamp_ns");

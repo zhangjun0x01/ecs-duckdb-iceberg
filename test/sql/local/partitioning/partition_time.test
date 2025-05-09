@@ -1,0 +1,21 @@
+# name: test/sql/local/partitioning/partition_time.test
+# group: [partitioning]
+
+require avro
+
+require parquet
+
+require iceberg
+
+require httpfs
+
+query III
+select * from ICEBERG_SCAN('data/persistent/partition_time/default.db/partition_time/metadata/00001-5c214dcc-e484-43f0-95df-b27b473ae0e3.metadata.json');
+----
+12:34:56	12345	click
+08:21:09	67890	purchase
+
+query I
+select user_id from ICEBERG_SCAN('data/persistent/partition_time/default.db/partition_time/metadata/00001-5c214dcc-e484-43f0-95df-b27b473ae0e3.metadata.json') WHERE partition_col = '12:34:56';
+----
+12345
