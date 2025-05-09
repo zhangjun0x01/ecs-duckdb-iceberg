@@ -34,13 +34,13 @@ import duckdb
 
 spark.sql(
     """
-CREATE OR REPLACE TABLE hive_partitioned_table (
-    event_date DATE,
+CREATE OR REPLACE TABLE partition_bool (
+    partition_col BOOLEAN,
     user_id BIGINT,
     event_type STRING
 )
 USING iceberg
-PARTITIONED BY (event_date)
+PARTITIONED BY (partition_col)
 TBLPROPERTIES (
     'format-version' = '2',
     'write.update.mode' = 'merge-on-read',
@@ -53,65 +53,26 @@ TBLPROPERTIES (
 
 spark.sql(
     """
-INSERT INTO hive_partitioned_table VALUES
-  (DATE'2024-01-01', 12345, 'click'),
-  (DATE'2024-01-02', 67890, 'purchase');
-"""
-)
-
-spark.sql(
-    """
-ALTER TABLE hive_partitioned_table 
-ADD PARTITION FIELD event_type
-"""
-)
-
-# Refresh the table to ensure the new partition spec is used
-spark.sql("REFRESH TABLE hive_partitioned_table")
-
-# Now insert new data that will be partitioned by both event_date and event_type
-spark.sql(
-    """
-INSERT INTO hive_partitioned_table VALUES
-  (DATE'2024-01-03', 13579, 'view'),
-  (DATE'2024-01-03', 24680, 'click'),
-  (DATE'2024-01-04', 97531, 'purchase'),
-  (DATE'2024-01-04', 86420, 'view');
+INSERT INTO partition_bool VALUES
+  (TRUE, 12345, 'click'),
+  (FALSE, 67890, 'purchase');
 """
 )
 
 # Strip the column that we're partitioned on from the data files
-parquet_files = glob.glob("data/persistent/hive_partitioned_table/data/event_date=2024-01-0*/*.parquet")
+parquet_files = glob.glob("data/persistent/partition_bool/data/partition_col=2024-01-0*/*.parquet")
 for file in parquet_files:
     duckdb.execute(
         f"""
 		copy (
 			select
 				*
-			EXCLUDE event_date
+			EXCLUDE partition_col
 			from '{file}'
 		) to '{file}'
 		(
 			FIELD_IDS {{
 				user_id: 2, event_type: 3
-			}}
-		);
-	"""
-    )
-
-parquet_files = glob.glob("data/persistent/hive_partitioned_table/data/event_date=2024-01-0*/event_type=*/*.parquet")
-for file in parquet_files:
-    duckdb.execute(
-        f"""
-		copy (
-			select
-				*
-			EXCLUDE (event_date, event_type)
-			from '{file}'
-		) to '{file}'
-		(
-			FIELD_IDS {{
-				user_id: 2
 			}}
 		);
 	"""

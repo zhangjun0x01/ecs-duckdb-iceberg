@@ -188,6 +188,13 @@ static Value DeserializeBound(const string &bound_value, const IcebergColumnDefi
 	case LogicalTypeId::DECIMAL: {
 		return DeserializeDecimalBound(bound_value, column);
 	}
+	case LogicalTypeId::BOOLEAN: {
+		if (bound_value.size() != 1) {
+			ThrowBoundError<LOWER_BOUND>(bound_value, column);
+		}
+		const bool val = bound_value[0] != '\0';
+		return Value::BOOLEAN(val);
+	}
 	// Add more types as needed
 	default:
 		break;
