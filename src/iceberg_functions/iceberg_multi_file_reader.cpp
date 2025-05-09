@@ -218,7 +218,10 @@ static Value DeserializeBound(const string &bound_value, const IcebergColumnDefi
 		throw NotImplementedException("timestamp_ns");
 	}
 	case LogicalTypeId::UUID: {
-		throw NotImplementedException("uuid");
+		if (bound_value.size() != 16) {
+			ThrowBoundError<LOWER_BOUND>(bound_value, column);
+		}
+		return Value::UUID(bound_value);
 	}
 	// Add more types as needed
 	default:
@@ -805,6 +808,10 @@ static Value TransformPartitionValue(const Value &value, const LogicalType &type
 	case LogicalTypeId::TIMESTAMP: {
 		D_ASSERT(value.type().id() == LogicalTypeId::BIGINT);
 		return Value::TIMESTAMP(Timestamp::FromEpochMicroSeconds(value.GetValue<int64_t>()));
+	}
+	case LogicalTypeId::UUID: {
+		D_ASSERT(value.type().id() == LogicalTypeId::VARCHAR);
+		return Value::UUID(value.GetValue<string>());
 	}
 	case LogicalTypeId::VARCHAR:
 	case LogicalTypeId::BLOB:
