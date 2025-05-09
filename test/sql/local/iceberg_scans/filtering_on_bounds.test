@@ -10,6 +10,15 @@ require parquet
 require iceberg
 
 statement ok
+attach ':memory:' as my_datalake;
+
+statement ok
+create schema my_datalake.default;
+
+statement ok
+create view my_datalake.default.filtering_on_bounds as select * from ICEBERG_SCAN('data/generated/iceberg/spark-local/default/filtering_on_bounds');
+
+statement ok
 pragma enable_logging=true;
 
 statement ok
@@ -20,7 +29,7 @@ set enable_logging=true;
 
 # 5 snapshots that each add 1000 rows (incremental)
 query I
-select count(*) from ICEBERG_SCAN('data/generated/iceberg/spark-local/default/filtering_on_bounds');
+select count(*) from my_datalake.default.filtering_on_bounds;
 ----
 5000
 
@@ -28,7 +37,7 @@ statement ok
 pragma truncate_duckdb_logs;
 
 query I
-select count(*) from ICEBERG_SCAN('data/generated/iceberg/spark-local/default/filtering_on_bounds') where col1 > 500;
+select count(*) from my_datalake.default.filtering_on_bounds where col1 > 500;
 ----
 4499
 
@@ -50,7 +59,7 @@ statement ok
 pragma truncate_duckdb_logs;
 
 query I
-select count(*) from ICEBERG_SCAN('data/generated/iceberg/spark-local/default/filtering_on_bounds') where col1 > 1500;
+select count(*) from my_datalake.default.filtering_on_bounds where col1 > 1500;
 ----
 3499
 
@@ -71,7 +80,7 @@ statement ok
 pragma truncate_duckdb_logs;
 
 query I
-select count(*) from ICEBERG_SCAN('data/generated/iceberg/spark-local/default/filtering_on_bounds') where col1 >= 2300 and col1 < 3500;
+select count(*) from my_datalake.default.filtering_on_bounds where col1 >= 2300 and col1 < 3500;
 ----
 1200
 

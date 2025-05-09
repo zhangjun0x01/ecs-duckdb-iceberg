@@ -63,7 +63,8 @@ static unique_ptr<FunctionData> IcebergSnapshotsBind(ClientContext &context, Tab
 			bind_data->options.infer_schema = !BooleanValue::Get(kv.second);
 		}
 	}
-	bind_data->filename = input.inputs[0].ToString();
+	auto input_string = input.inputs[0].ToString();
+	bind_data->filename = IcebergUtils::GetStorageLocation(context, input_string);
 
 	names.emplace_back("sequence_number");
 	return_types.emplace_back(LogicalType::UBIGINT);

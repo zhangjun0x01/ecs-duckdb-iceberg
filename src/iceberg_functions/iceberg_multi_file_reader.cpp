@@ -1,4 +1,5 @@
 #include "iceberg_multi_file_reader.hpp"
+#include "iceberg_utils.hpp"
 
 #include "duckdb/catalog/catalog_entry/table_function_catalog_entry.hpp"
 #include "duckdb/common/exception.hpp"
@@ -275,7 +276,11 @@ unique_ptr<MultiFileList> IcebergMultiFileList::ComplexFilterPushdown(ClientCont
 }
 
 vector<OpenFileInfo> IcebergMultiFileList::GetAllFiles() {
-	throw NotImplementedException("NOT IMPLEMENTED");
+	vector<OpenFileInfo> file_list;
+	for (idx_t i = 0; i < data_files.size(); i++) {
+		file_list.push_back(GetFile(i));
+	}
+	return file_list;
 }
 
 FileExpandResult IcebergMultiFileList::GetExpandResult() {
@@ -482,7 +487,7 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 	}
 
 	D_ASSERT(file_id < data_files.size());
-	auto &data_file = data_files[file_id];
+	const auto &data_file = data_files[file_id];
 	const auto &path = data_file.file_path;
 
 	if (!StringUtil::CIEquals(data_file.file_format, "parquet")) {
@@ -677,7 +682,8 @@ shared_ptr<MultiFileList> IcebergMultiFileReader::CreateFileList(ClientContext &
 	if (paths.size() != 1) {
 		throw BinderException("'iceberg_scan' only supports single path as input");
 	}
-	return make_shared_ptr<IcebergMultiFileList>(context, paths[0], this->options);
+	auto storage_location = IcebergUtils::GetStorageLocation(context, paths[0]);
+	return make_shared_ptr<IcebergMultiFileList>(context, storage_location, this->options);
 }
 
 bool IcebergMultiFileReader::Bind(MultiFileOptions &options, MultiFileList &files, vector<LogicalType> &return_types,
@@ -861,9 +867,13 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	D_ASSERT(global_state);
 	// Get the metadata for this file
 	const auto &multi_file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state->file_list);
+	{
+		lock_guard<mutex> guard(multi_file_list.lock);
+		D_ASSERT(multi_file_list.initialized);
+	}
 	auto &reader = *reader_data.reader;
 	auto file_id = reader.file_list_idx.GetIndex();
-	auto &data_file = multi_file_list.data_files[file_id];
+	const auto &data_file = multi_file_list.data_files[file_id];
 
 	// The path of the data file where this chunk was read from
 	const auto &file_path = data_file.file_path;
@@ -1010,7 +1020,7 @@ void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &en
 
 void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry,
                                           const vector<MultiFileColumnDefinition> &global_columns) const {
-	auto &delete_file_path = entry.file_path;
+	const auto &delete_file_path = entry.file_path;
 	auto &instance = DatabaseInstance::GetDatabase(context);
 	//! FIXME: delete files could also be made without row_ids,
 	//! in which case we need to rely on the `'schema.column-mapping.default'` property just like data files do.

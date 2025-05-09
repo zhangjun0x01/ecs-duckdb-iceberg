@@ -53,7 +53,8 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 	auto ret = make_uniq<IcebergMetaDataBindData>();
 
 	FileSystem &fs = FileSystem::GetFileSystem(context);
-	auto iceberg_path = input.inputs[0].ToString();
+	auto input_string = input.inputs[0].ToString();
+	auto iceberg_path = IcebergUtils::GetStorageLocation(context, input_string);
 
 	IcebergOptions options;
 
