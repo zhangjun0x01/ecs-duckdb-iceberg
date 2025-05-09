@@ -60,7 +60,7 @@ INSERT INTO partition_bool VALUES
 )
 
 # Strip the column that we're partitioned on from the data files
-parquet_files = glob.glob("data/persistent/partition_bool/data/partition_col=2024-01-0*/*.parquet")
+parquet_files = glob.glob("data/persistent/partition_double/data/partition_col=*/*.parquet")
 for file in parquet_files:
     duckdb.execute(
         f"""

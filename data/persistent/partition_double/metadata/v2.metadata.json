@@ -1,9 +1,9 @@
 {
   "format-version" : 2,
-  "table-uuid" : "109ccecb-ca4a-4fa2-8a39-451288d5e6a6",
-  "location" : "data/persistent/partition_float",
+  "table-uuid" : "5ea35046-9334-4f03-98ff-d59ab27b28cb",
+  "location" : "data/persistent/partition_double",
   "last-sequence-number" : 1,
-  "last-updated-ms" : 1746798041751,
+  "last-updated-ms" : 1746798033134,
   "last-column-id" : 3,
   "current-schema-id" : 0,
   "schemas" : [ {
@@ -49,20 +49,20 @@
     "write.parquet.compression-codec" : "zstd",
     "write.data.partition-columns" : "false"
   },
-  "current-snapshot-id" : 326079526498417653,
+  "current-snapshot-id" : 484560513910627928,
   "refs" : {
     "main" : {
-      "snapshot-id" : 326079526498417653,
+      "snapshot-id" : 484560513910627928,
       "type" : "branch"
     }
   },
   "snapshots" : [ {
     "sequence-number" : 1,
-    "snapshot-id" : 326079526498417653,
-    "timestamp-ms" : 1746798041751,
+    "snapshot-id" : 484560513910627928,
+    "timestamp-ms" : 1746798033134,
     "summary" : {
       "operation" : "append",
-      "spark.app.id" : "local-1746798039332",
+      "spark.app.id" : "local-1746798030695",
       "added-data-files" : "2",
       "added-records" : "2",
       "added-files-size" : "1884",
@@ -74,16 +74,16 @@
       "total-position-deletes" : "0",
       "total-equality-deletes" : "0"
     },
-    "manifest-list" : "data/persistent/partition_float/metadata/snap-326079526498417653-1-2b2411c7-bb7c-4b2e-8bbf-6c4d80592fbc.avro",
+    "manifest-list" : "data/persistent/partition_double/metadata/snap-484560513910627928-1-f5d6805d-af92-41a6-afbd-7d1742464e92.avro",
     "schema-id" : 0
   } ],
   "statistics" : [ ],
   "snapshot-log" : [ {
-    "timestamp-ms" : 1746798041751,
-    "snapshot-id" : 326079526498417653
+    "timestamp-ms" : 1746798033134,
+    "snapshot-id" : 484560513910627928
   } ],
   "metadata-log" : [ {
-    "timestamp-ms" : 1746798040391,
-    "metadata-file" : "data/persistent/partition_float/metadata/v1.metadata.json"
+    "timestamp-ms" : 1746798031746,
+    "metadata-file" : "data/persistent/partition_double/metadata/v1.metadata.json"
   } ]
 }

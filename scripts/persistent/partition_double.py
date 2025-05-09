@@ -34,7 +34,7 @@ import duckdb
 
 spark.sql(
     """
-CREATE OR REPLACE TABLE partition_float (
+CREATE OR REPLACE TABLE partition_double (
     partition_col FLOAT,
     user_id BIGINT,
     event_type STRING
@@ -53,9 +53,9 @@ TBLPROPERTIES (
 
 spark.sql(
     """
-INSERT INTO partition_float VALUES
-  (1.23, 12345, 'click'),
-  (4.56, 67890, 'purchase');
+INSERT INTO partition_double VALUES
+  (3.141592653589793, 12345, 'click'),
+  (2.718281828459045, 67890, 'purchase');
 """
 )
 

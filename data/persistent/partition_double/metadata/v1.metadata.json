@@ -1,9 +1,9 @@
 {
   "format-version" : 2,
-  "table-uuid" : "e657babf-548f-4493-bdb2-df1992a329ec",
-  "location" : "data/persistent/partition_bool",
+  "table-uuid" : "5ea35046-9334-4f03-98ff-d59ab27b28cb",
+  "location" : "data/persistent/partition_double",
   "last-sequence-number" : 0,
-  "last-updated-ms" : 1746798017464,
+  "last-updated-ms" : 1746798031746,
   "last-column-id" : 3,
   "current-schema-id" : 0,
   "schemas" : [ {
@@ -13,7 +13,7 @@
       "id" : 1,
       "name" : "partition_col",
       "required" : false,
-      "type" : "boolean"
+      "type" : "float"
     }, {
       "id" : 2,
       "name" : "user_id",
