@@ -218,30 +218,19 @@ unique_ptr<LogicalOperator> IRCatalog::BindCreateIndex(Binder &binder, CreateSta
 	throw NotImplementedException("ICCatalog BindCreateIndex");
 }
 
-bool IRCatalog::HasCachedValue(string url) const {
+string IRCatalog::OptionalGetCachedValue(const string &url) const {
 	auto value = metadata_cache.find(url);
 	if (value != metadata_cache.end()) {
-		auto now = std::chrono::system_clock::now();
-		if (now < value->second->expires_at) {
-			return true;
-		}
-	}
-	return false;
-}
-
-string IRCatalog::GetCachedValue(string url) const {
-	auto value = metadata_cache.find(url);
-	if (value != metadata_cache.end()) {
-		auto now = std::chrono::system_clock::now();
+		auto now = system_clock::now();
 		if (now < value->second->expires_at) {
 			return value->second->data;
 		}
 	}
-	throw InternalException("Cached value does not exist");
+	return "";
 }
 
-//! FIXME: this always returns false???
-bool IRCatalog::SetCachedValue(string url, const string &value, const rest_api_objects::LoadTableResult &result) {
+bool IRCatalog::SetCachedValue(const string &url, const string &value,
+                               const rest_api_objects::LoadTableResult &result) {
 	//! FIXME: shouldn't this also store the 'storage-credentials' ??
 	if (!result.has_config) {
 		return false;
@@ -253,11 +242,11 @@ bool IRCatalog::SetCachedValue(string url, const string &value, const rest_api_o
 	}
 
 	auto &expires_at = expires_at_it->second;
-	auto epochMillis = std::stoll(expires_at.c_str());
-	auto expired_time = std::chrono::system_clock::time_point(std::chrono::milliseconds(epochMillis));
+	auto epochMillis = std::stoll(expires_at);
+	auto expired_time = system_clock::time_point(milliseconds(epochMillis));
 	auto val = make_uniq<MetadataCacheValue>(value, expired_time);
 	metadata_cache[url] = std::move(val);
-	return false;
+	return true;
 }
 
 } // namespace duckdb
