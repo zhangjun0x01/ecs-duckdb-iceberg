@@ -77,6 +77,11 @@ struct YearTransform {
 			auto components = Timestamp::GetComponents(val);
 			return Value::INTEGER(components.year - 1970);
 		}
+		case LogicalTypeId::TIMESTAMP_TZ: {
+			auto val = constant.GetValue<timestamp_tz_t>();
+			auto components = Timestamp::GetComponents(val);
+			return Value::INTEGER(components.year - 1970);
+		}
 		default:
 			throw NotImplementedException("'year' transform for type %s", constant.type().ToString());
 		}
