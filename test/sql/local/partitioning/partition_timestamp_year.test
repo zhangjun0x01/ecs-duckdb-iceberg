@@ -1,0 +1,43 @@
+# name: test/sql/local/partitioning/partition_timestamp_year.test
+# group: [partitioning]
+
+require avro
+
+require parquet
+
+require iceberg
+
+require httpfs
+
+query III
+select * from ICEBERG_SCAN('data/persistent/partition_timestamp_year') ORDER BY partition_col;
+----
+2020-05-15 14:30:45	12345	click
+2021-08-22 09:15:20	67890	purchase
+2022-03-10 11:45:30	54321	view
+
+# Test filtering by year
+query I
+select user_id from ICEBERG_SCAN('data/persistent/partition_timestamp_year') 
+WHERE partition_col = '2020-05-15 14:30:45'
+----
+12345
+
+query I
+select user_id from ICEBERG_SCAN('data/persistent/partition_timestamp_year') 
+WHERE partition_col = '2021-08-22 09:15:20'
+----
+67890
+
+query I
+select user_id from ICEBERG_SCAN('data/persistent/partition_timestamp_year') 
+WHERE partition_col = '2022-03-10 11:45:30'
+----
+54321
+
+# Test filtering by timestamp range
+query I
+select user_id from ICEBERG_SCAN('data/persistent/partition_timestamp_year') 
+WHERE partition_col >= '2021-01-01' AND partition_col < '2022-01-01';
+----
+67890
