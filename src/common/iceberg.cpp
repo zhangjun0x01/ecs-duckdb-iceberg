@@ -123,14 +123,14 @@ bool IcebergPartitionSpec::IsUnpartitioned() const {
 	return !IsPartitioned();
 }
 
-const IcebergPartitionSpecField &IcebergPartitionSpec::GetFieldBySourceId(idx_t field_id) const {
+const IcebergPartitionSpecField &IcebergPartitionSpec::GetFieldBySourceId(idx_t source_id) const {
 	for (auto &field : fields) {
-		if (field.source_id == field_id) {
+		if (field.source_id == source_id) {
 			return field;
 		}
 	}
 	throw InvalidConfigurationException("Field with source_id %d doesn't exist in this partition spec (id %d)",
-	                                    field_id, spec_id);
+	                                    source_id, spec_id);
 }
 
 static void ParseFieldMappings(yyjson_val *obj, vector<IcebergFieldMapping> &mappings, idx_t &mapping_index,

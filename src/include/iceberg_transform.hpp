@@ -1,6 +1,6 @@
 #pragma once
 
-#include "duckdb/common/types/value.hpp"
+#include "iceberg_predicate_stats.hpp"
 
 namespace duckdb {
 
@@ -47,44 +47,44 @@ private:
 };
 
 struct IdentityTransform {
-	static Value ApplyTransform(const Value &input, const IcebergTransform &transform) {
-		return input;
+	static Value ApplyTransform(const Value &constant, const IcebergTransform &transform) {
+		return constant;
 	}
-	static bool CompareEqual(const Value &constant, const Value &lower, const Value &upper) {
-		return constant >= lower && constant <= upper;
+	static bool CompareEqual(const Value &constant, const IcebergPredicateStats &stats) {
+		return constant >= stats.lower_bound && constant <= stats.upper_bound;
 	}
-	static bool CompareLessThan(const Value &constant, const Value &lower, const Value &upper) {
-		return lower < constant;
+	static bool CompareLessThan(const Value &constant, const IcebergPredicateStats &stats) {
+		return stats.lower_bound < constant;
 	}
-	static bool CompareLessThanOrEqual(const Value &constant, const Value &lower, const Value &upper) {
-		return lower <= constant;
+	static bool CompareLessThanOrEqual(const Value &constant, const IcebergPredicateStats &stats) {
+		return stats.lower_bound <= constant;
 	}
-	static bool CompareGreaterThan(const Value &constant, const Value &lower, const Value &upper) {
-		return upper > constant;
+	static bool CompareGreaterThan(const Value &constant, const IcebergPredicateStats &stats) {
+		return stats.upper_bound > constant;
 	}
-	static bool CompareGreaterThanOrEqual(const Value &constant, const Value &lower, const Value &upper) {
-		return upper >= constant;
+	static bool CompareGreaterThanOrEqual(const Value &constant, const IcebergPredicateStats &stats) {
+		return stats.upper_bound >= constant;
 	}
 };
 
 // struct DayTransform {
-//	static Value ApplyTransform(const Value &input, const IcebergTransform &transform) {
+//	static Value ApplyTransform(const Value &constant, const IcebergTransform &transform) {
 //		throw NotImplementedException("'day' transform ApplyTransform");
 //	}
-//	static bool CompareEqual(const Value &constant, const Value &lower, const Value &upper) {
-//		return constant >= lower && constant <= upper;
+//	static bool CompareEqual(const Value &constant, const IcebergPredicateStats &stats) {
+//		return constant >= stats.lower_bound && constant <= stats.upper_bound;
 //	}
-//	static bool CompareLessThan(const Value &constant, const Value &lower, const Value &upper) {
-//		return lower <= constant;
+//	static bool CompareLessThan(const Value &constant, const IcebergPredicateStats &stats) {
+//		return stats.lower_bound <= constant;
 //	}
-//	static bool CompareLessThanOrEqual(const Value &constant, const Value &lower, const Value &upper) {
-//		return lower <= constant;
+//	static bool CompareLessThanOrEqual(const Value &constant, const IcebergPredicateStats &stats) {
+//		return stats.lower_bound <= constant;
 //	}
-//	static bool CompareGreaterThan(const Value &constant, const Value &lower, const Value &upper) {
-//		return upper >= constant;
+//	static bool CompareGreaterThan(const Value &constant, const IcebergPredicateStats &stats) {
+//		return stats.upper_bound >= constant;
 //	}
-//	static bool CompareGreaterThanOrEqual(const Value &constant, const Value &lower, const Value &upper) {
-//		return upper >= constant;
+//	static bool CompareGreaterThanOrEqual(const Value &constant, const IcebergPredicateStats &stats) {
+//		return stats.upper_bound >= constant;
 //	}
 //};
 

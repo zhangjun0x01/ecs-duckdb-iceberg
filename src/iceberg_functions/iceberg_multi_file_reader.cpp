@@ -1,6 +1,7 @@
 #include "iceberg_multi_file_reader.hpp"
 #include "iceberg_utils.hpp"
 #include "iceberg_predicate.hpp"
+#include "iceberg_predicate_stats.hpp"
 
 #include "duckdb/catalog/catalog_entry/table_function_catalog_entry.hpp"
 #include "duckdb/common/exception.hpp"
@@ -366,10 +367,12 @@ bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 			transform = field.transform;
 		}
 
-		auto lower_bound = DeserializeBound<true>(lower_bound_it->second, column);
-		auto upper_bound = DeserializeBound<false>(upper_bound_it->second, column);
+		IcebergPredicateStats stats;
+		stats.lower_bound = DeserializeBound<true>(lower_bound_it->second, column);
+		stats.upper_bound = DeserializeBound<false>(upper_bound_it->second, column);
+
 		auto &filter = *it->second;
-		if (!IcebergPredicate::MatchBounds(filter, lower_bound, upper_bound, transform)) {
+		if (!IcebergPredicate::MatchBounds(filter, stats, transform)) {
 			//! If any predicate fails, exclude the file
 			return false;
 		}
@@ -513,11 +516,12 @@ bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 		}
 
 		auto &column = schema[column_id];
-		auto lower_bound = DeserializeBound<true>(field_summary.lower_bound, column);
-		auto upper_bound = DeserializeBound<false>(field_summary.upper_bound, column);
+		IcebergPredicateStats stats;
+		stats.lower_bound = DeserializeBound<true>(field_summary.lower_bound, column);
+		stats.upper_bound = DeserializeBound<false>(field_summary.upper_bound, column);
 
 		auto &filter = *filter_it->second;
-		if (!IcebergPredicate::MatchBounds(filter, lower_bound, upper_bound, field.transform)) {
+		if (!IcebergPredicate::MatchBounds(filter, stats, field.transform)) {
 			return false;
 		}
 	}
