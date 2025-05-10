@@ -26,7 +26,10 @@ static Value DeserializeDecimalTemplated(const string_t &blob, uint8_t width, ui
 		// Fill remaining bytes with 1s for negative numbers
 		idx_t shift_amount = (sizeof(VALUE_TYPE) - blob.GetSize()) * 8;
 		if (shift_amount > 0) {
-			ret |= ~((VALUE_TYPE)0) << (blob.GetSize() * 8);
+			// Create a mask with 1s in the upper bits that need to be filled
+			VALUE_TYPE mask = ((VALUE_TYPE)1 << shift_amount) - 1;
+			mask = mask << (blob.GetSize() * 8);
+			ret |= mask;
 		}
 	}
 
@@ -56,7 +59,10 @@ static Value DeserializeHugeintDecimal(const string_t &blob, uint8_t width, uint
 	if (blob.GetSize() > 0 && (src[0] & 0x80)) {
 		// Fill remaining bytes with 1s for negative numbers
 		if (upper_bytes < sizeof(int64_t)) {
-			upper_val |= ~((int64_t)0) << (upper_bytes * 8);
+			// Create a mask with 1s in the upper bits that need to be filled
+			int64_t mask = ((int64_t)1 << ((sizeof(int64_t) - upper_bytes) * 8)) - 1;
+			mask = mask << (upper_bytes * 8);
+			upper_val |= mask;
 		}
 	}
 
