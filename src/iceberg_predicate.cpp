@@ -79,7 +79,7 @@ bool IcebergPredicate::MatchBounds(TableFilter &filter, const IcebergPredicateSt
 	case IcebergTransformType::VOID:
 		return true;
 	default:
-		throw InternalException("Transform '%s' not implemented", transform.RawType());
+		throw InvalidConfigurationException("Transform '%s' not implemented", transform.RawType());
 	}
 }
 
