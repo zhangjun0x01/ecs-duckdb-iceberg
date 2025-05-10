@@ -121,6 +121,7 @@ public:
 	string file_format;
 	vector<int32_t> equality_ids;
 	int64_t record_count;
+	//! source_id -> blob
 	unordered_map<int32_t, string> lower_bounds;
 	unordered_map<int32_t, string> upper_bounds;
 	Value partition;
