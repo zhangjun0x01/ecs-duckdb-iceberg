@@ -86,7 +86,7 @@ IcebergPartitionSpecField IcebergPartitionSpecField::ParseFromJson(yyjson_val *f
 	IcebergPartitionSpecField result;
 
 	result.name = IcebergUtils::TryGetStrFromObject(field, "name");
-	result.transform = IcebergUtils::TryGetStrFromObject(field, "transform");
+	result.transform = IcebergTransform(IcebergUtils::TryGetStrFromObject(field, "transform"));
 	result.source_id = IcebergUtils::TryGetNumFromObject(field, "source-id");
 	result.partition_field_id = IcebergUtils::TryGetNumFromObject(field, "field-id");
 	return result;
@@ -111,7 +111,7 @@ IcebergPartitionSpec IcebergPartitionSpec::ParseFromJson(yyjson_val *partition_s
 bool IcebergPartitionSpec::IsPartitioned() const {
 	//! A partition spec is considered partitioned if it has at least one field that doesn't have a 'void' transform
 	for (const auto &field : fields) {
-		if (!StringUtil::CIEquals(field.transform, "void")) {
+		if (field.transform != IcebergTransformType::VOID) {
 			return true;
 		}
 	}
@@ -121,6 +121,16 @@ bool IcebergPartitionSpec::IsPartitioned() const {
 
 bool IcebergPartitionSpec::IsUnpartitioned() const {
 	return !IsPartitioned();
+}
+
+const IcebergPartitionSpecField &IcebergPartitionSpec::GetFieldBySourceId(idx_t source_id) const {
+	for (auto &field : fields) {
+		if (field.source_id == source_id) {
+			return field;
+		}
+	}
+	throw InvalidConfigurationException("Field with source_id %d doesn't exist in this partition spec (id %d)",
+	                                    source_id, spec_id);
 }
 
 static void ParseFieldMappings(yyjson_val *obj, vector<IcebergFieldMapping> &mappings, idx_t &mapping_index,
