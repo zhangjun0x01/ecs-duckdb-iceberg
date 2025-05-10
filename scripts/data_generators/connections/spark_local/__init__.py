@@ -31,6 +31,7 @@ class IcebergSparkLocal(IcebergConnection):
         conf.set('spark.driver.memory', '10g')
         conf.set('spark.jars', SPARK_RUNTIME_PATH)
         conf.set('spark.sql.extensions', 'org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions')
+        conf.set('spark.sql.session.timeZone', 'America/Los_Angeles')
         spark = pyspark.sql.SparkSession.builder.config(conf=conf).getOrCreate()
         sc = spark.sparkContext
         sc.setLogLevel("ERROR")
