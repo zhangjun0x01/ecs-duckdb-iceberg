@@ -165,6 +165,9 @@ DeserializeResult IcebergValue::DeserializeValue(const string_t &blob, const Log
 		std::memcpy(&val, blob.GetData(), sizeof(double));
 		return Value::DOUBLE(val);
 	}
+	case LogicalTypeId::BLOB: {
+		return Value::BLOB((data_ptr_t)blob.GetData(), blob.GetSize());
+	}
 	case LogicalTypeId::VARCHAR: {
 		// Assume the bytes represent a UTF-8 string
 		return Value(blob);
