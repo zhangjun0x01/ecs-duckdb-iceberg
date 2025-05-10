@@ -14,6 +14,7 @@
 #include "iceberg_options.hpp"
 #include "rest_catalog/objects/struct_field.hpp"
 #include "duckdb/common/open_file_info.hpp"
+#include "iceberg_transform.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -40,10 +41,8 @@ public:
 
 public:
 	string name;
-	//! FIXME: parse this, there are a set amount of valid transforms
-	//! See: https://iceberg.apache.org/spec/#partition-specs
 	//! "Applied to the source column(s) to produce a partition value"
-	string transform;
+	IcebergTransform transform;
 	//! NOTE: v3 replaces 'source-id' with 'source-ids'
 	//! "A source column id or a list of source column ids from the table’s schema"
 	uint64_t source_id;
@@ -58,6 +57,7 @@ public:
 public:
 	bool IsUnpartitioned() const;
 	bool IsPartitioned() const;
+	const IcebergPartitionSpecField &GetFieldBySourceId(idx_t field_id) const;
 
 public:
 	uint64_t spec_id;

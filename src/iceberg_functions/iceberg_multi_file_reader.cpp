@@ -1,5 +1,6 @@
 #include "iceberg_multi_file_reader.hpp"
 #include "iceberg_utils.hpp"
+#include "iceberg_predicate.hpp"
 
 #include "duckdb/catalog/catalog_entry/table_function_catalog_entry.hpp"
 #include "duckdb/common/exception.hpp"
@@ -8,8 +9,6 @@
 #include "duckdb/parallel/thread_context.hpp"
 #include "duckdb/parser/tableref/table_function_ref.hpp"
 #include "duckdb/parser/expression/constant_expression.hpp"
-#include "duckdb/planner/filter/constant_filter.hpp"
-#include "duckdb/planner/filter/conjunction_filter.hpp"
 #include "duckdb/planner/expression/bound_comparison_expression.hpp"
 #include "duckdb/planner/expression/bound_constant_expression.hpp"
 #include "duckdb/planner/expression/bound_operator_expression.hpp"
@@ -327,56 +326,6 @@ unique_ptr<NodeStatistics> IcebergMultiFileList::GetCardinality(ClientContext &c
 	return make_uniq<NodeStatistics>(cardinality, cardinality);
 }
 
-static bool BoundsMatchFilter(TableFilter &table_filter, const Value &lower_bound, const Value &upper_bound);
-
-static bool BoundsMatchConstantFilter(ConstantFilter &constant_filter, const Value &lower_bound,
-                                      const Value &upper_bound) {
-	auto &constant_value = constant_filter.constant;
-	switch (constant_filter.comparison_type) {
-	case ExpressionType::COMPARE_EQUAL:
-		return constant_value >= lower_bound && constant_value <= upper_bound;
-	case ExpressionType::COMPARE_GREATERTHAN:
-		return !(upper_bound <= constant_value);
-	case ExpressionType::COMPARE_GREATERTHANOREQUALTO:
-		return !(upper_bound < constant_value);
-	case ExpressionType::COMPARE_LESSTHAN:
-		return !(lower_bound >= constant_value);
-	case ExpressionType::COMPARE_LESSTHANOREQUALTO:
-		return !(lower_bound > constant_value);
-	default:
-		//! Conservative approach: we don't know, so we just say it's not filtered out
-		return true;
-	}
-}
-
-static bool BoundsMatchConjunctionAndFilter(ConjunctionAndFilter &conjunction_and, const Value &lower_bound,
-                                            const Value &upper_bound) {
-	for (auto &child : conjunction_and.child_filters) {
-		if (!BoundsMatchFilter(*child, lower_bound, upper_bound)) {
-			return false;
-		}
-	}
-	return true;
-}
-
-static bool BoundsMatchFilter(TableFilter &filter, const Value &lower_bound, const Value &upper_bound) {
-	//! TODO: support more filter types
-	switch (filter.filter_type) {
-	case TableFilterType::CONSTANT_COMPARISON: {
-		auto &constant_filter = filter.Cast<ConstantFilter>();
-		return BoundsMatchConstantFilter(constant_filter, lower_bound, upper_bound);
-	}
-	case TableFilterType::CONJUNCTION_AND: {
-		//! TODO: If anything fails, return false
-		auto &conjunction_and_filter = filter.Cast<ConjunctionAndFilter>();
-		return BoundsMatchConjunctionAndFilter(conjunction_and_filter, lower_bound, upper_bound);
-	}
-	default:
-		//! Conservative approach: we don't know what this is, just say it doesn't filter anything
-		return true;
-	}
-}
-
 bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 	D_ASSERT(!table_filters.filters.empty());
 
@@ -396,18 +345,31 @@ bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 			continue;
 		}
 
-		auto &field_id = column.id;
-		auto lower_bound_it = file.lower_bounds.find(field_id);
-		auto upper_bound_it = file.upper_bounds.find(field_id);
+		auto &source_id = column.id;
+		auto spec_id = file.partition_spec_id;
+		auto partition_spec_it = metadata->partition_specs.find(spec_id);
+		if (partition_spec_it == metadata->partition_specs.end()) {
+			throw InvalidInputException("DataFile %s references 'partition_spec_id' %d which doesn't exist",
+			                            file.file_path, spec_id);
+		}
+		auto &partition_spec = partition_spec_it->second;
+
+		auto lower_bound_it = file.lower_bounds.find(source_id);
+		auto upper_bound_it = file.upper_bounds.find(source_id);
 		if (lower_bound_it == file.lower_bounds.end() || upper_bound_it == file.upper_bounds.end()) {
 			//! There are no bound statistics for this column
 			continue;
+		}
+		reference<const IcebergTransform> transform(IcebergTransform::Identity());
+		if (partition_spec.IsPartitioned()) {
+			auto &field = partition_spec.GetFieldBySourceId(source_id);
+			transform = field.transform;
 		}
 
 		auto lower_bound = DeserializeBound<true>(lower_bound_it->second, column);
 		auto upper_bound = DeserializeBound<false>(upper_bound_it->second, column);
 		auto &filter = *it->second;
-		if (!BoundsMatchFilter(filter, lower_bound, upper_bound)) {
+		if (!IcebergPredicate::MatchBounds(filter, lower_bound, upper_bound, transform)) {
 			//! If any predicate fails, exclude the file
 			return false;
 		}
@@ -538,10 +500,6 @@ bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 		auto &field_summary = manifest.field_summary[i];
 		auto &field = partition_spec.fields[i];
 
-		if (field.transform != "identity") {
-			//! FIXME: add support for different transformations
-			continue;
-		}
 		auto column_id = source_to_column_id.at(field.source_id);
 
 		// Find if we have a filter for this source column
@@ -559,7 +517,7 @@ bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 		auto upper_bound = DeserializeBound<false>(field_summary.upper_bound, column);
 
 		auto &filter = *filter_it->second;
-		if (!BoundsMatchFilter(filter, lower_bound, upper_bound)) {
+		if (!IcebergPredicate::MatchBounds(filter, lower_bound, upper_bound, field.transform)) {
 			return false;
 		}
 	}
