@@ -190,15 +190,11 @@ DeserializeResult IcebergValue::DeserializeValue(const string_t &blob, const Log
 		std::memcpy(&val.micros, blob.GetData(), sizeof(int64_t));
 		return Value::TIME(val);
 	}
-	case LogicalTypeId::TIMESTAMP_NS: {
-		throw NotImplementedException("timestamp_ns");
-	}
-	case LogicalTypeId::UUID: {
-		if (blob.GetSize() != 16) {
-			return DeserializeError(blob, type);
-		}
-		return Value::UUID(blob.GetString());
-	}
+	case LogicalTypeId::TIMESTAMP_NS:
+		//! TIMESTAMP_NS is added as part of Iceberg V3
+	case LogicalTypeId::UUID:
+		//! UUID not implemented yet
+		return DeserializeError(blob, type);
 	// Add more types as needed
 	default:
 		break;
