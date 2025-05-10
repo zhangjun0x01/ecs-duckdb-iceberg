@@ -227,31 +227,18 @@ bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 		}
 
 		auto &source_id = column.id;
-		auto spec_id = file.partition_spec_id;
-		auto partition_spec_it = metadata->partition_specs.find(spec_id);
-		if (partition_spec_it == metadata->partition_specs.end()) {
-			throw InvalidInputException("DataFile %s references 'partition_spec_id' %d which doesn't exist",
-			                            file.file_path, spec_id);
-		}
-		auto &partition_spec = partition_spec_it->second;
-
 		auto lower_bound_it = file.lower_bounds.find(source_id);
 		auto upper_bound_it = file.upper_bounds.find(source_id);
 		if (lower_bound_it == file.lower_bounds.end() || upper_bound_it == file.upper_bounds.end()) {
 			//! There are no bound statistics for this column
 			continue;
 		}
-		reference<const IcebergTransform> transform(IcebergTransform::Identity());
-		if (partition_spec.IsPartitioned()) {
-			auto &field = partition_spec.GetFieldBySourceId(source_id);
-			transform = field.transform;
-		}
 
 		IcebergPredicateStats stats;
 		DeserializeBounds(lower_bound_it->second, upper_bound_it->second, column.name, column.type, stats);
 
 		auto &filter = *it->second;
-		if (!IcebergPredicate::MatchBounds(filter, stats, transform)) {
+		if (!IcebergPredicate::MatchBounds(filter, stats, IcebergTransform::Identity())) {
 			//! If any predicate fails, exclude the file
 			return false;
 		}
