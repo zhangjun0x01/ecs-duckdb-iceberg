@@ -4,6 +4,11 @@
 namespace duckdb {
 
 struct IcebergPredicateStats {
+public:
+	IcebergPredicateStats() {
+	}
+
+public:
 	Value lower_bound;
 	Value upper_bound;
 };

@@ -21,6 +21,7 @@ set(EXTENSION_SOURCES
     src/aws.cpp
     src/iceberg_transform.cpp
     src/iceberg_predicate.cpp
+    src/iceberg_value.cpp
     src/common/utils.cpp
     src/common/url_utils.cpp
     src/common/schema.cpp

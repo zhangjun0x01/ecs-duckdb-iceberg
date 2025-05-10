@@ -1,5 +1,6 @@
 # This file is included by DuckDB's build system. It specifies which extension to load
 
+duckdb_extension_load(icu)
 duckdb_extension_load(avro
         LOAD_TESTS
         GIT_URL https://github.com/duckdb/duckdb_avro
