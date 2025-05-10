@@ -2,6 +2,7 @@
 #include "iceberg_utils.hpp"
 #include "iceberg_predicate.hpp"
 #include "iceberg_predicate_stats.hpp"
+#include "iceberg_value.hpp"
 
 #include "duckdb/catalog/catalog_entry/table_function_catalog_entry.hpp"
 #include "duckdb/common/exception.hpp"
@@ -52,182 +53,6 @@ void IcebergMultiFileList::Bind(vector<LogicalType> &return_types, vector<string
 	have_bound = true;
 	this->names = names;
 	this->types = return_types;
-}
-
-template <bool LOWER_BOUND = true>
-[[noreturn]] static void ThrowBoundError(const string &bound, const IcebergColumnDefinition &column) {
-	auto bound_type = LOWER_BOUND ? "'lower_bound'" : "'upper_bound'";
-	throw InvalidInputException("Invalid %s size (%d) for column %s with type '%s', bound value: '%s'", bound_type,
-	                            bound.size(), column.name, column.type.ToString(), bound);
-}
-
-template <class VALUE_TYPE>
-static Value DeserializeDecimalBoundTemplated(const string &bound_value, uint8_t width, uint8_t scale) {
-	VALUE_TYPE ret = 0;
-	//! The blob has to be smaller or equal to the size of the type
-	D_ASSERT(bound_value.size() <= sizeof(VALUE_TYPE));
-	std::memcpy(&ret, bound_value.data(), bound_value.size());
-	return Value::DECIMAL(ret, width, scale);
-}
-
-static Value DeserializeHugeintDecimalBound(const string &bound_value, uint8_t width, uint8_t scale) {
-	hugeint_t ret;
-
-	//! The blob has to be smaller or equal to the size of the type
-	D_ASSERT(bound_value.size() <= sizeof(hugeint_t));
-	int64_t upper_val = 0;
-	uint64_t lower_val = 0;
-	// Read upper and lower parts of hugeint
-
-	idx_t upper_val_size = MinValue(bound_value.size(), sizeof(int64_t));
-
-	std::memcpy(&upper_val, bound_value.data(), upper_val_size);
-	if (bound_value.size() > sizeof(int64_t)) {
-		idx_t lower_val_size = MinValue(bound_value.size() - sizeof(int64_t), sizeof(uint64_t));
-		std::memcpy(&lower_val, bound_value.data() + sizeof(int64_t), lower_val_size);
-	}
-	ret = hugeint_t(upper_val, lower_val);
-	return Value::DECIMAL(ret, width, scale);
-}
-
-template <bool LOWER_BOUND = true>
-static Value DeserializeDecimalBound(const string &bound_value, const IcebergColumnDefinition &column) {
-	D_ASSERT(column.type.id() == LogicalTypeId::DECIMAL);
-
-	uint8_t width;
-	uint8_t scale;
-	if (!column.type.GetDecimalProperties(width, scale)) {
-		ThrowBoundError<LOWER_BOUND>(bound_value, column);
-	}
-
-	auto physical_type = column.type.InternalType();
-	switch (physical_type) {
-	case PhysicalType::INT16: {
-		return DeserializeDecimalBoundTemplated<int16_t>(bound_value, width, scale);
-	}
-	case PhysicalType::INT32: {
-		return DeserializeDecimalBoundTemplated<int32_t>(bound_value, width, scale);
-	}
-	case PhysicalType::INT64: {
-		return DeserializeDecimalBoundTemplated<int64_t>(bound_value, width, scale);
-	}
-	case PhysicalType::INT128: {
-		return DeserializeHugeintDecimalBound(bound_value, width, scale);
-	}
-	default:
-		throw InternalException("DeserializeDecimalBound not implemented for physical type '%s'",
-		                        TypeIdToString(physical_type));
-	}
-}
-
-//! FIXME: because of schema evolution, there are rules for inferring the correct type that we need to apply:
-//! See https://iceberg.apache.org/spec/#schema-evolution
-template <bool LOWER_BOUND = true>
-static Value DeserializeBound(const string &bound_value, const IcebergColumnDefinition &column) {
-	auto &type = column.type;
-
-	switch (type.id()) {
-	case LogicalTypeId::INTEGER: {
-		if (bound_value.size() != sizeof(int32_t)) {
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		int32_t val;
-		std::memcpy(&val, bound_value.data(), sizeof(int32_t));
-		return Value::INTEGER(val);
-	}
-	case LogicalTypeId::BIGINT: {
-		if (bound_value.size() != sizeof(int64_t)) {
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		int64_t val;
-		std::memcpy(&val, bound_value.data(), sizeof(int64_t));
-		return Value::BIGINT(val);
-	}
-	case LogicalTypeId::DATE: {
-		if (bound_value.size() != sizeof(int32_t)) { // Dates are typically stored as int32 (days since epoch)
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		int32_t days_since_epoch;
-		std::memcpy(&days_since_epoch, bound_value.data(), sizeof(int32_t));
-		// Convert to DuckDB date
-		date_t date = Date::EpochDaysToDate(days_since_epoch);
-		return Value::DATE(date);
-	}
-	case LogicalTypeId::TIMESTAMP: {
-		if (bound_value.size() !=
-		    sizeof(int64_t)) { // Timestamps are typically stored as int64 (microseconds since epoch)
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		int64_t micros_since_epoch;
-		std::memcpy(&micros_since_epoch, bound_value.data(), sizeof(int64_t));
-		// Convert to DuckDB timestamp using microseconds
-		timestamp_t timestamp = Timestamp::FromEpochMicroSeconds(micros_since_epoch);
-		return Value::TIMESTAMP(timestamp);
-	}
-	case LogicalTypeId::TIMESTAMP_TZ: {
-		if (bound_value.size() != sizeof(int64_t)) { // Assuming stored as int64 (microseconds since epoch)
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		int64_t micros_since_epoch;
-		std::memcpy(&micros_since_epoch, bound_value.data(), sizeof(int64_t));
-		// Convert to DuckDB timestamp using microseconds
-		timestamp_t timestamp = Timestamp::FromEpochMicroSeconds(micros_since_epoch);
-		// Create a TIMESTAMPTZ Value
-		return Value::TIMESTAMPTZ(timestamp_tz_t(timestamp));
-	}
-	case LogicalTypeId::DOUBLE: {
-		if (bound_value.size() != sizeof(double)) {
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		double val;
-		std::memcpy(&val, bound_value.data(), sizeof(double));
-		return Value::DOUBLE(val);
-	}
-	case LogicalTypeId::VARCHAR: {
-		// Assume the bytes represent a UTF-8 string
-		return Value(bound_value);
-	}
-	case LogicalTypeId::DECIMAL: {
-		return DeserializeDecimalBound(bound_value, column);
-	}
-	case LogicalTypeId::BOOLEAN: {
-		if (bound_value.size() != 1) {
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		const bool val = bound_value[0] != '\0';
-		return Value::BOOLEAN(val);
-	}
-	case LogicalTypeId::FLOAT: {
-		if (bound_value.size() != sizeof(float)) {
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		float val;
-		std::memcpy(&val, bound_value.data(), sizeof(float));
-		return Value::FLOAT(val);
-	}
-	case LogicalTypeId::TIME: {
-		if (bound_value.size() != sizeof(int64_t)) {
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		//! bound stores microseconds since midnight
-		dtime_t val;
-		std::memcpy(&val.micros, bound_value.data(), sizeof(int64_t));
-		return Value::TIME(val);
-	}
-	case LogicalTypeId::TIMESTAMP_NS: {
-		throw NotImplementedException("timestamp_ns");
-	}
-	case LogicalTypeId::UUID: {
-		if (bound_value.size() != 16) {
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		return Value::UUID(bound_value);
-	}
-	// Add more types as needed
-	default:
-		break;
-	}
-	ThrowBoundError<LOWER_BOUND>(bound_value, column);
 }
 
 unique_ptr<IcebergMultiFileList> IcebergMultiFileList::PushdownInternal(ClientContext &context,
@@ -362,6 +187,25 @@ unique_ptr<NodeStatistics> IcebergMultiFileList::GetCardinality(ClientContext &c
 	return make_uniq<NodeStatistics>(cardinality, cardinality);
 }
 
+static void DeserializeBounds(const string &lower_bound, const string &upper_bound,
+                              const IcebergColumnDefinition &column, IcebergPredicateStats &out) {
+	string_t lower_bound_blob(lower_bound.data(), lower_bound.size());
+	string_t upper_bound_blob(upper_bound.data(), upper_bound.size());
+	auto deserialized_lower_bound = IcebergValue::DeserializeValue(lower_bound_blob, column.type);
+	auto deserialized_upper_bound = IcebergValue::DeserializeValue(upper_bound_blob, column.type);
+
+	if (deserialized_lower_bound.HasError()) {
+		throw InvalidConfigurationException("Column %s lower bound deserialization failed: %s", column.name,
+		                                    deserialized_lower_bound.GetError());
+	}
+	if (deserialized_upper_bound.HasError()) {
+		throw InvalidConfigurationException("Column %s upper bound deserialization failed: %s", column.name,
+		                                    deserialized_upper_bound.GetError());
+	}
+	out.lower_bound = deserialized_lower_bound.GetValue();
+	out.upper_bound = deserialized_upper_bound.GetValue();
+}
+
 bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 	D_ASSERT(!table_filters.filters.empty());
 
@@ -403,8 +247,7 @@ bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 		}
 
 		IcebergPredicateStats stats;
-		stats.lower_bound = DeserializeBound<true>(lower_bound_it->second, column);
-		stats.upper_bound = DeserializeBound<false>(upper_bound_it->second, column);
+		DeserializeBounds(lower_bound_it->second, upper_bound_it->second, column, stats);
 
 		auto &filter = *it->second;
 		if (!IcebergPredicate::MatchBounds(filter, stats, transform)) {
@@ -552,8 +395,7 @@ bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 
 		auto &column = schema[column_id];
 		IcebergPredicateStats stats;
-		stats.lower_bound = DeserializeBound<true>(field_summary.lower_bound, column);
-		stats.upper_bound = DeserializeBound<false>(field_summary.upper_bound, column);
+		DeserializeBounds(field_summary.lower_bound, field_summary.upper_bound, column, stats);
 
 		auto &filter = *filter_it->second;
 		if (!IcebergPredicate::MatchBounds(filter, stats, field.transform)) {
@@ -761,37 +603,46 @@ static void ApplyFieldMapping(MultiFileColumnDefinition &col, vector<IcebergFiel
 	}
 }
 
+static Value TransformPartitionValueFromBlob(const string_t &blob, const LogicalType &type) {
+	auto result = IcebergValue::DeserializeValue(blob, type);
+	if (result.HasError()) {
+		throw InvalidConfigurationException(result.GetError());
+	}
+	return result.GetValue();
+}
+
+template <class T>
+static Value TransformPartitionValueTemplated(const Value &value, const LogicalType &type) {
+	T val = value.GetValue<T>();
+	string_t blob((const char *)&val, sizeof(T));
+	return TransformPartitionValueFromBlob(blob, type);
+}
+
 static Value TransformPartitionValue(const Value &value, const LogicalType &type) {
-	switch (type.id()) {
-	case LogicalTypeId::DATE: {
-		D_ASSERT(value.type().id() == LogicalTypeId::INTEGER);
-		return Value::DATE(Date::EpochDaysToDate(value.GetValue<int32_t>()));
+	D_ASSERT(!value.type().IsNested());
+	switch (value.type().InternalType()) {
+	case PhysicalType::BOOL:
+		return TransformPartitionValueTemplated<bool>(value, type);
+	case PhysicalType::INT8:
+		return TransformPartitionValueTemplated<int8_t>(value, type);
+	case PhysicalType::INT16:
+		return TransformPartitionValueTemplated<int16_t>(value, type);
+	case PhysicalType::INT32:
+		return TransformPartitionValueTemplated<int32_t>(value, type);
+	case PhysicalType::INT64:
+		return TransformPartitionValueTemplated<int64_t>(value, type);
+	case PhysicalType::INT128:
+		return TransformPartitionValueTemplated<hugeint_t>(value, type);
+	case PhysicalType::FLOAT:
+		return TransformPartitionValueTemplated<float>(value, type);
+	case PhysicalType::DOUBLE:
+		return TransformPartitionValueTemplated<double>(value, type);
+	case PhysicalType::VARCHAR: {
+		return TransformPartitionValueFromBlob(value.GetValueUnsafe<string_t>(), type);
 	}
-	case LogicalTypeId::TIMESTAMP: {
-		D_ASSERT(value.type().id() == LogicalTypeId::BIGINT);
-		auto timestamp = Timestamp::FromEpochMicroSeconds(value.GetValue<int64_t>());
-		return Value::TIMESTAMP(timestamp);
-	}
-	case LogicalTypeId::TIMESTAMP_TZ: {
-		D_ASSERT(value.type().id() == LogicalTypeId::BIGINT);
-		auto timestamp = Timestamp::FromEpochMicroSeconds(value.GetValue<int64_t>());
-		return Value::TIMESTAMPTZ(timestamp_tz_t(timestamp));
-	}
-	case LogicalTypeId::UUID: {
-		D_ASSERT(value.type().id() == LogicalTypeId::VARCHAR);
-		return Value::UUID(value.GetValue<string>());
-	}
-	case LogicalTypeId::VARCHAR:
-	case LogicalTypeId::BLOB:
-	case LogicalTypeId::FLOAT:
-	case LogicalTypeId::DOUBLE:
-	case LogicalTypeId::BIGINT:
-	case LogicalTypeId::INTEGER:
-	case LogicalTypeId::BOOLEAN:
-		return value;
 	default:
-		throw NotImplementedException("Can't cast partition value (%s) of type '%s' to type '%s'", value.ToString(),
-		                              value.type().ToString(), type.ToString());
+		throw NotImplementedException("TransformPartitionValue: Value: '%s' -> '%s'", value.ToString(),
+		                              type.ToString());
 	}
 }
 
