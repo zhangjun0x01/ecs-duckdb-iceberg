@@ -769,7 +769,13 @@ static Value TransformPartitionValue(const Value &value, const LogicalType &type
 	}
 	case LogicalTypeId::TIMESTAMP: {
 		D_ASSERT(value.type().id() == LogicalTypeId::BIGINT);
-		return Value::TIMESTAMP(Timestamp::FromEpochMicroSeconds(value.GetValue<int64_t>()));
+		auto timestamp = Timestamp::FromEpochMicroSeconds(value.GetValue<int64_t>());
+		return Value::TIMESTAMP(timestamp);
+	}
+	case LogicalTypeId::TIMESTAMP_TZ: {
+		D_ASSERT(value.type().id() == LogicalTypeId::BIGINT);
+		auto timestamp = Timestamp::FromEpochMicroSeconds(value.GetValue<int64_t>());
+		return Value::TIMESTAMPTZ(timestamp_tz_t(timestamp));
 	}
 	case LogicalTypeId::UUID: {
 		D_ASSERT(value.type().id() == LogicalTypeId::VARCHAR);
@@ -779,6 +785,9 @@ static Value TransformPartitionValue(const Value &value, const LogicalType &type
 	case LogicalTypeId::BLOB:
 	case LogicalTypeId::FLOAT:
 	case LogicalTypeId::DOUBLE:
+	case LogicalTypeId::BIGINT:
+	case LogicalTypeId::INTEGER:
+	case LogicalTypeId::BOOLEAN:
 		return value;
 	default:
 		throw NotImplementedException("Can't cast partition value (%s) of type '%s' to type '%s'", value.ToString(),
@@ -840,7 +849,7 @@ static void ApplyPartitionConstants(const IcebergMultiFileList &multi_file_list,
 		}
 
 		auto &field = partition_spec.fields[it->second];
-		if (field.transform != "identity") {
+		if (field.transform != IcebergTransformType::IDENTITY) {
 			continue; // Skip non-identity transforms
 		}
 

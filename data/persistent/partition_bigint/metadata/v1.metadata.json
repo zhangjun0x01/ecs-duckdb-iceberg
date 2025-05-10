@@ -1,9 +1,9 @@
 {
   "format-version" : 2,
-  "table-uuid" : "8491ab88-8bea-4f43-b826-9df7b9fb99e5",
+  "table-uuid" : "49e5a3b9-f8af-497a-9fed-7edd59dc1f43",
   "location" : "data/persistent/partition_bigint",
   "last-sequence-number" : 0,
-  "last-updated-ms" : 1746798024296,
+  "last-updated-ms" : 1746881363873,
   "last-column-id" : 3,
   "current-schema-id" : 0,
   "schemas" : [ {

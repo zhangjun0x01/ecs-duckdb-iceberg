@@ -7,6 +7,8 @@ from pyiceberg.utils.datetime import datetime_to_micros
 from datetime import datetime, timezone
 import pyarrow as pa
 import os
+import glob
+import duckdb
 
 timestamps = [
     datetime(2023, 5, 15, 14, 30, 45, tzinfo=timezone.utc),

@@ -1,9 +1,9 @@
 {
   "format-version" : 2,
-  "table-uuid" : "5ea35046-9334-4f03-98ff-d59ab27b28cb",
+  "table-uuid" : "4014e1a3-4706-495c-9b2e-196045426cc8",
   "location" : "data/persistent/partition_double",
   "last-sequence-number" : 0,
-  "last-updated-ms" : 1746798031746,
+  "last-updated-ms" : 1746881387766,
   "last-column-id" : 3,
   "current-schema-id" : 0,
   "schemas" : [ {

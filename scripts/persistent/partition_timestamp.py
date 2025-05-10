@@ -7,6 +7,8 @@ from pyiceberg.utils.datetime import datetime_to_micros
 from datetime import datetime
 import pyarrow as pa
 import os
+import glob
+import duckdb
 
 timestamps = ["2023-05-15T14:30:45", "2023-08-22T09:15:20"]
 # Convert to datetime objects and then to microseconds since epoch
