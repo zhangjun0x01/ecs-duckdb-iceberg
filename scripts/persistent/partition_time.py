@@ -9,6 +9,8 @@ from pyiceberg.table.metadata import TableMetadata
 from datetime import time
 import pyarrow as pa
 import os
+import glob
+import duckdb
 
 
 # Utility to convert 'HH:MM:SS' into microseconds since midnight

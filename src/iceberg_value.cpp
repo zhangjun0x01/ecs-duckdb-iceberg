@@ -14,7 +14,22 @@ static Value DeserializeDecimalTemplated(const string_t &blob, uint8_t width, ui
 	VALUE_TYPE ret = 0;
 	//! The blob has to be smaller or equal to the size of the type
 	D_ASSERT(blob.GetSize() <= sizeof(VALUE_TYPE));
-	std::memcpy(&ret, blob.GetData(), blob.GetSize());
+
+	// Convert from big-endian to host byte order
+	const uint8_t *src = reinterpret_cast<const uint8_t *>(blob.GetData());
+	for (idx_t i = 0; i < blob.GetSize(); i++) {
+		ret = (ret << 8) | src[i];
+	}
+
+	// Handle sign extension for negative numbers (if high bit is set)
+	if (blob.GetSize() > 0 && (src[0] & 0x80)) {
+		// Fill remaining bytes with 1s for negative numbers
+		idx_t shift_amount = (sizeof(VALUE_TYPE) - blob.GetSize()) * 8;
+		if (shift_amount > 0) {
+			ret |= ~((VALUE_TYPE)0) << (blob.GetSize() * 8);
+		}
+	}
+
 	return Value::DECIMAL(ret, width, scale);
 }
 
@@ -23,17 +38,35 @@ static Value DeserializeHugeintDecimal(const string_t &blob, uint8_t width, uint
 
 	//! The blob has to be smaller or equal to the size of the type
 	D_ASSERT(blob.GetSize() <= sizeof(hugeint_t));
+
+	// Convert from big-endian to host byte order
+	const uint8_t *src = reinterpret_cast<const uint8_t *>(blob.GetData());
 	int64_t upper_val = 0;
 	uint64_t lower_val = 0;
-	// Read upper and lower parts of hugeint
 
-	idx_t upper_val_size = MinValue<idx_t>(blob.GetSize(), sizeof(int64_t));
+	// Calculate how many bytes go into upper and lower parts
+	idx_t upper_bytes = (blob.GetSize() <= sizeof(uint64_t)) ? blob.GetSize() : (blob.GetSize() - sizeof(uint64_t));
 
-	std::memcpy(&upper_val, blob.GetData(), upper_val_size);
-	if (blob.GetSize() > sizeof(int64_t)) {
-		idx_t lower_val_size = MinValue(static_cast<size_t>(blob.GetSize() - sizeof(int64_t)), sizeof(uint64_t));
-		std::memcpy(&lower_val, blob.GetData() + sizeof(int64_t), lower_val_size);
+	// Read upper part (big-endian)
+	for (idx_t i = 0; i < upper_bytes; i++) {
+		upper_val = (upper_val << 8) | src[i];
 	}
+
+	// Handle sign extension for negative numbers
+	if (blob.GetSize() > 0 && (src[0] & 0x80)) {
+		// Fill remaining bytes with 1s for negative numbers
+		if (upper_bytes < sizeof(int64_t)) {
+			upper_val |= ~((int64_t)0) << (upper_bytes * 8);
+		}
+	}
+
+	// Read lower part if there are remaining bytes
+	if (blob.GetSize() > sizeof(int64_t)) {
+		for (idx_t i = upper_bytes; i < blob.GetSize(); i++) {
+			lower_val = (lower_val << 8) | src[i];
+		}
+	}
+
 	ret = hugeint_t(upper_val, lower_val);
 	return Value::DECIMAL(ret, width, scale);
 }
