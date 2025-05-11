@@ -2,6 +2,7 @@
 #include "iceberg_utils.hpp"
 #include "iceberg_predicate.hpp"
 #include "iceberg_predicate_stats.hpp"
+#include "iceberg_value.hpp"
 
 #include "duckdb/catalog/catalog_entry/table_function_catalog_entry.hpp"
 #include "duckdb/common/exception.hpp"
@@ -52,147 +53,6 @@ void IcebergMultiFileList::Bind(vector<LogicalType> &return_types, vector<string
 	have_bound = true;
 	this->names = names;
 	this->types = return_types;
-}
-
-template <bool LOWER_BOUND = true>
-[[noreturn]] static void ThrowBoundError(const string &bound, const IcebergColumnDefinition &column) {
-	auto bound_type = LOWER_BOUND ? "'lower_bound'" : "'upper_bound'";
-	throw InvalidInputException("Invalid %s size (%d) for column %s with type '%s', bound value: '%s'", bound_type,
-	                            bound.size(), column.name, column.type.ToString(), bound);
-}
-
-template <class VALUE_TYPE>
-static Value DeserializeDecimalBoundTemplated(const string &bound_value, uint8_t width, uint8_t scale) {
-	VALUE_TYPE ret = 0;
-	//! The blob has to be smaller or equal to the size of the type
-	D_ASSERT(bound_value.size() <= sizeof(VALUE_TYPE));
-	std::memcpy(&ret, bound_value.data(), bound_value.size());
-	return Value::DECIMAL(ret, width, scale);
-}
-
-static Value DeserializeHugeintDecimalBound(const string &bound_value, uint8_t width, uint8_t scale) {
-	hugeint_t ret;
-
-	//! The blob has to be smaller or equal to the size of the type
-	D_ASSERT(bound_value.size() <= sizeof(hugeint_t));
-	int64_t upper_val = 0;
-	uint64_t lower_val = 0;
-	// Read upper and lower parts of hugeint
-
-	idx_t upper_val_size = MinValue(bound_value.size(), sizeof(int64_t));
-
-	std::memcpy(&upper_val, bound_value.data(), upper_val_size);
-	if (bound_value.size() > sizeof(int64_t)) {
-		idx_t lower_val_size = MinValue(bound_value.size() - sizeof(int64_t), sizeof(uint64_t));
-		std::memcpy(&lower_val, bound_value.data() + sizeof(int64_t), lower_val_size);
-	}
-	ret = hugeint_t(upper_val, lower_val);
-	return Value::DECIMAL(ret, width, scale);
-}
-
-template <bool LOWER_BOUND = true>
-static Value DeserializeDecimalBound(const string &bound_value, const IcebergColumnDefinition &column) {
-	D_ASSERT(column.type.id() == LogicalTypeId::DECIMAL);
-
-	uint8_t width;
-	uint8_t scale;
-	if (!column.type.GetDecimalProperties(width, scale)) {
-		ThrowBoundError<LOWER_BOUND>(bound_value, column);
-	}
-
-	auto physical_type = column.type.InternalType();
-	switch (physical_type) {
-	case PhysicalType::INT16: {
-		return DeserializeDecimalBoundTemplated<int16_t>(bound_value, width, scale);
-	}
-	case PhysicalType::INT32: {
-		return DeserializeDecimalBoundTemplated<int32_t>(bound_value, width, scale);
-	}
-	case PhysicalType::INT64: {
-		return DeserializeDecimalBoundTemplated<int64_t>(bound_value, width, scale);
-	}
-	case PhysicalType::INT128: {
-		return DeserializeHugeintDecimalBound(bound_value, width, scale);
-	}
-	default:
-		throw InternalException("DeserializeDecimalBound not implemented for physical type '%s'",
-		                        TypeIdToString(physical_type));
-	}
-}
-
-template <bool LOWER_BOUND = true>
-static Value DeserializeBound(const string &bound_value, const IcebergColumnDefinition &column) {
-	auto &type = column.type;
-
-	switch (type.id()) {
-	case LogicalTypeId::INTEGER: {
-		if (bound_value.size() != sizeof(int32_t)) {
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		int32_t val;
-		std::memcpy(&val, bound_value.data(), sizeof(int32_t));
-		return Value::INTEGER(val);
-	}
-	case LogicalTypeId::BIGINT: {
-		if (bound_value.size() != sizeof(int64_t)) {
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		int64_t val;
-		std::memcpy(&val, bound_value.data(), sizeof(int64_t));
-		return Value::BIGINT(val);
-	}
-	case LogicalTypeId::DATE: {
-		if (bound_value.size() != sizeof(int32_t)) { // Dates are typically stored as int32 (days since epoch)
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		int32_t days_since_epoch;
-		std::memcpy(&days_since_epoch, bound_value.data(), sizeof(int32_t));
-		// Convert to DuckDB date
-		date_t date = Date::EpochDaysToDate(days_since_epoch);
-		return Value::DATE(date);
-	}
-	case LogicalTypeId::TIMESTAMP: {
-		if (bound_value.size() !=
-		    sizeof(int64_t)) { // Timestamps are typically stored as int64 (microseconds since epoch)
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		int64_t micros_since_epoch;
-		std::memcpy(&micros_since_epoch, bound_value.data(), sizeof(int64_t));
-		// Convert to DuckDB timestamp using microseconds
-		timestamp_t timestamp = Timestamp::FromEpochMicroSeconds(micros_since_epoch);
-		return Value::TIMESTAMP(timestamp);
-	}
-	case LogicalTypeId::TIMESTAMP_TZ: {
-		if (bound_value.size() != sizeof(int64_t)) { // Assuming stored as int64 (microseconds since epoch)
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		int64_t micros_since_epoch;
-		std::memcpy(&micros_since_epoch, bound_value.data(), sizeof(int64_t));
-		// Convert to DuckDB timestamp using microseconds
-		timestamp_t timestamp = Timestamp::FromEpochMicroSeconds(micros_since_epoch);
-		// Create a TIMESTAMPTZ Value
-		return Value::TIMESTAMPTZ(timestamp_tz_t(timestamp));
-	}
-	case LogicalTypeId::DOUBLE: {
-		if (bound_value.size() != sizeof(double)) {
-			ThrowBoundError<LOWER_BOUND>(bound_value, column);
-		}
-		double val;
-		std::memcpy(&val, bound_value.data(), sizeof(double));
-		return Value::DOUBLE(val);
-	}
-	case LogicalTypeId::VARCHAR: {
-		// Assume the bytes represent a UTF-8 string
-		return Value(bound_value);
-	}
-	case LogicalTypeId::DECIMAL: {
-		return DeserializeDecimalBound(bound_value, column);
-	}
-	// Add more types as needed
-	default:
-		break;
-	}
-	ThrowBoundError<LOWER_BOUND>(bound_value, column);
 }
 
 unique_ptr<IcebergMultiFileList> IcebergMultiFileList::PushdownInternal(ClientContext &context,
@@ -327,6 +187,25 @@ unique_ptr<NodeStatistics> IcebergMultiFileList::GetCardinality(ClientContext &c
 	return make_uniq<NodeStatistics>(cardinality, cardinality);
 }
 
+static void DeserializeBounds(const string &lower_bound, const string &upper_bound,
+                              const IcebergColumnDefinition &column, IcebergPredicateStats &out) {
+	string_t lower_bound_blob(lower_bound.data(), lower_bound.size());
+	string_t upper_bound_blob(upper_bound.data(), upper_bound.size());
+	auto deserialized_lower_bound = IcebergValue::DeserializeValue(lower_bound_blob, column.type);
+	auto deserialized_upper_bound = IcebergValue::DeserializeValue(upper_bound_blob, column.type);
+
+	if (deserialized_lower_bound.HasError()) {
+		throw InvalidConfigurationException("Column %s lower bound deserialization failed: %s", column.name,
+		                                    deserialized_lower_bound.GetError());
+	}
+	if (deserialized_upper_bound.HasError()) {
+		throw InvalidConfigurationException("Column %s upper bound deserialization failed: %s", column.name,
+		                                    deserialized_upper_bound.GetError());
+	}
+	out.lower_bound = deserialized_lower_bound.GetValue();
+	out.upper_bound = deserialized_upper_bound.GetValue();
+}
+
 bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 	D_ASSERT(!table_filters.filters.empty());
 
@@ -368,8 +247,7 @@ bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 		}
 
 		IcebergPredicateStats stats;
-		stats.lower_bound = DeserializeBound<true>(lower_bound_it->second, column);
-		stats.upper_bound = DeserializeBound<false>(upper_bound_it->second, column);
+		DeserializeBounds(lower_bound_it->second, upper_bound_it->second, column, stats);
 
 		auto &filter = *it->second;
 		if (!IcebergPredicate::MatchBounds(filter, stats, transform)) {
@@ -517,8 +395,7 @@ bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 
 		auto &column = schema[column_id];
 		IcebergPredicateStats stats;
-		stats.lower_bound = DeserializeBound<true>(field_summary.lower_bound, *column);
-		stats.upper_bound = DeserializeBound<false>(field_summary.upper_bound, *column);
+		DeserializeBounds(field_summary.lower_bound, field_summary.upper_bound, *column, stats);
 
 		auto &filter = *filter_it->second;
 		if (!IcebergPredicate::MatchBounds(filter, stats, field.transform)) {
@@ -674,7 +551,6 @@ bool IcebergMultiFileReader::Bind(MultiFileOptions &options, MultiFileList &file
 	for (auto &item : schema) {
 		columns.push_back(TransformColumn(*item));
 	}
-	//! FIXME: check if 'schema.name-mapping.default' is set, act on it to support "column-mapping"
 	bind_data.mapping = MultiFileColumnMappingMode::BY_FIELD_ID;
 	return true;
 }
@@ -737,6 +613,130 @@ static void ApplyFieldMapping(MultiFileColumnDefinition &col, vector<IcebergFiel
 	}
 }
 
+static Value TransformPartitionValueFromBlob(const string_t &blob, const LogicalType &type) {
+	auto result = IcebergValue::DeserializeValue(blob, type);
+	if (result.HasError()) {
+		throw InvalidConfigurationException(result.GetError());
+	}
+	return result.GetValue();
+}
+
+template <class T>
+static Value TransformPartitionValueTemplated(const Value &value, const LogicalType &type) {
+	T val = value.GetValue<T>();
+	string_t blob((const char *)&val, sizeof(T));
+	return TransformPartitionValueFromBlob(blob, type);
+}
+
+static Value TransformPartitionValue(const Value &value, const LogicalType &type) {
+	D_ASSERT(!value.type().IsNested());
+	switch (value.type().InternalType()) {
+	case PhysicalType::BOOL:
+		return TransformPartitionValueTemplated<bool>(value, type);
+	case PhysicalType::INT8:
+		return TransformPartitionValueTemplated<int8_t>(value, type);
+	case PhysicalType::INT16:
+		return TransformPartitionValueTemplated<int16_t>(value, type);
+	case PhysicalType::INT32:
+		return TransformPartitionValueTemplated<int32_t>(value, type);
+	case PhysicalType::INT64:
+		return TransformPartitionValueTemplated<int64_t>(value, type);
+	case PhysicalType::INT128:
+		return TransformPartitionValueTemplated<hugeint_t>(value, type);
+	case PhysicalType::FLOAT:
+		return TransformPartitionValueTemplated<float>(value, type);
+	case PhysicalType::DOUBLE:
+		return TransformPartitionValueTemplated<double>(value, type);
+	case PhysicalType::VARCHAR: {
+		return TransformPartitionValueFromBlob(value.GetValueUnsafe<string_t>(), type);
+	}
+	default:
+		throw NotImplementedException("TransformPartitionValue: Value: '%s' -> '%s'", value.ToString(),
+		                              type.ToString());
+	}
+}
+
+static void ApplyPartitionConstants(const IcebergMultiFileList &multi_file_list, MultiFileReaderData &reader_data,
+                                    const vector<MultiFileColumnDefinition> &global_columns,
+                                    const vector<ColumnIndex> &global_column_ids) {
+	// Get the metadata for this file
+	auto &reader = *reader_data.reader;
+	auto file_id = reader.file_list_idx.GetIndex();
+	auto &data_file = multi_file_list.data_files[file_id];
+
+	// Get the partition spec for this file
+	auto &partition_specs = multi_file_list.metadata->partition_specs;
+	auto spec_id = data_file.partition_spec_id;
+	auto partition_spec_it = partition_specs.find(spec_id);
+	if (partition_spec_it == partition_specs.end()) {
+		throw InvalidConfigurationException("'partition_spec_id' %d doesn't exist in the metadata", spec_id);
+	}
+
+	auto &partition_spec = partition_spec_it->second;
+	if (partition_spec.fields.empty()) {
+		return; // No partition fields, continue with normal mapping
+	}
+
+	unordered_map<uint64_t, idx_t> identifier_to_field_id;
+	for (idx_t i = 0; i < partition_spec.fields.size(); i++) {
+		auto &field = partition_spec.fields[i];
+		identifier_to_field_id[field.source_id] = i;
+	}
+
+	auto &local_columns = reader.columns;
+	unordered_map<uint64_t, idx_t> local_field_id_to_index;
+	for (idx_t i = 0; i < local_columns.size(); i++) {
+		auto &local_column = local_columns[i];
+		auto field_identifier = local_column.identifier.GetValue<int32_t>();
+		auto field_id = static_cast<uint64_t>(field_identifier);
+		local_field_id_to_index[field_id] = i;
+	}
+
+	for (idx_t i = 0; i < global_column_ids.size(); i++) {
+		auto global_id = global_column_ids[i];
+		if (global_id.IsVirtualColumn()) {
+			continue;
+		}
+		auto &global_column = global_columns[global_id.GetPrimaryIndex()];
+		auto field_id = static_cast<uint64_t>(global_column.identifier.GetValue<int32_t>());
+		if (local_field_id_to_index.count(field_id)) {
+			//! Column exists in the local columns of the file
+			continue;
+		}
+
+		auto it = identifier_to_field_id.find(field_id);
+		if (it == identifier_to_field_id.end()) {
+			continue;
+		}
+
+		auto &field = partition_spec.fields[it->second];
+		if (field.transform != IcebergTransformType::IDENTITY) {
+			continue; // Skip non-identity transforms
+		}
+
+		// Get the partition value from the data file's partition struct
+		auto partition_value = data_file.partition;
+		if (partition_value.IsNull()) {
+			continue; // No partition value available
+		}
+
+		// Extract the field value from the partition struct
+		const auto &struct_type = partition_value.type();
+		const auto &struct_children = StructValue::GetChildren(partition_value);
+
+		auto global_idx = MultiFileGlobalIndex(i);
+		for (idx_t i = 0; i < StructType::GetChildCount(struct_type); i++) {
+			auto &name = StructType::GetChildName(struct_type, i);
+			if (name == field.name) {
+				// Add to constant map - this will be used instead of reading from the file
+				reader_data.constant_map.Add(global_idx,
+				                             TransformPartitionValue(struct_children[i], global_column.type));
+				break;
+			}
+		}
+	}
+}
+
 void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, const MultiFileOptions &file_options,
                                           const MultiFileReaderBindData &options,
                                           const vector<MultiFileColumnDefinition> &global_columns,
@@ -773,6 +773,7 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 			ApplyFieldMapping(local_column, mappings, root.field_mapping_indexes);
 		}
 	}
+	ApplyPartitionConstants(multi_file_list, reader_data, global_columns, global_column_ids);
 }
 
 void IcebergMultiFileList::ScanPositionalDeleteFile(DataChunk &result) const {

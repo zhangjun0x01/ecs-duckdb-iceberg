@@ -25,11 +25,13 @@ void ManifestReader::SetPartitionSpecID(int32_t partition_spec_id_p) {
 void ManifestReader::Initialize(unique_ptr<AvroScan> scan_p) {
 	const bool first_init = scan == nullptr;
 	scan = std::move(scan_p);
-	if (first_init) {
-		scan->InitializeChunk(chunk);
-	} else {
-		chunk.Reset();
+	if (!first_init) {
+		chunk.Destroy();
 	}
+	//! Reinitialize for every new scan, the schema isn't guaranteed to be the same for every scan
+	//! the 'partition' of the 'data_file' is based on the partition spec referenced by the manifest
+	scan->InitializeChunk(chunk);
+
 	finished = false;
 	offset = 0;
 	name_to_vec.clear();
