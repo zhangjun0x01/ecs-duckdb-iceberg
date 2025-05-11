@@ -1,6 +1,8 @@
 #include "iceberg_predicate.hpp"
 #include "duckdb/planner/filter/constant_filter.hpp"
 #include "duckdb/planner/filter/conjunction_filter.hpp"
+#include "duckdb/planner/filter/null_filter.hpp"
+#include "duckdb/planner/filter/expression_filter.hpp"
 
 namespace duckdb {
 
@@ -11,6 +13,11 @@ template <class TRANSFORM>
 static bool MatchBoundsConstantFilter(ConstantFilter &constant_filter, const IcebergPredicateStats &stats,
                                       const IcebergTransform &transform) {
 	auto constant_value = TRANSFORM::ApplyTransform(constant_filter.constant, transform);
+
+	if (constant_value.IsNull() || stats.lower_bound.IsNull() || stats.upper_bound.IsNull()) {
+		//! Can't compare when there are no bounds
+		return true;
+	}
 
 	switch (constant_filter.comparison_type) {
 	case ExpressionType::COMPARE_EQUAL:
@@ -27,6 +34,16 @@ static bool MatchBoundsConstantFilter(ConstantFilter &constant_filter, const Ice
 		//! Conservative approach: we don't know, so we just say it's not filtered out
 		return true;
 	}
+}
+
+template <class TRANSFORM>
+static bool MatchBoundsIsNullFilter(const IcebergPredicateStats &stats, const IcebergTransform &transform) {
+	return stats.has_null == true;
+}
+
+template <class TRANSFORM>
+static bool MatchBoundsIsNotNullFilter(const IcebergPredicateStats &stats, const IcebergTransform &transform) {
+	return stats.has_null == false;
 }
 
 template <class TRANSFORM>
@@ -51,6 +68,26 @@ bool MatchBoundsTemplated(TableFilter &filter, const IcebergPredicateStats &stat
 	case TableFilterType::CONJUNCTION_AND: {
 		auto &conjunction_and_filter = filter.Cast<ConjunctionAndFilter>();
 		return MatchBoundsConjunctionAndFilter<TRANSFORM>(conjunction_and_filter, stats, transform);
+	}
+	case TableFilterType::IS_NULL: {
+		//! FIXME: these are never hit, because it goes through ExpressionFilter instead?
+		return MatchBoundsIsNullFilter<TRANSFORM>(stats, transform);
+	}
+	case TableFilterType::IS_NOT_NULL: {
+		//! FIXME: these are never hit, because it goes through ExpressionFilter instead?
+		return MatchBoundsIsNotNullFilter<TRANSFORM>(stats, transform);
+	}
+	case TableFilterType::EXPRESSION_FILTER: {
+		auto &expression_filter = filter.Cast<ExpressionFilter>();
+		auto &expr = *expression_filter.expr;
+		if (expr.type == ExpressionType::OPERATOR_IS_NULL) {
+			return MatchBoundsIsNullFilter<TRANSFORM>(stats, transform);
+		}
+		if (expr.type == ExpressionType::OPERATOR_IS_NOT_NULL) {
+			return MatchBoundsIsNotNullFilter<TRANSFORM>(stats, transform);
+		}
+		//! Any other expression can not be filtered
+		return true;
 	}
 	default:
 		//! Conservative approach: we don't know what this is, just say it doesn't filter anything

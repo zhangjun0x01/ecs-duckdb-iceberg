@@ -187,24 +187,33 @@ unique_ptr<NodeStatistics> IcebergMultiFileList::GetCardinality(ClientContext &c
 	return make_uniq<NodeStatistics>(cardinality, cardinality);
 }
 
-static void DeserializeBounds(const string &lower_bound, const string &upper_bound, const string &name,
+static void DeserializeBounds(const Value &lower_bound, const Value &upper_bound, const string &name,
                               const LogicalType &type, IcebergPredicateStats &out) {
-	string_t lower_bound_blob(lower_bound.data(), lower_bound.size());
-	string_t upper_bound_blob(upper_bound.data(), upper_bound.size());
-
-	auto deserialized_lower_bound = IcebergValue::DeserializeValue(lower_bound_blob, type);
-	auto deserialized_upper_bound = IcebergValue::DeserializeValue(upper_bound_blob, type);
-
-	if (deserialized_lower_bound.HasError()) {
-		throw InvalidConfigurationException("Column %s lower bound deserialization failed: %s", name,
-		                                    deserialized_lower_bound.GetError());
+	if (lower_bound.IsNull()) {
+		out.lower_bound = Value(type);
+	} else {
+		D_ASSERT(lower_bound.type().id() == LogicalTypeId::BLOB);
+		auto lower_bound_blob = lower_bound.GetValueUnsafe<string_t>();
+		auto deserialized_lower_bound = IcebergValue::DeserializeValue(lower_bound_blob, type);
+		if (deserialized_lower_bound.HasError()) {
+			throw InvalidConfigurationException("Column %s lower bound deserialization failed: %s", name,
+			                                    deserialized_lower_bound.GetError());
+		}
+		out.lower_bound = deserialized_lower_bound.GetValue();
 	}
-	if (deserialized_upper_bound.HasError()) {
-		throw InvalidConfigurationException("Column %s upper bound deserialization failed: %s", name,
-		                                    deserialized_upper_bound.GetError());
+
+	if (upper_bound.IsNull()) {
+		out.upper_bound = Value(type);
+	} else {
+		D_ASSERT(upper_bound.type().id() == LogicalTypeId::BLOB);
+		auto upper_bound_blob = upper_bound.GetValueUnsafe<string_t>();
+		auto deserialized_upper_bound = IcebergValue::DeserializeValue(upper_bound_blob, type);
+		if (deserialized_upper_bound.HasError()) {
+			throw InvalidConfigurationException("Column %s upper bound deserialization failed: %s", name,
+			                                    deserialized_upper_bound.GetError());
+		}
+		out.upper_bound = deserialized_upper_bound.GetValue();
 	}
-	out.lower_bound = deserialized_lower_bound.GetValue();
-	out.upper_bound = deserialized_upper_bound.GetValue();
 }
 
 bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
@@ -229,13 +238,27 @@ bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 		auto &source_id = column.id;
 		auto lower_bound_it = file.lower_bounds.find(source_id);
 		auto upper_bound_it = file.upper_bounds.find(source_id);
-		if (lower_bound_it == file.lower_bounds.end() || upper_bound_it == file.upper_bounds.end()) {
-			//! There are no bound statistics for this column
-			continue;
+		Value lower_bound;
+		Value upper_bound;
+		if (lower_bound_it != file.lower_bounds.end()) {
+			lower_bound = lower_bound_it->second;
+		}
+		if (upper_bound_it != file.upper_bounds.end()) {
+			upper_bound = upper_bound_it->second;
 		}
 
 		IcebergPredicateStats stats;
-		DeserializeBounds(lower_bound_it->second, upper_bound_it->second, column.name, column.type, stats);
+		DeserializeBounds(lower_bound, upper_bound, column.name, column.type, stats);
+		auto null_counts_it = file.null_value_counts.find(source_id);
+		if (null_counts_it != file.null_value_counts.end()) {
+			auto &null_counts = null_counts_it->second;
+			stats.has_null = null_counts != 0;
+		}
+		auto nan_counts_it = file.nan_value_counts.find(source_id);
+		if (nan_counts_it != file.nan_value_counts.end()) {
+			auto &nan_counts = nan_counts_it->second;
+			stats.has_nan = nan_counts != 0;
+		}
 
 		auto &filter = *it->second;
 		if (!IcebergPredicate::MatchBounds(filter, stats, IcebergTransform::Identity())) {
@@ -376,15 +399,13 @@ bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 		if (filter_it == table_filters.filters.end()) {
 			continue;
 		}
-		// Skip if no bounds available
-		if (field_summary.lower_bound.empty() || field_summary.upper_bound.empty()) {
-			continue;
-		}
 
 		auto &column = schema[column_id];
 		IcebergPredicateStats stats;
 		auto result_type = field.transform.GetSerializedType(column.type);
 		DeserializeBounds(field_summary.lower_bound, field_summary.upper_bound, column.name, result_type, stats);
+		stats.has_nan = field_summary.contains_nan;
+		stats.has_null = field_summary.contains_null;
 
 		auto &filter = *filter_it->second;
 		if (!IcebergPredicate::MatchBounds(filter, stats, field.transform)) {

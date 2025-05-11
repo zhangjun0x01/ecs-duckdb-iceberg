@@ -69,9 +69,9 @@ struct FieldSummary {
 	//! Optional
 	bool contains_nan = false;
 	//! Optional
-	string lower_bound;
+	Value lower_bound;
 	//! Optional
-	string upper_bound;
+	Value upper_bound;
 };
 
 //! An entry in the manifest list file (top level AVRO file)
@@ -122,8 +122,11 @@ public:
 	vector<int32_t> equality_ids;
 	int64_t record_count;
 	//! source_id -> blob
-	unordered_map<int32_t, string> lower_bounds;
-	unordered_map<int32_t, string> upper_bounds;
+	unordered_map<int32_t, Value> lower_bounds;
+	unordered_map<int32_t, Value> upper_bounds;
+	unordered_map<int32_t, int64_t> value_counts;
+	unordered_map<int32_t, int64_t> null_value_counts;
+	unordered_map<int32_t, int64_t> nan_value_counts;
 	Value partition;
 	//! Inherited from the 'manifest_file' if NULL and 'status == EXISTING'
 	sequence_number_t sequence_number;
