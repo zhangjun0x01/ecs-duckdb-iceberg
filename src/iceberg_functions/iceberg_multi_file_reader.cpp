@@ -724,8 +724,6 @@ static void ApplyPartitionConstants(const IcebergMultiFileList &multi_file_list,
 		const auto &struct_type = partition_value.type();
 		const auto &struct_children = StructValue::GetChildren(partition_value);
 
-		//! FIXME: this likely needs the same logic as `ManifestMatchesFilter`,
-		//! the field of the 'partition' should probably be deserialized using the "Result type" of the transform
 		auto global_idx = MultiFileGlobalIndex(i);
 		for (idx_t i = 0; i < StructType::GetChildCount(struct_type); i++) {
 			auto &name = StructType::GetChildName(struct_type, i);
