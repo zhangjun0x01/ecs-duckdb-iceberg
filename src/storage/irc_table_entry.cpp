@@ -80,7 +80,7 @@ string ICTableEntry::PrepareIcebergScanFromEntry(ClientContext &context) {
 		               lc_storage_location.begin(), ::tolower);
 		size_t metadata_pos = lc_storage_location.find("metadata");
 		if (metadata_pos != std::string::npos) {
-			info.scope = {lc_storage_location.substr(0, metadata_pos)};
+			info.scope = {table_data->storage_location.substr(0, metadata_pos)};
 		} else {
 			throw InvalidInputException("Substring not found");
 		}
