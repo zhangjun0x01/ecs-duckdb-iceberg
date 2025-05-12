@@ -19,7 +19,7 @@ require aws
 require tpch
 
 statement ok
-CREATE SECRET glue_secret (
+CREATE SECRET r2_secret (
     TYPE ICEBERG,
     TOKEN '${r2_token}'
 );
