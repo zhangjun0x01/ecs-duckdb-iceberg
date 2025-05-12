@@ -12,7 +12,9 @@
 #include "yyjson.hpp"
 #include "iceberg_types.hpp"
 #include "iceberg_options.hpp"
+#include "rest_catalog/objects/struct_field.hpp"
 #include "duckdb/common/open_file_info.hpp"
+#include "iceberg_transform.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -20,17 +22,55 @@ namespace duckdb {
 
 struct IcebergColumnDefinition {
 public:
-	static IcebergColumnDefinition ParseFromJson(yyjson_val *val);
-
+	static IcebergColumnDefinition ParseFromJson(rest_api_objects::StructField &field);
 	LogicalType ToDuckDBType() {
 		return type;
 	}
 
+public:
 	int32_t id;
 	string name;
 	LogicalType type;
 	Value default_value;
 	bool required;
+};
+
+struct IcebergPartitionSpecField {
+public:
+	static IcebergPartitionSpecField ParseFromJson(yyjson_val *val);
+
+public:
+	string name;
+	//! "Applied to the source column(s) to produce a partition value"
+	IcebergTransform transform;
+	//! NOTE: v3 replaces 'source-id' with 'source-ids'
+	//! "A source column id or a list of source column ids from the table’s schema"
+	uint64_t source_id;
+	//! "Used to identify a partition field and is unique within a partition spec"
+	uint64_t partition_field_id;
+};
+
+struct IcebergPartitionSpec {
+public:
+	static IcebergPartitionSpec ParseFromJson(yyjson_val *val);
+
+public:
+	bool IsUnpartitioned() const;
+	bool IsPartitioned() const;
+	const IcebergPartitionSpecField &GetFieldBySourceId(idx_t field_id) const;
+
+public:
+	uint64_t spec_id;
+	vector<IcebergPartitionSpecField> fields;
+};
+
+struct IcebergFieldMapping {
+public:
+	//! field-id can be omitted for the root of a struct
+	//! "Fields that exist in imported files but not in the Iceberg schema may omit field-id."
+	int32_t field_id = NumericLimits<int32_t>::Maximum();
+	//! "Fields which exist only in the Iceberg schema and not in imported data files may use an empty names list."
+	case_insensitive_map_t<idx_t> field_mapping_indexes;
 };
 
 struct IcebergMetadata {
@@ -53,9 +93,11 @@ public:
 
 	//! Parsed info
 	yyjson_val *snapshots;
+	unordered_map<int64_t, IcebergPartitionSpec> partition_specs;
 	vector<yyjson_val *> schemas;
 	uint64_t iceberg_version;
 	uint64_t schema_id;
+	vector<IcebergFieldMapping> mappings;
 };
 
 //! An Iceberg snapshot https://iceberg.apache.org/spec/#snapshots
@@ -77,8 +119,8 @@ public:
 	static IcebergSnapshot GetSnapshotByTimestamp(IcebergMetadata &info, timestamp_t timestamp,
 	                                              const IcebergOptions &options);
 
-	static IcebergSnapshot ParseSnapShot(yyjson_val *snapshot, idx_t iceberg_format_version, idx_t schema_id,
-	                                     vector<yyjson_val *> &schemas, const IcebergOptions &options);
+	static IcebergSnapshot ParseSnapShot(yyjson_val *snapshot, IcebergMetadata &metadata,
+	                                     const IcebergOptions &options);
 	static string GetMetaDataPath(ClientContext &context, const string &path, FileSystem &fs,
 	                              const IcebergOptions &options);
 

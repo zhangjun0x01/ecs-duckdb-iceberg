@@ -2,8 +2,11 @@
 
 namespace duckdb {
 
-ManifestReaderInput::ManifestReaderInput(const case_insensitive_map_t<ColumnIndex> &name_to_vec, bool skip_deleted)
-    : name_to_vec(name_to_vec), skip_deleted(skip_deleted) {
+ManifestReaderInput::ManifestReaderInput(const case_insensitive_map_t<ColumnIndex> &name_to_vec,
+                                         sequence_number_t sequence_number, int32_t partition_spec_id,
+                                         bool skip_deleted)
+    : name_to_vec(name_to_vec), skip_deleted(skip_deleted), sequence_number(sequence_number),
+      partition_spec_id(partition_spec_id) {
 }
 
 ManifestReader::ManifestReader(manifest_reader_name_mapping name_mapping,
@@ -11,14 +14,24 @@ ManifestReader::ManifestReader(manifest_reader_name_mapping name_mapping,
     : name_mapping(name_mapping), schema_validation(schema_validation) {
 }
 
+void ManifestReader::SetSequenceNumber(sequence_number_t sequence_number_p) {
+	sequence_number = sequence_number_p;
+}
+
+void ManifestReader::SetPartitionSpecID(int32_t partition_spec_id_p) {
+	partition_spec_id = partition_spec_id_p;
+}
+
 void ManifestReader::Initialize(unique_ptr<AvroScan> scan_p) {
 	const bool first_init = scan == nullptr;
 	scan = std::move(scan_p);
-	if (first_init) {
-		scan->InitializeChunk(chunk);
-	} else {
-		chunk.Reset();
+	if (!first_init) {
+		chunk.Destroy();
 	}
+	//! Reinitialize for every new scan, the schema isn't guaranteed to be the same for every scan
+	//! the 'partition' of the 'data_file' is based on the partition spec referenced by the manifest
+	scan->InitializeChunk(chunk);
+
 	finished = false;
 	offset = 0;
 	name_to_vec.clear();
@@ -53,7 +66,7 @@ idx_t ManifestReader::ReadEntries(idx_t count, manifest_reader_read callback) {
 		idx_t remaining = count - scanned;
 		idx_t to_scan = MinValue(chunk.size() - offset, remaining);
 
-		ManifestReaderInput input(name_to_vec, skip_deleted);
+		ManifestReaderInput input(name_to_vec, sequence_number, partition_spec_id, skip_deleted);
 		scanned += callback(chunk, offset, to_scan, input);
 		offset += count;
 	}
