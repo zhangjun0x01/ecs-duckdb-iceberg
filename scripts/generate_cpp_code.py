@@ -189,8 +189,19 @@ class PrimitiveTypeMapping:
 
 PRIMITIVE_TYPE_MAPPING = {
     'string': PrimitiveTypeMapping(type_check='yyjson_is_str', conversion='yyjson_get_str', cpp_type='string'),
-    # FIXME: yyjson distinguishes between 'sint' and 'uint', might want to make this distinction based on 'minimum'+'maximum' values if provided
-    'integer': PrimitiveTypeMapping(type_check='yyjson_is_int', conversion='yyjson_get_int', cpp_type='int64_t'),
+    'integer': PrimitiveTypeMapping(
+        type_check='yyjson_is_int',
+        conversion='yyjson_get_int',
+        cpp_type='int32_t',
+        formats={
+            'int64': PrimitiveTypeMapping(
+                type_check='yyjson_is_sint', conversion='yyjson_get_sint', cpp_type='int64_t'
+            ),
+            'uint': PrimitiveTypeMapping(
+                type_check='yyjson_is_uint', conversion='yyjson_get_uint', cpp_type='uint64_t'
+            ),
+        },
+    ),
     'boolean': PrimitiveTypeMapping(type_check='yyjson_is_bool', conversion='yyjson_get_bool', cpp_type='bool'),
     'number': PrimitiveTypeMapping(
         type_check='yyjson_is_num',
@@ -632,6 +643,8 @@ class CPPClass:
                 exit(1)
 
             type_mapping: PrimitiveTypeMapping = PRIMITIVE_TYPE_MAPPING[item_type]
+            if type_mapping.formats and property.format in type_mapping.formats:
+                type_mapping = type_mapping.formats[property.format]
             # NOTE: no need to really check the 'format' of the 'property' here
             # FIXME: 'target' is not the property name in the spec, it's already been transformed to the cpp variable name
             res.extend(
@@ -808,6 +821,9 @@ class CPPClass:
             primitive_property = cast(PrimitiveProperty, schema)
             primitive_type = primitive_property.primitive_type
             if primitive_type in PRIMITIVE_TYPE_MAPPING:
+                mapping = PRIMITIVE_TYPE_MAPPING[primitive_type]
+                if mapping.formats and schema.format in mapping.formats:
+                    return mapping.formats[schema.format].cpp_type
                 return PRIMITIVE_TYPE_MAPPING[primitive_type].cpp_type
             elif primitive_type == 'number':
                 if not primitive_property.format:

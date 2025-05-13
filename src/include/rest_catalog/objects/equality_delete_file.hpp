@@ -30,7 +30,7 @@ public:
 public:
 	ContentFile content_file;
 	string content;
-	vector<int64_t> equality_ids;
+	vector<int32_t> equality_ids;
 	bool has_equality_ids = false;
 };
 

@@ -42,8 +42,8 @@ string ScanReport::TryFromJSON(yyjson_val *obj) {
 	if (!snapshot_id_val) {
 		return "ScanReport required property 'snapshot-id' is missing";
 	} else {
-		if (yyjson_is_int(snapshot_id_val)) {
-			snapshot_id = yyjson_get_int(snapshot_id_val);
+		if (yyjson_is_sint(snapshot_id_val)) {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		} else {
 			return StringUtil::Format("ScanReport property 'snapshot_id' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(snapshot_id_val));
@@ -78,7 +78,7 @@ string ScanReport::TryFromJSON(yyjson_val *obj) {
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(projected_field_ids_val, idx, max, val) {
-				int64_t tmp;
+				int32_t tmp;
 				if (yyjson_is_int(val)) {
 					tmp = yyjson_get_int(val);
 				} else {

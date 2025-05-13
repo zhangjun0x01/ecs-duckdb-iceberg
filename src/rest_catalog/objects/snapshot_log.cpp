@@ -33,8 +33,8 @@ string SnapshotLog::Object3::TryFromJSON(yyjson_val *obj) {
 	if (!snapshot_id_val) {
 		return "Object3 required property 'snapshot-id' is missing";
 	} else {
-		if (yyjson_is_int(snapshot_id_val)) {
-			snapshot_id = yyjson_get_int(snapshot_id_val);
+		if (yyjson_is_sint(snapshot_id_val)) {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		} else {
 			return StringUtil::Format("Object3 property 'snapshot_id' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(snapshot_id_val));
@@ -44,8 +44,8 @@ string SnapshotLog::Object3::TryFromJSON(yyjson_val *obj) {
 	if (!timestamp_ms_val) {
 		return "Object3 required property 'timestamp-ms' is missing";
 	} else {
-		if (yyjson_is_int(timestamp_ms_val)) {
-			timestamp_ms = yyjson_get_int(timestamp_ms_val);
+		if (yyjson_is_sint(timestamp_ms_val)) {
+			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 		} else {
 			return StringUtil::Format("Object3 property 'timestamp_ms' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(timestamp_ms_val));

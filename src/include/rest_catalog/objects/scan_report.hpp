@@ -33,8 +33,8 @@ public:
 	string table_name;
 	int64_t snapshot_id;
 	unique_ptr<Expression> filter;
-	int64_t schema_id;
-	vector<int64_t> projected_field_ids;
+	int32_t schema_id;
+	vector<int32_t> projected_field_ids;
 	vector<string> projected_field_names;
 	Metrics metrics;
 	case_insensitive_map_t<string> metadata;

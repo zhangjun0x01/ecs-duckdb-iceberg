@@ -75,8 +75,8 @@ string Snapshot::TryFromJSON(yyjson_val *obj) {
 	if (!snapshot_id_val) {
 		return "Snapshot required property 'snapshot-id' is missing";
 	} else {
-		if (yyjson_is_int(snapshot_id_val)) {
-			snapshot_id = yyjson_get_int(snapshot_id_val);
+		if (yyjson_is_sint(snapshot_id_val)) {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		} else {
 			return StringUtil::Format("Snapshot property 'snapshot_id' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(snapshot_id_val));
@@ -86,8 +86,8 @@ string Snapshot::TryFromJSON(yyjson_val *obj) {
 	if (!timestamp_ms_val) {
 		return "Snapshot required property 'timestamp-ms' is missing";
 	} else {
-		if (yyjson_is_int(timestamp_ms_val)) {
-			timestamp_ms = yyjson_get_int(timestamp_ms_val);
+		if (yyjson_is_sint(timestamp_ms_val)) {
+			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
 		} else {
 			return StringUtil::Format("Snapshot property 'timestamp_ms' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(timestamp_ms_val));
@@ -116,8 +116,8 @@ string Snapshot::TryFromJSON(yyjson_val *obj) {
 	auto parent_snapshot_id_val = yyjson_obj_get(obj, "parent-snapshot-id");
 	if (parent_snapshot_id_val) {
 		has_parent_snapshot_id = true;
-		if (yyjson_is_int(parent_snapshot_id_val)) {
-			parent_snapshot_id = yyjson_get_int(parent_snapshot_id_val);
+		if (yyjson_is_sint(parent_snapshot_id_val)) {
+			parent_snapshot_id = yyjson_get_sint(parent_snapshot_id_val);
 		} else {
 			return StringUtil::Format(
 			    "Snapshot property 'parent_snapshot_id' is not of type 'integer', found '%s' instead",
@@ -127,8 +127,8 @@ string Snapshot::TryFromJSON(yyjson_val *obj) {
 	auto sequence_number_val = yyjson_obj_get(obj, "sequence-number");
 	if (sequence_number_val) {
 		has_sequence_number = true;
-		if (yyjson_is_int(sequence_number_val)) {
-			sequence_number = yyjson_get_int(sequence_number_val);
+		if (yyjson_is_sint(sequence_number_val)) {
+			sequence_number = yyjson_get_sint(sequence_number_val);
 		} else {
 			return StringUtil::Format(
 			    "Snapshot property 'sequence_number' is not of type 'integer', found '%s' instead",

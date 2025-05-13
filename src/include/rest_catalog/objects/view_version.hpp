@@ -29,9 +29,9 @@ public:
 	string TryFromJSON(yyjson_val *obj);
 
 public:
-	int64_t version_id;
+	int32_t version_id;
 	int64_t timestamp_ms;
-	int64_t schema_id;
+	int32_t schema_id;
 	case_insensitive_map_t<string> summary;
 	vector<ViewRepresentation> representations;
 	Namespace default_namespace;

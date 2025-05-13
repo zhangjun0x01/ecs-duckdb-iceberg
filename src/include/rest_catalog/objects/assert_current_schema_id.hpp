@@ -29,7 +29,7 @@ public:
 
 public:
 	TableRequirement table_requirement;
-	int64_t current_schema_id;
+	int32_t current_schema_id;
 	string type;
 	bool has_type = false;
 };

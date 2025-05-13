@@ -31,7 +31,7 @@ public:
 
 public:
 	DataFile data_file;
-	vector<int64_t> delete_file_references;
+	vector<int32_t> delete_file_references;
 	bool has_delete_file_references = false;
 	unique_ptr<Expression> residual_filter;
 	bool has_residual_filter = false;

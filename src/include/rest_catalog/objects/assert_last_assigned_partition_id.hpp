@@ -29,7 +29,7 @@ public:
 
 public:
 	TableRequirement table_requirement;
-	int64_t last_assigned_partition_id;
+	int32_t last_assigned_partition_id;
 	string type;
 	bool has_type = false;
 };

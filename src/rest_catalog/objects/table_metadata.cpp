@@ -63,8 +63,8 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	auto last_updated_ms_val = yyjson_obj_get(obj, "last-updated-ms");
 	if (last_updated_ms_val) {
 		has_last_updated_ms = true;
-		if (yyjson_is_int(last_updated_ms_val)) {
-			last_updated_ms = yyjson_get_int(last_updated_ms_val);
+		if (yyjson_is_sint(last_updated_ms_val)) {
+			last_updated_ms = yyjson_get_sint(last_updated_ms_val);
 		} else {
 			return StringUtil::Format(
 			    "TableMetadata property 'last_updated_ms' is not of type 'integer', found '%s' instead",
@@ -236,8 +236,8 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	auto current_snapshot_id_val = yyjson_obj_get(obj, "current-snapshot-id");
 	if (current_snapshot_id_val) {
 		has_current_snapshot_id = true;
-		if (yyjson_is_int(current_snapshot_id_val)) {
-			current_snapshot_id = yyjson_get_int(current_snapshot_id_val);
+		if (yyjson_is_sint(current_snapshot_id_val)) {
+			current_snapshot_id = yyjson_get_sint(current_snapshot_id_val);
 		} else {
 			return StringUtil::Format(
 			    "TableMetadata property 'current_snapshot_id' is not of type 'integer', found '%s' instead",
@@ -247,8 +247,8 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 	auto last_sequence_number_val = yyjson_obj_get(obj, "last-sequence-number");
 	if (last_sequence_number_val) {
 		has_last_sequence_number = true;
-		if (yyjson_is_int(last_sequence_number_val)) {
-			last_sequence_number = yyjson_get_int(last_sequence_number_val);
+		if (yyjson_is_sint(last_sequence_number_val)) {
+			last_sequence_number = yyjson_get_sint(last_sequence_number_val);
 		} else {
 			return StringUtil::Format(
 			    "TableMetadata property 'last_sequence_number' is not of type 'integer', found '%s' instead",

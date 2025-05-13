@@ -29,7 +29,7 @@ public:
 
 public:
 	vector<PartitionField> fields;
-	int64_t spec_id;
+	int32_t spec_id;
 	bool has_spec_id = false;
 };
 

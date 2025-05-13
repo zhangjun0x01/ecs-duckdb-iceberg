@@ -35,9 +35,9 @@ public:
 		string TryFromJSON(yyjson_val *obj);
 
 	public:
-		int64_t schema_id;
+		int32_t schema_id;
 		bool has_schema_id = false;
-		vector<int64_t> identifier_field_ids;
+		vector<int32_t> identifier_field_ids;
 		bool has_identifier_field_ids = false;
 	};
 

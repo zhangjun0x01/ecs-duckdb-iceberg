@@ -30,7 +30,7 @@ public:
 	string TryFromJSON(yyjson_val *obj);
 
 public:
-	int64_t spec_id;
+	int32_t spec_id;
 	vector<PrimitiveTypeValue> partition;
 	string content;
 	string file_path;
@@ -41,7 +41,7 @@ public:
 	bool has_key_metadata = false;
 	vector<int64_t> split_offsets;
 	bool has_split_offsets = false;
-	int64_t sort_order_id;
+	int32_t sort_order_id;
 	bool has_sort_order_id = false;
 };
 

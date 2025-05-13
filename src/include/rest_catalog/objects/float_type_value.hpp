@@ -27,7 +27,7 @@ public:
 	string TryFromJSON(yyjson_val *obj);
 
 public:
-	double value;
+	float value;
 };
 
 } // namespace rest_api_objects

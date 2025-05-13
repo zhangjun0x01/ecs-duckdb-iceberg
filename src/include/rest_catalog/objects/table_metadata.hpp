@@ -36,7 +36,7 @@ public:
 	string TryFromJSON(yyjson_val *obj);
 
 public:
-	int64_t format_version;
+	int32_t format_version;
 	string table_uuid;
 	string location;
 	bool has_location = false;
@@ -46,19 +46,19 @@ public:
 	bool has_properties = false;
 	vector<Schema> schemas;
 	bool has_schemas = false;
-	int64_t current_schema_id;
+	int32_t current_schema_id;
 	bool has_current_schema_id = false;
-	int64_t last_column_id;
+	int32_t last_column_id;
 	bool has_last_column_id = false;
 	vector<PartitionSpec> partition_specs;
 	bool has_partition_specs = false;
-	int64_t default_spec_id;
+	int32_t default_spec_id;
 	bool has_default_spec_id = false;
-	int64_t last_partition_id;
+	int32_t last_partition_id;
 	bool has_last_partition_id = false;
 	vector<SortOrder> sort_orders;
 	bool has_sort_orders = false;
-	int64_t default_sort_order_id;
+	int32_t default_sort_order_id;
 	bool has_default_sort_order_id = false;
 	vector<Snapshot> snapshots;
 	bool has_snapshots = false;

@@ -30,9 +30,9 @@ public:
 
 public:
 	string type;
-	int64_t key_id;
+	int32_t key_id;
 	unique_ptr<Type> key;
-	int64_t value_id;
+	int32_t value_id;
 	unique_ptr<Type> value;
 	bool value_required;
 };

@@ -29,7 +29,7 @@ public:
 
 public:
 	BaseUpdate base_update;
-	int64_t sort_order_id;
+	int32_t sort_order_id;
 	string action;
 	bool has_action = false;
 };

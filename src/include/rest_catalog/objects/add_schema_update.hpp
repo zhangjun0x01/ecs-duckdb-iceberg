@@ -33,7 +33,7 @@ public:
 	Schema schema;
 	string action;
 	bool has_action = false;
-	int64_t last_column_id;
+	int32_t last_column_id;
 	bool has_last_column_id = false;
 };
 

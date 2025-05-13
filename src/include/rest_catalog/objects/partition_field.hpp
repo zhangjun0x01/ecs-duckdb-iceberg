@@ -28,10 +28,10 @@ public:
 	string TryFromJSON(yyjson_val *obj);
 
 public:
-	int64_t source_id;
+	int32_t source_id;
 	Transform transform;
 	string name;
-	int64_t field_id;
+	int32_t field_id;
 	bool has_field_id = false;
 };
 

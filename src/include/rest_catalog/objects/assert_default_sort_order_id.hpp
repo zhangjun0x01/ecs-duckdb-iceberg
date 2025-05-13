@@ -29,7 +29,7 @@ public:
 
 public:
 	TableRequirement table_requirement;
-	int64_t default_sort_order_id;
+	int32_t default_sort_order_id;
 	string type;
 	bool has_type = false;
 };

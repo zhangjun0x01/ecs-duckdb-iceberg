@@ -54,8 +54,8 @@ string SetStatisticsUpdate::TryFromJSON(yyjson_val *obj) {
 	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (snapshot_id_val) {
 		has_snapshot_id = true;
-		if (yyjson_is_int(snapshot_id_val)) {
-			snapshot_id = yyjson_get_int(snapshot_id_val);
+		if (yyjson_is_sint(snapshot_id_val)) {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
 		} else {
 			return StringUtil::Format(
 			    "SetStatisticsUpdate property 'snapshot_id' is not of type 'integer', found '%s' instead",

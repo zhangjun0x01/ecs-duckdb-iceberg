@@ -6,6 +6,62 @@ namespace duckdb {
 
 // https://iceberg.apache.org/spec/#schemas
 
+//! Hexadecimal values are given without the proper escape sequences, so we add them, for simplicity of conversion
+static string AddEscapesToBlob(const string &hexadecimal_string) {
+	string result;
+	D_ASSERT(hexadecimal_string.size() % 2 == 0);
+	for (idx_t i = 0; i < hexadecimal_string.size() / 2; i++) {
+		result += "\\x";
+		result += hexadecimal_string.substr(i * 2, 2);
+	}
+	return result;
+}
+
+static Value ParseDefaultForType(const LogicalType &type, rest_api_objects::PrimitiveTypeValue &default_value) {
+	if (type.IsNested()) {
+		throw InvalidConfigurationException("Can't parse default value for nested type (%s)", type.ToString());
+	}
+
+	switch (type.id()) {
+	case LogicalTypeId::BOOLEAN: {
+		D_ASSERT(default_value.has_boolean_type_value);
+		return Value::BOOLEAN(default_value.boolean_type_value.value);
+	}
+	case LogicalTypeId::INTEGER: {
+		D_ASSERT(default_value.has_integer_type_value);
+		return Value::INTEGER(default_value.integer_type_value.value);
+	}
+	case LogicalTypeId::BIGINT: {
+		D_ASSERT(default_value.has_long_type_value);
+		return Value::BIGINT(default_value.long_type_value.value);
+	}
+	case LogicalTypeId::FLOAT: {
+		D_ASSERT(default_value.has_float_type_value);
+		return Value::FLOAT(default_value.float_type_value.value);
+	}
+	case LogicalTypeId::DOUBLE: {
+		D_ASSERT(default_value.has_double_type_value);
+		return Value::DOUBLE(default_value.double_type_value.value);
+	}
+	case LogicalTypeId::DECIMAL:
+	case LogicalTypeId::DATE:
+	case LogicalTypeId::TIME:
+	case LogicalTypeId::TIMESTAMP:
+	case LogicalTypeId::TIMESTAMP_TZ:
+	case LogicalTypeId::VARCHAR:
+	case LogicalTypeId::UUID: {
+		D_ASSERT(default_value.has_string_type_value);
+		return Value(default_value.string_type_value.value).DefaultCastAs(type);
+	}
+	case LogicalTypeId::BLOB: {
+		D_ASSERT(default_value.has_binary_type_value);
+		return Value::BLOB(AddEscapesToBlob(default_value.binary_type_value.value));
+	}
+	default:
+		throw NotImplementedException("ParseDefaultForType not implemented for type: %s", type.ToString());
+	}
+}
+
 unique_ptr<IcebergColumnDefinition>
 IcebergColumnDefinition::ParseType(const string &name, int32_t field_id, bool required, rest_api_objects::Type &type,
                                    optional_ptr<rest_api_objects::PrimitiveTypeValue> initial_default) {
@@ -43,6 +99,10 @@ IcebergColumnDefinition::ParseType(const string &name, int32_t field_id, bool re
 		res->children.push_back(std::move(value));
 	} else {
 		throw InvalidConfigurationException("Encountered an invalid type in JSON schema");
+	}
+
+	if (initial_default) {
+		res->initial_default = ParseDefaultForType(res->type, *initial_default);
 	}
 	return res;
 }
