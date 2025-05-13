@@ -69,7 +69,6 @@ IcebergColumnDefinition::ParseType(const string &name, int32_t field_id, bool re
 	res->id = field_id;
 	res->required = required;
 	res->name = name;
-	//! FIXME: parse the 'initial_default' into a Value
 
 	if (type.has_primitive_type) {
 		res->type = ParsePrimitiveType(type.primitive_type);
