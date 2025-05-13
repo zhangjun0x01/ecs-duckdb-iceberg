@@ -13,7 +13,7 @@ CONNECTION_KEY = 'lakekeeper'
 
 SCRIPT_DIR = os.path.dirname(__file__)
 DATA_GENERATION_DIR = os.path.join(SCRIPT_DIR, '..', '..', '..', 'data', 'generated', 'iceberg', 'spark-local')
-SPARK_RUNTIME_PATH = os.path.join(SCRIPT_DIR, '..', '..', 'iceberg-spark-runtime-3.5_2.12-1.4.2.jar')
+SPARK_RUNTIME_PATH = os.path.join(SCRIPT_DIR, '..', '..', 'iceberg-spark-runtime-3.5_2.12-1.9.0.jar')
 
 CATALOG_URL = "http://localhost:8181/catalog"
 MANAGEMENT_URL = "http://localhost:8181/management"
