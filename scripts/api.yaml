@@ -2069,7 +2069,6 @@ components:
         - required
       properties:
         id:
-          format: uint
           type: integer
         name:
           type: string
