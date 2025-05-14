@@ -62,7 +62,6 @@ idx_t ProduceManifests(DataChunk &chunk, idx_t offset, idx_t count, const Manife
 			auto &name = kv.first;
 
 			if (StringUtil::CIEquals(name, "contains_null")) {
-				contains_null = child_vectors[i].get();
 				contains_null_data = FlatVector::GetData<bool>(*child_vectors[i]);
 			} else if (StringUtil::CIEquals(name, "contains_nan")) {
 				contains_nan = child_vectors[i].get();
