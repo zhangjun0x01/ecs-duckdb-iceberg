@@ -155,28 +155,22 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 		ParseConfigOptions(config, config_options);
 	}
 
+	const auto &metadata_location = load_table_result.metadata.location;
+
 	if (load_table_result.has_storage_credentials) {
 		auto &storage_credentials = load_table_result.storage_credentials;
+
+		//! If there is only one credential listed, we don't really care about the prefix,
+		//! we can use the metadata_location instead.
+		const bool ignore_credential_prefix = storage_credentials.size() == 1;
 		for (idx_t index = 0; index < storage_credentials.size(); index++) {
 			auto &credential = storage_credentials[index];
 			CreateSecretInput create_secret_input;
 			create_secret_input.on_conflict = OnCreateConflict::REPLACE_ON_CONFLICT;
 			create_secret_input.persist_type = SecretPersistType::TEMPORARY;
 
-			auto prefix_string = credential.prefix;
-
-			// R2 data catalog has a prefix of '/' in storage credentials. This is most likely an attempt to
-			// have the secret match many files. The spec says the longest prefix should be chosen.
-			// In this case we get the scope from the metadata location.
-			// TODO: figure out a better work around for r2 catalogs
-			if (prefix_string == string("/")) {
-				auto *metadata = yyjson_obj_get(root, "metadata");
-				auto *metadata_location = yyjson_obj_get(metadata, "location");
-				prefix_string = yyjson_get_str(metadata_location);
-			}
-
-			create_secret_input.scope.push_back(string(prefix_string));
-			create_secret_input.name = StringUtil::Format("%s_%d_%s", secret_base_name, index, prefix_string);
+			create_secret_input.scope.push_back(ignore_credential_prefix ? metadata_location : credential.prefix);
+			create_secret_input.name = StringUtil::Format("%s_%d_%s", secret_base_name, index, credential.prefix);
 
 			create_secret_input.type = "s3";
 			create_secret_input.provider = "config";
@@ -209,8 +203,7 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 
 static void populateTableMetadata(IRCAPITable &table, const rest_api_objects::LoadTableResult &load_table_result) {
 	if (!load_table_result.has_metadata_location) {
-		throw NotImplementedException(
-		    "metadata-location is expected to be populated, likely missing support for V1 Iceberg");
+		throw InvalidConfigurationException("'metadata-location' can only be missing in uncommitted transactions");
 	}
 	table.storage_location = load_table_result.metadata_location;
 	auto &metadata = load_table_result.metadata;
