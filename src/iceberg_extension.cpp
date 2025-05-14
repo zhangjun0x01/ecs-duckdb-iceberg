@@ -91,9 +91,10 @@ static bool SanityCheckGlueWarehouse(const string &warehouse) {
 		}
 	}
 
-	throw IOException("Invalid Glue Catalog Format: '%s'. Expected format: ':', '12-digit account ID', "
-	                  "'catalog1/catalog2', or '12-digit accountId:catalog1/catalog2'.",
-	                  warehouse);
+	throw InvalidConfigurationException(
+	    "Invalid Glue Catalog Format: '%s'. Expected format: ':', '12-digit account ID', "
+	    "'catalog1/catalog2', or '12-digit accountId:catalog1/catalog2'.",
+	    warehouse);
 }
 
 static void GlueAttach(ClientContext &context, IcebergAttachOptions &input) {
