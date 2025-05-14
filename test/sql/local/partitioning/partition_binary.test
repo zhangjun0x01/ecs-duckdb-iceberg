@@ -1,0 +1,26 @@
+# name: test/sql/local/partitioning/partition_binary.test
+# group: [partitioning]
+
+require avro
+
+require parquet
+
+require iceberg
+
+require httpfs
+
+query III
+select * from ICEBERG_SCAN('data/persistent/partition_binary');
+----
+\xAA\xBB\xCC	67890	purchase
+\x01\x02\x03	12345	click
+
+query I
+select user_id from ICEBERG_SCAN('data/persistent/partition_binary') WHERE partition_col = '\x01\x02\x03'::BLOB;
+----
+12345
+
+query I
+select user_id from ICEBERG_SCAN('data/persistent/partition_binary') WHERE partition_col = '\xAA\xBB\xCC'::BLOB;
+----
+67890

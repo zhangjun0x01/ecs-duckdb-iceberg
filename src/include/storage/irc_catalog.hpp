@@ -23,19 +23,20 @@ public:
 
 class MetadataCacheValue {
 public:
-	std::string data;
-	std::chrono::system_clock::time_point expires_at;
+	const std::string data;
+	const system_clock::time_point expires_at;
 
 public:
-	MetadataCacheValue(std::string data_, std::chrono::system_clock::time_point expires_at_)
-	    : data(data_), expires_at(expires_at_) {};
+	MetadataCacheValue(const std::string &data_, const system_clock::time_point expires_at_)
+	    : data(data_), expires_at(expires_at_) {
+	}
 };
 
 class IRCatalog : public Catalog {
 public:
 	explicit IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, unique_ptr<IRCAuthorization> auth_handler,
 	                   const string &warehouse, const string &uri, const string &version = "v1");
-	~IRCatalog();
+	~IRCatalog() override;
 
 	string internal_name;
 	AccessMode access_mode;
@@ -63,6 +64,10 @@ public:
 	static unique_ptr<SecretEntry> GetIcebergSecret(ClientContext &context, const string &secret_name);
 
 	void GetConfig(ClientContext &context);
+
+	bool SupportsTimeTravel() const override {
+		return true;
+	}
 
 	optional_ptr<CatalogEntry> CreateSchema(CatalogTransaction transaction, CreateSchemaInfo &info) override;
 
@@ -92,9 +97,8 @@ public:
 
 	void ClearCache();
 
-	bool HasCachedValue(string url) const;
-	string GetCachedValue(string url) const;
-	bool SetCachedValue(string url, const string &value, const rest_api_objects::LoadTableResult &result);
+	string OptionalGetCachedValue(const string &url);
+	bool SetCachedValue(const string &url, const string &value, const rest_api_objects::LoadTableResult &result);
 
 private:
 	void DropSchema(ClientContext &context, DropInfo &info) override;
@@ -107,6 +111,7 @@ private:
 	case_insensitive_map_t<string> defaults;
 	case_insensitive_map_t<string> overrides;
 
+	std::mutex metadata_cache_mutex;
 	unordered_map<string, unique_ptr<MetadataCacheValue>> metadata_cache;
 };
 

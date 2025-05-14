@@ -1,9 +1,10 @@
 # This file is included by DuckDB's build system. It specifies which extension to load
 
+duckdb_extension_load(icu)
 duckdb_extension_load(avro
         LOAD_TESTS
         GIT_URL https://github.com/duckdb/duckdb_avro
-        GIT_TAG 489fa49ce3b6f6b2d5f67bf75f6b4622197fc94a
+        GIT_TAG ff766174cc6cc9c4ed93fc4b75871bcdffcc6e65
 )
 
 # Extension from this repo
@@ -26,6 +27,6 @@ endif ()
 
 duckdb_extension_load(httpfs
         GIT_URL https://github.com/duckdb/duckdb-httpfs
-        GIT_TAG main
+        GIT_TAG d6c3eb0d7b73c8dd0701b6626924fbeba47e7416
         INCLUDE_DIR extension/httpfs/include
 )

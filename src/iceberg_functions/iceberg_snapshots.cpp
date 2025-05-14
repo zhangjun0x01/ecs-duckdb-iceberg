@@ -63,7 +63,8 @@ static unique_ptr<FunctionData> IcebergSnapshotsBind(ClientContext &context, Tab
 			bind_data->options.infer_schema = !BooleanValue::Get(kv.second);
 		}
 	}
-	bind_data->filename = input.inputs[0].ToString();
+	auto input_string = input.inputs[0].ToString();
+	bind_data->filename = IcebergUtils::GetStorageLocation(context, input_string);
 
 	names.emplace_back("sequence_number");
 	return_types.emplace_back(LogicalType::UBIGINT);
@@ -93,10 +94,10 @@ static void IcebergSnapshotsFunction(ClientContext &context, TableFunctionInput 
 		auto &metadata = *global_state.metadata;
 		auto snapshot = IcebergSnapshot::ParseSnapShot(next_snapshot, metadata, bind_data.options);
 
-		FlatVector::GetData<int64_t>(output.data[0])[i] = snapshot.sequence_number;
-		FlatVector::GetData<int64_t>(output.data[1])[i] = snapshot.snapshot_id;
-		FlatVector::GetData<timestamp_t>(output.data[2])[i] = snapshot.timestamp_ms;
-		string_t manifest_string_t = StringVector::AddString(output.data[3], string_t(snapshot.manifest_list));
+		FlatVector::GetData<int64_t>(output.data[0])[i] = snapshot->sequence_number;
+		FlatVector::GetData<int64_t>(output.data[1])[i] = snapshot->snapshot_id;
+		FlatVector::GetData<timestamp_t>(output.data[2])[i] = snapshot->timestamp_ms;
+		string_t manifest_string_t = StringVector::AddString(output.data[3], string_t(snapshot->manifest_list));
 		FlatVector::GetData<string_t>(output.data[3])[i] = manifest_string_t;
 
 		i++;
