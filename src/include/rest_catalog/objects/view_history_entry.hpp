@@ -27,7 +27,7 @@ public:
 	string TryFromJSON(yyjson_val *obj);
 
 public:
-	int64_t version_id;
+	int32_t version_id;
 	int64_t timestamp_ms;
 };
 

@@ -8,7 +8,7 @@ import os
 
 DATA_GENERATION_DIR = '.'
 SCRIPT_DIR = os.path.dirname(__file__)
-SPARK_RUNTIME_PATH = os.path.join(SCRIPT_DIR, '..', 'data_generators', 'iceberg-spark-runtime-3.5_2.12-1.4.2.jar')
+SPARK_RUNTIME_PATH = os.path.join(SCRIPT_DIR, '..', 'data_generators', 'iceberg-spark-runtime-3.5_2.12-1.9.0.jar')
 
 conf = pyspark.SparkConf()
 conf.setMaster('local[*]')

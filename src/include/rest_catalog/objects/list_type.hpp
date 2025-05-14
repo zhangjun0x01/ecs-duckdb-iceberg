@@ -30,7 +30,7 @@ public:
 
 public:
 	string type;
-	int64_t element_id;
+	int32_t element_id;
 	unique_ptr<Type> element;
 	bool element_required;
 };

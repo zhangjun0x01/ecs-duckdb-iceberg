@@ -53,7 +53,7 @@ public:
 	bool has_parent_snapshot_id = false;
 	int64_t sequence_number;
 	bool has_sequence_number = false;
-	int64_t schema_id;
+	int32_t schema_id;
 	bool has_schema_id = false;
 };
 

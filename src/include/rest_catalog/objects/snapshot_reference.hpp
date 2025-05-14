@@ -33,7 +33,7 @@ public:
 	bool has_max_ref_age_ms = false;
 	int64_t max_snapshot_age_ms;
 	bool has_max_snapshot_age_ms = false;
-	int64_t min_snapshots_to_keep;
+	int32_t min_snapshots_to_keep;
 	bool has_min_snapshots_to_keep = false;
 };
 

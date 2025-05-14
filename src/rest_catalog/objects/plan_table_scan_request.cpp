@@ -30,7 +30,9 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 	auto snapshot_id_val = yyjson_obj_get(obj, "snapshot-id");
 	if (snapshot_id_val) {
 		has_snapshot_id = true;
-		if (yyjson_is_int(snapshot_id_val)) {
+		if (yyjson_is_sint(snapshot_id_val)) {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		} else if (yyjson_is_int(snapshot_id_val)) {
 			snapshot_id = yyjson_get_int(snapshot_id_val);
 		} else {
 			return StringUtil::Format(
@@ -92,7 +94,9 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 	auto start_snapshot_id_val = yyjson_obj_get(obj, "start-snapshot-id");
 	if (start_snapshot_id_val) {
 		has_start_snapshot_id = true;
-		if (yyjson_is_int(start_snapshot_id_val)) {
+		if (yyjson_is_sint(start_snapshot_id_val)) {
+			start_snapshot_id = yyjson_get_sint(start_snapshot_id_val);
+		} else if (yyjson_is_int(start_snapshot_id_val)) {
 			start_snapshot_id = yyjson_get_int(start_snapshot_id_val);
 		} else {
 			return StringUtil::Format(
@@ -103,7 +107,9 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 	auto end_snapshot_id_val = yyjson_obj_get(obj, "end-snapshot-id");
 	if (end_snapshot_id_val) {
 		has_end_snapshot_id = true;
-		if (yyjson_is_int(end_snapshot_id_val)) {
+		if (yyjson_is_sint(end_snapshot_id_val)) {
+			end_snapshot_id = yyjson_get_sint(end_snapshot_id_val);
+		} else if (yyjson_is_int(end_snapshot_id_val)) {
 			end_snapshot_id = yyjson_get_int(end_snapshot_id_val);
 		} else {
 			return StringUtil::Format(

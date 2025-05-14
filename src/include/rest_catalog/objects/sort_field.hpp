@@ -30,7 +30,7 @@ public:
 	string TryFromJSON(yyjson_val *obj);
 
 public:
-	int64_t source_id;
+	int32_t source_id;
 	Transform transform;
 	SortDirection direction;
 	NullOrder null_order;

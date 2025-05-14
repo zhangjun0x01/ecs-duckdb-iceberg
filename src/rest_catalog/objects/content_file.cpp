@@ -93,7 +93,9 @@ string ContentFile::TryFromJSON(yyjson_val *obj) {
 	if (!file_size_in_bytes_val) {
 		return "ContentFile required property 'file-size-in-bytes' is missing";
 	} else {
-		if (yyjson_is_int(file_size_in_bytes_val)) {
+		if (yyjson_is_sint(file_size_in_bytes_val)) {
+			file_size_in_bytes = yyjson_get_sint(file_size_in_bytes_val);
+		} else if (yyjson_is_int(file_size_in_bytes_val)) {
 			file_size_in_bytes = yyjson_get_int(file_size_in_bytes_val);
 		} else {
 			return StringUtil::Format(
@@ -105,7 +107,9 @@ string ContentFile::TryFromJSON(yyjson_val *obj) {
 	if (!record_count_val) {
 		return "ContentFile required property 'record-count' is missing";
 	} else {
-		if (yyjson_is_int(record_count_val)) {
+		if (yyjson_is_sint(record_count_val)) {
+			record_count = yyjson_get_sint(record_count_val);
+		} else if (yyjson_is_int(record_count_val)) {
 			record_count = yyjson_get_int(record_count_val);
 		} else {
 			return StringUtil::Format(
@@ -129,7 +133,9 @@ string ContentFile::TryFromJSON(yyjson_val *obj) {
 			yyjson_val *val;
 			yyjson_arr_foreach(split_offsets_val, idx, max, val) {
 				int64_t tmp;
-				if (yyjson_is_int(val)) {
+				if (yyjson_is_sint(val)) {
+					tmp = yyjson_get_sint(val);
+				} else if (yyjson_is_int(val)) {
 					tmp = yyjson_get_int(val);
 				} else {
 					return StringUtil::Format("ContentFile property 'tmp' is not of type 'integer', found '%s' instead",

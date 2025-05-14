@@ -29,7 +29,7 @@ public:
 
 public:
 	BaseUpdate base_update;
-	vector<int64_t> spec_ids;
+	vector<int32_t> spec_ids;
 	string action;
 	bool has_action = false;
 };

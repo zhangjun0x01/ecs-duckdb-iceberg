@@ -28,7 +28,7 @@ public:
 	string TryFromJSON(yyjson_val *obj);
 
 public:
-	int64_t order_id;
+	int32_t order_id;
 	vector<SortField> fields;
 };
 

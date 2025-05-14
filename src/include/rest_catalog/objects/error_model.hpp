@@ -29,7 +29,7 @@ public:
 public:
 	string message;
 	string type;
-	int64_t code;
+	int32_t code;
 	vector<string> stack;
 	bool has_stack = false;
 };

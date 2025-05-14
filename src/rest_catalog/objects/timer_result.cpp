@@ -42,7 +42,9 @@ string TimerResult::TryFromJSON(yyjson_val *obj) {
 	if (!count_val) {
 		return "TimerResult required property 'count' is missing";
 	} else {
-		if (yyjson_is_int(count_val)) {
+		if (yyjson_is_sint(count_val)) {
+			count = yyjson_get_sint(count_val);
+		} else if (yyjson_is_int(count_val)) {
 			count = yyjson_get_int(count_val);
 		} else {
 			return StringUtil::Format("TimerResult property 'count' is not of type 'integer', found '%s' instead",
@@ -53,7 +55,9 @@ string TimerResult::TryFromJSON(yyjson_val *obj) {
 	if (!total_duration_val) {
 		return "TimerResult required property 'total-duration' is missing";
 	} else {
-		if (yyjson_is_int(total_duration_val)) {
+		if (yyjson_is_sint(total_duration_val)) {
+			total_duration = yyjson_get_sint(total_duration_val);
+		} else if (yyjson_is_int(total_duration_val)) {
 			total_duration = yyjson_get_int(total_duration_val);
 		} else {
 			return StringUtil::Format(

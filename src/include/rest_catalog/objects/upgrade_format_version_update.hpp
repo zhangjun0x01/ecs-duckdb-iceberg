@@ -29,7 +29,7 @@ public:
 
 public:
 	BaseUpdate base_update;
-	int64_t format_version;
+	int32_t format_version;
 	string action;
 	bool has_action = false;
 };

@@ -42,7 +42,9 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 	if (!snapshot_id_val) {
 		return "BlobMetadata required property 'snapshot-id' is missing";
 	} else {
-		if (yyjson_is_int(snapshot_id_val)) {
+		if (yyjson_is_sint(snapshot_id_val)) {
+			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		} else if (yyjson_is_int(snapshot_id_val)) {
 			snapshot_id = yyjson_get_int(snapshot_id_val);
 		} else {
 			return StringUtil::Format(
@@ -54,7 +56,9 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 	if (!sequence_number_val) {
 		return "BlobMetadata required property 'sequence-number' is missing";
 	} else {
-		if (yyjson_is_int(sequence_number_val)) {
+		if (yyjson_is_sint(sequence_number_val)) {
+			sequence_number = yyjson_get_sint(sequence_number_val);
+		} else if (yyjson_is_int(sequence_number_val)) {
 			sequence_number = yyjson_get_int(sequence_number_val);
 		} else {
 			return StringUtil::Format(
@@ -70,7 +74,7 @@ string BlobMetadata::TryFromJSON(yyjson_val *obj) {
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(fields_val, idx, max, val) {
-				int64_t tmp;
+				int32_t tmp;
 				if (yyjson_is_int(val)) {
 					tmp = yyjson_get_int(val);
 				} else {

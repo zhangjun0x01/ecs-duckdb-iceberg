@@ -29,7 +29,7 @@ public:
 
 public:
 	BaseUpdate base_update;
-	int64_t schema_id;
+	int32_t schema_id;
 	string action;
 	bool has_action = false;
 };

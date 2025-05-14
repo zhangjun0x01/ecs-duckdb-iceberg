@@ -40,7 +40,9 @@ string RemoveSnapshotsUpdate::TryFromJSON(yyjson_val *obj) {
 			yyjson_val *val;
 			yyjson_arr_foreach(snapshot_ids_val, idx, max, val) {
 				int64_t tmp;
-				if (yyjson_is_int(val)) {
+				if (yyjson_is_sint(val)) {
+					tmp = yyjson_get_sint(val);
+				} else if (yyjson_is_int(val)) {
 					tmp = yyjson_get_int(val);
 				} else {
 					return StringUtil::Format(

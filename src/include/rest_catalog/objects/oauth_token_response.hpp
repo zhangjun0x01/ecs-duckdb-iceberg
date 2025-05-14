@@ -30,7 +30,7 @@ public:
 public:
 	string access_token;
 	string token_type;
-	int64_t expires_in;
+	int32_t expires_in;
 	bool has_expires_in = false;
 	TokenType issued_token_type;
 	bool has_issued_token_type = false;

@@ -39,7 +39,7 @@ string RemoveSchemasUpdate::TryFromJSON(yyjson_val *obj) {
 			size_t idx, max;
 			yyjson_val *val;
 			yyjson_arr_foreach(schema_ids_val, idx, max, val) {
-				int64_t tmp;
+				int32_t tmp;
 				if (yyjson_is_int(val)) {
 					tmp = yyjson_get_int(val);
 				} else {

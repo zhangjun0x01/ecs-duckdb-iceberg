@@ -44,7 +44,9 @@ string MetadataLog::Object4::TryFromJSON(yyjson_val *obj) {
 	if (!timestamp_ms_val) {
 		return "Object4 required property 'timestamp-ms' is missing";
 	} else {
-		if (yyjson_is_int(timestamp_ms_val)) {
+		if (yyjson_is_sint(timestamp_ms_val)) {
+			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		} else if (yyjson_is_int(timestamp_ms_val)) {
 			timestamp_ms = yyjson_get_int(timestamp_ms_val);
 		} else {
 			return StringUtil::Format("Object4 property 'timestamp_ms' is not of type 'integer', found '%s' instead",

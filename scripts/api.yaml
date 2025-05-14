@@ -4168,7 +4168,8 @@ components:
         }
 
     PrimitiveTypeValue:
-      oneOf:
+      # NOTE: this is changed from oneOf because we can't differentiate on just the json type alone.
+      anyOf:
         - $ref: '#/components/schemas/BooleanTypeValue'
         - $ref: '#/components/schemas/IntegerTypeValue'
         - $ref: '#/components/schemas/LongTypeValue'

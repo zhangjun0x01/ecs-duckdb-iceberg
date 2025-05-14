@@ -29,7 +29,7 @@ public:
 
 public:
 	TableRequirement table_requirement;
-	int64_t default_spec_id;
+	int32_t default_spec_id;
 	string type;
 	bool has_type = false;
 };
