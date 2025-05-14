@@ -48,8 +48,6 @@ idx_t ProduceManifests(DataChunk &chunk, idx_t offset, idx_t count, const Manife
 
 	bool *contains_null_data = nullptr;
 	bool *contains_nan_data = nullptr;
-	string_t *lower_bound_data = nullptr;
-	string_t *upper_bound_data = nullptr;
 
 	auto partitions_it = name_to_vec.find("partitions");
 	if (partitions_it != name_to_vec.end()) {
@@ -71,10 +69,8 @@ idx_t ProduceManifests(DataChunk &chunk, idx_t offset, idx_t count, const Manife
 				contains_nan_data = FlatVector::GetData<bool>(*child_vectors[i]);
 			} else if (StringUtil::CIEquals(name, "lower_bound")) {
 				lower_bound = child_vectors[i].get();
-				lower_bound_data = FlatVector::GetData<string_t>(*child_vectors[i]);
 			} else if (StringUtil::CIEquals(name, "upper_bound")) {
 				upper_bound = child_vectors[i].get();
-				upper_bound_data = FlatVector::GetData<string_t>(*child_vectors[i]);
 			}
 		}
 	}
@@ -110,11 +106,11 @@ idx_t ProduceManifests(DataChunk &chunk, idx_t offset, idx_t count, const Manife
 				if (contains_nan && FlatVector::Validity(*contains_nan).RowIsValid(list_idx)) {
 					summary.contains_nan = contains_nan_data[list_idx];
 				}
-				if (lower_bound && FlatVector::Validity(*lower_bound).RowIsValid(list_idx)) {
-					summary.lower_bound = lower_bound_data[list_idx].GetString();
+				if (lower_bound) {
+					summary.lower_bound = lower_bound->GetValue(list_idx);
 				}
-				if (upper_bound && FlatVector::Validity(*upper_bound).RowIsValid(list_idx)) {
-					summary.upper_bound = upper_bound_data[list_idx].GetString();
+				if (upper_bound) {
+					summary.upper_bound = upper_bound->GetValue(list_idx);
 				}
 				manifest.field_summary.push_back(summary);
 			}
@@ -187,13 +183,13 @@ static void EntryNameMapping(idx_t column_id, const LogicalType &type, const str
 	}
 }
 
-static unordered_map<int32_t, string> GetBounds(Vector &bounds, idx_t index) {
+static unordered_map<int32_t, Value> GetBounds(Vector &bounds, idx_t index) {
 	auto &bounds_child = ListVector::GetEntry(bounds);
 	auto keys = FlatVector::GetData<int32_t>(*StructVector::GetEntries(bounds_child)[0]);
-	auto values = FlatVector::GetData<string_t>(*StructVector::GetEntries(bounds_child)[1]);
+	auto &values = *StructVector::GetEntries(bounds_child)[1];
 	auto bounds_list = FlatVector::GetData<list_entry_t>(bounds);
 
-	unordered_map<int32_t, string> parsed_bounds;
+	unordered_map<int32_t, Value> parsed_bounds;
 
 	auto &validity = FlatVector::Validity(bounds);
 	if (!validity.RowIsValid(index)) {
@@ -203,9 +199,30 @@ static unordered_map<int32_t, string> GetBounds(Vector &bounds, idx_t index) {
 	auto list_entry = bounds_list[index];
 	for (idx_t j = 0; j < list_entry.length; j++) {
 		auto list_idx = list_entry.offset + j;
-		parsed_bounds[keys[list_idx]] = values[list_idx].GetString();
+		parsed_bounds[keys[list_idx]] = values.GetValue(list_idx);
 	}
 	return parsed_bounds;
+}
+
+static unordered_map<int32_t, int64_t> GetCounts(Vector &counts, idx_t index) {
+	auto &counts_child = ListVector::GetEntry(counts);
+	auto keys = FlatVector::GetData<int32_t>(*StructVector::GetEntries(counts_child)[0]);
+	auto values = FlatVector::GetData<int64_t>(*StructVector::GetEntries(counts_child)[1]);
+	auto counts_list = FlatVector::GetData<list_entry_t>(counts);
+
+	unordered_map<int32_t, int64_t> parsed_counts;
+
+	auto &validity = FlatVector::Validity(counts);
+	if (!validity.RowIsValid(index)) {
+		return parsed_counts;
+	}
+
+	auto list_entry = counts_list[index];
+	for (idx_t j = 0; j < list_entry.length; j++) {
+		auto list_idx = list_entry.offset + j;
+		parsed_counts[keys[list_idx]] = values[list_idx];
+	}
+	return parsed_counts;
 }
 
 static vector<int32_t> GetEqualityIds(Vector &equality_ids, idx_t index) {
@@ -268,6 +285,9 @@ idx_t ProduceManifestEntries(DataChunk &chunk, idx_t offset, idx_t count, const 
 	    *child_entries[name_to_vec.at("file_size_in_bytes").GetChildIndex(0).GetPrimaryIndex()]);
 	optional_ptr<Vector> lower_bounds;
 	optional_ptr<Vector> upper_bounds;
+	optional_ptr<Vector> value_counts;
+	optional_ptr<Vector> null_value_counts;
+	optional_ptr<Vector> nan_value_counts;
 
 	auto lower_bounds_it = name_to_vec.find("lower_bounds");
 	if (lower_bounds_it != name_to_vec.end()) {
@@ -276,6 +296,18 @@ idx_t ProduceManifestEntries(DataChunk &chunk, idx_t offset, idx_t count, const 
 	auto upper_bounds_it = name_to_vec.find("upper_bounds");
 	if (upper_bounds_it != name_to_vec.end()) {
 		upper_bounds = *child_entries[upper_bounds_it->second.GetChildIndex(0).GetPrimaryIndex()];
+	}
+	auto value_counts_it = name_to_vec.find("value_counts");
+	if (value_counts_it != name_to_vec.end()) {
+		value_counts = *child_entries[value_counts_it->second.GetChildIndex(0).GetPrimaryIndex()];
+	}
+	auto null_value_counts_it = name_to_vec.find("null_value_counts");
+	if (null_value_counts_it != name_to_vec.end()) {
+		null_value_counts = *child_entries[null_value_counts_it->second.GetChildIndex(0).GetPrimaryIndex()];
+	}
+	auto nan_value_counts_it = name_to_vec.find("nan_value_counts");
+	if (nan_value_counts_it != name_to_vec.end()) {
+		nan_value_counts = *child_entries[nan_value_counts_it->second.GetChildIndex(0).GetPrimaryIndex()];
 	}
 	auto &partition_vec = child_entries[partition_idx.GetChildIndex(0).GetPrimaryIndex()];
 
@@ -299,6 +331,15 @@ idx_t ProduceManifestEntries(DataChunk &chunk, idx_t offset, idx_t count, const 
 		if (lower_bounds && upper_bounds) {
 			entry.lower_bounds = GetBounds(*lower_bounds, index);
 			entry.upper_bounds = GetBounds(*upper_bounds, index);
+		}
+		if (value_counts) {
+			entry.value_counts = GetCounts(*value_counts, index);
+		}
+		if (null_value_counts) {
+			entry.null_value_counts = GetCounts(*null_value_counts, index);
+		}
+		if (nan_value_counts) {
+			entry.nan_value_counts = GetCounts(*nan_value_counts, index);
 		}
 
 		if (ICEBERG_VERSION > 1) {
