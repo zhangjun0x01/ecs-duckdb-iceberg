@@ -44,6 +44,8 @@ string CounterResult::TryFromJSON(yyjson_val *obj) {
 	} else {
 		if (yyjson_is_sint(value_val)) {
 			value = yyjson_get_sint(value_val);
+		} else if (yyjson_is_int(value_val)) {
+			value = yyjson_get_int(value_val);
 		} else {
 			return StringUtil::Format("CounterResult property 'value' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(value_val));

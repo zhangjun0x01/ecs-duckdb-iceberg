@@ -44,6 +44,8 @@ string SnapshotReference::TryFromJSON(yyjson_val *obj) {
 	} else {
 		if (yyjson_is_sint(snapshot_id_val)) {
 			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		} else if (yyjson_is_int(snapshot_id_val)) {
+			snapshot_id = yyjson_get_int(snapshot_id_val);
 		} else {
 			return StringUtil::Format(
 			    "SnapshotReference property 'snapshot_id' is not of type 'integer', found '%s' instead",
@@ -55,6 +57,8 @@ string SnapshotReference::TryFromJSON(yyjson_val *obj) {
 		has_max_ref_age_ms = true;
 		if (yyjson_is_sint(max_ref_age_ms_val)) {
 			max_ref_age_ms = yyjson_get_sint(max_ref_age_ms_val);
+		} else if (yyjson_is_int(max_ref_age_ms_val)) {
+			max_ref_age_ms = yyjson_get_int(max_ref_age_ms_val);
 		} else {
 			return StringUtil::Format(
 			    "SnapshotReference property 'max_ref_age_ms' is not of type 'integer', found '%s' instead",
@@ -66,6 +70,8 @@ string SnapshotReference::TryFromJSON(yyjson_val *obj) {
 		has_max_snapshot_age_ms = true;
 		if (yyjson_is_sint(max_snapshot_age_ms_val)) {
 			max_snapshot_age_ms = yyjson_get_sint(max_snapshot_age_ms_val);
+		} else if (yyjson_is_int(max_snapshot_age_ms_val)) {
+			max_snapshot_age_ms = yyjson_get_int(max_snapshot_age_ms_val);
 		} else {
 			return StringUtil::Format(
 			    "SnapshotReference property 'max_snapshot_age_ms' is not of type 'integer', found '%s' instead",

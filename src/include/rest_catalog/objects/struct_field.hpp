@@ -30,7 +30,7 @@ public:
 	string TryFromJSON(yyjson_val *obj);
 
 public:
-	uint64_t id;
+	int32_t id;
 	string name;
 	unique_ptr<Type> type;
 	bool required;

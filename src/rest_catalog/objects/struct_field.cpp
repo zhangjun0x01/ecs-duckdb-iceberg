@@ -31,8 +31,8 @@ string StructField::TryFromJSON(yyjson_val *obj) {
 	if (!id_val) {
 		return "StructField required property 'id' is missing";
 	} else {
-		if (yyjson_is_uint(id_val)) {
-			id = yyjson_get_uint(id_val);
+		if (yyjson_is_int(id_val)) {
+			id = yyjson_get_int(id_val);
 		} else {
 			return StringUtil::Format("StructField property 'id' is not of type 'integer', found '%s' instead",
 			                          yyjson_get_type_desc(id_val));

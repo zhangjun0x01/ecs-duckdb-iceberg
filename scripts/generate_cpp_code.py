@@ -194,26 +194,11 @@ PRIMITIVE_TYPE_MAPPING = {
         conversion='yyjson_get_int',
         cpp_type='int32_t',
         formats={
-            'int64': PrimitiveTypeMapping(
-                type_check='yyjson_is_sint', conversion='yyjson_get_sint', cpp_type='int64_t'
-            ),
-            'uint': PrimitiveTypeMapping(
-                type_check='yyjson_is_uint', conversion='yyjson_get_uint', cpp_type='uint64_t'
-            ),
+            'int64': PrimitiveTypeMapping(type_check='yyjson_is_sint', conversion='yyjson_get_sint', cpp_type='int64_t')
         },
     ),
     'boolean': PrimitiveTypeMapping(type_check='yyjson_is_bool', conversion='yyjson_get_bool', cpp_type='bool'),
-    'number': PrimitiveTypeMapping(
-        type_check='yyjson_is_num',
-        conversion='yyjson_get_num',
-        cpp_type='double',
-        formats={
-            'double': PrimitiveTypeMapping(
-                type_check='yyjson_is_real', conversion='yyjson_get_real', cpp_type='double'
-            ),
-            'float': PrimitiveTypeMapping(type_check='yyjson_is_real', conversion='yyjson_get_real', cpp_type='float'),
-        },
-    ),
+    'number': PrimitiveTypeMapping(type_check='yyjson_is_num', conversion='yyjson_get_num', cpp_type='double'),
 }
 
 
@@ -643,14 +628,36 @@ class CPPClass:
                 exit(1)
 
             type_mapping: PrimitiveTypeMapping = PRIMITIVE_TYPE_MAPPING[item_type]
+            specific_mapping = None
+            generic_mapping = None
             if type_mapping.formats and property.format in type_mapping.formats:
-                type_mapping = type_mapping.formats[property.format]
+                specific_mapping = type_mapping.formats[property.format]
+            generic_mapping = type_mapping
             # NOTE: no need to really check the 'format' of the 'property' here
             # FIXME: 'target' is not the property name in the spec, it's already been transformed to the cpp variable name
+            if specific_mapping:
+                res.extend(
+                    [
+                        f'{prefix}if ({specific_mapping.type_check}({source})) {{',
+                        f'\t{target} = {specific_mapping.conversion}({source});',
+                    ]
+                )
+                res.extend(
+                    [
+                        f'}} else if ({generic_mapping.type_check}({source})) {{',
+                        f'\t{target} = {generic_mapping.conversion}({source});',
+                    ]
+                )
+            else:
+                res.extend(
+                    [
+                        f'{prefix}if ({generic_mapping.type_check}({source})) {{',
+                        f'\t{target} = {generic_mapping.conversion}({source});',
+                    ]
+                )
+
             res.extend(
                 [
-                    f'{prefix}if ({type_mapping.type_check}({source})) {{',
-                    f'\t{target} = {type_mapping.conversion}({source});',
                     '} else {',
                     f"""\treturn StringUtil::Format("{self.name} property '{target}' is not of type '{item_type}', found '%s' instead", yyjson_get_type_desc({source}));""",
                     '}',

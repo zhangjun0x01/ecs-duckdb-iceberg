@@ -32,6 +32,8 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 		has_snapshot_id = true;
 		if (yyjson_is_sint(snapshot_id_val)) {
 			snapshot_id = yyjson_get_sint(snapshot_id_val);
+		} else if (yyjson_is_int(snapshot_id_val)) {
+			snapshot_id = yyjson_get_int(snapshot_id_val);
 		} else {
 			return StringUtil::Format(
 			    "PlanTableScanRequest property 'snapshot_id' is not of type 'integer', found '%s' instead",
@@ -94,6 +96,8 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 		has_start_snapshot_id = true;
 		if (yyjson_is_sint(start_snapshot_id_val)) {
 			start_snapshot_id = yyjson_get_sint(start_snapshot_id_val);
+		} else if (yyjson_is_int(start_snapshot_id_val)) {
+			start_snapshot_id = yyjson_get_int(start_snapshot_id_val);
 		} else {
 			return StringUtil::Format(
 			    "PlanTableScanRequest property 'start_snapshot_id' is not of type 'integer', found '%s' instead",
@@ -105,6 +109,8 @@ string PlanTableScanRequest::TryFromJSON(yyjson_val *obj) {
 		has_end_snapshot_id = true;
 		if (yyjson_is_sint(end_snapshot_id_val)) {
 			end_snapshot_id = yyjson_get_sint(end_snapshot_id_val);
+		} else if (yyjson_is_int(end_snapshot_id_val)) {
+			end_snapshot_id = yyjson_get_int(end_snapshot_id_val);
 		} else {
 			return StringUtil::Format(
 			    "PlanTableScanRequest property 'end_snapshot_id' is not of type 'integer', found '%s' instead",

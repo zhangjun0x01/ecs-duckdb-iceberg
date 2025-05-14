@@ -44,6 +44,8 @@ string ViewVersion::TryFromJSON(yyjson_val *obj) {
 	} else {
 		if (yyjson_is_sint(timestamp_ms_val)) {
 			timestamp_ms = yyjson_get_sint(timestamp_ms_val);
+		} else if (yyjson_is_int(timestamp_ms_val)) {
+			timestamp_ms = yyjson_get_int(timestamp_ms_val);
 		} else {
 			return StringUtil::Format(
 			    "ViewVersion property 'timestamp_ms' is not of type 'integer', found '%s' instead",

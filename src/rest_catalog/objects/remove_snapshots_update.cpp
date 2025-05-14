@@ -42,6 +42,8 @@ string RemoveSnapshotsUpdate::TryFromJSON(yyjson_val *obj) {
 				int64_t tmp;
 				if (yyjson_is_sint(val)) {
 					tmp = yyjson_get_sint(val);
+				} else if (yyjson_is_int(val)) {
+					tmp = yyjson_get_int(val);
 				} else {
 					return StringUtil::Format(
 					    "RemoveSnapshotsUpdate property 'tmp' is not of type 'integer', found '%s' instead",
