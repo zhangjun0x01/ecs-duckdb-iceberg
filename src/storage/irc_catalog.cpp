@@ -48,9 +48,6 @@ optional_ptr<SchemaCatalogEntry> IRCatalog::LookupSchema(CatalogTransaction tran
                                                          const EntryLookupInfo &schema_lookup,
                                                          OnEntryNotFound if_not_found) {
 	auto &schema_name = schema_lookup.GetEntryName();
-	if (schema_name == DEFAULT_SCHEMA) {
-		return GetSchema(transaction, DefaultSchema(), if_not_found);
-	}
 	auto entry = schemas.GetEntry(transaction.GetContext(), schema_name);
 	if (!entry && if_not_found != OnEntryNotFound::RETURN_NULL) {
 		throw CatalogException(schema_lookup.GetErrorContext(), "Schema with name \"%s\" not found", schema_name);
@@ -240,10 +237,6 @@ bool IRCatalog::SetCachedValue(const string &url, const string &value,
 		metadata_cache[url] = std::move(val);
 	}
 	return true;
-}
-
-string IRCatalog::DefaultSchema() const {
-	return "main";
 }
 
 //===--------------------------------------------------------------------===//

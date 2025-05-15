@@ -41,7 +41,6 @@ public:
 	IRCEndpointBuilder GetBaseUrl() const;
 	string OptionalGetCachedValue(const string &url);
 	bool SetCachedValue(const string &url, const string &value, const rest_api_objects::LoadTableResult &result);
-	string DefaultSchema() const;
 
 public:
 	static unique_ptr<Catalog> Attach(StorageExtensionInfo *storage_info, ClientContext &context, AttachedDatabase &db,
