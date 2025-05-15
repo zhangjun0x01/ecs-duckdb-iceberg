@@ -101,10 +101,10 @@ static void ParseConfigOptions(const case_insensitive_map_t<string> &config, cas
 	}
 	auto endpoint = endpoint_it->second.ToString();
 	if (StringUtil::StartsWith(endpoint, "http://")) {
-		endpoint = endpoint.substr(7, std::string::npos);
+		endpoint = endpoint.substr(7, string::npos);
 	}
 	if (StringUtil::StartsWith(endpoint, "https://")) {
-		endpoint = endpoint.substr(8, std::string::npos);
+		endpoint = endpoint.substr(8, string::npos);
 	}
 	if (StringUtil::EndsWith(endpoint, "/")) {
 		endpoint = endpoint.substr(0, endpoint.size() - 1);
@@ -330,29 +330,27 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catal
 	return result;
 }
 
-IRCAPISchema IRCAPI::CreateSchema(ClientContext &context, IRCatalog &catalog, const string &internal,
-                                  const string &schema) {
+IRCAPISchema IRCAPI::CreateSchema(ClientContext &context, IRCatalog &catalog, const string &schema) {
 	throw NotImplementedException("IRCAPI::Create Schema not Implemented");
 }
 
-void IRCAPI::DropSchema(ClientContext &context, const string &internal, const string &schema) {
+void IRCAPI::DropSchema(ClientContext &context, const string &schema) {
 	throw NotImplementedException("IRCAPI Drop Schema not Implemented");
 }
 
-void IRCAPI::DropTable(ClientContext &context, IRCatalog &catalog, const string &internal, const string &schema,
-                       string &table_name) {
+void IRCAPI::DropTable(ClientContext &context, IRCatalog &catalog, const string &schema, string &table_name) {
 	throw NotImplementedException("IRCAPI Drop Table not Implemented");
 }
 
-static std::string json_to_string(yyjson_mut_doc *doc, yyjson_write_flag flags = YYJSON_WRITE_PRETTY) {
+static string json_to_string(yyjson_mut_doc *doc, yyjson_write_flag flags = YYJSON_WRITE_PRETTY) {
 	char *json_chars = yyjson_mut_write(doc, flags, NULL);
-	std::string json_str(json_chars);
+	string json_str(json_chars);
 	free(json_chars);
 	return json_str;
 }
 
-IRCAPITable IRCAPI::CreateTable(ClientContext &context, IRCatalog &catalog, const string &internal,
-                                const string &schema, CreateTableInfo *table_info) {
+IRCAPITable IRCAPI::CreateTable(ClientContext &context, IRCatalog &catalog, const string &schema,
+                                CreateTableInfo *table_info) {
 	throw NotImplementedException("IRCAPI Create Table not Implemented");
 }
 
