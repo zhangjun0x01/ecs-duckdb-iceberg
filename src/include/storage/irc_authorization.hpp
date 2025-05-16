@@ -3,7 +3,6 @@
 #include "duckdb/main/secret/secret.hpp"
 #include "catalog_utils.hpp"
 #include "url_utils.hpp"
-#include "curl.hpp"
 #include "duckdb/common/http_util.hpp"
 
 namespace duckdb {
@@ -28,7 +27,6 @@ public:
 
 public:
 	static IRCAuthorizationType TypeFromString(const string &type);
-	static string TypeToString(IRCAuthorizationType type);
 
 public:
 	virtual unique_ptr<HTTPResponse> GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder) = 0;

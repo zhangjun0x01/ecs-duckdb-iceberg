@@ -11,7 +11,6 @@
 #include "duckdb/main/attached_database.hpp"
 #include "rest_catalog/objects/catalog_config.hpp"
 #include "storage/irc_catalog.hpp"
-#include "curl.hpp"
 
 #include <regex>
 #include "storage/irc_authorization.hpp"
@@ -407,8 +406,7 @@ unique_ptr<Catalog> IRCatalog::Attach(StorageExtensionInfo *storage_info, Client
 		break;
 	}
 	default:
-		throw InternalException("Authorization Type (%s) not implemented",
-		                        IRCAuthorization::TypeToString(attach_options.authorization_type));
+		throw InternalException("Authorization Type (%s) not implemented", authorization_type_string);
 	}
 
 	//! We throw if there are any additional options not handled by previous steps

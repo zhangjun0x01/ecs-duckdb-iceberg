@@ -12,7 +12,6 @@
 #include "yyjson.hpp"
 #include "duckdb/common/file_system.hpp"
 #include "url_utils.hpp"
-#include "curl.hpp"
 #include "aws.hpp"
 #include "duckdb/common/http_util.hpp"
 

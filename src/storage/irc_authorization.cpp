@@ -4,19 +4,6 @@
 
 namespace duckdb {
 
-string IRCAuthorization::TypeToString(IRCAuthorizationType type) {
-	switch (type) {
-	case IRCAuthorizationType::OAUTH2: {
-		return "OAUTH2";
-	}
-	case IRCAuthorizationType::SIGV4: {
-		return "SIGV4";
-	}
-	default:
-		throw NotImplementedException("IRCAuthorization::TypeToString type (%d)", static_cast<uint8_t>(type));
-	}
-}
-
 IRCAuthorizationType IRCAuthorization::TypeFromString(const string &type) {
 	static const case_insensitive_map_t<IRCAuthorizationType> mapping {{"oauth2", IRCAuthorizationType::OAUTH2},
 	                                                                   {"sigv4", IRCAuthorizationType::SIGV4}};
