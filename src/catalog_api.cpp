@@ -8,6 +8,8 @@
 #include <duckdb/main/secret/secret.hpp>
 #include <duckdb/main/secret/secret_manager.hpp>
 #include "duckdb/common/error_data.hpp"
+#include "duckdb/common/http_util.hpp"
+
 #include "storage/authorization/sigv4.hpp"
 #include "storage/authorization/oauth2.hpp"
 #include "curl.hpp"
@@ -18,18 +20,28 @@ using namespace duckdb_yyjson;
 namespace duckdb {
 
 static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table) {
-	RequestInput request_input;
+	auto url_builder = catalog.GetBaseUrl();
+	url_builder.AddPathComponent(catalog.prefix);
+	url_builder.AddPathComponent("namespaces");
+	url_builder.AddPathComponent(schema);
+	url_builder.AddPathComponent("tables");
+	url_builder.AddPathComponent(table);
 
-	auto url = catalog.GetBaseUrl();
-	url.AddPathComponent(catalog.prefix);
-	url.AddPathComponent("namespaces");
-	url.AddPathComponent(schema);
-	url.AddPathComponent("tables");
-	url.AddPathComponent(table);
+	auto response = catalog.auth_handler->GetRequest(context, url_builder);
+	if (!response->Success()) {
+		auto url = url_builder.GetURL();
+		if (response->HasRequestError()) {
+			//! Request error - this means something went wrong performing the request
+			throw IOException("Failed to hit endpoint '%s' (ERROR %s)", url, response->GetRequestError());
+		}
+		//! FIXME: the spec defines response objects for all failure conditions, we can deserialize the response and
+		//! return a more descriptive error message based on that. If this was not a request error this means the server
+		//! responded - report the response status and response
+		throw HTTPException(*response, "GET Request to endpoint '%s' returned an error response (HTTP %n)", url,
+		                    int(response->status));
+	}
 
-	request_input.AddHeader("X-Iceberg-Access-Delegation: vended-credentials");
-	string api_result = catalog.auth_handler->GetRequest(context, url, request_input);
-
+	const auto &api_result = response->body;
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto load_table_result = rest_api_objects::LoadTableResult::FromJSON(root);
@@ -283,8 +295,7 @@ vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog
 	url.AddPathComponent("namespaces");
 	url.AddPathComponent(schema);
 	url.AddPathComponent("tables");
-	RequestInput request_input;
-	string api_result = catalog.auth_handler->GetRequest(context, url, request_input);
+	string api_result = catalog.auth_handler->GetRequest(context, url);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto list_tables_response = rest_api_objects::ListTablesResponse::FromJSON(root);
@@ -304,8 +315,7 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catal
 	auto endpoint_builder = catalog.GetBaseUrl();
 	endpoint_builder.AddPathComponent(catalog.prefix);
 	endpoint_builder.AddPathComponent("namespaces");
-	RequestInput request_input;
-	string api_result = catalog.auth_handler->GetRequest(context, endpoint_builder, request_input);
+	string api_result = catalog.auth_handler->GetRequest(context, endpoint_builder);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto list_namespaces_response = rest_api_objects::ListNamespacesResponse::FromJSON(root);

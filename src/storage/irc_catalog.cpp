@@ -17,12 +17,25 @@ using namespace duckdb_yyjson;
 
 namespace duckdb {
 
-IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, unique_ptr<IRCAuthorization> auth_handler,
-                     const string &warehouse, const string &uri, const string &version)
-    : Catalog(db_p), access_mode(access_mode), auth_handler(std::move(auth_handler)), warehouse(warehouse), uri(uri),
+IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, ClientContext &context,
+                     IcebergAttachOptions &attach_options, const string &version)
+    : Catalog(db_p), access_mode(access_mode), warehouse(attach_options.warehouse), uri(attach_options.uri),
       version(version), schemas(*this) {
 	if (version.empty()) {
 		throw InternalException("version can not be empty");
+	}
+	switch (attach_options.authorization_type) {
+	case IRCAuthorizationType::OAUTH2: {
+		auth_handler = OAuth2Authorization::FromAttachOptions(context, attach_options);
+		break;
+	}
+	case IRCAuthorizationType::SIGV4: {
+		auth_handler = SIGV4Authorization::FromAttachOptions(attach_options);
+		break;
+	}
+	default:
+		throw InternalException("Authorization Type (%s) not implemented",
+		                        IRCAuthorization::TypeToString(attach_options.authorization_type));
 	}
 }
 
@@ -38,8 +51,8 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	D_ASSERT(prefix.empty());
 	url.AddPathComponent("config");
 	url.SetParam("warehouse", warehouse);
-	RequestInput request_input;
-	auto response = auth_handler->GetRequest(context, url, request_input);
+
+	auto response = auth_handler->GetRequest(*this, context, url);
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(response));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto catalog_config = rest_api_objects::CatalogConfig::FromJSON(root);

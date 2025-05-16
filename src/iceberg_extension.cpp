@@ -185,18 +185,6 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 
 	//! Finally, create the auth_handler class from the authorization_type and the remaining options
 	unique_ptr<IRCAuthorization> auth_handler;
-	switch (attach_options.authorization_type) {
-	case IRCAuthorizationType::OAUTH2: {
-		auth_handler = OAuth2Authorization::FromAttachOptions(context, attach_options);
-		break;
-	}
-	case IRCAuthorizationType::SIGV4: {
-		auth_handler = SIGV4Authorization::FromAttachOptions(attach_options);
-		break;
-	}
-	default:
-		throw InternalException("Authorization Type (%s) not implemented", authorization_type_string);
-	}
 
 	//! We throw if there are any additional options not handled by previous steps
 	if (!attach_options.options.empty()) {
@@ -213,8 +201,7 @@ static unique_ptr<Catalog> IcebergCatalogAttach(StorageExtensionInfo *storage_in
 	}
 
 	D_ASSERT(auth_handler);
-	auto catalog = make_uniq<IRCatalog>(db, access_mode, std::move(auth_handler), attach_options.warehouse,
-	                                    attach_options.endpoint);
+	auto catalog = make_uniq<IRCatalog>(db, access_mode, context, attach_options);
 	catalog->GetConfig(context);
 	return std::move(catalog);
 }

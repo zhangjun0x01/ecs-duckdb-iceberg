@@ -63,8 +63,7 @@ static string GetAwsService(const string &host) {
 	return host.substr(0, host.find_first_of('.'));
 }
 
-string SIGV4Authorization::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-                                      RequestInput &) {
+string SIGV4Authorization::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder) {
 	AWSInput aws_input;
 	aws_input.cert_path = APIUtils::GetCURLCertPath();
 	// Set the user Agent.

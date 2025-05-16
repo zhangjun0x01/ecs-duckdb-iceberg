@@ -9,13 +9,12 @@ public:
 	static constexpr const IRCAuthorizationType TYPE = IRCAuthorizationType::SIGV4;
 
 public:
-	SIGV4Authorization();
-	SIGV4Authorization(const string &secret);
+	SIGV4Authorization(Catalog &catalog);
+	SIGV4Authorization(Catalog &catalog, const string &secret);
 
 public:
 	static unique_ptr<IRCAuthorization> FromAttachOptions(IcebergAttachOptions &input);
-	string GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-	                  RequestInput &request_input) override;
+	unique_ptr<HTTPResponse> GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder) override;
 
 public:
 	string secret;

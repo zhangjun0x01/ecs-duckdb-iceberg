@@ -23,9 +23,9 @@ const string &APIUtils::GetCURLCertPath() {
 	return cert_path;
 }
 
-string APIUtils::DeleteRequest(ClientContext &context, const string &url, RequestInput &request_input,
-                               const string &token) {
+string APIUtils::DeleteRequest(ClientContext &context, const string &url, const string &token) {
 	// Set the user Agent.
+	auto &db = DatabaseInstance::GetDatabase(context);
 	auto &config = DBConfig::GetConfig(context);
 	request_input.AddHeader(StringUtil::Format("User-Agent: %s", config.UserAgent()));
 	request_input.SetURL(url);
@@ -36,7 +36,8 @@ string APIUtils::DeleteRequest(ClientContext &context, const string &url, Reques
 }
 
 string APIUtils::PostRequest(ClientContext &context, const string &url, const string &post_data,
-                             RequestInput &request_input, const string &content_type, const string &token) {
+                             const string &content_type, const string &token) {
+	auto &db = DatabaseInstance::GetDatabase(context);
 	auto &config = DBConfig::GetConfig(context);
 	request_input.AddHeader(StringUtil::Format("User-Agent: %s", config.UserAgent()));
 	request_input.AddHeader("Content-Type: application/" + content_type);
@@ -47,17 +48,22 @@ string APIUtils::PostRequest(ClientContext &context, const string &url, const st
 	return request_input.PostRequest(context, post_data);
 }
 
-string APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-                            RequestInput &request_input, const string &token) {
-	auto url = endpoint_builder.GetURL();
-	// Set the user Agent.
-	auto &config = DBConfig::GetConfig(context);
-	request_input.AddHeader(StringUtil::Format("User-Agent: %s", config.UserAgent()));
-	request_input.SetURL(url);
-	request_input.SetCertPath(GetCURLCertPath());
-	request_input.SetBearerToken(token);
+unique_ptr<HTTPResponse> APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
+                                              const string &token) {
+	auto &db = DatabaseInstance::GetDatabase(context);
+	HTTPHeaders headers(db);
+	headers.Insert("X-Iceberg-Access-Delegation", "vended-credentials");
+	headers.Insert("Authorization", StringUtil::Format("Bearer %s", token));
 
-	return request_input.GetRequest(context);
+	HTTPParams params;
+	params.Initialize(db);
+	params.logger = context.GetLogger();
+
+	auto &http_util = HTTPUtil::Get(db);
+	auto url = endpoint_builder.GetURL();
+	GetRequestInfo get_request(url, headers, params, nullptr, nullptr);
+
+	return http_util.Request(get_request);
 }
 
 } // namespace duckdb

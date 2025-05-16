@@ -4,6 +4,7 @@
 #include "catalog_utils.hpp"
 #include "url_utils.hpp"
 #include "curl.hpp"
+#include "duckdb/common/http_util.hpp"
 
 namespace duckdb {
 
@@ -27,10 +28,11 @@ public:
 
 public:
 	static IRCAuthorizationType TypeFromString(const string &type);
+	static string TypeToString(IRCAuthorizationType type);
 
 public:
-	virtual string GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-	                          RequestInput &request_input) = 0;
+	virtual unique_ptr<HTTPResponse> GetRequest(Catalog &catalog, ClientContext &context,
+	                                            const IRCEndpointBuilder &endpoint_builder) = 0;
 
 public:
 	template <class TARGET>
