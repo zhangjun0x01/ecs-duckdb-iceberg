@@ -60,13 +60,11 @@ public:
 	                            const string &table_name, bool perform_request = false);
 	static vector<IRCAPISchema> GetSchemas(ClientContext &context, IRCatalog &catalog);
 
-	static IRCAPISchema CreateSchema(ClientContext &context, IRCatalog &catalog, const string &internal,
-	                                 const string &schema);
-	static void DropSchema(ClientContext &context, const string &internal, const string &schema);
-	static IRCAPITable CreateTable(ClientContext &context, IRCatalog &catalog, const string &internal,
-	                               const string &schema, CreateTableInfo *table_info);
-	static void DropTable(ClientContext &context, IRCatalog &catalog, const string &internal, const string &schema,
-	                      string &table_name);
+	static IRCAPISchema CreateSchema(ClientContext &context, IRCatalog &catalog, const string &schema);
+	static void DropSchema(ClientContext &context, const string &schema);
+	static IRCAPITable CreateTable(ClientContext &context, IRCatalog &catalog, const string &schema,
+	                               CreateTableInfo *table_info);
+	static void DropTable(ClientContext &context, IRCatalog &catalog, const string &schema, string &table_name);
 };
 
 } // namespace duckdb

@@ -11,7 +11,7 @@ namespace duckdb {
 idx_t IcebergUtils::CountOccurrences(const string &input, const string &to_find) {
 	size_t pos = input.find(to_find);
 	idx_t count = 0;
-	while (pos != std::string::npos) {
+	while (pos != string::npos) {
 		pos = input.find(to_find, pos + to_find.length()); // move past current match
 		count++;
 	}
@@ -29,12 +29,12 @@ string IcebergUtils::FileToString(const string &path, FileSystem &fs) {
 static string ExtractIcebergScanPath(const string &sql) {
 	auto lower_sql = StringUtil::Lower(sql);
 	auto start = lower_sql.find("iceberg_scan('");
-	if (start == std::string::npos) {
+	if (start == string::npos) {
 		throw InvalidInputException("Could not find ICEBERG_SCAN in referenced view");
 	}
 	start += 14;
 	auto end = sql.find("\'", start);
-	if (end == std::string::npos) {
+	if (end == string::npos) {
 		throw InvalidInputException("Could not find end of the ICEBERG_SCAN in referenced view");
 	}
 	return sql.substr(start, end - start);

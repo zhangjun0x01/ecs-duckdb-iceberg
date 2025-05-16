@@ -80,14 +80,14 @@ unique_ptr<ICTableInfo> ICTableSet::GetTableInfo(ClientContext &context, IRCSche
 optional_ptr<CatalogEntry> ICTableSet::CreateTable(ClientContext &context, BoundCreateTableInfo &info) {
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
 	auto *table_info = dynamic_cast<CreateTableInfo *>(info.base.get());
-	auto table = IRCAPI::CreateTable(context, ic_catalog, ic_catalog.internal_name, schema.name, table_info);
+	auto table = IRCAPI::CreateTable(context, ic_catalog, schema.name, table_info);
 	auto entry = _CreateCatalogEntry(context, std::move(table));
 	return CreateEntry(std::move(entry));
 }
 
 void ICTableSet::DropTable(ClientContext &context, DropInfo &info) {
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
-	IRCAPI::DropTable(context, ic_catalog, ic_catalog.internal_name, schema.name, info.name);
+	IRCAPI::DropTable(context, ic_catalog, schema.name, info.name);
 }
 
 void ICTableSet::AlterTable(ClientContext &context, RenameTableInfo &info) {

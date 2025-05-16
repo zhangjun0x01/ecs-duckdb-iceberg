@@ -15,7 +15,7 @@ HostDecompositionResult DecomposeHost(const string &host) {
 	HostDecompositionResult result;
 
 	auto start_of_path = host.find('/');
-	if (start_of_path != std::string::npos) {
+	if (start_of_path != string::npos) {
 		//! Authority consists of everything (assuming the host does not contain the scheme) before the first slash
 		result.authority = host.substr(0, start_of_path);
 		auto remainder = host.substr(start_of_path + 1);
