@@ -2,6 +2,8 @@
 
 namespace duckdb {
 
+constexpr LogLevel IcebergLogType::LEVEL;
+
 IcebergLogType::IcebergLogType() : LogType(NAME, LEVEL, GetLogType()) {
 }
 

@@ -31,11 +31,16 @@ unique_ptr<HTTPResponse> APIUtils::DeleteRequest(ClientContext &context, const s
 	headers.Insert("X-Iceberg-Access-Delegation", "vended-credentials");
 	headers.Insert("Authorization", StringUtil::Format("Bearer %s", token));
 
+	string request_url = url;
+	if (StringUtil::StartsWith(request_url, "127.0.0.1")) {
+		request_url = "http://" + request_url;
+	}
+
 	auto &http_util = HTTPUtil::Get(db);
 	unique_ptr<HTTPParams> params;
-	params = http_util.InitializeParameters(context, url);
+	params = http_util.InitializeParameters(context, request_url);
 
-	DeleteRequestInfo delete_request(url, headers, *params);
+	DeleteRequestInfo delete_request(request_url, headers, *params);
 	return http_util.Request(delete_request);
 }
 
@@ -43,6 +48,11 @@ unique_ptr<HTTPResponse> APIUtils::PostRequest(ClientContext &context, const str
                                                const string &content_type, const string &token) {
 	auto &db = DatabaseInstance::GetDatabase(context);
 	auto &config = DBConfig::GetConfig(context);
+
+	string request_url = url;
+	if (StringUtil::StartsWith(request_url, "127.0.0.1")) {
+		request_url = "http://" + request_url;
+	}
 
 	HTTPHeaders headers(db);
 	headers.Insert("X-Iceberg-Access-Delegation", "vended-credentials");
@@ -53,9 +63,9 @@ unique_ptr<HTTPResponse> APIUtils::PostRequest(ClientContext &context, const str
 
 	auto &http_util = HTTPUtil::Get(db);
 	unique_ptr<HTTPParams> params;
-	params = http_util.InitializeParameters(context, url);
+	params = http_util.InitializeParameters(context, request_url);
 
-	PostRequestInfo post_request(url, headers, *params, reinterpret_cast<const_data_ptr_t>(post_data.data()),
+	PostRequestInfo post_request(request_url, headers, *params, reinterpret_cast<const_data_ptr_t>(post_data.data()),
 	                             post_data.size());
 	auto response = http_util.Request(post_request);
 	response->body = post_request.buffer_out;
@@ -73,10 +83,14 @@ unique_ptr<HTTPResponse> APIUtils::GetRequest(ClientContext &context, const IRCE
 	auto &http_util = HTTPUtil::Get(db);
 	unique_ptr<HTTPParams> params;
 
-	auto url = endpoint_builder.GetURL();
-	params = http_util.InitializeParameters(context, url);
+	string request_url = endpoint_builder.GetURL();
+	if (StringUtil::StartsWith(request_url, "127.0.0.1")) {
+		request_url = "http://" + request_url;
+	}
 
-	GetRequestInfo get_request(url, headers, *params, nullptr, nullptr);
+	params = http_util.InitializeParameters(context, request_url);
+
+	GetRequestInfo get_request(request_url, headers, *params, nullptr, nullptr);
 	return http_util.Request(get_request);
 }
 
