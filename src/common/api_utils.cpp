@@ -47,7 +47,9 @@ unique_ptr<HTTPResponse> APIUtils::PostRequest(ClientContext &context, const str
 	HTTPHeaders headers(db);
 	headers.Insert("X-Iceberg-Access-Delegation", "vended-credentials");
 	headers.Insert("Content-Type", StringUtil::Format("application/%s", content_type));
-	headers.Insert("Authorization", StringUtil::Format("Bearer %s", token));
+	if (!token.empty()) {
+		headers.Insert("Authorization", StringUtil::Format("Bearer %s", token));
+	}
 
 	auto &http_util = HTTPUtil::Get(db);
 	unique_ptr<HTTPParams> params;
@@ -55,7 +57,9 @@ unique_ptr<HTTPResponse> APIUtils::PostRequest(ClientContext &context, const str
 
 	PostRequestInfo post_request(url, headers, *params, reinterpret_cast<const_data_ptr_t>(post_data.data()),
 	                             post_data.size());
-	return http_util.Request(post_request);
+	auto response = http_util.Request(post_request);
+	response->body = post_request.buffer_out;
+	return response;
 }
 
 unique_ptr<HTTPResponse> APIUtils::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
