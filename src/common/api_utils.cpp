@@ -24,6 +24,13 @@ const string &APIUtils::GetCURLCertPath() {
 	return cert_path;
 }
 
+static string AddHttpHostIfMissing(const string &url) {
+	if (StringUtil::StartsWith(url, "http://") || StringUtil::StartsWith(url, "https://")) {
+		return url;
+	}
+	return "http://" + url;
+}
+
 unique_ptr<HTTPResponse> APIUtils::DeleteRequest(ClientContext &context, const string &url, const string &token) {
 	auto &db = DatabaseInstance::GetDatabase(context);
 
@@ -31,11 +38,7 @@ unique_ptr<HTTPResponse> APIUtils::DeleteRequest(ClientContext &context, const s
 	headers.Insert("X-Iceberg-Access-Delegation", "vended-credentials");
 	headers.Insert("Authorization", StringUtil::Format("Bearer %s", token));
 
-	string request_url = url;
-	if (StringUtil::StartsWith(request_url, "127.0.0.1")) {
-		request_url = "http://" + request_url;
-	}
-
+	string request_url = AddHttpHostIfMissing(url);
 	auto &http_util = HTTPUtil::Get(db);
 	unique_ptr<HTTPParams> params;
 	params = http_util.InitializeParameters(context, request_url);
@@ -49,10 +52,7 @@ unique_ptr<HTTPResponse> APIUtils::PostRequest(ClientContext &context, const str
 	auto &db = DatabaseInstance::GetDatabase(context);
 	auto &config = DBConfig::GetConfig(context);
 
-	string request_url = url;
-	if (StringUtil::StartsWith(request_url, "127.0.0.1")) {
-		request_url = "http://" + request_url;
-	}
+	string request_url = AddHttpHostIfMissing(url);
 
 	HTTPHeaders headers(db);
 	headers.Insert("X-Iceberg-Access-Delegation", "vended-credentials");
@@ -83,10 +83,7 @@ unique_ptr<HTTPResponse> APIUtils::GetRequest(ClientContext &context, const IRCE
 	auto &http_util = HTTPUtil::Get(db);
 	unique_ptr<HTTPParams> params;
 
-	string request_url = endpoint_builder.GetURL();
-	if (StringUtil::StartsWith(request_url, "127.0.0.1")) {
-		request_url = "http://" + request_url;
-	}
+	string request_url = AddHttpHostIfMissing(endpoint_builder.GetURL());
 
 	params = http_util.InitializeParameters(context, request_url);
 
