@@ -25,7 +25,8 @@ const string &APIUtils::GetCURLCertPath() {
 }
 
 static string AddHttpHostIfMissing(const string &url) {
-	if (StringUtil::StartsWith(url, "http://") || StringUtil::StartsWith(url, "https://")) {
+	auto lower_url = StringUtil::Lower(url);
+	if (StringUtil::StartsWith(lower_url, "http://") || StringUtil::StartsWith(lower_url, "https://")) {
 		return url;
 	}
 	return "http://" + url;
