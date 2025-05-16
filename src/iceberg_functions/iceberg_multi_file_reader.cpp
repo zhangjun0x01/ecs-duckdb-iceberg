@@ -1,5 +1,6 @@
 #include "iceberg_multi_file_reader.hpp"
 #include "iceberg_utils.hpp"
+#include "iceberg_logging.hpp"
 #include "iceberg_predicate.hpp"
 #include "iceberg_predicate_stats.hpp"
 #include "iceberg_value.hpp"
@@ -314,8 +315,8 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 
 			for (auto &entry : intermediate_entries) {
 				if (!FileMatchesFilter(entry)) {
-					DUCKDB_LOG_INFO(context, "duckdb.Extensions.Iceberg",
-					                "Iceberg Filter Pushdown, skipped 'data_file': '%s'", entry.file_path);
+					DUCKDB_LOG(context, IcebergLogType, "Iceberg Filter Pushdown, skipped 'data_file': '%s'",
+					           entry.file_path);
 					//! Skip this file
 					continue;
 				}
@@ -506,8 +507,8 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 
 	for (auto &manifest : all_manifests) {
 		if (!ManifestMatchesFilter(manifest)) {
-			DUCKDB_LOG_INFO(context, "duckdb.Extensions.Iceberg",
-			                "Iceberg Filter Pushdown, skipped 'manifest_file': '%s'", manifest.manifest_path);
+			DUCKDB_LOG(context, IcebergLogType, "Iceberg Filter Pushdown, skipped 'manifest_file': '%s'",
+			           manifest.manifest_path);
 			//! Skip this manifest
 			continue;
 		}
