@@ -31,7 +31,7 @@ public:
 class IRCatalog : public Catalog {
 public:
 	explicit IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, unique_ptr<IRCAuthorization> auth_handler,
-	                   const string &warehouse, const string &uri, const string &version = "v1");
+	                   IcebergAttachOptions &attach_options, const string &version = "v1");
 	~IRCatalog() override;
 
 public:

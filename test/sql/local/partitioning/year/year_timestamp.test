@@ -12,7 +12,7 @@ require httpfs
 require-env DUCKDB_ICEBERG_HAVE_GENERATED_DATA
 
 statement ok
-pragma enable_logging=true;
+pragma enable_logging('Iceberg');
 
 statement ok
 set enable_logging=false;
@@ -54,10 +54,8 @@ WHERE partition_col IS NULL
 query I
 SELECT SUM(meta.record_count) AS total_record_count
 FROM (
-    SELECT 
-        message.split(': ')[2][2:-2] AS msg
-    FROM duckdb_logs
-    WHERE type = 'duckdb.Extensions.Iceberg' and message.contains('manifest_file')
+	SELECT message.split(': ')[2][2:-2] AS msg
+	FROM duckdb_logs() where type = 'Iceberg' and message.contains('manifest_file')
 ) logs
 JOIN ICEBERG_METADATA('data/generated/iceberg/spark-local/default/year_timestamp') meta
 ON logs.msg = meta.manifest_path;
@@ -81,10 +79,8 @@ NULL
 query I
 SELECT SUM(meta.record_count) AS total_record_count
 FROM (
-    SELECT 
-        message.split(': ')[2][2:-2] AS msg
-    FROM duckdb_logs
-    WHERE type = 'duckdb.Extensions.Iceberg' and message.contains('manifest_file')
+	SELECT message.split(': ')[2][2:-2] AS msg
+	FROM duckdb_logs() where type = 'Iceberg' and message.contains('manifest_file')
 ) logs
 JOIN ICEBERG_METADATA('data/generated/iceberg/spark-local/default/year_timestamp') meta
 ON logs.msg = meta.manifest_path;
@@ -104,10 +100,8 @@ WHERE partition_col = '2020-05-15 14:30:45'
 query I
 SELECT SUM(meta.record_count) AS total_record_count
 FROM (
-    SELECT 
-        message.split(': ')[2][2:-2] AS msg
-    FROM duckdb_logs
-    WHERE type = 'duckdb.Extensions.Iceberg' and message.contains('manifest_file')
+	SELECT message.split(': ')[2][2:-2] AS msg
+	FROM duckdb_logs() where type = 'Iceberg' and message.contains('manifest_file')
 ) logs
 JOIN ICEBERG_METADATA('data/generated/iceberg/spark-local/default/year_timestamp') meta
 ON logs.msg = meta.manifest_path;
@@ -126,10 +120,8 @@ WHERE partition_col = '2021-08-22 09:15:20'
 query I
 SELECT SUM(meta.record_count) AS total_record_count
 FROM (
-    SELECT 
-        message.split(': ')[2][2:-2] AS msg
-    FROM duckdb_logs
-    WHERE type = 'duckdb.Extensions.Iceberg' and message.contains('manifest_file')
+	SELECT message.split(': ')[2][2:-2] AS msg
+	FROM duckdb_logs() where type = 'Iceberg' and message.contains('manifest_file')
 ) logs
 JOIN ICEBERG_METADATA('data/generated/iceberg/spark-local/default/year_timestamp') meta
 ON logs.msg = meta.manifest_path;
@@ -148,10 +140,8 @@ WHERE partition_col = '2022-03-10 11:45:30'
 query I
 SELECT SUM(meta.record_count) AS total_record_count
 FROM (
-    SELECT 
-        message.split(': ')[2][2:-2] AS msg
-    FROM duckdb_logs
-    WHERE type = 'duckdb.Extensions.Iceberg' and message.contains('manifest_file')
+	SELECT message.split(': ')[2][2:-2] AS msg
+	FROM duckdb_logs() where type = 'Iceberg' and message.contains('manifest_file')
 ) logs
 JOIN ICEBERG_METADATA('data/generated/iceberg/spark-local/default/year_timestamp') meta
 ON logs.msg = meta.manifest_path;
@@ -171,10 +161,8 @@ WHERE partition_col >= '2021-01-01' AND partition_col < '2022-01-01';
 query I
 SELECT SUM(meta.record_count) AS total_record_count
 FROM (
-    SELECT 
-        message.split(': ')[2][2:-2] AS msg
-    FROM duckdb_logs
-    WHERE type = 'duckdb.Extensions.Iceberg' and message.contains('manifest_file')
+	SELECT message.split(': ')[2][2:-2] AS msg
+	FROM duckdb_logs() where type = 'Iceberg' and message.contains('manifest_file')
 ) logs
 JOIN ICEBERG_METADATA('data/generated/iceberg/spark-local/default/year_timestamp') meta
 ON logs.msg = meta.manifest_path;

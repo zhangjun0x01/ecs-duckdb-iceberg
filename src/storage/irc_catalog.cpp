@@ -11,7 +11,6 @@
 #include "duckdb/main/attached_database.hpp"
 #include "rest_catalog/objects/catalog_config.hpp"
 #include "storage/irc_catalog.hpp"
-#include "curl.hpp"
 
 #include <regex>
 #include "storage/irc_authorization.hpp"
@@ -23,9 +22,9 @@ using namespace duckdb_yyjson;
 namespace duckdb {
 
 IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, unique_ptr<IRCAuthorization> auth_handler,
-                     const string &warehouse, const string &uri, const string &version)
-    : Catalog(db_p), access_mode(access_mode), auth_handler(std::move(auth_handler)), warehouse(warehouse), uri(uri),
-      version(version), schemas(*this) {
+                     IcebergAttachOptions &attach_options, const string &version)
+    : Catalog(db_p), access_mode(access_mode), auth_handler(std::move(auth_handler)),
+      warehouse(attach_options.warehouse), uri(attach_options.endpoint), version(version), schemas(*this) {
 	if (version.empty()) {
 		throw InternalException("version can not be empty");
 	}
@@ -170,9 +169,8 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	D_ASSERT(prefix.empty());
 	url.AddPathComponent("config");
 	url.SetParam("warehouse", warehouse);
-	RequestInput request_input;
-	auto response = auth_handler->GetRequest(context, url, request_input);
-	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(response));
+	auto response = auth_handler->GetRequest(context, url);
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(response->body));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto catalog_config = rest_api_objects::CatalogConfig::FromJSON(root);
 
@@ -426,8 +424,7 @@ unique_ptr<Catalog> IRCatalog::Attach(StorageExtensionInfo *storage_info, Client
 	}
 
 	D_ASSERT(auth_handler);
-	auto catalog = make_uniq<IRCatalog>(db, access_mode, std::move(auth_handler), attach_options.warehouse,
-	                                    attach_options.endpoint);
+	auto catalog = make_uniq<IRCatalog>(db, access_mode, std::move(auth_handler), attach_options);
 	catalog->GetConfig(context);
 	return std::move(catalog);
 }

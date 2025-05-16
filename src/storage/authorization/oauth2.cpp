@@ -1,4 +1,6 @@
 #include "iceberg_extension.hpp"
+#include "iceberg_utils.hpp"
+#include "iceberg_logging.hpp"
 #include "duckdb/main/extension_helper.hpp"
 #include "storage/authorization/oauth2.hpp"
 #include "storage/irc_catalog.hpp"
@@ -43,9 +45,8 @@ string OAuth2Authorization::GetToken(ClientContext &context, const string &grant
 	string post_data = StringUtil::Format("%s", StringUtil::Join(parameters, "&"));
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc;
 	try {
-		RequestInput request_input;
-		string api_result = APIUtils::PostRequest(context, uri, post_data, request_input);
-		doc = std::unique_ptr<yyjson_doc, YyjsonDocDeleter>(ICUtils::api_result_to_doc(api_result));
+		auto response = APIUtils::PostRequest(context, uri, post_data);
+		doc = std::unique_ptr<yyjson_doc, YyjsonDocDeleter>(ICUtils::api_result_to_doc(response->body));
 	} catch (std::exception &ex) {
 		ErrorData error(ex);
 		throw InvalidConfigurationException("Could not get token from %s, captured error message: %s", uri,
@@ -71,9 +72,9 @@ string OAuth2Authorization::GetToken(ClientContext &context, const string &grant
 	return access_token;
 }
 
-string OAuth2Authorization::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-                                       RequestInput &request_input) {
-	return APIUtils::GetRequest(context, endpoint_builder, request_input, token);
+unique_ptr<HTTPResponse> OAuth2Authorization::GetRequest(ClientContext &context,
+                                                         const IRCEndpointBuilder &endpoint_builder) {
+	return APIUtils::GetRequest(context, endpoint_builder, token);
 }
 
 unique_ptr<OAuth2Authorization> OAuth2Authorization::FromAttachOptions(ClientContext &context,
@@ -121,8 +122,8 @@ unique_ptr<OAuth2Authorization> OAuth2Authorization::FromAttachOptions(ClientCon
 				throw InvalidConfigurationException(
 				    "No 'endpoint' was given to attach, and no 'endpoint' could be retrieved from the ICEBERG secret!");
 			}
-			DUCKDB_LOG_INFO(context, "iceberg", "'endpoint' is inferred from the ICEBERG secret '%s'",
-			                iceberg_secret->secret->GetName());
+			DUCKDB_LOG(context, IcebergLogType, "'endpoint' is inferred from the ICEBERG secret '%s'",
+			           iceberg_secret->secret->GetName());
 			input.endpoint = endpoint_from_secret.ToString();
 		}
 		token = kv_iceberg_secret.TryGetValue("token");

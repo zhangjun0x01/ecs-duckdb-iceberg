@@ -12,8 +12,8 @@
 #include "yyjson.hpp"
 #include "duckdb/common/file_system.hpp"
 #include "url_utils.hpp"
-#include "curl.hpp"
 #include "aws.hpp"
+#include "duckdb/common/http_util.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -36,13 +36,12 @@ static string certFileLocations[] = {
 
 class APIUtils {
 public:
-	static string GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-	                         RequestInput &request_input, const string &token = "");
-	static string DeleteRequest(ClientContext &context, const string &url, RequestInput &request_input,
-	                            const string &token = "");
-	static string PostRequest(ClientContext &context, const string &url, const string &post_data,
-	                          RequestInput &request_input, const string &content_type = "x-www-form-urlencoded",
-	                          const string &token = "");
+	static unique_ptr<HTTPResponse> GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
+	                                           const string &token = "");
+	static unique_ptr<HTTPResponse> DeleteRequest(ClientContext &context, const string &url, const string &token = "");
+	static unique_ptr<HTTPResponse> PostRequest(ClientContext &context, const string &url, const string &post_data,
+	                                            const string &content_type = "x-www-form-urlencoded",
+	                                            const string &token = "");
 	//! We use a singleton here to store the path, set by SelectCurlCertPath
 	static const string &GetCURLCertPath();
 };

@@ -21,6 +21,8 @@
 #include "duckdb/main/extension_helper.hpp"
 #include "storage/authorization/oauth2.hpp"
 #include "storage/authorization/sigv4.hpp"
+#include "iceberg_utils.hpp"
+#include "iceberg_logging.hpp"
 
 namespace duckdb {
 
@@ -73,6 +75,9 @@ static void LoadInternal(DatabaseInstance &instance) {
 	CreateSecretFunction secret_function = {"iceberg", "config", OAuth2Authorization::CreateCatalogSecretFunction};
 	OAuth2Authorization::SetCatalogSecretParameters(secret_function);
 	ExtensionUtil::RegisterFunction(instance, secret_function);
+
+	auto &log_manager = instance.GetLogManager();
+	log_manager.RegisterLogType(make_uniq<IcebergLogType>());
 
 	config.storage_extensions["iceberg"] = make_uniq<IRCStorageExtension>();
 }
