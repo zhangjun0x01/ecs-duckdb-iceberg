@@ -98,8 +98,10 @@
 //	return result;
 //}
 
-// string RequestInput::PostRequest(ClientContext &context, const string &post_data) {
-//	CURLRequestHeaders curl_headers(headers);
+// static size_t RequestWriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+//	((string *)userp)->append((char *)contents, size * nmemb);
+//	return size * nmemb;
+//}
 
 //	CURLcode res;
 //	string result;

@@ -9,6 +9,7 @@
 #include <duckdb/main/secret/secret_manager.hpp>
 #include "duckdb/common/error_data.hpp"
 #include "duckdb/common/http_util.hpp"
+#include "duckdb/common/exception/http_exception.hpp"
 
 #include "storage/authorization/sigv4.hpp"
 #include "storage/authorization/oauth2.hpp"
@@ -27,9 +28,9 @@ static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const
 	url_builder.AddPathComponent("tables");
 	url_builder.AddPathComponent(table);
 
+	auto url = url_builder.GetURL();
 	auto response = catalog.auth_handler->GetRequest(context, url_builder);
 	if (!response->Success()) {
-		auto url = url_builder.GetURL();
 		if (response->HasRequestError()) {
 			//! Request error - this means something went wrong performing the request
 			throw IOException("Failed to hit endpoint '%s' (ERROR %s)", url, response->GetRequestError());
@@ -45,7 +46,7 @@ static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto load_table_result = rest_api_objects::LoadTableResult::FromJSON(root);
-	catalog.SetCachedValue(url.GetURL(), api_result, load_table_result);
+	catalog.SetCachedValue(url, api_result, load_table_result);
 	return api_result;
 }
 
@@ -113,10 +114,10 @@ static void ParseConfigOptions(const case_insensitive_map_t<string> &config, cas
 	}
 	auto endpoint = endpoint_it->second.ToString();
 	if (StringUtil::StartsWith(endpoint, "http://")) {
-		endpoint = endpoint.substr(7, std::string::npos);
+		endpoint = endpoint.substr(7, string::npos);
 	}
 	if (StringUtil::StartsWith(endpoint, "https://")) {
-		endpoint = endpoint.substr(8, std::string::npos);
+		endpoint = endpoint.substr(8, string::npos);
 	}
 	if (StringUtil::EndsWith(endpoint, "/")) {
 		endpoint = endpoint.substr(0, endpoint.size() - 1);
@@ -295,8 +296,8 @@ vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog
 	url.AddPathComponent("namespaces");
 	url.AddPathComponent(schema);
 	url.AddPathComponent("tables");
-	string api_result = catalog.auth_handler->GetRequest(context, url);
-	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
+	auto response = catalog.auth_handler->GetRequest(context, url);
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(response->body));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto list_tables_response = rest_api_objects::ListTablesResponse::FromJSON(root);
 
@@ -315,8 +316,8 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catal
 	auto endpoint_builder = catalog.GetBaseUrl();
 	endpoint_builder.AddPathComponent(catalog.prefix);
 	endpoint_builder.AddPathComponent("namespaces");
-	string api_result = catalog.auth_handler->GetRequest(context, endpoint_builder);
-	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(api_result));
+	auto response = catalog.auth_handler->GetRequest(context, endpoint_builder);
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(response->body));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto list_namespaces_response = rest_api_objects::ListNamespacesResponse::FromJSON(root);
 	if (!list_namespaces_response.has_namespaces) {
@@ -340,29 +341,27 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catal
 	return result;
 }
 
-IRCAPISchema IRCAPI::CreateSchema(ClientContext &context, IRCatalog &catalog, const string &internal,
-                                  const string &schema) {
+IRCAPISchema IRCAPI::CreateSchema(ClientContext &context, IRCatalog &catalog, const string &schema) {
 	throw NotImplementedException("IRCAPI::Create Schema not Implemented");
 }
 
-void IRCAPI::DropSchema(ClientContext &context, const string &internal, const string &schema) {
+void IRCAPI::DropSchema(ClientContext &context, const string &schema) {
 	throw NotImplementedException("IRCAPI Drop Schema not Implemented");
 }
 
-void IRCAPI::DropTable(ClientContext &context, IRCatalog &catalog, const string &internal, const string &schema,
-                       string &table_name) {
+void IRCAPI::DropTable(ClientContext &context, IRCatalog &catalog, const string &schema, string &table_name) {
 	throw NotImplementedException("IRCAPI Drop Table not Implemented");
 }
 
-static std::string json_to_string(yyjson_mut_doc *doc, yyjson_write_flag flags = YYJSON_WRITE_PRETTY) {
+static string json_to_string(yyjson_mut_doc *doc, yyjson_write_flag flags = YYJSON_WRITE_PRETTY) {
 	char *json_chars = yyjson_mut_write(doc, flags, NULL);
-	std::string json_str(json_chars);
+	string json_str(json_chars);
 	free(json_chars);
 	return json_str;
 }
 
-IRCAPITable IRCAPI::CreateTable(ClientContext &context, IRCatalog &catalog, const string &internal,
-                                const string &schema, CreateTableInfo *table_info) {
+IRCAPITable IRCAPI::CreateTable(ClientContext &context, IRCatalog &catalog, const string &schema,
+                                CreateTableInfo *table_info) {
 	throw NotImplementedException("IRCAPI Create Table not Implemented");
 }
 

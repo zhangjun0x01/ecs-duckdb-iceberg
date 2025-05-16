@@ -74,12 +74,12 @@ string ICTableEntry::PrepareIcebergScanFromEntry(ClientContext &context) {
 		auto &info = *table_credentials.config;
 		D_ASSERT(info.scope.empty());
 		//! Limit the scope to the metadata location
-		std::string lc_storage_location;
+		string lc_storage_location;
 		lc_storage_location.resize(table_data->storage_location.size());
 		std::transform(table_data->storage_location.begin(), table_data->storage_location.end(),
 		               lc_storage_location.begin(), ::tolower);
 		size_t metadata_pos = lc_storage_location.find("metadata");
-		if (metadata_pos != std::string::npos) {
+		if (metadata_pos != string::npos) {
 			info.scope = {table_data->storage_location.substr(0, metadata_pos)};
 		} else {
 			throw InvalidInputException("Substring not found");

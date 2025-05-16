@@ -31,8 +31,7 @@ public:
 	static string TypeToString(IRCAuthorizationType type);
 
 public:
-	virtual unique_ptr<HTTPResponse> GetRequest(Catalog &catalog, ClientContext &context,
-	                                            const IRCEndpointBuilder &endpoint_builder) = 0;
+	virtual unique_ptr<HTTPResponse> GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder) = 0;
 
 public:
 	template <class TARGET>

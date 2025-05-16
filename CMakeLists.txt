@@ -36,7 +36,6 @@ set(EXTENSION_SOURCES
     src/storage/irc_authorization.cpp
     src/storage/irc_catalog.cpp
     src/storage/irc_catalog_set.cpp
-    src/storage/irc_clear_cache.cpp
     src/storage/irc_schema_entry.cpp
     src/storage/irc_schema_set.cpp
     src/storage/irc_table_entry.cpp

@@ -43,9 +43,8 @@ string OAuth2Authorization::GetToken(ClientContext &context, const string &grant
 	string post_data = StringUtil::Format("%s", StringUtil::Join(parameters, "&"));
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc;
 	try {
-		RequestInput request_input;
-		string api_result = APIUtils::PostRequest(context, uri, post_data, request_input);
-		doc = std::unique_ptr<yyjson_doc, YyjsonDocDeleter>(ICUtils::api_result_to_doc(api_result));
+		auto response = APIUtils::PostRequest(context, uri, post_data);
+		doc = std::unique_ptr<yyjson_doc, YyjsonDocDeleter>(ICUtils::api_result_to_doc(response->body));
 	} catch (std::exception &ex) {
 		ErrorData error(ex);
 		throw InvalidConfigurationException("Could not get token from %s, captured error message: %s", uri,
@@ -71,7 +70,8 @@ string OAuth2Authorization::GetToken(ClientContext &context, const string &grant
 	return access_token;
 }
 
-string OAuth2Authorization::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder) {
+unique_ptr<HTTPResponse> OAuth2Authorization::GetRequest(ClientContext &context,
+                                                         const IRCEndpointBuilder &endpoint_builder) {
 	return APIUtils::GetRequest(context, endpoint_builder, token);
 }
 

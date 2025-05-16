@@ -37,12 +37,12 @@ static string certFileLocations[] = {
 
 class APIUtils {
 public:
-	unique_ptr<HTTPResponse> GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-	                                    const string &token = "");
-	unique_ptr<HTTPResponse> DeleteRequest(ClientContext &context, const string &url, const string &token = "");
-	unique_ptr<HTTPResponse> PostRequest(ClientContext &context, const string &url, const string &post_data,
-	                                     const string &content_type = "x-www-form-urlencoded",
-	                                     const string &token = "");
+	static unique_ptr<HTTPResponse> GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
+	                                           const string &token = "");
+	static unique_ptr<HTTPResponse> DeleteRequest(ClientContext &context, const string &url, const string &token = "");
+	static unique_ptr<HTTPResponse> PostRequest(ClientContext &context, const string &url, const string &post_data,
+	                                            const string &content_type = "x-www-form-urlencoded",
+	                                            const string &token = "");
 	//! We use a singleton here to store the path, set by SelectCurlCertPath
 	static const string &GetCURLCertPath();
 };
