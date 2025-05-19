@@ -16,8 +16,6 @@
 #include "iceberg_functions.hpp"
 #include "yyjson.hpp"
 #include "catalog_api.hpp"
-#include "aws/core/Aws.h"
-#include "aws/s3/S3Client.h"
 #include "duckdb/main/extension_helper.hpp"
 #include "storage/authorization/oauth2.hpp"
 #include "storage/authorization/sigv4.hpp"
@@ -41,9 +39,6 @@ public:
 };
 
 static void LoadInternal(DatabaseInstance &instance) {
-	Aws::SDKOptions options;
-	Aws::InitAPI(options); // Should only be called once.
-
 	ExtensionHelper::AutoLoadExtension(instance, "parquet");
 	if (!instance.ExtensionIsLoaded("parquet")) {
 		throw MissingExtensionException("The iceberg extension requires the parquet extension to be loaded!");

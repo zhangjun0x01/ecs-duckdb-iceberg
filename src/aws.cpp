@@ -44,7 +44,17 @@ protected:
 
 } // namespace
 
+static void InitAWSAPI() {
+	static bool loaded = false;
+	if (!loaded) {
+		Aws::SDKOptions options;
+		Aws::InitAPI(options); // Should only be called once.
+		loaded = true;
+	}
+}
+
 string AWSInput::GetRequest(ClientContext &context) {
+	InitAWSAPI();
 	auto clientConfig = make_uniq<Aws::Client::ClientConfiguration>();
 
 	if (!cert_path.empty()) {
