@@ -3,6 +3,7 @@
 #include "catalog_api.hpp"
 #include "catalog_utils.hpp"
 #include "iceberg_utils.hpp"
+#include "iceberg_logging.hpp"
 #include "api_utils.hpp"
 #include "duckdb/storage/database_size.hpp"
 #include "duckdb/main/database.hpp"
@@ -195,8 +196,7 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	}
 
 	if (prefix.empty()) {
-		DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.HttpRequest", "No prefix found for catalog with warehouse value %s",
-		                 warehouse);
+		DUCKDB_LOG(context, IcebergLogType, "No prefix found for catalog with warehouse value %s", warehouse);
 	}
 	// TODO: store optional endpoints param as well. We can enforce per catalog the endpoints that
 	//  are allowed to be hit

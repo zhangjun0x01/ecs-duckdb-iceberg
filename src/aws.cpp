@@ -1,3 +1,5 @@
+#include "iceberg_logging.hpp"
+
 #include "aws.hpp"
 #include "duckdb/common/string_util.hpp"
 #include "duckdb/common/exception/http_exception.hpp"
@@ -89,9 +91,9 @@ string AWSInput::GetRequest(ClientContext &context) {
 	MyHttpClient = Aws::Http::CreateHttpClient(*clientConfig);
 	std::shared_ptr<Aws::Http::HttpResponse> res = MyHttpClient->MakeRequest(req);
 	Aws::Http::HttpResponseCode resCode = res->GetResponseCode();
-	DUCKDB_LOG_DEBUG(context, "iceberg.Catalog.Aws.HTTPRequest",
-	                 "GET %s (response %d) (signed with key_id '%s' for service '%s', in region '%s')",
-	                 uri.GetURIString(), resCode, key_id, service.c_str(), region.c_str());
+	DUCKDB_LOG(context, IcebergLogType,
+	           "GET %s (response %d) (signed with key_id '%s' for service '%s', in region '%s')", uri.GetURIString(),
+	           resCode, key_id, service.c_str(), region.c_str());
 
 	if (resCode != Aws::Http::HttpResponseCode::OK) {
 		Aws::StringStream resBody;
