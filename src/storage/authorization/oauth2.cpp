@@ -188,8 +188,8 @@ unique_ptr<BaseSecret> OAuth2Authorization::CreateCatalogSecretFunction(ClientCo
 	if (oauth2_server_uri_it != result->secret_map.end()) {
 		server_uri = oauth2_server_uri_it->second.ToString();
 	} else if (endpoint_it != result->secret_map.end()) {
-		DUCKDB_LOG_WARN(
-		    context, "iceberg",
+		DUCKDB_LOG(
+		    context, IcebergLogType,
 		    "'oauth2_server_uri' is not set, defaulting to deprecated '{endpoint}/v1/oauth/tokens' oauth2_server_uri");
 		server_uri = StringUtil::Format("%s/v1/oauth/tokens", endpoint_it->second.ToString());
 	} else {
