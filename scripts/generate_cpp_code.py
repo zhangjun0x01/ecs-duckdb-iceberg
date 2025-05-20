@@ -631,6 +631,7 @@ class CPPClass:
             specific_mapping = None
             generic_mapping = None
             if type_mapping.formats and property.format in type_mapping.formats:
+                assert item_type == 'integer'
                 specific_mapping = type_mapping.formats[property.format]
             generic_mapping = type_mapping
             # NOTE: no need to really check the 'format' of the 'property' here
@@ -644,8 +645,8 @@ class CPPClass:
                 )
                 res.extend(
                     [
-                        f'}} else if ({generic_mapping.type_check}({source})) {{',
-                        f'\t{target} = {generic_mapping.conversion}({source});',
+                        f'}} else if (yyjson_is_uint({source})) {{',
+                        f'\t{target} = yyjson_get_uint({source});',
                     ]
                 )
             else:
