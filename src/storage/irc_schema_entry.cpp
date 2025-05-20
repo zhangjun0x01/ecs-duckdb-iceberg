@@ -95,7 +95,6 @@ void IRCSchemaEntry::Alter(CatalogTransaction transaction, AlterInfo &info) {
 
 static bool CatalogTypeIsSupported(CatalogType type) {
 	switch (type) {
-	case CatalogType::INDEX_ENTRY:
 	case CatalogType::TABLE_ENTRY:
 	case CatalogType::VIEW_ENTRY:
 		return true;
@@ -124,7 +123,7 @@ optional_ptr<CatalogEntry> IRCSchemaEntry::LookupEntry(CatalogTransaction transa
 	return GetCatalogSet(type).GetEntry(transaction.GetContext(), lookup_info.GetEntryName());
 }
 
-IRCCatalogSet &IRCSchemaEntry::GetCatalogSet(CatalogType type) {
+ICTableSet &IRCSchemaEntry::GetCatalogSet(CatalogType type) {
 	switch (type) {
 	case CatalogType::TABLE_ENTRY:
 	case CatalogType::VIEW_ENTRY:
