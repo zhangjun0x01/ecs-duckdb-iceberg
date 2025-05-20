@@ -16,12 +16,12 @@ public:
 
 public:
 	bool IsEmptySnapshot() {
-		return snapshot_id == NumericLimits<int32_t>::Maximum();
+		return snapshot_id == NumericLimits<int64_t>::Maximum();
 	}
 
 public:
 	//! Snapshot metadata
-	int32_t snapshot_id = NumericLimits<int32_t>::Maximum();
+	int64_t snapshot_id = NumericLimits<int64_t>::Maximum();
 	int64_t sequence_number;
 	int32_t schema_id;
 	timestamp_t timestamp_ms;

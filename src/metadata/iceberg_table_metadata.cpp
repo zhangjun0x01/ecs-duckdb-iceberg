@@ -13,8 +13,9 @@ optional_ptr<IcebergSnapshot> IcebergTableMetadata::FindLatestSnapshotInternal()
 	optional_ptr<IcebergSnapshot> max_snapshot;
 	for (auto &it : snapshots) {
 		auto &snapshot = it.second;
+		auto current_timestamp = Timestamp::GetEpochMs(snapshot.timestamp_ms);
 		if (snapshot.timestamp_ms.value >= max_timestamp) {
-			max_timestamp = snapshot.timestamp_ms.value;
+			max_timestamp = current_timestamp;
 			max_snapshot = snapshot;
 		}
 	}
@@ -36,7 +37,7 @@ optional_ptr<IcebergSnapshot> IcebergTableMetadata::FindSnapshotByIdTimestampInt
 	auto timestamp_millis = Timestamp::GetEpochMs(timestamp);
 	for (auto &it : snapshots) {
 		auto &snapshot = it.second;
-		auto curr_millis = snapshot.timestamp_ms.value;
+		auto curr_millis = Timestamp::GetEpochMs(snapshot.timestamp_ms);
 		if (curr_millis <= timestamp_millis && curr_millis >= max_millis) {
 			max_snapshot = snapshot;
 			max_millis = curr_millis;
