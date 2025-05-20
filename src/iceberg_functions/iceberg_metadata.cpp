@@ -22,7 +22,8 @@
 #include "iceberg_metadata.hpp"
 #include "iceberg_functions.hpp"
 #include "iceberg_utils.hpp"
-#include "yyjson.hpp"
+
+#include "metadata/iceberg_table_metadata.hpp"
 
 #include <string>
 #include <numeric>
@@ -95,28 +96,16 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 		}
 	}
 
-	auto iceberg_meta_path = IcebergSnapshot::GetMetaDataPath(context, iceberg_path, fs, options);
-	auto metadata = IcebergMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
+	auto iceberg_meta_path = IcebergTableMetadata::GetMetaDataPath(context, iceberg_path, fs, options);
+	auto table_metadata = IcebergTableMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
+	auto metadata = IcebergTableMetadata::FromTableMetadata(table_metadata);
 
-	shared_ptr<IcebergSnapshot> snapshot_to_scan;
-	switch (options.snapshot_source) {
-	case SnapshotSource::LATEST: {
-		snapshot_to_scan = IcebergSnapshot::GetLatestSnapshot(*metadata, options);
-		break;
-	}
-	case SnapshotSource::FROM_ID: {
-		snapshot_to_scan = IcebergSnapshot::GetSnapshotById(*metadata, options.snapshot_id, options);
-		break;
-	}
-	case SnapshotSource::FROM_TIMESTAMP: {
-		snapshot_to_scan = IcebergSnapshot::GetSnapshotByTimestamp(*metadata, options.snapshot_timestamp, options);
-		break;
-	}
-	default:
-		throw InternalException("SnapshotSource type not implemented");
-	}
+	auto snapshot_to_scan = metadata->GetSnapshot(options);
 
-	ret->iceberg_table = make_uniq<IcebergTable>(IcebergTable::Load(iceberg_path, snapshot_to_scan, context, options));
+	if (snapshot_to_scan) {
+		ret->iceberg_table =
+		    make_uniq<IcebergTable>(IcebergTable::Load(iceberg_path, *metadata, *snapshot_to_scan, context, options));
+	}
 
 	auto manifest_types = IcebergManifest::Types();
 	return_types.insert(return_types.end(), manifest_types.begin(), manifest_types.end());
@@ -138,6 +127,11 @@ static void AddString(Vector &vec, idx_t index, string_t &&str) {
 static void IcebergMetaDataFunction(ClientContext &context, TableFunctionInput &data, DataChunk &output) {
 	auto &bind_data = data.bind_data->Cast<IcebergMetaDataBindData>();
 	auto &global_state = data.global_state->Cast<IcebergMetaDataGlobalTableFunctionState>();
+
+	if (!bind_data.iceberg_table) {
+		//! Table is empty
+		return;
+	}
 
 	idx_t out = 0;
 	auto manifests = bind_data.iceberg_table->entries;

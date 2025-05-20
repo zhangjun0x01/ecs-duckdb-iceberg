@@ -14,7 +14,6 @@
 #include "duckdb/catalog/default/default_functions.hpp"
 #include "duckdb/storage/storage_extension.hpp"
 #include "iceberg_functions.hpp"
-#include "yyjson.hpp"
 #include "catalog_api.hpp"
 #include "duckdb/main/extension_helper.hpp"
 #include "storage/authorization/oauth2.hpp"

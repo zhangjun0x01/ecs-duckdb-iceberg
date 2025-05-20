@@ -19,12 +19,17 @@ set(EXTENSION_SOURCES
     src/iceberg_logging.cpp
     src/catalog_utils.cpp
     src/aws.cpp
-    src/iceberg_transform.cpp
+    src/metadata/iceberg_transform.cpp
+    src/metadata/iceberg_table_schema.cpp
+    src/metadata/iceberg_partition_spec.cpp
+    src/metadata/iceberg_snapshot.cpp
+    src/metadata/iceberg_field_mapping.cpp
+    src/metadata/iceberg_column_definition.cpp
+    src/metadata/iceberg_table_metadata.cpp
     src/iceberg_predicate.cpp
     src/iceberg_value.cpp
     src/common/utils.cpp
     src/common/url_utils.cpp
-    src/common/schema.cpp
     src/common/iceberg.cpp
     src/common/api_utils.cpp
     src/iceberg_functions/iceberg_multi_file_reader.cpp

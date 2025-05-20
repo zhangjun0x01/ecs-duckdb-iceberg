@@ -24,7 +24,6 @@
 #include "iceberg_utils.hpp"
 #include "iceberg_multi_file_reader.hpp"
 #include "iceberg_functions.hpp"
-#include "yyjson.hpp"
 #include "storage/irc_table_entry.hpp"
 
 #include <string>
