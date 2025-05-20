@@ -166,7 +166,7 @@ public:
 	bool initialized = false;
 	ClientContext &context;
 	const IcebergOptions &options;
-	unique_ptr<IcebergTableMetadata> metadata;
+	IcebergTableMetadata metadata;
 
 	bool table_is_empty = true;
 	IcebergSnapshot snapshot;

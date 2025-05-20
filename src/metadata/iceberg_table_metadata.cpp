@@ -230,26 +230,26 @@ rest_api_objects::TableMetadata IcebergTableMetadata::Parse(const string &path, 
 	return rest_api_objects::TableMetadata::FromJSON(root);
 }
 
-unique_ptr<IcebergTableMetadata>
-IcebergTableMetadata::FromTableMetadata(rest_api_objects::TableMetadata &table_metadata) {
-	auto res = make_uniq<IcebergTableMetadata>();
+IcebergTableMetadata IcebergTableMetadata::FromTableMetadata(rest_api_objects::TableMetadata &table_metadata) {
+	IcebergTableMetadata res;
 
-	res->iceberg_version = table_metadata.format_version;
+	res.iceberg_version = table_metadata.format_version;
 	for (auto &schema : table_metadata.schemas) {
-		res->schemas.emplace(schema.object_1.schema_id, IcebergTableSchema::ParseSchema(schema));
+		res.schemas.emplace(schema.object_1.schema_id, IcebergTableSchema::ParseSchema(schema));
 	}
 	for (auto &snapshot : table_metadata.snapshots) {
-		res->snapshots.emplace(snapshot.snapshot_id, IcebergSnapshot::ParseSnapshot(snapshot, *res));
+		res.snapshots.emplace(snapshot.snapshot_id, IcebergSnapshot::ParseSnapshot(snapshot, res));
 	}
 	for (auto &spec : table_metadata.partition_specs) {
-		res->partition_specs.emplace(spec.spec_id, IcebergPartitionSpec::ParseFromJson(spec));
+		res.partition_specs.emplace(spec.spec_id, IcebergPartitionSpec::ParseFromJson(spec));
 	}
 	if (!table_metadata.has_current_schema_id) {
-		if (res->iceberg_version == 1) {
+		if (res.iceberg_version == 1) {
 			throw NotImplementedException("Reading of the V1 'schema' field is not currently supported");
 		}
 		throw InvalidConfigurationException("'current_schema_id' field is missing from the metadata.json file");
 	}
+	res.current_schema_id = table_metadata.current_schema_id;
 
 	auto &properties = table_metadata.properties;
 	auto name_mapping = properties.find("schema.name-mapping.default");
@@ -261,9 +261,9 @@ IcebergTableMetadata::FromTableMetadata(rest_api_objects::TableMetadata &table_m
 		}
 		auto root = yyjson_doc_get_root(doc.get());
 		idx_t mapping_index = 0;
-		res->mappings.emplace_back();
+		res.mappings.emplace_back();
 		mapping_index++;
-		IcebergFieldMapping::ParseFieldMappings(root, res->mappings, mapping_index, 0);
+		IcebergFieldMapping::ParseFieldMappings(root, res.mappings, mapping_index, 0);
 	}
 	return res;
 }

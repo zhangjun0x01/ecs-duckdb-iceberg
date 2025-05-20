@@ -100,11 +100,11 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 	auto table_metadata = IcebergTableMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
 	auto metadata = IcebergTableMetadata::FromTableMetadata(table_metadata);
 
-	auto snapshot_to_scan = metadata->GetSnapshot(options);
+	auto snapshot_to_scan = metadata.GetSnapshot(options);
 
 	if (snapshot_to_scan) {
 		ret->iceberg_table =
-		    make_uniq<IcebergTable>(IcebergTable::Load(iceberg_path, *metadata, *snapshot_to_scan, context, options));
+		    make_uniq<IcebergTable>(IcebergTable::Load(iceberg_path, metadata, *snapshot_to_scan, context, options));
 	}
 
 	auto manifest_types = IcebergManifest::Types();

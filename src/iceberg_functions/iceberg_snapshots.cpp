@@ -31,12 +31,12 @@ public:
 		    IcebergTableMetadata::Parse(iceberg_meta_path, fs, bind_data.options.metadata_compression_codec);
 		global_state->metadata = IcebergTableMetadata::FromTableMetadata(table_metadata);
 
-		auto &info = *global_state->metadata;
+		auto &info = global_state->metadata;
 		global_state->snapshot_it = info.snapshots.begin();
 		return std::move(global_state);
 	}
 
-	unique_ptr<IcebergTableMetadata> metadata;
+	IcebergTableMetadata metadata;
 	unordered_map<int64_t, IcebergSnapshot>::iterator snapshot_it;
 };
 
@@ -87,13 +87,13 @@ static void IcebergSnapshotsFunction(ClientContext &context, TableFunctionInput 
 	auto &bind_data = data.bind_data->Cast<IcebergSnaphotsBindData>();
 	idx_t i = 0;
 	auto &it = global_state.snapshot_it;
-	auto end = global_state.metadata->snapshots.end();
+	auto end = global_state.metadata.snapshots.end();
 	for (; it != end; it++) {
 		if (i >= STANDARD_VECTOR_SIZE) {
 			break;
 		}
 
-		auto &metadata = *global_state.metadata;
+		auto &metadata = global_state.metadata;
 		auto &snapshot = it->second;
 
 		FlatVector::GetData<int64_t>(output.data[0])[i] = snapshot.sequence_number;

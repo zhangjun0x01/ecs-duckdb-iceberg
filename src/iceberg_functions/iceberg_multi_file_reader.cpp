@@ -91,6 +91,7 @@ unique_ptr<IcebergMultiFileList> IcebergMultiFileList::PushdownInternal(ClientCo
 		unique_lock<mutex> lck(lock);
 		filtered_list->snapshot = snapshot;
 		filtered_list->schema = schema;
+		filtered_list->metadata = metadata;
 	}
 	return filtered_list;
 }
@@ -178,7 +179,7 @@ idx_t IcebergMultiFileList::GetTotalFileCount() {
 unique_ptr<NodeStatistics> IcebergMultiFileList::GetCardinality(ClientContext &context) {
 	idx_t cardinality = 0;
 
-	if (metadata->iceberg_version == 1) {
+	if (metadata.iceberg_version == 1) {
 		//! We collect no cardinality information from manifests for V1 tables.
 		return nullptr;
 	}
@@ -373,8 +374,8 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 
 bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 	auto spec_id = manifest.partition_spec_id;
-	auto partition_spec_it = metadata->partition_specs.find(spec_id);
-	if (partition_spec_it == metadata->partition_specs.end()) {
+	auto partition_spec_it = metadata.partition_specs.find(spec_id);
+	if (partition_spec_it == metadata.partition_specs.end()) {
 		throw InvalidInputException("Manifest %s references 'partition_spec_id' %d which doesn't exist",
 		                            manifest.manifest_path, spec_id);
 	}
@@ -438,11 +439,11 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	auto table_metadata = IcebergTableMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
 	metadata = IcebergTableMetadata::FromTableMetadata(table_metadata);
 
-	auto snapshot_lookup = metadata->GetSnapshot(options);
+	auto snapshot_lookup = metadata.GetSnapshot(options);
 	if (options.snapshot_source == SnapshotSource::LATEST) {
-		schema = metadata->GetSchemaFromId(metadata->current_schema_id);
+		schema = metadata.GetSchemaFromId(metadata.current_schema_id);
 	} else {
-		schema = metadata->GetSchemaFromId(snapshot_lookup->schema_id);
+		schema = metadata.GetSchemaFromId(snapshot_lookup->schema_id);
 	}
 
 	if (snapshot_lookup) {
@@ -450,7 +451,7 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	}
 
 	//! Set up the manifest + manifest entry readers
-	if (metadata->iceberg_version == 1) {
+	if (metadata.iceberg_version == 1) {
 		data_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping,
 		                                                       IcebergManifestEntryV1::VerifySchema);
 		delete_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping,
@@ -462,7 +463,7 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 
 		manifest_producer = IcebergManifestV1::ProduceEntries;
 		entry_producer = IcebergManifestEntryV1::ProduceEntries;
-	} else if (metadata->iceberg_version == 2) {
+	} else if (metadata.iceberg_version == 2) {
 		data_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping,
 		                                                       IcebergManifestEntryV2::VerifySchema);
 		delete_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping,
@@ -475,7 +476,7 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 		manifest_producer = IcebergManifestV2::ProduceEntries;
 		entry_producer = IcebergManifestEntryV2::ProduceEntries;
 	} else {
-		throw InvalidInputException("Reading from Iceberg version %d is not supported yet", metadata->iceberg_version);
+		throw InvalidInputException("Reading from Iceberg version %d is not supported yet", metadata.iceberg_version);
 	}
 
 	if (snapshot.IsEmptySnapshot()) {
@@ -590,8 +591,8 @@ IcebergMultiFileReader::InitializeGlobalState(ClientContext &context, const Mult
 	return std::move(res);
 }
 
-static void ApplyFieldMapping(MultiFileColumnDefinition &col, vector<IcebergFieldMapping> &mappings,
-                              case_insensitive_map_t<idx_t> &fields,
+static void ApplyFieldMapping(MultiFileColumnDefinition &col, const vector<IcebergFieldMapping> &mappings,
+                              const case_insensitive_map_t<idx_t> &fields,
                               optional_ptr<MultiFileColumnDefinition> parent = nullptr) {
 	if (!col.identifier.IsNull()) {
 		return;
@@ -678,7 +679,7 @@ static void ApplyPartitionConstants(const IcebergMultiFileList &multi_file_list,
 	auto &data_file = multi_file_list.data_files[file_id];
 
 	// Get the partition spec for this file
-	auto &partition_specs = multi_file_list.metadata->partition_specs;
+	auto &partition_specs = multi_file_list.metadata.partition_specs;
 	auto spec_id = data_file.partition_spec_id;
 	auto partition_spec_it = partition_specs.find(spec_id);
 	if (partition_spec_it == partition_specs.end()) {
@@ -779,9 +780,9 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	}
 
 	auto &local_columns = reader_data.reader->columns;
-	auto &mappings = multi_file_list.metadata->mappings;
-	if (!multi_file_list.metadata->mappings.empty()) {
-		auto &root = multi_file_list.metadata->mappings[0];
+	auto &mappings = multi_file_list.metadata.mappings;
+	if (!multi_file_list.metadata.mappings.empty()) {
+		auto &root = multi_file_list.metadata.mappings[0];
 		for (auto &local_column : local_columns) {
 			ApplyFieldMapping(local_column, mappings, root.field_mapping_indexes);
 		}
@@ -1049,7 +1050,7 @@ void IcebergMultiFileReader::ApplyEqualityDeletes(ClientContext &context, DataCh
                                                   const vector<MultiFileColumnDefinition> &local_columns) {
 	vector<reference<IcebergEqualityDeleteRow>> delete_rows;
 
-	auto &metadata = *multi_file_list.metadata;
+	auto &metadata = multi_file_list.metadata;
 	auto delete_data_it = multi_file_list.equality_delete_data.upper_bound(data_file.sequence_number);
 	//! Look through all the equality delete files with a *higher* sequence number
 	for (; delete_data_it != multi_file_list.equality_delete_data.end(); delete_data_it++) {
