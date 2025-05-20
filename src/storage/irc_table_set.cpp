@@ -17,7 +17,7 @@
 
 namespace duckdb {
 
-ICTableSet::ICTableSet(IRCSchemaEntry &schema) : ICInSchemaSet(schema) {
+ICTableSet::ICTableSet(IRCSchemaEntry &schema) : schema(schema), catalog(schema.ParentCatalog()) {
 }
 
 static ColumnDefinition CreateColumnDefinition(ClientContext &context, IcebergColumnDefinition &coldef) {
@@ -49,6 +49,19 @@ void ICTableSet::FillEntry(ClientContext &context, unique_ptr<CatalogEntry> &ent
 	entry = _CreateCatalogEntry(context, std::move(table));
 }
 
+void ICTableSet::Scan(ClientContext &context, const std::function<void(CatalogEntry &)> &callback) {
+	lock_guard<mutex> l(entry_lock);
+	LoadEntries(context);
+	for (auto &entry : entries) {
+		callback(*entry.second);
+	}
+}
+
+void ICTableSet::DropEntry(ClientContext &context, DropInfo &info) {
+	lock_guard<mutex> l(entry_lock);
+	entries.erase(info.name);
+}
+
 void ICTableSet::LoadEntries(ClientContext &context) {
 	if (!entries.empty()) {
 		return;
@@ -60,16 +73,8 @@ void ICTableSet::LoadEntries(ClientContext &context) {
 
 	for (auto &table : tables) {
 		auto entry = _CreateCatalogEntry(context, std::move(table));
-		CreateEntry(std::move(entry));
+		CreateEntryInternal(context, std::move(entry));
 	}
-}
-
-optional_ptr<CatalogEntry> ICTableSet::RefreshTable(ClientContext &context, const string &table_name) {
-	auto table_info = GetTableInfo(context, schema, table_name);
-	auto table_entry = make_uniq<ICTableEntry>(catalog, schema, *table_info);
-	auto table_ptr = table_entry.get();
-	CreateEntry(std::move(table_entry));
-	return table_ptr;
 }
 
 unique_ptr<ICTableInfo> ICTableSet::GetTableInfo(ClientContext &context, IRCSchemaEntry &schema,
@@ -77,12 +82,36 @@ unique_ptr<ICTableInfo> ICTableSet::GetTableInfo(ClientContext &context, IRCSche
 	throw NotImplementedException("ICTableSet::GetTableInfo");
 }
 
+optional_ptr<CatalogEntry> ICTableSet::GetEntry(ClientContext &context, const string &name) {
+	LoadEntries(context);
+	lock_guard<mutex> l(entry_lock);
+	auto entry = entries.find(name);
+	if (entry == entries.end()) {
+		return nullptr;
+	}
+	FillEntry(context, entry->second);
+	return entry->second.get();
+}
+
+optional_ptr<CatalogEntry> ICTableSet::CreateEntryInternal(ClientContext &context, unique_ptr<CatalogEntry> entry) {
+	if (!entry->internal) {
+		entry->internal = schema.internal;
+	}
+	auto result = entry.get();
+	if (result->name.empty()) {
+		throw InternalException("ICTableSet::CreateEntry called with empty name");
+	}
+	entries.insert(make_pair(result->name, std::move(entry)));
+	return result;
+}
+
 optional_ptr<CatalogEntry> ICTableSet::CreateTable(ClientContext &context, BoundCreateTableInfo &info) {
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
 	auto *table_info = dynamic_cast<CreateTableInfo *>(info.base.get());
 	auto table = IRCAPI::CreateTable(context, ic_catalog, schema.name, table_info);
 	auto entry = _CreateCatalogEntry(context, std::move(table));
-	return CreateEntry(std::move(entry));
+
+	return CreateEntryInternal(context, std::move(entry));
 }
 
 void ICTableSet::DropTable(ClientContext &context, DropInfo &info) {

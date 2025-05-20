@@ -37,7 +37,7 @@ public:
 	optional_ptr<CatalogEntry> LookupEntry(CatalogTransaction transaction, const EntryLookupInfo &lookup_info) override;
 
 private:
-	IRCCatalogSet &GetCatalogSet(CatalogType type);
+	ICTableSet &GetCatalogSet(CatalogType type);
 
 private:
 	ICTableSet tables;
