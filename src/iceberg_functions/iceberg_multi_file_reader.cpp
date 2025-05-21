@@ -287,12 +287,10 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 
 	auto iceberg_path = GetPath();
 	auto &fs = FileSystem::GetFileSystem(context);
-	auto &data_files = this->data_files;
-	auto &entry_producer = this->entry_producer;
 
 	// Read enough data files
 	while (file_id >= data_files.size()) {
-		if (data_manifest_entry_reader->Finished()) {
+		if (data_manifest_reader->Finished()) {
 			if (current_data_manifest == data_manifests.end()) {
 				break;
 			}
@@ -301,9 +299,9 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 			                                    ? IcebergUtils::GetFullPath(iceberg_path, manifest.manifest_path, fs)
 			                                    : manifest.manifest_path;
 			auto scan = make_uniq<AvroScan>("IcebergManifest", context, manifest_entry_full_path);
-			data_manifest_entry_reader->Initialize(std::move(scan));
-			data_manifest_entry_reader->SetSequenceNumber(manifest.sequence_number);
-			data_manifest_entry_reader->SetPartitionSpecID(manifest.partition_spec_id);
+			data_manifest_reader->Initialize(std::move(scan));
+			data_manifest_reader->SetSequenceNumber(manifest.sequence_number);
+			data_manifest_reader->SetPartitionSpecID(manifest.partition_spec_id);
 		}
 
 		idx_t remaining = (file_id + 1) - data_files.size();
@@ -311,11 +309,7 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 			// FIXME: push down the filter into the 'read_avro' scan, so the entries that don't match are just filtered
 			// out
 			vector<IcebergManifestEntry> intermediate_entries;
-			data_manifest_entry_reader->ReadEntries(
-			    remaining, [&intermediate_entries, &entry_producer](DataChunk &chunk, idx_t offset, idx_t count,
-			                                                        const ManifestReaderInput &input) {
-				    return entry_producer(chunk, offset, count, input, intermediate_entries);
-			    });
+			data_manifest_reader->Read(remaining, intermediate_entries);
 
 			for (auto &entry : intermediate_entries) {
 				if (!FileMatchesFilter(entry)) {
@@ -327,14 +321,10 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 				data_files.push_back(entry);
 			}
 		} else {
-			data_manifest_entry_reader->ReadEntries(
-			    remaining, [&data_files, &entry_producer](DataChunk &chunk, idx_t offset, idx_t count,
-			                                              const ManifestReaderInput &input) {
-				    return entry_producer(chunk, offset, count, input, data_files);
-			    });
+			data_manifest_reader->Read(remaining, data_files);
 		}
 
-		if (data_manifest_entry_reader->Finished()) {
+		if (data_manifest_reader->Finished()) {
 			current_data_manifest++;
 			continue;
 		}
@@ -430,7 +420,6 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 		return;
 	}
 	initialized = true;
-	auto &manifest_producer = this->manifest_producer;
 
 	//! Load the snapshot
 	auto iceberg_path = GetPath();
@@ -450,9 +439,9 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 		snapshot = *snapshot_lookup;
 	}
 
-	data_manifest_entry_reader = make_uniq<ManifestEntryReader>();
-	delete_manifest_entry_reader = make_uniq<ManifestEntryReader>();
-	manifest_reader = make_uniq<ManifestListReader>();
+	data_manifest_reader = make_uniq<ManifestFileReader>(metadata.iceberg_version);
+	delete_manifest_reader = make_uniq<ManifestFileReader>(metadata.iceberg_version);
+	manifest_list = make_uniq<ManifestListReader>(metadata.iceberg_version);
 
 	if (snapshot.IsEmptySnapshot()) {
 		// we are reading from an empty table
@@ -467,7 +456,7 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	                                   : snapshot.manifest_list;
 
 	auto scan = make_uniq<AvroScan>("IcebergManifestList", context, manifest_list_full_path);
-	manifest_reader->Initialize(std::move(scan));
+	manifest_list->Initialize(std::move(scan));
 
 	vector<IcebergManifest> all_manifests;
 	while (!manifest_list->Finished()) {
@@ -967,11 +956,10 @@ void IcebergMultiFileList::ProcessDeletes(const vector<MultiFileColumnDefinition
 
 	auto iceberg_path = GetPath();
 	auto &fs = FileSystem::GetFileSystem(context);
-	auto &entry_producer = this->entry_producer;
 
 	vector<IcebergManifestEntry> delete_files;
 	while (current_delete_manifest != delete_manifests.end()) {
-		if (delete_manifest_entry_reader->Finished()) {
+		if (delete_manifest_reader->Finished()) {
 			if (current_delete_manifest == delete_manifests.end()) {
 				break;
 			}
@@ -980,18 +968,13 @@ void IcebergMultiFileList::ProcessDeletes(const vector<MultiFileColumnDefinition
 			                                    ? IcebergUtils::GetFullPath(iceberg_path, manifest.manifest_path, fs)
 			                                    : manifest.manifest_path;
 			auto scan = make_uniq<AvroScan>("IcebergManifest", context, manifest_entry_full_path);
-			delete_manifest_entry_reader->Initialize(std::move(scan));
-			delete_manifest_entry_reader->SetSequenceNumber(manifest.sequence_number);
-			delete_manifest_entry_reader->SetPartitionSpecID(manifest.partition_spec_id);
+			delete_manifest_reader->Initialize(std::move(scan));
+			delete_manifest_reader->SetSequenceNumber(manifest.sequence_number);
+			delete_manifest_reader->SetPartitionSpecID(manifest.partition_spec_id);
 		}
 
-		delete_manifest_entry_reader->ReadEntries(
-		    STANDARD_VECTOR_SIZE, [&delete_files, &entry_producer](DataChunk &chunk, idx_t offset, idx_t count,
-		                                                           const ManifestReaderInput &input) {
-			    return entry_producer(chunk, offset, count, input, delete_files);
-		    });
-
-		if (delete_manifest_entry_reader->Finished()) {
+		delete_manifest_reader->Read(STANDARD_VECTOR_SIZE, delete_files);
+		if (delete_manifest_reader->Finished()) {
 			current_delete_manifest++;
 			continue;
 		}

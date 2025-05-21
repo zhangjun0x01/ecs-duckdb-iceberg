@@ -18,33 +18,21 @@ IcebergTable IcebergTable::Load(const string &iceberg_path, const IcebergTableMe
 	ret.path = iceberg_path;
 
 	vector<IcebergManifest> manifests;
-	unique_ptr<ManifestReader> manifest_reader;
-	unique_ptr<ManifestReader> manifest_entry_reader;
-	manifest_reader_manifest_producer manifest_producer = nullptr;
-	manifest_reader_manifest_entry_producer entry_producer = nullptr;
 
 	//! Set up the manifest + manifest entry readers
-	manifest_entry_reader =
-	    make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping, IcebergManifestEntryV1::VerifySchema);
-	manifest_reader =
-	    make_uniq<ManifestReader>(IcebergManifestV1::PopulateNameMapping, IcebergManifestV1::VerifySchema);
-	manifest_producer = IcebergManifestV1::ProduceEntries;
-	entry_producer = IcebergManifestEntryV1::ProduceEntries;
+	auto manifest_list = make_uniq<ManifestListReader>(metadata.iceberg_version);
+	auto manifest_file_reader = make_uniq<ManifestFileReader>(metadata.iceberg_version, false);
 
 	auto &fs = FileSystem::GetFileSystem(context);
 	auto manifest_list_full_path = options.allow_moved_paths
 	                                   ? IcebergUtils::GetFullPath(iceberg_path, snapshot.manifest_list, fs)
 	                                   : snapshot.manifest_list;
 	auto scan = make_uniq<AvroScan>("IcebergManifestList", context, manifest_list_full_path);
-	manifest_reader->Initialize(std::move(scan));
+	manifest_list->Initialize(std::move(scan));
 
 	vector<IcebergManifest> all_manifests;
-	while (!manifest_reader->Finished()) {
-		manifest_reader->ReadEntries(STANDARD_VECTOR_SIZE,
-		                             [&all_manifests, manifest_producer](DataChunk &chunk, idx_t offset, idx_t count,
-		                                                                 const ManifestReaderInput &input) {
-			                             return manifest_producer(chunk, offset, count, input, all_manifests);
-		                             });
+	while (!manifest_list->Finished()) {
+		manifest_list->Read(STANDARD_VECTOR_SIZE, all_manifests);
 	}
 
 	for (auto &manifest : all_manifests) {
@@ -52,17 +40,13 @@ IcebergTable IcebergTable::Load(const string &iceberg_path, const IcebergTableMe
 		                                    ? IcebergUtils::GetFullPath(iceberg_path, manifest.manifest_path, fs)
 		                                    : manifest.manifest_path;
 		auto scan = make_uniq<AvroScan>("IcebergManifest", context, manifest_entry_full_path);
-		manifest_entry_reader->Initialize(std::move(scan));
-		manifest_entry_reader->SetSequenceNumber(manifest.sequence_number);
-		manifest_entry_reader->SetPartitionSpecID(manifest.partition_spec_id);
+		manifest_file_reader->Initialize(std::move(scan));
+		manifest_file_reader->SetSequenceNumber(manifest.sequence_number);
+		manifest_file_reader->SetPartitionSpecID(manifest.partition_spec_id);
 
 		vector<IcebergManifestEntry> data_files;
-		while (!manifest_entry_reader->Finished()) {
-			manifest_entry_reader->ReadEntries(
-			    STANDARD_VECTOR_SIZE, [&data_files, &entry_producer](DataChunk &chunk, idx_t offset, idx_t count,
-			                                                         const ManifestReaderInput &input) {
-				    return entry_producer(chunk, offset, count, input, data_files);
-			    });
+		while (!manifest_file_reader->Finished()) {
+			manifest_file_reader->Read(STANDARD_VECTOR_SIZE, data_files);
 		}
 		IcebergTableEntry table_entry;
 		table_entry.manifest = std::move(manifest);
