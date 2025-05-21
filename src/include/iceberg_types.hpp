@@ -16,6 +16,9 @@
 
 namespace duckdb {
 
+//! fwd declare
+struct ManifestReaderInput;
+
 using sequence_number_t = int64_t;
 
 enum class IcebergManifestContentType : uint8_t {
@@ -93,11 +96,13 @@ public:
 	vector<FieldSummary> field_summary;
 
 public:
-	void Print() {
-		Printer::Print("  - Manifest = { content: " + IcebergManifestContentTypeToString(content) +
-		               ", path: " + manifest_path + "}");
-	}
+	static idx_t ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input,
+	                            vector<entry_type> &entries);
+	static bool VerifySchema(const case_insensitive_map_t<ColumnIndex> &name_to_vec);
+	static void PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name,
+	                                case_insensitive_map_t<ColumnIndex> &name_to_vec);
 
+public:
 	static vector<LogicalType> Types() {
 		return {
 		    LogicalType::VARCHAR,
@@ -135,12 +140,13 @@ public:
 	int64_t file_size_in_bytes;
 
 public:
-	void Print() {
-		Printer::Print("    -> ManifestEntry = { type: " + IcebergManifestEntryStatusTypeToString(status) +
-		               ", content: " + IcebergManifestEntryContentTypeToString(content) + ", file: " + file_path +
-		               ", record_count: " + std::to_string(record_count) + "}");
-	}
+	static idx_t ProduceEntries(DataChunk &chunk, idx_t offset, idx_t count, const ManifestReaderInput &input,
+	                            vector<entry_type> &entries);
+	static bool VerifySchema(const case_insensitive_map_t<ColumnIndex> &name_to_vec);
+	static void PopulateNameMapping(idx_t column_id, const LogicalType &type, const string &name,
+	                                case_insensitive_map_t<ColumnIndex> &name_to_vec);
 
+public:
 	static vector<LogicalType> Types() {
 		return {
 		    LogicalType::VARCHAR, LogicalType::VARCHAR, LogicalType::VARCHAR, LogicalType::VARCHAR, LogicalType::BIGINT,
@@ -155,13 +161,6 @@ public:
 struct IcebergTableEntry {
 	IcebergManifest manifest;
 	vector<IcebergManifestEntry> manifest_entries;
-
-	void Print() {
-		manifest.Print();
-		for (auto &manifest_entry : manifest_entries) {
-			manifest_entry.Print();
-		}
-	}
 };
 
 } // namespace duckdb

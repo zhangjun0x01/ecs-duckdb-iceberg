@@ -450,34 +450,9 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 		snapshot = *snapshot_lookup;
 	}
 
-	//! Set up the manifest + manifest entry readers
-	if (metadata.iceberg_version == 1) {
-		data_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping,
-		                                                       IcebergManifestEntryV1::VerifySchema);
-		delete_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping,
-		                                                         IcebergManifestEntryV1::VerifySchema);
-		delete_manifest_entry_reader->skip_deleted = true;
-		data_manifest_entry_reader->skip_deleted = true;
-		manifest_reader =
-		    make_uniq<ManifestReader>(IcebergManifestV1::PopulateNameMapping, IcebergManifestV1::VerifySchema);
-
-		manifest_producer = IcebergManifestV1::ProduceEntries;
-		entry_producer = IcebergManifestEntryV1::ProduceEntries;
-	} else if (metadata.iceberg_version == 2) {
-		data_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping,
-		                                                       IcebergManifestEntryV2::VerifySchema);
-		delete_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping,
-		                                                         IcebergManifestEntryV2::VerifySchema);
-		delete_manifest_entry_reader->skip_deleted = true;
-		data_manifest_entry_reader->skip_deleted = true;
-		manifest_reader =
-		    make_uniq<ManifestReader>(IcebergManifestV2::PopulateNameMapping, IcebergManifestV2::VerifySchema);
-
-		manifest_producer = IcebergManifestV2::ProduceEntries;
-		entry_producer = IcebergManifestEntryV2::ProduceEntries;
-	} else {
-		throw InvalidInputException("Reading from Iceberg version %d is not supported yet", metadata.iceberg_version);
-	}
+	data_manifest_entry_reader = make_uniq<ManifestEntryReader>();
+	delete_manifest_entry_reader = make_uniq<ManifestEntryReader>();
+	manifest_reader = make_uniq<ManifestListReader>();
 
 	if (snapshot.IsEmptySnapshot()) {
 		// we are reading from an empty table
@@ -495,12 +470,8 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	manifest_reader->Initialize(std::move(scan));
 
 	vector<IcebergManifest> all_manifests;
-	while (!manifest_reader->Finished()) {
-		manifest_reader->ReadEntries(STANDARD_VECTOR_SIZE,
-		                             [&all_manifests, manifest_producer](DataChunk &chunk, idx_t offset, idx_t count,
-		                                                                 const ManifestReaderInput &input) {
-			                             return manifest_producer(chunk, offset, count, input, all_manifests);
-		                             });
+	while (!manifest_list->Finished()) {
+		manifest_list->Read(STANDARD_VECTOR_SIZE, all_manifests);
 	}
 
 	for (auto &manifest : all_manifests) {

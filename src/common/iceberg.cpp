@@ -24,25 +24,13 @@ IcebergTable IcebergTable::Load(const string &iceberg_path, const IcebergTableMe
 	manifest_reader_manifest_entry_producer entry_producer = nullptr;
 
 	//! Set up the manifest + manifest entry readers
-	if (metadata.iceberg_version == 1) {
-		manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping,
-		                                                  IcebergManifestEntryV1::VerifySchema);
-		manifest_reader =
-		    make_uniq<ManifestReader>(IcebergManifestV1::PopulateNameMapping, IcebergManifestV1::VerifySchema);
+	manifest_entry_reader =
+	    make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping, IcebergManifestEntryV1::VerifySchema);
+	manifest_reader =
+	    make_uniq<ManifestReader>(IcebergManifestV1::PopulateNameMapping, IcebergManifestV1::VerifySchema);
+	manifest_producer = IcebergManifestV1::ProduceEntries;
+	entry_producer = IcebergManifestEntryV1::ProduceEntries;
 
-		manifest_producer = IcebergManifestV1::ProduceEntries;
-		entry_producer = IcebergManifestEntryV1::ProduceEntries;
-	} else if (metadata.iceberg_version == 2) {
-		manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping,
-		                                                  IcebergManifestEntryV2::VerifySchema);
-		manifest_reader =
-		    make_uniq<ManifestReader>(IcebergManifestV2::PopulateNameMapping, IcebergManifestV2::VerifySchema);
-
-		manifest_producer = IcebergManifestV2::ProduceEntries;
-		entry_producer = IcebergManifestEntryV2::ProduceEntries;
-	} else {
-		throw InvalidInputException("Reading from Iceberg version %d is not supported yet", metadata.iceberg_version);
-	}
 	auto &fs = FileSystem::GetFileSystem(context);
 	auto manifest_list_full_path = options.allow_moved_paths
 	                                   ? IcebergUtils::GetFullPath(iceberg_path, snapshot.manifest_list, fs)

@@ -82,13 +82,6 @@ public:
 		return ret;
 	}
 
-	void Print() {
-		Printer::Print("Iceberg table (" + path + ")");
-		for (auto &entry : entries) {
-			entry.Print();
-		}
-	}
-
 	//! The snapshot of this table
 	const IcebergSnapshot &snapshot;
 	//! The entries (manifests) of this table
