@@ -66,8 +66,6 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 			options.allow_moved_paths = BooleanValue::Get(val);
 		} else if (loption == "metadata_compression_codec") {
 			options.metadata_compression_codec = StringValue::Get(val);
-		} else if (loption == "skip_schema_inference") {
-			options.infer_schema = !BooleanValue::Get(kv.second);
 		} else if (loption == "version") {
 			options.table_version = StringValue::Get(val);
 		} else if (loption == "version_name_format") {
@@ -176,7 +174,6 @@ TableFunctionSet IcebergFunctions::GetIcebergMetadataFunction() {
 	auto fun = TableFunction({LogicalType::VARCHAR}, IcebergMetaDataFunction, IcebergMetaDataBind,
 	                         IcebergMetaDataGlobalTableFunctionState::Init);
 	fun.named_parameters["allow_moved_paths"] = LogicalType::BOOLEAN;
-	fun.named_parameters["skip_schema_inference"] = LogicalType::BOOLEAN;
 	fun.named_parameters["metadata_compression_codec"] = LogicalType::VARCHAR;
 	fun.named_parameters["version"] = LogicalType::VARCHAR;
 	fun.named_parameters["version_name_format"] = LogicalType::VARCHAR;
@@ -185,7 +182,6 @@ TableFunctionSet IcebergFunctions::GetIcebergMetadataFunction() {
 	fun = TableFunction({LogicalType::VARCHAR, LogicalType::UBIGINT}, IcebergMetaDataFunction, IcebergMetaDataBind,
 	                    IcebergMetaDataGlobalTableFunctionState::Init);
 	fun.named_parameters["allow_moved_paths"] = LogicalType::BOOLEAN;
-	fun.named_parameters["skip_schema_inference"] = LogicalType::BOOLEAN;
 	fun.named_parameters["metadata_compression_codec"] = LogicalType::VARCHAR;
 	fun.named_parameters["version"] = LogicalType::VARCHAR;
 	fun.named_parameters["version_name_format"] = LogicalType::VARCHAR;
@@ -194,7 +190,6 @@ TableFunctionSet IcebergFunctions::GetIcebergMetadataFunction() {
 	fun = TableFunction({LogicalType::VARCHAR, LogicalType::TIMESTAMP}, IcebergMetaDataFunction, IcebergMetaDataBind,
 	                    IcebergMetaDataGlobalTableFunctionState::Init);
 	fun.named_parameters["allow_moved_paths"] = LogicalType::BOOLEAN;
-	fun.named_parameters["skip_schema_inference"] = LogicalType::BOOLEAN;
 	fun.named_parameters["metadata_compression_codec"] = LogicalType::VARCHAR;
 	fun.named_parameters["version"] = LogicalType::VARCHAR;
 	fun.named_parameters["version_name_format"] = LogicalType::VARCHAR;

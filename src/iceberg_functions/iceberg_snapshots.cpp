@@ -59,8 +59,6 @@ static unique_ptr<FunctionData> IcebergSnapshotsBind(ClientContext &context, Tab
 				    string_substitutions);
 			}
 			bind_data->options.version_name_format = value;
-		} else if (loption == "skip_schema_inference") {
-			bind_data->options.infer_schema = !BooleanValue::Get(kv.second);
 		}
 	}
 	auto input_string = input.inputs[0].ToString();
@@ -113,7 +111,6 @@ TableFunctionSet IcebergFunctions::GetIcebergSnapshotsFunction() {
 	table_function.named_parameters["metadata_compression_codec"] = LogicalType::VARCHAR;
 	table_function.named_parameters["version"] = LogicalType::VARCHAR;
 	table_function.named_parameters["version_name_format"] = LogicalType::VARCHAR;
-	table_function.named_parameters["skip_schema_inference"] = LogicalType::BOOLEAN;
 	function_set.AddFunction(table_function);
 	return function_set;
 }

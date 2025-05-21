@@ -1177,10 +1177,6 @@ bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, Mu
 		this->options.metadata_compression_codec = StringValue::Get(val);
 		return true;
 	}
-	if (loption == "skip_schema_inference") {
-		this->options.infer_schema = !BooleanValue::Get(val);
-		return true;
-	}
 	if (loption == "version") {
 		this->options.table_version = StringValue::Get(val);
 		return true;

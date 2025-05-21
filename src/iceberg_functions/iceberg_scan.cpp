@@ -32,7 +32,6 @@
 namespace duckdb {
 
 static void AddNamedParameters(TableFunction &fun) {
-	fun.named_parameters["skip_schema_inference"] = LogicalType::BOOLEAN;
 	fun.named_parameters["allow_moved_paths"] = LogicalType::BOOLEAN;
 	fun.named_parameters["mode"] = LogicalType::VARCHAR;
 	fun.named_parameters["metadata_compression_codec"] = LogicalType::VARCHAR;
