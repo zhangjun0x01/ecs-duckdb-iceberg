@@ -144,12 +144,9 @@ public:
 	vector<LogicalType> types;
 	TableFilterSet table_filters;
 
-	unique_ptr<ManifestReader> manifest_reader;
-	unique_ptr<ManifestReader> data_manifest_entry_reader;
-	unique_ptr<ManifestReader> delete_manifest_entry_reader;
-
-	manifest_reader_manifest_producer manifest_producer = nullptr;
-	manifest_reader_manifest_entry_producer entry_producer = nullptr;
+	unique_ptr<ManifestListReader> manifest_list;
+	unique_ptr<ManifestFileReader> data_manifest_reader;
+	unique_ptr<ManifestFileReader> delete_manifest_reader;
 
 	vector<IcebergManifestEntry> data_files;
 	vector<IcebergManifest> data_manifests;
@@ -167,8 +164,6 @@ public:
 	ClientContext &context;
 	const IcebergOptions &options;
 	IcebergTableMetadata metadata;
-
-	bool table_is_empty = true;
 	IcebergSnapshot snapshot;
 	shared_ptr<IcebergTableSchema> schema;
 };

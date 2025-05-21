@@ -149,12 +149,12 @@ static void IcebergMetaDataFunction(ClientContext &context, TableFunctionInput &
 			//! manifest_sequence_number
 			FlatVector::GetData<int64_t>(output.data[1])[out] = manifest.manifest.sequence_number;
 			//! manifest_content
-			AddString(output.data[2], out, string_t(IcebergManifestContentTypeToString(manifest.manifest.content)));
+			AddString(output.data[2], out, string_t(IcebergManifest::ContentTypeToString(manifest.manifest.content)));
 
 			//! status
-			AddString(output.data[3], out, string_t(IcebergManifestEntryStatusTypeToString(manifest_entry.status)));
+			AddString(output.data[3], out, string_t(IcebergManifestEntry::StatusTypeToString(manifest_entry.status)));
 			//! content
-			AddString(output.data[4], out, string_t(IcebergManifestEntryContentTypeToString(manifest_entry.content)));
+			AddString(output.data[4], out, string_t(IcebergManifestEntry::ContentTypeToString(manifest_entry.content)));
 			//! file_path
 			AddString(output.data[5], out, string_t(manifest_entry.file_path));
 			//! file_format

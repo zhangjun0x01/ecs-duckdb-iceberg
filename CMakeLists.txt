@@ -14,11 +14,13 @@ set(EXTENSION_SOURCES
     src/iceberg_extension.cpp
     src/iceberg_functions.cpp
     src/iceberg_manifest.cpp
-    src/manifest_reader.cpp
     src/catalog_api.cpp
     src/iceberg_logging.cpp
     src/catalog_utils.cpp
     src/aws.cpp
+    src/base_manifest_reader.cpp
+    src/manifest_list_reader.cpp
+    src/manifest_file_reader.cpp
     src/metadata/iceberg_transform.cpp
     src/metadata/iceberg_table_schema.cpp
     src/metadata/iceberg_partition_spec.cpp
