@@ -9,12 +9,12 @@ namespace duckdb {
 //! ----------- Select Snapshot -----------
 
 optional_ptr<IcebergSnapshot> IcebergTableMetadata::FindLatestSnapshotInternal() {
-	uint64_t max_timestamp = NumericLimits<uint64_t>::Minimum();
+	int64_t max_timestamp = NumericLimits<int64_t>::Minimum();
 	optional_ptr<IcebergSnapshot> max_snapshot;
 	for (auto &it : snapshots) {
 		auto &snapshot = it.second;
 		auto current_timestamp = Timestamp::GetEpochMs(snapshot.timestamp_ms);
-		if (snapshot.timestamp_ms.value >= max_timestamp) {
+		if (current_timestamp >= max_timestamp) {
 			max_timestamp = current_timestamp;
 			max_snapshot = snapshot;
 		}
