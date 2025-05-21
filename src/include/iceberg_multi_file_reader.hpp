@@ -166,8 +166,11 @@ public:
 	bool initialized = false;
 	ClientContext &context;
 	const IcebergOptions &options;
-	unique_ptr<IcebergMetadata> metadata;
-	shared_ptr<IcebergSnapshot> snapshot;
+	IcebergTableMetadata metadata;
+
+	bool table_is_empty = true;
+	IcebergSnapshot snapshot;
+	shared_ptr<IcebergTableSchema> schema;
 };
 
 struct IcebergMultiFileReaderGlobalState : public MultiFileReaderGlobalState {

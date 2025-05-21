@@ -9,13 +9,10 @@
 #pragma once
 
 #include "duckdb/common/printer.hpp"
-#include "yyjson.hpp"
 #include "duckdb/common/file_system.hpp"
 #include "url_utils.hpp"
 #include "aws.hpp"
 #include "duckdb/common/http_util.hpp"
-
-using namespace duckdb_yyjson;
 
 namespace duckdb {
 

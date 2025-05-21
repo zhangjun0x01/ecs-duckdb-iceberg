@@ -1,6 +1,4 @@
-#include "iceberg_metadata.hpp"
-#include "iceberg_utils.hpp"
-#include "rest_catalog/objects/list.hpp"
+#include "metadata/iceberg_column_definition.hpp"
 
 namespace duckdb {
 
@@ -168,30 +166,6 @@ LogicalType IcebergColumnDefinition::ParsePrimitiveType(rest_api_objects::Primit
 unique_ptr<IcebergColumnDefinition> IcebergColumnDefinition::ParseStructField(rest_api_objects::StructField &field) {
 	return ParseType(field.name, field.id, field.required, *field.type,
 	                 field.has_initial_default ? &field.initial_default : nullptr);
-}
-
-static vector<unique_ptr<IcebergColumnDefinition>> ParseSchemaFromJson(yyjson_val *schema_json) {
-	auto parsed_schema = rest_api_objects::Schema::FromJSON(schema_json);
-	auto &struct_type = parsed_schema.struct_type;
-
-	vector<unique_ptr<IcebergColumnDefinition>> ret;
-	for (auto &field : struct_type.fields) {
-		ret.push_back(IcebergColumnDefinition::ParseStructField(*field));
-	}
-	return ret;
-}
-
-vector<unique_ptr<IcebergColumnDefinition>> IcebergSnapshot::ParseSchema(vector<yyjson_val *> &schemas,
-                                                                         idx_t schema_id) {
-	// Multiple schemas can be present in the json metadata 'schemas' list
-	for (const auto &schema_ptr : schemas) {
-		auto found_schema_id = IcebergUtils::TryGetNumFromObject(schema_ptr, "schema-id");
-		if (found_schema_id == schema_id) {
-			return ParseSchemaFromJson(schema_ptr);
-		}
-	}
-
-	throw InvalidConfigurationException("Iceberg schema with schema id " + to_string(schema_id) + " was not found!");
 }
 
 } // namespace duckdb

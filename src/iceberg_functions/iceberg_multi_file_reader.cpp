@@ -2,7 +2,6 @@
 #include "iceberg_utils.hpp"
 #include "iceberg_logging.hpp"
 #include "iceberg_predicate.hpp"
-#include "iceberg_predicate_stats.hpp"
 #include "iceberg_value.hpp"
 
 #include "duckdb/catalog/catalog_entry/table_function_catalog_entry.hpp"
@@ -17,6 +16,9 @@
 #include "duckdb/planner/expression/bound_operator_expression.hpp"
 #include "duckdb/planner/expression/bound_reference_expression.hpp"
 #include "duckdb/planner/expression/bound_conjunction_expression.hpp"
+
+#include "metadata/iceberg_predicate_stats.hpp"
+#include "metadata/iceberg_table_metadata.hpp"
 
 namespace duckdb {
 
@@ -45,7 +47,7 @@ void IcebergMultiFileList::Bind(vector<LogicalType> &return_types, vector<string
 		InitializeFiles(guard);
 	}
 
-	auto &schema = snapshot->schema;
+	auto &schema = this->schema->columns;
 	for (auto &schema_entry : schema) {
 		names.push_back(schema_entry->name);
 		return_types.push_back(schema_entry->type);
@@ -88,6 +90,8 @@ unique_ptr<IcebergMultiFileList> IcebergMultiFileList::PushdownInternal(ClientCo
 	{
 		unique_lock<mutex> lck(lock);
 		filtered_list->snapshot = snapshot;
+		filtered_list->schema = schema;
+		filtered_list->metadata = metadata;
 	}
 	return filtered_list;
 }
@@ -175,7 +179,7 @@ idx_t IcebergMultiFileList::GetTotalFileCount() {
 unique_ptr<NodeStatistics> IcebergMultiFileList::GetCardinality(ClientContext &context) {
 	idx_t cardinality = 0;
 
-	if (snapshot->iceberg_format_version == 1) {
+	if (metadata.iceberg_version == 1) {
 		//! We collect no cardinality information from manifests for V1 tables.
 		return nullptr;
 	}
@@ -226,7 +230,7 @@ bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 	D_ASSERT(!table_filters.filters.empty());
 
 	auto &filters = table_filters.filters;
-	auto &schema = snapshot->schema;
+	auto &schema = this->schema->columns;
 
 	for (idx_t column_id = 0; column_id < schema.size(); column_id++) {
 		// FIXME: is there a potential mismatch between column_id / field_id lurking here?
@@ -370,8 +374,8 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 
 bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 	auto spec_id = manifest.partition_spec_id;
-	auto partition_spec_it = metadata->partition_specs.find(spec_id);
-	if (partition_spec_it == metadata->partition_specs.end()) {
+	auto partition_spec_it = metadata.partition_specs.find(spec_id);
+	if (partition_spec_it == metadata.partition_specs.end()) {
 		throw InvalidInputException("Manifest %s references 'partition_spec_id' %d which doesn't exist",
 		                            manifest.manifest_path, spec_id);
 	}
@@ -387,7 +391,7 @@ bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 		return true;
 	}
 
-	auto &schema = snapshot->schema;
+	auto &schema = this->schema->columns;
 	unordered_map<uint64_t, idx_t> source_to_column_id;
 	for (idx_t i = 0; i < schema.size(); i++) {
 		auto &column = schema[i];
@@ -431,28 +435,23 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	//! Load the snapshot
 	auto iceberg_path = GetPath();
 	auto &fs = FileSystem::GetFileSystem(context);
-	auto iceberg_meta_path = IcebergSnapshot::GetMetaDataPath(context, iceberg_path, fs, options);
-	metadata = IcebergMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
+	auto iceberg_meta_path = IcebergTableMetadata::GetMetaDataPath(context, iceberg_path, fs, options);
+	auto table_metadata = IcebergTableMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
+	metadata = IcebergTableMetadata::FromTableMetadata(table_metadata);
 
-	switch (options.snapshot_source) {
-	case SnapshotSource::LATEST: {
-		snapshot = IcebergSnapshot::GetLatestSnapshot(*metadata, options);
-		break;
+	auto snapshot_lookup = metadata.GetSnapshot(options);
+	if (options.snapshot_source == SnapshotSource::LATEST) {
+		schema = metadata.GetSchemaFromId(metadata.current_schema_id);
+	} else {
+		schema = metadata.GetSchemaFromId(snapshot_lookup->schema_id);
 	}
-	case SnapshotSource::FROM_ID: {
-		snapshot = IcebergSnapshot::GetSnapshotById(*metadata, options.snapshot_id, options);
-		break;
-	}
-	case SnapshotSource::FROM_TIMESTAMP: {
-		snapshot = IcebergSnapshot::GetSnapshotByTimestamp(*metadata, options.snapshot_timestamp, options);
-		break;
-	}
-	default:
-		throw InternalException("SnapshotSource type not implemented");
+
+	if (snapshot_lookup) {
+		snapshot = *snapshot_lookup;
 	}
 
 	//! Set up the manifest + manifest entry readers
-	if (snapshot->iceberg_format_version == 1) {
+	if (metadata.iceberg_version == 1) {
 		data_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping,
 		                                                       IcebergManifestEntryV1::VerifySchema);
 		delete_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV1::PopulateNameMapping,
@@ -464,7 +463,7 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 
 		manifest_producer = IcebergManifestV1::ProduceEntries;
 		entry_producer = IcebergManifestEntryV1::ProduceEntries;
-	} else if (snapshot->iceberg_format_version == 2) {
+	} else if (metadata.iceberg_version == 2) {
 		data_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping,
 		                                                       IcebergManifestEntryV2::VerifySchema);
 		delete_manifest_entry_reader = make_uniq<ManifestReader>(IcebergManifestEntryV2::PopulateNameMapping,
@@ -477,12 +476,11 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 		manifest_producer = IcebergManifestV2::ProduceEntries;
 		entry_producer = IcebergManifestEntryV2::ProduceEntries;
 	} else {
-		throw InvalidInputException("Reading from Iceberg version %d is not supported yet",
-		                            snapshot->iceberg_format_version);
+		throw InvalidInputException("Reading from Iceberg version %d is not supported yet", metadata.iceberg_version);
 	}
 
-	if (snapshot->snapshot_id == DConstants::INVALID_INDEX) {
-		// we are in an empty table
+	if (snapshot.IsEmptySnapshot()) {
+		// we are reading from an empty table
 		current_data_manifest = data_manifests.begin();
 		current_delete_manifest = delete_manifests.begin();
 		return;
@@ -490,8 +488,8 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 
 	// Read the manifest list, we need all the manifests to determine if we've seen all deletes
 	auto manifest_list_full_path = options.allow_moved_paths
-	                                   ? IcebergUtils::GetFullPath(iceberg_path, snapshot->manifest_list, fs)
-	                                   : snapshot->manifest_list;
+	                                   ? IcebergUtils::GetFullPath(iceberg_path, snapshot.manifest_list, fs)
+	                                   : snapshot.manifest_list;
 
 	auto scan = make_uniq<AvroScan>("IcebergManifestList", context, manifest_list_full_path);
 	manifest_reader->Initialize(std::move(scan));
@@ -562,7 +560,7 @@ bool IcebergMultiFileReader::Bind(MultiFileOptions &options, MultiFileList &file
 	iceberg_multi_file_list.Bind(return_types, names);
 	// FIXME: apply final transformation for 'file_row_number' ???
 
-	auto &schema = iceberg_multi_file_list.snapshot->schema;
+	auto &schema = iceberg_multi_file_list.schema->columns;
 	auto &columns = bind_data.schema;
 	for (auto &item : schema) {
 		columns.push_back(TransformColumn(*item));
@@ -593,8 +591,8 @@ IcebergMultiFileReader::InitializeGlobalState(ClientContext &context, const Mult
 	return std::move(res);
 }
 
-static void ApplyFieldMapping(MultiFileColumnDefinition &col, vector<IcebergFieldMapping> &mappings,
-                              case_insensitive_map_t<idx_t> &fields,
+static void ApplyFieldMapping(MultiFileColumnDefinition &col, const vector<IcebergFieldMapping> &mappings,
+                              const case_insensitive_map_t<idx_t> &fields,
                               optional_ptr<MultiFileColumnDefinition> parent = nullptr) {
 	if (!col.identifier.IsNull()) {
 		return;
@@ -681,7 +679,7 @@ static void ApplyPartitionConstants(const IcebergMultiFileList &multi_file_list,
 	auto &data_file = multi_file_list.data_files[file_id];
 
 	// Get the partition spec for this file
-	auto &partition_specs = multi_file_list.metadata->partition_specs;
+	auto &partition_specs = multi_file_list.metadata.partition_specs;
 	auto spec_id = data_file.partition_spec_id;
 	auto partition_spec_it = partition_specs.find(spec_id);
 	if (partition_spec_it == partition_specs.end()) {
@@ -782,9 +780,9 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	}
 
 	auto &local_columns = reader_data.reader->columns;
-	auto &mappings = multi_file_list.metadata->mappings;
-	if (!multi_file_list.metadata->mappings.empty()) {
-		auto &root = multi_file_list.metadata->mappings[0];
+	auto &mappings = multi_file_list.metadata.mappings;
+	if (!multi_file_list.metadata.mappings.empty()) {
+		auto &root = multi_file_list.metadata.mappings[0];
 		for (auto &local_column : local_columns) {
 			ApplyFieldMapping(local_column, mappings, root.field_mapping_indexes);
 		}
@@ -1052,7 +1050,7 @@ void IcebergMultiFileReader::ApplyEqualityDeletes(ClientContext &context, DataCh
                                                   const vector<MultiFileColumnDefinition> &local_columns) {
 	vector<reference<IcebergEqualityDeleteRow>> delete_rows;
 
-	auto &metadata = *multi_file_list.metadata;
+	auto &metadata = multi_file_list.metadata;
 	auto delete_data_it = multi_file_list.equality_delete_data.upper_bound(data_file.sequence_number);
 	//! Look through all the equality delete files with a *higher* sequence number
 	for (; delete_data_it != multi_file_list.equality_delete_data.end(); delete_data_it++) {
@@ -1177,10 +1175,6 @@ bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, Mu
 	}
 	if (loption == "metadata_compression_codec") {
 		this->options.metadata_compression_codec = StringValue::Get(val);
-		return true;
-	}
-	if (loption == "skip_schema_inference") {
-		this->options.infer_schema = !BooleanValue::Get(val);
 		return true;
 	}
 	if (loption == "version") {
