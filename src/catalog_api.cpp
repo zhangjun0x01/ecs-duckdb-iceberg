@@ -250,10 +250,6 @@ vector<rest_api_objects::TableIdentifier> IRCAPI::GetTables(ClientContext &conte
 	if (!list_tables_response.has_identifiers) {
 		throw NotImplementedException("List of 'identifiers' is missing, missing support for Iceberg V1");
 	}
-	// for (auto &table : list_tables_response.identifiers) {
-	//	auto table_result = GetTable(context, catalog, schema, table.name);
-	//	result.push_back(std::move(table_result));
-	//}
 	return std::move(list_tables_response.identifiers);
 }
 
