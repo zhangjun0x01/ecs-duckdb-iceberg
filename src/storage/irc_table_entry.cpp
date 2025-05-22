@@ -40,8 +40,7 @@ string ICTableEntry::PrepareIcebergScanFromEntry(ClientContext &context) {
 	auto &secret_manager = SecretManager::Get(context);
 
 	// Get Credentials from IRC API
-	auto secret_base_name = StringUtil::Format("__internal_ic_%s__%s__%s", table_info.table_id, schema.name, name);
-	auto table_credentials = IRCAPI::GetTableCredentials(context, ic_catalog, schema.name, name, secret_base_name);
+	auto table_credentials = table_info.GetVendedCredentials(context);
 	auto &load_result = table_info.load_table_result;
 
 	if (table_credentials.config) {
@@ -117,7 +116,8 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 		schema_id = snapshot->schema_id;
 	}
 	auto schema = metadata.GetSchemaFromId(schema_id);
-	iceberg_scan_function.function_info = make_shared_ptr<IcebergScanInfo>(metadata, snapshot, *schema);
+	iceberg_scan_function.function_info =
+	    make_shared_ptr<IcebergScanInfo>(table_info.load_table_result.metadata_location, metadata, snapshot, *schema);
 
 	// Set the S3 path as input to table function
 	vector<Value> inputs = {storage_location};

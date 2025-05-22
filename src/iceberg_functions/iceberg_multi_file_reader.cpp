@@ -31,12 +31,14 @@ unique_ptr<MultiFileReader> IcebergMultiFileReader::CreateInstance(const TableFu
 }
 
 shared_ptr<MultiFileList> IcebergMultiFileReader::CreateFileList(ClientContext &context, const vector<string> &paths,
-                                                                 FileGlobOptions options) {
+                                                                 FileGlobOptions) {
 	if (paths.size() != 1) {
 		throw BinderException("'iceberg_scan' only supports single path as input");
 	}
-	auto storage_location = IcebergUtils::GetStorageLocation(context, paths[0]);
-	return make_shared_ptr<IcebergMultiFileList>(context, storage_location, this->options);
+
+	//! Scan initiated from a REST Catalog
+	auto scan_info = shared_ptr_cast<TableFunctionInfo, IcebergScanInfo>(function_info);
+	return make_shared_ptr<IcebergMultiFileList>(context, scan_info, paths[0], options);
 }
 
 static MultiFileColumnDefinition TransformColumn(const IcebergColumnDefinition &input) {
@@ -60,7 +62,7 @@ bool IcebergMultiFileReader::Bind(MultiFileOptions &options, MultiFileList &file
 	iceberg_multi_file_list.Bind(return_types, names);
 	// FIXME: apply final transformation for 'file_row_number' ???
 
-	auto &schema = iceberg_multi_file_list.schema->columns;
+	auto &schema = iceberg_multi_file_list.GetSchema().columns;
 	auto &columns = bind_data.schema;
 	for (auto &item : schema) {
 		columns.push_back(TransformColumn(*item));
@@ -179,7 +181,7 @@ static void ApplyPartitionConstants(const IcebergMultiFileList &multi_file_list,
 	auto &data_file = multi_file_list.data_files[file_id];
 
 	// Get the partition spec for this file
-	auto &partition_specs = multi_file_list.metadata.partition_specs;
+	auto &partition_specs = multi_file_list.GetMetadata().partition_specs;
 	auto spec_id = data_file.partition_spec_id;
 	auto partition_spec_it = partition_specs.find(spec_id);
 	if (partition_spec_it == partition_specs.end()) {
@@ -281,9 +283,10 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	}
 
 	auto &local_columns = reader_data.reader->columns;
-	auto &mappings = multi_file_list.metadata.mappings;
-	if (!multi_file_list.metadata.mappings.empty()) {
-		auto &root = multi_file_list.metadata.mappings[0];
+	auto &metadata = multi_file_list.GetMetadata();
+	auto &mappings = metadata.mappings;
+	if (!multi_file_list.GetMetadata().mappings.empty()) {
+		auto &root = metadata.mappings[0];
 		for (auto &local_column : local_columns) {
 			ApplyFieldMapping(local_column, mappings, root.field_mapping_indexes);
 		}
@@ -297,7 +300,7 @@ void IcebergMultiFileReader::ApplyEqualityDeletes(ClientContext &context, DataCh
                                                   const vector<MultiFileColumnDefinition> &local_columns) {
 	vector<reference<IcebergEqualityDeleteRow>> delete_rows;
 
-	auto &metadata = multi_file_list.metadata;
+	auto &metadata = multi_file_list.GetMetadata();
 	auto delete_data_it = multi_file_list.equality_delete_data.upper_bound(data_file.sequence_number);
 	//! Look through all the equality delete files with a *higher* sequence number
 	for (; delete_data_it != multi_file_list.equality_delete_data.end(); delete_data_it++) {

@@ -22,8 +22,10 @@
 
 namespace duckdb {
 
-IcebergMultiFileList::IcebergMultiFileList(ClientContext &context_p, const string &path, const IcebergOptions &options)
-    : MultiFileList({path}, FileGlobOptions::ALLOW_EMPTY), lock(), context(context_p), options(options) {
+IcebergMultiFileList::IcebergMultiFileList(ClientContext &context_p, shared_ptr<IcebergScanInfo> scan_info,
+                                           const string &path, const IcebergOptions &options)
+    : MultiFileList(vector<OpenFileInfo> {}, FileGlobOptions::ALLOW_EMPTY), context(context_p), scan_info(scan_info),
+      path(path), lock(), options(options) {
 }
 
 string IcebergMultiFileList::ToDuckDBPath(const string &raw_path) {
@@ -31,7 +33,19 @@ string IcebergMultiFileList::ToDuckDBPath(const string &raw_path) {
 }
 
 string IcebergMultiFileList::GetPath() const {
-	return GetPaths()[0].path;
+	return path;
+}
+
+const IcebergTableMetadata &IcebergMultiFileList::GetMetadata() const {
+	return scan_info->metadata;
+}
+
+optional_ptr<IcebergSnapshot> IcebergMultiFileList::GetSnapshot() const {
+	return scan_info->snapshot;
+}
+
+const IcebergTableSchema &IcebergMultiFileList::GetSchema() const {
+	return scan_info->schema;
 }
 
 void IcebergMultiFileList::Bind(vector<LogicalType> &return_types, vector<string> &names) {
@@ -43,11 +57,30 @@ void IcebergMultiFileList::Bind(vector<LogicalType> &return_types, vector<string
 		return;
 	}
 
+	if (!scan_info) {
+		D_ASSERT(!path.empty());
+		auto input_string = path;
+		auto iceberg_path = IcebergUtils::GetStorageLocation(context, input_string);
+		auto &fs = FileSystem::GetFileSystem(context);
+		auto iceberg_meta_path = IcebergTableMetadata::GetMetaDataPath(context, iceberg_path, fs, options);
+		auto table_metadata = IcebergTableMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
+		auto metadata = make_uniq<IcebergTableMetadata>(IcebergTableMetadata::FromTableMetadata(table_metadata));
+
+		auto found_snapshot = metadata->GetSnapshot(options.snapshot_lookup);
+		shared_ptr<IcebergTableSchema> schema;
+		if (options.snapshot_lookup.snapshot_source == SnapshotSource::LATEST) {
+			schema = metadata->GetSchemaFromId(metadata->current_schema_id);
+		} else {
+			schema = metadata->GetSchemaFromId(found_snapshot->schema_id);
+		}
+		scan_info = make_shared_ptr<IcebergScanInfo>(iceberg_path, std::move(metadata), found_snapshot, *schema);
+	}
+
 	if (!initialized) {
 		InitializeFiles(guard);
 	}
 
-	auto &schema = this->schema->columns;
+	auto &schema = GetSchema().columns;
 	for (auto &schema_entry : schema) {
 		names.push_back(schema_entry->name);
 		return_types.push_back(schema_entry->type);
@@ -65,7 +98,7 @@ void IcebergMultiFileList::Bind(vector<LogicalType> &return_types, vector<string
 
 unique_ptr<IcebergMultiFileList> IcebergMultiFileList::PushdownInternal(ClientContext &context,
                                                                         TableFilterSet &new_filters) const {
-	auto filtered_list = make_uniq<IcebergMultiFileList>(context, paths[0].path, this->options);
+	auto filtered_list = make_uniq<IcebergMultiFileList>(context, scan_info, path, this->options);
 
 	TableFilterSet result_filter_set;
 
@@ -85,14 +118,6 @@ unique_ptr<IcebergMultiFileList> IcebergMultiFileList::PushdownInternal(ClientCo
 	filtered_list->names = names;
 	filtered_list->types = types;
 	filtered_list->have_bound = true;
-
-	// Copy over the snapshot, this avoids reparsing metadata
-	{
-		unique_lock<mutex> lck(lock);
-		filtered_list->snapshot = snapshot;
-		filtered_list->schema = schema;
-		filtered_list->metadata = metadata;
-	}
 	return filtered_list;
 }
 
@@ -179,7 +204,7 @@ idx_t IcebergMultiFileList::GetTotalFileCount() {
 unique_ptr<NodeStatistics> IcebergMultiFileList::GetCardinality(ClientContext &context) {
 	idx_t cardinality = 0;
 
-	if (metadata.iceberg_version == 1) {
+	if (GetMetadata().iceberg_version == 1) {
 		//! We collect no cardinality information from manifests for V1 tables.
 		return nullptr;
 	}
@@ -230,7 +255,7 @@ bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 	D_ASSERT(!table_filters.filters.empty());
 
 	auto &filters = table_filters.filters;
-	auto &schema = this->schema->columns;
+	auto &schema = GetSchema().columns;
 
 	for (idx_t column_id = 0; column_id < schema.size(); column_id++) {
 		// FIXME: is there a potential mismatch between column_id / field_id lurking here?
@@ -283,6 +308,10 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 	lock_guard<mutex> guard(lock);
 	if (!initialized) {
 		InitializeFiles(guard);
+	}
+
+	if (!scan_info->snapshot) {
+		return OpenFileInfo();
 	}
 
 	auto iceberg_path = GetPath();
@@ -364,6 +393,8 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 
 bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 	auto spec_id = manifest.partition_spec_id;
+	auto &metadata = GetMetadata();
+
 	auto partition_spec_it = metadata.partition_specs.find(spec_id);
 	if (partition_spec_it == metadata.partition_specs.end()) {
 		throw InvalidInputException("Manifest %s references 'partition_spec_id' %d which doesn't exist",
@@ -381,7 +412,7 @@ bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 		return true;
 	}
 
-	auto &schema = this->schema->columns;
+	auto &schema = GetSchema().columns;
 	unordered_map<uint64_t, idx_t> source_to_column_id;
 	for (idx_t i = 0; i < schema.size(); i++) {
 		auto &column = schema[i];
@@ -420,35 +451,22 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 		return;
 	}
 	initialized = true;
-
-	//! Load the snapshot
-	auto iceberg_path = GetPath();
-	auto &fs = FileSystem::GetFileSystem(context);
-	auto iceberg_meta_path = IcebergTableMetadata::GetMetaDataPath(context, iceberg_path, fs, options);
-	auto table_metadata = IcebergTableMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
-	metadata = IcebergTableMetadata::FromTableMetadata(table_metadata);
-
-	auto found_snapshot = metadata.GetSnapshot(options.snapshot_lookup);
-	if (options.snapshot_lookup.snapshot_source == SnapshotSource::LATEST) {
-		schema = metadata.GetSchemaFromId(metadata.current_schema_id);
-	} else {
-		schema = metadata.GetSchemaFromId(found_snapshot->schema_id);
-	}
-
-	if (found_snapshot) {
-		snapshot = *found_snapshot;
-	}
-
-	data_manifest_reader = make_uniq<ManifestFileReader>(metadata.iceberg_version);
-	delete_manifest_reader = make_uniq<ManifestFileReader>(metadata.iceberg_version);
-	manifest_list = make_uniq<ManifestListReader>(metadata.iceberg_version);
-
-	if (snapshot.IsEmptySnapshot()) {
+	if (!scan_info->snapshot) {
 		// we are reading from an empty table
 		current_data_manifest = data_manifests.begin();
 		current_delete_manifest = delete_manifests.begin();
 		return;
 	}
+
+	//! Load the snapshot
+	auto iceberg_path = GetPath();
+	auto &snapshot = *GetSnapshot();
+	auto &metadata = GetMetadata();
+	auto &fs = FileSystem::GetFileSystem(context);
+
+	data_manifest_reader = make_uniq<ManifestFileReader>(metadata.iceberg_version);
+	delete_manifest_reader = make_uniq<ManifestFileReader>(metadata.iceberg_version);
+	manifest_list = make_uniq<ManifestListReader>(metadata.iceberg_version);
 
 	// Read the manifest list, we need all the manifests to determine if we've seen all deletes
 	auto manifest_list_full_path = options.allow_moved_paths

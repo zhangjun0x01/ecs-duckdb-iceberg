@@ -91,9 +91,7 @@ static void IcebergSnapshotsFunction(ClientContext &context, TableFunctionInput 
 			break;
 		}
 
-		auto &metadata = global_state.metadata;
 		auto &snapshot = it->second;
-
 		FlatVector::GetData<int64_t>(output.data[0])[i] = snapshot.sequence_number;
 		FlatVector::GetData<int64_t>(output.data[1])[i] = snapshot.snapshot_id;
 		FlatVector::GetData<timestamp_t>(output.data[2])[i] = snapshot.timestamp_ms;

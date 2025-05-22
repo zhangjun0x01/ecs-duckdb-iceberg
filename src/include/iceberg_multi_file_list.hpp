@@ -93,11 +93,16 @@ public:
 
 struct IcebergMultiFileList : public MultiFileList {
 public:
-	IcebergMultiFileList(ClientContext &context, const string &path, const IcebergOptions &options);
+	IcebergMultiFileList(ClientContext &context, shared_ptr<IcebergScanInfo> scan_info, const string &path,
+	                     const IcebergOptions &options);
 
 public:
 	static string ToDuckDBPath(const string &raw_path);
 	string GetPath() const;
+	const IcebergTableMetadata &GetMetadata() const;
+	optional_ptr<IcebergSnapshot> GetSnapshot() const;
+	const IcebergTableSchema &GetSchema() const;
+
 	void Bind(vector<LogicalType> &return_types, vector<string> &names);
 	unique_ptr<IcebergMultiFileList> PushdownInternal(ClientContext &context, TableFilterSet &new_filters) const;
 	void ScanPositionalDeleteFile(DataChunk &result) const;
@@ -134,8 +139,11 @@ protected:
 	void InitializeFiles(lock_guard<mutex> &guard);
 
 public:
-	mutable mutex lock;
+	ClientContext &context;
+	shared_ptr<IcebergScanInfo> scan_info;
+	string path;
 
+	mutable mutex lock;
 	//! ComplexFilterPushdown results
 	bool have_bound = false;
 	vector<string> names;
@@ -159,11 +167,7 @@ public:
 	mutable mutex delete_lock;
 
 	bool initialized = false;
-	ClientContext &context;
 	const IcebergOptions &options;
-	IcebergTableMetadata metadata;
-	IcebergSnapshot snapshot;
-	shared_ptr<IcebergTableSchema> schema;
 };
 
 } // namespace duckdb

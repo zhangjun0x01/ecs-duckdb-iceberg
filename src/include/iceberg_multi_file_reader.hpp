@@ -31,16 +31,6 @@ public:
 	}
 };
 
-struct IcebergScanInternals {
-public:
-	IcebergScanInternals(shared_ptr<TableFunctionInfo> function_info, IcebergOptions options, const string &path);
-
-public:
-	IcebergTableMetadata &metadata;
-	optional_ptr<IcebergSnapshot> snapshot;
-	IcebergTableSchema &schema;
-};
-
 struct IcebergMultiFileReader : public MultiFileReader {
 public:
 	IcebergMultiFileReader(shared_ptr<TableFunctionInfo> function_info);
