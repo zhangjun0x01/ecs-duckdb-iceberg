@@ -91,11 +91,7 @@ jobs:
           cd polaris_catalog
           ./gradlew clean :polaris-quarkus-server:assemble -Dquarkus.container-image.build=true --no-build-cache
           ./gradlew --stop
-          nohup ./gradlew run \
-          -Dpolaris.bootstrap.credentials=POLARIS,root,secret \
-          -Dpolaris.features."ALLOW_INSECURE_STORAGE_TYPES"=true \
-          -Dpolaris.features."SUPPORTED_CATALOG_STORAGE_TYPES"="[\"FILE\",\"S3\",\"GCS\",\"AZURE\"]" \
-          > polaris-server.log 2> polaris-error.log &
+          nohup ./gradlew run -Dpolaris.bootstrap.credentials="POLARIS,root,secret" -Dpolaris.features."ALLOW_INSECURE_STORAGE_TYPES"=true &
           cd ..
           # let polaris initialize 
           max_attempts=50
