@@ -82,6 +82,7 @@ void ICTableSet::Scan(ClientContext &context, const std::function<void(CatalogEn
 	lock_guard<mutex> l(entry_lock);
 	LoadEntries(context);
 	for (auto &entry : entries) {
+		FillEntry(context, entry.second);
 		for (auto &schema : entry.second.schema_versions) {
 			callback(*schema.second);
 		}
