@@ -732,7 +732,8 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	// The path of the data file where this chunk was read from
 	const auto &file_path = data_file.file_path;
 	{
-		std::lock_guard<mutex> guard(multi_file_list.delete_lock);
+		lock_guard<mutex> guard(multi_file_list.lock);
+		std::lock_guard<mutex> delete_guard(multi_file_list.delete_lock);
 		if (multi_file_list.current_delete_manifest != multi_file_list.delete_manifests.end()) {
 			multi_file_list.ProcessDeletes(global_columns);
 		}

@@ -11,6 +11,9 @@ IcebergSnapshotLookup IcebergSnapshotLookup::FromAtClause(optional_ptr<BoundAtCl
 	auto &unit = at->Unit();
 	auto &value = at->GetValue();
 
+	if (value.IsNull()) {
+		throw InvalidInputException("NULL values can not be used as the 'unit' of a time travel clause");
+	}
 	if (StringUtil::CIEquals(unit, "version")) {
 		if (value.type().id() != LogicalTypeId::BIGINT) {
 			throw InvalidInputException("'version' has to be provided as a BIGINT value");
