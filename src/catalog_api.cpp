@@ -220,83 +220,18 @@ IRCAPITableCredentials IRCAPI::GetTableCredentials(ClientContext &context, IRCat
 	return result;
 }
 
-static void populateTableMetadata(IRCAPITable &table, const rest_api_objects::LoadTableResult &load_table_result) {
-	if (!load_table_result.has_metadata_location) {
-		throw InvalidConfigurationException("'metadata-location' can only be missing in uncommitted transactions");
-	}
-	table.storage_location = load_table_result.metadata_location;
-	auto &metadata = load_table_result.metadata;
-	// table_result.table_id = load_table_result.metadata.table_uuid;
-
-	//! NOTE: these (schema-id and current-schema-id) are saved as int64_t in the parsed structure,
-	//! the spec lists them as 'int', so I think they are really int32_t. (?)
-	//! We parsed them as uint64_t before using the generated JSON->CPP parsing logic.
-	bool found = false;
-	if (!metadata.has_current_schema_id) {
-		//! It's required since v2, but we want to support reading v1 as well, no?
-		throw NotImplementedException("FIXME: We require the 'current-schema-id' always, the spec says it's optional?");
-		//! FIXME: for v1 we should check if `schema` is set and use that instead
-	}
-	int64_t current_schema_id = metadata.current_schema_id;
-	if (!metadata.has_schemas) {
-		throw NotImplementedException("'schemas' is not present! V1 not supported currently");
-		//! FIXME: for v1 we should check if `schema` is set and use that instead (see above)
-	}
-	for (auto &schema : metadata.schemas) {
-		auto &schema_internals = schema.object_1;
-		if (!schema_internals.has_schema_id) {
-			throw NotImplementedException("'schema-id' not present! V1 not supported currently!");
-		}
-		int64_t schema_id = schema_internals.schema_id;
-		if (schema_id == current_schema_id) {
-			found = true;
-			auto &columns = schema.struct_type.fields;
-			for (auto &col : columns) {
-				table.columns.push_back(IcebergColumnDefinition::ParseStructField(*col));
-			}
-		}
-	}
-
-	if (!found) {
-		throw InvalidInputException("Current schema not found");
-	}
-}
-
-static IRCAPITable createTable(IRCatalog &catalog, const string &schema, const string &table_name) {
-	IRCAPITable table_result;
-	table_result.catalog_name = catalog.GetName();
-	table_result.schema_name = schema;
-	table_result.name = table_name;
-	table_result.data_source_format = "ICEBERG";
-	table_result.table_id = "uuid-" + schema + "-" + "table";
-	std::replace(table_result.table_id.begin(), table_result.table_id.end(), '_', '-');
-	return table_result;
-}
-
-IRCAPITable IRCAPI::GetTable(ClientContext &context, IRCatalog &catalog, const string &schema, const string &table_name,
-                             bool perform_request) {
-	IRCAPITable table_result = createTable(catalog, schema, table_name);
-
-	if (perform_request) {
-		string result = GetTableMetadata(context, catalog, schema, table_result.name);
-		std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(result));
-		auto *metadata_root = yyjson_doc_get_root(doc.get());
-		auto load_table_result = rest_api_objects::LoadTableResult::FromJSON(metadata_root);
-		populateTableMetadata(table_result, load_table_result);
-	} else {
-		// Skip fetching metadata, we'll do it later when we access the table
-		auto col = make_uniq<IcebergColumnDefinition>();
-		col->name = "__";
-		col->id = 0;
-		col->type = LogicalType::UNKNOWN;
-		table_result.columns.push_back(std::move(col));
-	}
-	return table_result;
+rest_api_objects::LoadTableResult IRCAPI::GetTable(ClientContext &context, IRCatalog &catalog, const string &schema,
+                                                   const string &table_name) {
+	string result = GetTableMetadata(context, catalog, schema, table_name);
+	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(result));
+	auto *metadata_root = yyjson_doc_get_root(doc.get());
+	auto load_table_result = rest_api_objects::LoadTableResult::FromJSON(metadata_root);
+	return load_table_result;
 }
 
 // TODO: handle out-of-order columns using position property
-vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog, const string &schema) {
-	vector<IRCAPITable> result;
+vector<rest_api_objects::TableIdentifier> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog,
+                                                            const string &schema) {
 	auto url_builder = catalog.GetBaseUrl();
 	url_builder.AddPathComponent(catalog.prefix);
 	url_builder.AddPathComponent("namespaces");
@@ -315,11 +250,7 @@ vector<IRCAPITable> IRCAPI::GetTables(ClientContext &context, IRCatalog &catalog
 	if (!list_tables_response.has_identifiers) {
 		throw NotImplementedException("List of 'identifiers' is missing, missing support for Iceberg V1");
 	}
-	for (auto &table : list_tables_response.identifiers) {
-		auto table_result = GetTable(context, catalog, schema, table.name);
-		result.push_back(std::move(table_result));
-	}
-	return result;
+	return std::move(list_tables_response.identifiers);
 }
 
 vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catalog) {
@@ -374,11 +305,6 @@ static string json_to_string(yyjson_mut_doc *doc, yyjson_write_flag flags = YYJS
 	string json_str(json_chars);
 	free(json_chars);
 	return json_str;
-}
-
-IRCAPITable IRCAPI::CreateTable(ClientContext &context, IRCatalog &catalog, const string &schema,
-                                CreateTableInfo *table_info) {
-	throw NotImplementedException("IRCAPI Create Table not Implemented");
 }
 
 } // namespace duckdb

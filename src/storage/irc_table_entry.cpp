@@ -20,13 +20,9 @@
 
 namespace duckdb {
 
-ICTableEntry::ICTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, CreateTableInfo &info)
-    : TableCatalogEntry(catalog, schema, info) {
-	this->internal = false;
-}
-
-ICTableEntry::ICTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, ICTableInfo &info)
-    : TableCatalogEntry(catalog, schema, *info.create_info) {
+ICTableEntry::ICTableEntry(IcebergTableInformation &table_info, Catalog &catalog, SchemaCatalogEntry &schema,
+                           CreateTableInfo &info)
+    : TableCatalogEntry(catalog, schema, info), table_info(table_info) {
 	this->internal = false;
 }
 
@@ -54,33 +50,22 @@ static void AddTimeTravelInformation(named_parameter_map_t &param_map, BoundAtCl
 }
 
 string ICTableEntry::PrepareIcebergScanFromEntry(ClientContext &context) {
-	D_ASSERT(table_data);
-	if (table_data->data_source_format != "ICEBERG") {
-		throw NotImplementedException("Table '%s' is of unsupported format '%s', ", table_data->name,
-		                              table_data->data_source_format);
-	}
-
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
 	auto &secret_manager = SecretManager::Get(context);
 
 	// Get Credentials from IRC API
-	auto secret_base_name =
-	    StringUtil::Format("__internal_ic_%s__%s__%s", table_data->table_id, table_data->schema_name, table_data->name);
-	auto table_credentials =
-	    IRCAPI::GetTableCredentials(context, ic_catalog, table_data->schema_name, table_data->name, secret_base_name);
-	// First check if table credentials are set (possible the IC catalog does not return credentials)
+	auto secret_base_name = StringUtil::Format("__internal_ic_%s__%s__%s", table_info.table_id, schema.name, name);
+	auto table_credentials = IRCAPI::GetTableCredentials(context, ic_catalog, schema.name, name, secret_base_name);
+	auto &load_result = table_info.load_table_result;
 
 	if (table_credentials.config) {
 		auto &info = *table_credentials.config;
 		D_ASSERT(info.scope.empty());
 		//! Limit the scope to the metadata location
-		string lc_storage_location;
-		lc_storage_location.resize(table_data->storage_location.size());
-		std::transform(table_data->storage_location.begin(), table_data->storage_location.end(),
-		               lc_storage_location.begin(), ::tolower);
+		string lc_storage_location = StringUtil::Lower(load_result.metadata_location);
 		size_t metadata_pos = lc_storage_location.find("metadata");
 		if (metadata_pos != string::npos) {
-			info.scope = {table_data->storage_location.substr(0, metadata_pos)};
+			info.scope = {load_result.metadata_location.substr(0, metadata_pos)};
 		} else {
 			throw InvalidInputException("Substring not found");
 		}
@@ -117,7 +102,7 @@ string ICTableEntry::PrepareIcebergScanFromEntry(ClientContext &context) {
 	for (auto &info : table_credentials.storage_credentials) {
 		(void)secret_manager.CreateSecret(context, info);
 	}
-	return table_data->storage_location;
+	return table_info.load_table_result.metadata_location;
 }
 
 TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<FunctionData> &bind_data,

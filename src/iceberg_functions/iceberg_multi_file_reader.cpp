@@ -428,15 +428,15 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	auto table_metadata = IcebergTableMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
 	metadata = IcebergTableMetadata::FromTableMetadata(table_metadata);
 
-	auto snapshot_lookup = metadata.GetSnapshot(options);
-	if (options.snapshot_source == SnapshotSource::LATEST) {
+	auto found_snapshot = metadata.GetSnapshot(options.snapshot_lookup);
+	if (options.snapshot_lookup.snapshot_source == SnapshotSource::LATEST) {
 		schema = metadata.GetSchemaFromId(metadata.current_schema_id);
 	} else {
-		schema = metadata.GetSchemaFromId(snapshot_lookup->schema_id);
+		schema = metadata.GetSchemaFromId(found_snapshot->schema_id);
 	}
 
-	if (snapshot_lookup) {
-		snapshot = *snapshot_lookup;
+	if (found_snapshot) {
+		snapshot = *found_snapshot;
 	}
 
 	data_manifest_reader = make_uniq<ManifestFileReader>(metadata.iceberg_version);
@@ -732,7 +732,8 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	// The path of the data file where this chunk was read from
 	const auto &file_path = data_file.file_path;
 	{
-		std::lock_guard<mutex> guard(multi_file_list.delete_lock);
+		lock_guard<mutex> guard(multi_file_list.lock);
+		std::lock_guard<mutex> delete_guard(multi_file_list.delete_lock);
 		if (multi_file_list.current_delete_manifest != multi_file_list.delete_manifests.end()) {
 			multi_file_list.ProcessDeletes(global_columns);
 		}
@@ -1123,6 +1124,8 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, MultiFileOptions &options,
                                          ClientContext &context) {
 	auto loption = StringUtil::Lower(key);
+	auto &snapshot_lookup = this->options.snapshot_lookup;
+
 	if (loption == "allow_moved_paths") {
 		this->options.allow_moved_paths = BooleanValue::Get(val);
 		return true;
@@ -1146,19 +1149,19 @@ bool IcebergMultiFileReader::ParseOption(const string &key, const Value &val, Mu
 		return true;
 	}
 	if (loption == "snapshot_from_id") {
-		if (this->options.snapshot_source != SnapshotSource::LATEST) {
+		if (snapshot_lookup.snapshot_source != SnapshotSource::LATEST) {
 			throw InvalidInputException("Can't use 'snapshot_from_id' in combination with 'snapshot_from_timestamp'");
 		}
-		this->options.snapshot_source = SnapshotSource::FROM_ID;
-		this->options.snapshot_id = val.GetValue<uint64_t>();
+		snapshot_lookup.snapshot_source = SnapshotSource::FROM_ID;
+		snapshot_lookup.snapshot_id = val.GetValue<uint64_t>();
 		return true;
 	}
 	if (loption == "snapshot_from_timestamp") {
-		if (this->options.snapshot_source != SnapshotSource::LATEST) {
+		if (snapshot_lookup.snapshot_source != SnapshotSource::LATEST) {
 			throw InvalidInputException("Can't use 'snapshot_from_id' in combination with 'snapshot_from_timestamp'");
 		}
-		this->options.snapshot_source = SnapshotSource::FROM_TIMESTAMP;
-		this->options.snapshot_timestamp = val.GetValue<timestamp_t>();
+		snapshot_lookup.snapshot_source = SnapshotSource::FROM_TIMESTAMP;
+		snapshot_lookup.snapshot_timestamp = val.GetValue<timestamp_t>();
 		return true;
 	}
 	return MultiFileReader::ParseOption(key, val, options, context);

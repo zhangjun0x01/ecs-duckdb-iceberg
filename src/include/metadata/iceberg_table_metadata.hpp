@@ -39,7 +39,7 @@ public:
 
 	shared_ptr<IcebergTableSchema> GetSchemaFromId(int32_t schema_id);
 
-	optional_ptr<IcebergSnapshot> GetSnapshot(const IcebergOptions &options);
+	optional_ptr<IcebergSnapshot> GetSnapshot(const IcebergSnapshotLookup &lookup);
 
 public:
 	int32_t iceberg_version;
