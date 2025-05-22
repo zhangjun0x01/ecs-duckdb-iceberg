@@ -35,20 +35,6 @@ void ICTableEntry::BindUpdateConstraints(Binder &binder, LogicalGet &, LogicalPr
 	throw NotImplementedException("BindUpdateConstraints");
 }
 
-static void AddTimeTravelInformation(named_parameter_map_t &param_map, BoundAtClause &at) {
-	auto &unit = at.Unit();
-	auto &value = at.GetValue();
-
-	if (StringUtil::CIEquals(unit, "version")) {
-		param_map.emplace("snapshot_from_id", value);
-	} else if (StringUtil::CIEquals(unit, "timestamp")) {
-		param_map.emplace("snapshot_from_timestamp", value);
-	} else {
-		throw InvalidInputException(
-		    "Unit '%s' for time travel is not valid, supported options are 'version' and 'timestamp'", unit);
-	}
-}
-
 string ICTableEntry::PrepareIcebergScanFromEntry(ClientContext &context) {
 	auto &ic_catalog = catalog.Cast<IRCatalog>();
 	auto &secret_manager = SecretManager::Get(context);
@@ -118,18 +104,27 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	vector<string> names;
 	TableFunctionRef empty_ref;
 
-	// Set the S3 path as input to table function
+	auto &metadata = table_info.table_metadata;
 	auto at = lookup.GetAtClause();
-	if (at) {
-		AddTimeTravelInformation(param_map, *at);
+	auto snapshot_lookup = IcebergSnapshotLookup::FromAtClause(at);
+	auto snapshot = metadata.GetSnapshot(snapshot_lookup);
+
+	int32_t schema_id;
+	if (snapshot_lookup.IsLatest()) {
+		schema_id = metadata.current_schema_id;
+	} else {
+		D_ASSERT(snapshot);
+		schema_id = snapshot->schema_id;
 	}
+	auto schema = metadata.GetSchemaFromId(schema_id);
+	iceberg_scan_function.function_info = make_shared_ptr<IcebergScanInfo>(metadata, snapshot, *schema);
+
+	// Set the S3 path as input to table function
 	vector<Value> inputs = {storage_location};
 	TableFunctionBindInput bind_input(inputs, param_map, return_types, names, nullptr, nullptr, iceberg_scan_function,
 	                                  empty_ref);
-
 	auto result = iceberg_scan_function.bind(context, bind_input, return_types, names);
 	bind_data = std::move(result);
-
 	return iceberg_scan_function;
 }
 

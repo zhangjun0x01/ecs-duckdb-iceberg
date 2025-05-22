@@ -13,6 +13,7 @@
 #include "iceberg_types.hpp"
 #include "iceberg_options.hpp"
 #include "duckdb/common/open_file_info.hpp"
+#include "duckdb/function/table_function.hpp"
 
 #include "rest_catalog/objects/table_metadata.hpp"
 
@@ -39,6 +40,18 @@ namespace duckdb {
 //	const IcebergTableSchema &schema;
 //	const IcebergTableMetadata &metadata;
 //};
+
+struct IcebergScanInfo : public TableFunctionInfo {
+public:
+	IcebergScanInfo(IcebergTableMetadata &metadata, optional_ptr<IcebergSnapshot> snapshot, IcebergTableSchema &schema)
+	    : metadata(metadata), snapshot(snapshot), schema(schema) {
+	}
+
+public:
+	IcebergTableMetadata &metadata;
+	optional_ptr<IcebergSnapshot> snapshot;
+	IcebergTableSchema &schema;
+};
 
 //! ------------- ICEBERG_METADATA TABLE FUNCTION -------------
 
