@@ -106,7 +106,7 @@ jobs:
               exit 1
             fi
             echo "Waiting for Polaris to initialize (attempt $attempt/$max_attempts)..."
-            sleep 5
+            sleep 10
             attempt=$((attempt + 1))
           done
           echo "Polaris is healthy"
