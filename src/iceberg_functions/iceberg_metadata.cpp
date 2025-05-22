@@ -58,6 +58,7 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 	auto iceberg_path = IcebergUtils::GetStorageLocation(context, input_string);
 
 	IcebergOptions options;
+	auto &snapshot_lookup = options.snapshot_lookup;
 
 	for (auto &kv : input.named_parameters) {
 		auto loption = StringUtil::Lower(kv.first);
@@ -78,19 +79,19 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 			}
 			options.version_name_format = value;
 		} else if (loption == "snapshot_from_id") {
-			if (options.snapshot_source != SnapshotSource::LATEST) {
+			if (snapshot_lookup.snapshot_source != SnapshotSource::LATEST) {
 				throw InvalidInputException(
 				    "Can't use 'snapshot_from_id' in combination with 'snapshot_from_timestamp'");
 			}
-			options.snapshot_source = SnapshotSource::FROM_ID;
-			options.snapshot_id = val.GetValue<uint64_t>();
+			snapshot_lookup.snapshot_source = SnapshotSource::FROM_ID;
+			snapshot_lookup.snapshot_id = val.GetValue<uint64_t>();
 		} else if (loption == "snapshot_from_timestamp") {
-			if (options.snapshot_source != SnapshotSource::LATEST) {
+			if (snapshot_lookup.snapshot_source != SnapshotSource::LATEST) {
 				throw InvalidInputException(
 				    "Can't use 'snapshot_from_id' in combination with 'snapshot_from_timestamp'");
 			}
-			options.snapshot_source = SnapshotSource::FROM_TIMESTAMP;
-			options.snapshot_timestamp = val.GetValue<timestamp_t>();
+			snapshot_lookup.snapshot_source = SnapshotSource::FROM_TIMESTAMP;
+			snapshot_lookup.snapshot_timestamp = val.GetValue<timestamp_t>();
 		}
 	}
 
@@ -98,7 +99,7 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 	auto table_metadata = IcebergTableMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
 	auto metadata = IcebergTableMetadata::FromTableMetadata(table_metadata);
 
-	auto snapshot_to_scan = metadata.GetSnapshot(options);
+	auto snapshot_to_scan = metadata.GetSnapshot(options.snapshot_lookup);
 
 	if (snapshot_to_scan) {
 		ret->iceberg_table =

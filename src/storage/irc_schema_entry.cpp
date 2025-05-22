@@ -120,7 +120,7 @@ optional_ptr<CatalogEntry> IRCSchemaEntry::LookupEntry(CatalogTransaction transa
 	if (!CatalogTypeIsSupported(type)) {
 		return nullptr;
 	}
-	return GetCatalogSet(type).GetEntry(transaction.GetContext(), lookup_info.GetEntryName());
+	return GetCatalogSet(type).GetEntry(transaction.GetContext(), lookup_info);
 }
 
 ICTableSet &IRCSchemaEntry::GetCatalogSet(CatalogType type) {

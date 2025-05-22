@@ -74,14 +74,14 @@ optional_ptr<IcebergSnapshot> IcebergTableMetadata::GetSnapshotByTimestamp(times
 	return snapshot;
 }
 
-optional_ptr<IcebergSnapshot> IcebergTableMetadata::GetSnapshot(const IcebergOptions &options) {
-	switch (options.snapshot_source) {
+optional_ptr<IcebergSnapshot> IcebergTableMetadata::GetSnapshot(const IcebergSnapshotLookup &lookup) {
+	switch (lookup.snapshot_source) {
 	case SnapshotSource::LATEST:
 		return GetLatestSnapshot();
 	case SnapshotSource::FROM_ID:
-		return GetSnapshotById(options.snapshot_id);
+		return GetSnapshotById(lookup.snapshot_id);
 	case SnapshotSource::FROM_TIMESTAMP:
-		return GetSnapshotByTimestamp(options.snapshot_timestamp);
+		return GetSnapshotByTimestamp(lookup.snapshot_timestamp);
 	default:
 		throw InternalException("SnapshotSource type not implemented");
 	}
