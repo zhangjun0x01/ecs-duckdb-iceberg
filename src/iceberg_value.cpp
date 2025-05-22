@@ -119,12 +119,16 @@ DeserializeResult IcebergValue::DeserializeValue(const string_t &blob, const Log
 		return Value::INTEGER(val);
 	}
 	case LogicalTypeId::BIGINT: {
-		if (blob.GetSize() != sizeof(int64_t)) {
+		if (blob.GetSize() == sizeof(int32_t)) {
+			//! Schema evolution happened: Infer the type as INTEGER
+			return DeserializeValue(blob, LogicalType::INTEGER);
+		} else if (blob.GetSize() == sizeof(int64_t)) {
+			int64_t val;
+			std::memcpy(&val, blob.GetData(), sizeof(int64_t));
+			return Value::BIGINT(val);
+		} else {
 			return DeserializeError(blob, type);
 		}
-		int64_t val;
-		std::memcpy(&val, blob.GetData(), sizeof(int64_t));
-		return Value::BIGINT(val);
 	}
 	case LogicalTypeId::DATE: {
 		if (blob.GetSize() != sizeof(int32_t)) { // Dates are typically stored as int32 (days since epoch)
@@ -137,14 +141,19 @@ DeserializeResult IcebergValue::DeserializeValue(const string_t &blob, const Log
 		return Value::DATE(date);
 	}
 	case LogicalTypeId::TIMESTAMP: {
-		if (blob.GetSize() != sizeof(int64_t)) { // Timestamps are typically stored as int64 (microseconds since epoch)
+		if (blob.GetSize() == sizeof(int32_t)) {
+			//! Schema evolution happened: Infer the type as DATE
+			return DeserializeValue(blob, LogicalType::DATE);
+		} else if (blob.GetSize() ==
+		           sizeof(int64_t)) { // Timestamps are typically stored as int64 (microseconds since epoch)
+			int64_t micros_since_epoch;
+			std::memcpy(&micros_since_epoch, blob.GetData(), sizeof(int64_t));
+			// Convert to DuckDB timestamp using microseconds
+			timestamp_t timestamp = Timestamp::FromEpochMicroSeconds(micros_since_epoch);
+			return Value::TIMESTAMP(timestamp);
+		} else {
 			return DeserializeError(blob, type);
 		}
-		int64_t micros_since_epoch;
-		std::memcpy(&micros_since_epoch, blob.GetData(), sizeof(int64_t));
-		// Convert to DuckDB timestamp using microseconds
-		timestamp_t timestamp = Timestamp::FromEpochMicroSeconds(micros_since_epoch);
-		return Value::TIMESTAMP(timestamp);
 	}
 	case LogicalTypeId::TIMESTAMP_TZ: {
 		if (blob.GetSize() != sizeof(int64_t)) { // Assuming stored as int64 (microseconds since epoch)
@@ -158,12 +167,16 @@ DeserializeResult IcebergValue::DeserializeValue(const string_t &blob, const Log
 		return Value::TIMESTAMPTZ(timestamp_tz_t(timestamp));
 	}
 	case LogicalTypeId::DOUBLE: {
-		if (blob.GetSize() != sizeof(double)) {
+		if (blob.GetSize() == sizeof(float)) {
+			//! Schema evolution happened: Infer the type as FLOAT
+			return DeserializeValue(blob, LogicalType::FLOAT);
+		} else if (blob.GetSize() == sizeof(double)) {
+			double val;
+			std::memcpy(&val, blob.GetData(), sizeof(double));
+			return Value::DOUBLE(val);
+		} else {
 			return DeserializeError(blob, type);
 		}
-		double val;
-		std::memcpy(&val, blob.GetData(), sizeof(double));
-		return Value::DOUBLE(val);
 	}
 	case LogicalTypeId::BLOB: {
 		return Value::BLOB((data_ptr_t)blob.GetData(), blob.GetSize());
@@ -200,7 +213,11 @@ DeserializeResult IcebergValue::DeserializeValue(const string_t &blob, const Log
 		return Value::TIME(val);
 	}
 	case LogicalTypeId::TIMESTAMP_NS:
+		//! FIXME: When support for 'TIMESTAMP_NS' is added,
+		//! keep in mind that the value should be inferred as DATE when the blob size is 4
+
 		//! TIMESTAMP_NS is added as part of Iceberg V3
+		return DeserializeError(blob, type);
 	case LogicalTypeId::UUID:
 		//! UUID not implemented yet
 		return DeserializeError(blob, type);
