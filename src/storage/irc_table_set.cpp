@@ -22,7 +22,7 @@ IcebergTableInformation::IcebergTableInformation(IRCatalog &catalog, IRCSchemaEn
 	table_id = "uuid-" + schema.name + "-" + name;
 }
 
-optional_ptr<CatalogEntry> IcebergTableInformation::_CreateCatalogEntry(IcebergTableSchema &table_schema) {
+optional_ptr<CatalogEntry> IcebergTableInformation::CreateSchemaVersion(IcebergTableSchema &table_schema) {
 	CreateTableInfo info;
 	info.table = name;
 	for (auto &col : table_schema.columns) {
@@ -73,9 +73,8 @@ void ICTableSet::FillEntry(ClientContext &context, IcebergTableInformation &tabl
 	//! It should be impossible to have a metadata file without any schema
 	D_ASSERT(!schemas.empty());
 	for (auto &table_schema : schemas) {
-		table._CreateCatalogEntry(*table_schema.second);
+		table.CreateSchemaVersion(*table_schema.second);
 	}
-	table.current_schema_id = table.table_metadata.current_schema_id;
 }
 
 void ICTableSet::Scan(ClientContext &context, const std::function<void(CatalogEntry &)> &callback) {

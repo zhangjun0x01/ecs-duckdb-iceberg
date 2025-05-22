@@ -14,7 +14,7 @@ public:
 
 public:
 	optional_ptr<CatalogEntry> GetSchemaVersion(optional_ptr<BoundAtClause> at);
-	optional_ptr<CatalogEntry> _CreateCatalogEntry(IcebergTableSchema &table_schema);
+	optional_ptr<CatalogEntry> CreateSchemaVersion(IcebergTableSchema &table_schema);
 
 public:
 	IRCatalog &catalog;
@@ -25,7 +25,6 @@ public:
 	rest_api_objects::LoadTableResult load_table_result;
 	IcebergTableMetadata table_metadata;
 	unordered_map<int32_t, unique_ptr<ICTableEntry>> schema_versions;
-	int32_t current_schema_id;
 };
 
 class ICTableSet {
