@@ -88,8 +88,6 @@ public:
 	string prefix;
 
 private:
-	IRCSchemaSet schemas;
-
 	// defaults and overrides provided by a catalog.
 	case_insensitive_map_t<string> defaults;
 	case_insensitive_map_t<string> overrides;

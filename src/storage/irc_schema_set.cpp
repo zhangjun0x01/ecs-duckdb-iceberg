@@ -29,11 +29,6 @@ void IRCSchemaSet::Scan(ClientContext &context, const std::function<void(Catalog
 	}
 }
 
-void IRCSchemaSet::DropEntry(ClientContext &context, DropInfo &info) {
-	lock_guard<mutex> l(entry_lock);
-	entries.erase(info.name);
-}
-
 void IRCSchemaSet::LoadEntries(ClientContext &context) {
 	if (!entries.empty()) {
 		return;
@@ -58,21 +53,6 @@ optional_ptr<CatalogEntry> IRCSchemaSet::CreateEntryInternal(ClientContext &cont
 	}
 	entries.insert(make_pair(result->name, std::move(entry)));
 	return result;
-}
-
-optional_ptr<CatalogEntry> IRCSchemaSet::CreateSchema(ClientContext &context, CreateSchemaInfo &info) {
-	auto &ic_catalog = catalog.Cast<IRCatalog>();
-	auto schema = IRCAPI::CreateSchema(context, ic_catalog, info.schema);
-	auto schema_entry = make_uniq<IRCSchemaEntry>(catalog, info);
-	schema_entry->schema_data = make_uniq<IRCAPISchema>(schema);
-
-	return CreateEntryInternal(context, std::move(schema_entry));
-}
-
-void IRCSchemaSet::DropSchema(ClientContext &context, DropInfo &info) {
-	auto &ic_catalog = catalog.Cast<IRCatalog>();
-	IRCAPI::DropSchema(context, info.name);
-	DropEntry(context, info);
 }
 
 } // namespace duckdb
