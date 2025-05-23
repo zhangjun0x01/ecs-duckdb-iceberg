@@ -85,13 +85,11 @@ select * from my_datalake.default.table_more_deletes order by all;
 2023-03-11	11	k
 2023-03-12	12	l
 
-# TODO: after https://github.com/duckdb/duckdb-iceberg/pull/142 is merged, we can combine the
-# following two tests into one
+# Because we loaded the table already, we perform no extra requests here
+
 query II
 SELECT request.url, response.reason FROM duckdb_logs_parsed('HTTP') WHERE request.type='GET' AND (request.url).starts_with('http://127.0.0.1:8181/v1/') order by timestamp
 ----
-http://127.0.0.1:8181/v1/namespaces/default/tables/table_unpartitioned	OK
-http://127.0.0.1:8181/v1/namespaces/default/tables/table_more_deletes	OK
 
 query I
 select count(*) from my_datalake.default.pyspark_iceberg_table_v2;
