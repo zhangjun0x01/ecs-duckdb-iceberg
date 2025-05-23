@@ -27,10 +27,6 @@ public:
 	static rest_api_objects::LoadTableResult GetTable(ClientContext &context, IRCatalog &catalog, const string &schema,
 	                                                  const string &table_name);
 	static vector<IRCAPISchema> GetSchemas(ClientContext &context, IRCatalog &catalog);
-
-	static IRCAPISchema CreateSchema(ClientContext &context, IRCatalog &catalog, const string &schema);
-	static void DropSchema(ClientContext &context, const string &schema);
-	static void DropTable(ClientContext &context, IRCatalog &catalog, const string &schema, string &table_name);
 };
 
 } // namespace duckdb

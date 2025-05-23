@@ -141,18 +141,6 @@ vector<IRCAPISchema> IRCAPI::GetSchemas(ClientContext &context, IRCatalog &catal
 	return result;
 }
 
-IRCAPISchema IRCAPI::CreateSchema(ClientContext &context, IRCatalog &catalog, const string &schema) {
-	throw NotImplementedException("IRCAPI::Create Schema not Implemented");
-}
-
-void IRCAPI::DropSchema(ClientContext &context, const string &schema) {
-	throw NotImplementedException("IRCAPI Drop Schema not Implemented");
-}
-
-void IRCAPI::DropTable(ClientContext &context, IRCatalog &catalog, const string &schema, string &table_name) {
-	throw NotImplementedException("IRCAPI Drop Table not Implemented");
-}
-
 static string json_to_string(yyjson_mut_doc *doc, yyjson_write_flag flags = YYJSON_WRITE_PRETTY) {
 	char *json_chars = yyjson_mut_write(doc, flags, NULL);
 	string json_str(json_chars);
