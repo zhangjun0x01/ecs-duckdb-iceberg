@@ -177,22 +177,8 @@ TableFunctionSet IcebergFunctions::GetIcebergMetadataFunction() {
 	fun.named_parameters["metadata_compression_codec"] = LogicalType::VARCHAR;
 	fun.named_parameters["version"] = LogicalType::VARCHAR;
 	fun.named_parameters["version_name_format"] = LogicalType::VARCHAR;
-	function_set.AddFunction(fun);
-
-	fun = TableFunction({LogicalType::VARCHAR, LogicalType::UBIGINT}, IcebergMetaDataFunction, IcebergMetaDataBind,
-	                    IcebergMetaDataGlobalTableFunctionState::Init);
-	fun.named_parameters["allow_moved_paths"] = LogicalType::BOOLEAN;
-	fun.named_parameters["metadata_compression_codec"] = LogicalType::VARCHAR;
-	fun.named_parameters["version"] = LogicalType::VARCHAR;
-	fun.named_parameters["version_name_format"] = LogicalType::VARCHAR;
-	function_set.AddFunction(fun);
-
-	fun = TableFunction({LogicalType::VARCHAR, LogicalType::TIMESTAMP}, IcebergMetaDataFunction, IcebergMetaDataBind,
-	                    IcebergMetaDataGlobalTableFunctionState::Init);
-	fun.named_parameters["allow_moved_paths"] = LogicalType::BOOLEAN;
-	fun.named_parameters["metadata_compression_codec"] = LogicalType::VARCHAR;
-	fun.named_parameters["version"] = LogicalType::VARCHAR;
-	fun.named_parameters["version_name_format"] = LogicalType::VARCHAR;
+	fun.named_parameters["snapshot_from_timestamp"] = LogicalType::TIMESTAMP;
+	fun.named_parameters["snapshot_from_id"] = LogicalType::UBIGINT;
 	function_set.AddFunction(fun);
 
 	return function_set;
