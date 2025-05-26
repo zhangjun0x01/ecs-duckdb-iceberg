@@ -86,9 +86,9 @@ jobs:
         env:
           JAVA_HOME: /usr/lib/jvm/java-21-openjdk-amd64
         run: |
-          mkdir polaris_catalog
           git clone https://github.com/apache/polaris.git polaris_catalog
           cd polaris_catalog
+          git checkout 8fa1c773c8a775834bda24964dbed25c34ef2917
           ./gradlew clean :polaris-quarkus-server:assemble -Dquarkus.container-image.build=true --no-build-cache
           ./gradlew --stop
           nohup ./gradlew run -Dpolaris.bootstrap.credentials=POLARIS,root,secret > polaris-server.log 2> polaris-error.log &

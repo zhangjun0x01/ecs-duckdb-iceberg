@@ -15,7 +15,7 @@ HostDecompositionResult DecomposeHost(const string &host) {
 	HostDecompositionResult result;
 
 	auto start_of_path = host.find('/');
-	if (start_of_path != std::string::npos) {
+	if (start_of_path != string::npos) {
 		//! Authority consists of everything (assuming the host does not contain the scheme) before the first slash
 		result.authority = host.substr(0, start_of_path);
 		auto remainder = host.substr(start_of_path + 1);
@@ -63,8 +63,8 @@ static string GetAwsService(const string &host) {
 	return host.substr(0, host.find_first_of('.'));
 }
 
-string SIGV4Authorization::GetRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder,
-                                      RequestInput &) {
+unique_ptr<HTTPResponse> SIGV4Authorization::GetRequest(ClientContext &context,
+                                                        const IRCEndpointBuilder &endpoint_builder) {
 	AWSInput aws_input;
 	aws_input.cert_path = APIUtils::GetCURLCertPath();
 	// Set the user Agent.
@@ -97,7 +97,10 @@ string SIGV4Authorization::GetRequest(ClientContext &context, const IRCEndpointB
 	aws_input.session_token =
 	    kv_secret.secret_map["session_token"].IsNull() ? "" : kv_secret.secret_map["session_token"].GetValue<string>();
 
-	return aws_input.GetRequest(context);
+	auto body = aws_input.GetRequest(context);
+	auto response = make_uniq<HTTPResponse>(HTTPStatusCode::OK_200);
+	response->body = body;
+	return response;
 }
 
 } // namespace duckdb
