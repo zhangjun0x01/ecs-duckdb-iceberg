@@ -20,6 +20,8 @@
 #include "metadata/iceberg_predicate_stats.hpp"
 #include "metadata/iceberg_table_metadata.hpp"
 
+#include <sys/fcntl.h>
+
 namespace duckdb {
 
 IcebergMultiFileList::IcebergMultiFileList(ClientContext &context_p, const string &path, const IcebergOptions &options)
@@ -489,6 +491,29 @@ unique_ptr<MultiFileReader> IcebergMultiFileReader::CreateInstance(const TableFu
 	(void)table;
 	return make_uniq<IcebergMultiFileReader>();
 }
+
+unique_ptr<MultiFileReader> IcebergAvroMultiFileReader::CreateInstance(const TableFunction &table) {
+	(void)table;
+	return make_uniq<IcebergAvroMultiFileReader>();
+}
+
+shared_ptr<MultiFileList> IcebergAvroMultiFileReader::CreateFileList(ClientContext &context, const vector<string> &paths,
+		   FileGlobOptions options) {
+
+ 	auto break_here = 0;
+	vector<OpenFileInfo> open_files;
+	for (auto &path : paths) {
+		open_files.emplace_back(path);
+		open_files.back().extended_info = make_uniq<ExtendedOpenFileInfo>();
+		open_files.back().extended_info->options["validate_external_cache"] = false;
+	}
+	auto res = make_uniq<GlobMultiFileList>(context, std::move(open_files), options);
+	if (res->GetExpandResult() == FileExpandResult::NO_FILES && options == FileGlobOptions::DISALLOW_EMPTY) {
+		throw IOException("%s needs at least one file to read", function_name);
+	}
+	return std::move(res);
+}
+
 
 shared_ptr<MultiFileList> IcebergMultiFileReader::CreateFileList(ClientContext &context, const vector<string> &paths,
                                                                  FileGlobOptions options) {

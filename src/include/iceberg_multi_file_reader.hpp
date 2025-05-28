@@ -175,6 +175,14 @@ public:
 	}
 };
 
+
+struct IcebergAvroMultiFileReader : public MultiFileReader {
+	shared_ptr<MultiFileList> CreateFileList(ClientContext &context, const vector<string> &paths,
+	       FileGlobOptions options) override;
+
+	static unique_ptr<MultiFileReader> CreateInstance(const TableFunction &table);
+};
+
 struct IcebergMultiFileReader : public MultiFileReader {
 public:
 	static unique_ptr<MultiFileReader> CreateInstance(const TableFunction &table);
