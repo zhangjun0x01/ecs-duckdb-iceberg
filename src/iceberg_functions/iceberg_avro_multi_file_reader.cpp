@@ -4,7 +4,6 @@
 #include "duckdb/main/extension_util.hpp"
 #include "duckdb/parallel/thread_context.hpp"
 
-
 namespace duckdb {
 
 unique_ptr<MultiFileReader> IcebergAvroMultiFileReader::CreateInstance(const TableFunction &table) {
@@ -12,8 +11,9 @@ unique_ptr<MultiFileReader> IcebergAvroMultiFileReader::CreateInstance(const Tab
 	return make_uniq<IcebergAvroMultiFileReader>();
 }
 
-shared_ptr<MultiFileList> IcebergAvroMultiFileReader::CreateFileList(ClientContext &context, const vector<string> &paths,
-		   FileGlobOptions options) {
+shared_ptr<MultiFileList> IcebergAvroMultiFileReader::CreateFileList(ClientContext &context,
+                                                                     const vector<string> &paths,
+                                                                     FileGlobOptions options) {
 
 	vector<OpenFileInfo> open_files;
 	for (auto &path : paths) {
@@ -25,4 +25,4 @@ shared_ptr<MultiFileList> IcebergAvroMultiFileReader::CreateFileList(ClientConte
 	return std::move(res);
 }
 
-}
+} // namespace duckdb

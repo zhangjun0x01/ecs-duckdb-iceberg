@@ -31,7 +31,6 @@ public:
 	}
 };
 
-
 struct IcebergMultiFileReader : public MultiFileReader {
 public:
 	IcebergMultiFileReader(shared_ptr<TableFunctionInfo> function_info);

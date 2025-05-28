@@ -1,4 +1,4 @@
-# name: test/sql/local/irc/iceberg_catalog_read.test
+# name: test/sql/local/irc/test_minimal_head_requests.test
 # description: test integration with iceberg catalog read
 # group: [irc]
 
