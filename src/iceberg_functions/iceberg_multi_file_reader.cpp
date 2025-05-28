@@ -40,17 +40,13 @@ unique_ptr<MultiFileReader> IcebergAvroMultiFileReader::CreateInstance(const Tab
 shared_ptr<MultiFileList> IcebergAvroMultiFileReader::CreateFileList(ClientContext &context, const vector<string> &paths,
 		   FileGlobOptions options) {
 
- 	auto break_here = 0;
 	vector<OpenFileInfo> open_files;
 	for (auto &path : paths) {
 		open_files.emplace_back(path);
 		open_files.back().extended_info = make_uniq<ExtendedOpenFileInfo>();
-		open_files.back().extended_info->options["validate_external_cache"] = false;
+		open_files.back().extended_info->options["validate_external_file_cache"] = Value::BOOLEAN(false);
 	}
-	auto res = make_uniq<GlobMultiFileList>(context, std::move(open_files), options);
-	if (res->GetExpandResult() == FileExpandResult::NO_FILES && options == FileGlobOptions::DISALLOW_EMPTY) {
-		throw IOException("%s needs at least one file to read", function_name);
-	}
+	auto res = make_uniq<SimpleMultiFileList>(std::move(open_files));
 	return std::move(res);
 }
 
@@ -436,6 +432,7 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 	const auto &multi_file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state->file_list);
 	auto file_id = reader.file_list_idx.GetIndex();
 	auto &data_file = multi_file_list.data_files[file_id];
+
 	auto &local_columns = reader.columns;
 
 	ApplyEqualityDeletes(context, output_chunk, multi_file_list, data_file, local_columns);
