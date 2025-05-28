@@ -4,7 +4,8 @@
 #include "duckdb/main/extension_helper.hpp"
 #include "duckdb/main/database.hpp"
 
-#include <iceberg_multi_file_reader.hpp>
+#include "iceberg_multi_file_reader.hpp"
+#include "iceberg_avro_multi_file_reader.hpp"
 
 namespace duckdb {
 

@@ -20,7 +20,6 @@
 #include "metadata/iceberg_predicate_stats.hpp"
 #include "metadata/iceberg_table_metadata.hpp"
 
-#include <sys/fcntl.h>
 
 namespace duckdb {
 
@@ -31,25 +30,6 @@ IcebergMultiFileReader::IcebergMultiFileReader(shared_ptr<TableFunctionInfo> fun
 unique_ptr<MultiFileReader> IcebergMultiFileReader::CreateInstance(const TableFunction &table) {
 	return make_uniq<IcebergMultiFileReader>(table.function_info);
 }
-
-unique_ptr<MultiFileReader> IcebergAvroMultiFileReader::CreateInstance(const TableFunction &table) {
-	(void)table;
-	return make_uniq<IcebergAvroMultiFileReader>();
-}
-
-shared_ptr<MultiFileList> IcebergAvroMultiFileReader::CreateFileList(ClientContext &context, const vector<string> &paths,
-		   FileGlobOptions options) {
-
-	vector<OpenFileInfo> open_files;
-	for (auto &path : paths) {
-		open_files.emplace_back(path);
-		open_files.back().extended_info = make_uniq<ExtendedOpenFileInfo>();
-		open_files.back().extended_info->options["validate_external_file_cache"] = Value::BOOLEAN(false);
-	}
-	auto res = make_uniq<SimpleMultiFileList>(std::move(open_files));
-	return std::move(res);
-}
-
 
 shared_ptr<MultiFileList> IcebergMultiFileReader::CreateFileList(ClientContext &context, const vector<string> &paths,
                                                                  FileGlobOptions) {
