@@ -8,6 +8,11 @@ struct CreateTableInfo;
 class ICResult;
 class IRCSchemaEntry;
 
+struct IRCAPITableCredentials {
+	unique_ptr<CreateSecretInput> config;
+	vector<CreateSecretInput> storage_credentials;
+};
+
 struct IcebergTableInformation {
 public:
 	IcebergTableInformation(IRCatalog &catalog, IRCSchemaEntry &schema, const string &name);
@@ -15,6 +20,7 @@ public:
 public:
 	optional_ptr<CatalogEntry> GetSchemaVersion(optional_ptr<BoundAtClause> at);
 	optional_ptr<CatalogEntry> CreateSchemaVersion(IcebergTableSchema &table_schema);
+	IRCAPITableCredentials GetVendedCredentials(ClientContext &context);
 
 public:
 	IRCatalog &catalog;

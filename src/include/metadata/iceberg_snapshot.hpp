@@ -15,11 +15,6 @@ public:
 	static IcebergSnapshot ParseSnapshot(rest_api_objects::Snapshot &snapshot, IcebergTableMetadata &metadata);
 
 public:
-	bool IsEmptySnapshot() {
-		return snapshot_id == NumericLimits<int64_t>::Maximum();
-	}
-
-public:
 	//! Snapshot metadata
 	int64_t snapshot_id = NumericLimits<int64_t>::Maximum();
 	int64_t sequence_number;

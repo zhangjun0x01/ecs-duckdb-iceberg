@@ -18,27 +18,15 @@ struct IRCAPISchema {
 	string catalog_name;
 };
 
-struct IRCAPITableCredentials {
-	unique_ptr<CreateSecretInput> config;
-	vector<CreateSecretInput> storage_credentials;
-};
-
 class IRCAPI {
 public:
 	static const string API_VERSION_1;
-
-	static IRCAPITableCredentials GetTableCredentials(ClientContext &context, IRCatalog &catalog, const string &schema,
-	                                                  const string &table, const string &secret_base_name);
 	static vector<string> GetCatalogs(ClientContext &context, IRCatalog &catalog);
 	static vector<rest_api_objects::TableIdentifier> GetTables(ClientContext &context, IRCatalog &catalog,
 	                                                           const string &schema);
 	static rest_api_objects::LoadTableResult GetTable(ClientContext &context, IRCatalog &catalog, const string &schema,
 	                                                  const string &table_name);
 	static vector<IRCAPISchema> GetSchemas(ClientContext &context, IRCatalog &catalog);
-
-	static IRCAPISchema CreateSchema(ClientContext &context, IRCatalog &catalog, const string &schema);
-	static void DropSchema(ClientContext &context, const string &schema);
-	static void DropTable(ClientContext &context, IRCatalog &catalog, const string &schema, string &table_name);
 };
 
 } // namespace duckdb

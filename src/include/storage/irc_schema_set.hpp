@@ -11,11 +11,8 @@ public:
 	explicit IRCSchemaSet(Catalog &catalog);
 
 public:
-	optional_ptr<CatalogEntry> CreateSchema(ClientContext &context, CreateSchemaInfo &info);
-	void DropSchema(ClientContext &context, DropInfo &info);
 	void LoadEntries(ClientContext &context);
 	optional_ptr<CatalogEntry> GetEntry(ClientContext &context, const string &name);
-	void DropEntry(ClientContext &context, DropInfo &info);
 	void Scan(ClientContext &context, const std::function<void(CatalogEntry &)> &callback);
 
 protected:
