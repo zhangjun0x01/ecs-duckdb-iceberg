@@ -191,7 +191,7 @@ jobs:
             --health-start-period=15s \
             -p 9000:9000 \
             -p 9001:9001 \
-            bitnami/minio:latest
+            bitnami/minio:2025.4.22
 
       - name: Wait for Minio
         run: |
