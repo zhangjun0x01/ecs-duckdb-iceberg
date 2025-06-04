@@ -20,7 +20,6 @@
 #include "storage/authorization/sigv4.hpp"
 #include "iceberg_utils.hpp"
 #include "iceberg_logging.hpp"
-#include "iceberg_copy.hpp"
 
 namespace duckdb {
 
@@ -70,7 +69,6 @@ static void LoadInternal(DatabaseInstance &instance) {
 	CreateSecretFunction secret_function = {"iceberg", "config", OAuth2Authorization::CreateCatalogSecretFunction};
 	OAuth2Authorization::SetCatalogSecretParameters(secret_function);
 	ExtensionUtil::RegisterFunction(instance, secret_function);
-	ExtensionUtil::RegisterFunction(instance, IcebergCopyToFunction::Create());
 
 	auto &log_manager = instance.GetLogManager();
 	log_manager.RegisterLogType(make_uniq<IcebergLogType>());

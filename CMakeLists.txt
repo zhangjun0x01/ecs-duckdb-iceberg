@@ -18,7 +18,7 @@ set(EXTENSION_SOURCES
     src/catalog_api.cpp
     src/iceberg_logging.cpp
     src/catalog_utils.cpp
-    src/iceberg_copy.cpp
+    src/storage/iceberg_insert.cpp
     src/aws.cpp
     src/base_manifest_reader.cpp
     src/manifest_list_reader.cpp

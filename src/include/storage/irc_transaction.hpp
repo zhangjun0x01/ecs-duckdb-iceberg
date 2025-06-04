@@ -30,6 +30,8 @@ public:
 
 public:
 	IRCSchemaSet schemas;
+	//! Tables marked dirty in this transaction, to be rewritten on commit
+	unordered_set<ICTableEntry *> dirty_tables;
 
 private:
 	IRCTransactionState transaction_state;

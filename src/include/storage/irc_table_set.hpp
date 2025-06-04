@@ -31,6 +31,11 @@ public:
 	rest_api_objects::LoadTableResult load_table_result;
 	IcebergTableMetadata table_metadata;
 	unordered_map<int32_t, unique_ptr<ICTableEntry>> schema_versions;
+
+	//! The list of new data files, used to reconstruct the metadata for retry, or clean up for fail/abort
+	vector<IcebergDataFile> new_data_files;
+	//! The map of partition value to new manifests created in the transaction
+	unordered_map<string, IcebergManifest> new_manifests;
 };
 
 class ICTableSet {
