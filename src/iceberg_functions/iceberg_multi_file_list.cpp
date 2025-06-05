@@ -506,7 +506,8 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	current_delete_manifest = delete_manifests.begin();
 }
 
-void IcebergMultiFileList::ProcessDeletes(const vector<MultiFileColumnDefinition> &global_columns) const {
+void IcebergMultiFileList::ProcessDeletes(const vector<MultiFileColumnDefinition> &global_columns,
+                                          const vector<ColumnIndex> &column_indexes) const {
 	// In <=v2 we now have to process *all* delete manifests
 	// before we can be certain that we have all the delete data for the current file.
 
@@ -553,7 +554,7 @@ void IcebergMultiFileList::ProcessDeletes(const vector<MultiFileColumnDefinition
 			throw NotImplementedException(
 			    "File format '%s' not supported for deletes, only supports 'parquet' currently", entry.file_format);
 		}
-		ScanDeleteFile(entry, global_columns);
+		ScanDeleteFile(entry, global_columns, column_indexes);
 	}
 
 	D_ASSERT(current_delete_manifest == delete_manifests.end());
@@ -605,7 +606,8 @@ static void InitializeFromOtherChunk(DataChunk &target, DataChunk &other, const 
 
 void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &entry, DataChunk &result_p,
                                                   vector<MultiFileColumnDefinition> &local_columns,
-                                                  const vector<MultiFileColumnDefinition> &global_columns) const {
+                                                  const vector<MultiFileColumnDefinition> &global_columns,
+                                                  const vector<ColumnIndex> &column_indexes) const {
 	D_ASSERT(!entry.equality_ids.empty());
 	D_ASSERT(result_p.ColumnCount() == local_columns.size());
 
@@ -646,6 +648,16 @@ void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &en
 		id_to_global_column[col.identifier.GetValue<int32_t>()] = i;
 	}
 
+	unordered_map<idx_t, idx_t> global_id_to_result_id;
+	for (idx_t i = 0; i < column_indexes.size(); i++) {
+		auto &column_index = column_indexes[i];
+		if (column_index.IsVirtualColumn()) {
+			continue;
+		}
+		auto global_id = column_index.GetPrimaryIndex();
+		global_id_to_result_id[global_id] = i;
+	}
+
 	//! Take only the relevant columns from the result
 	InitializeFromOtherChunk(result, result_p, column_ids);
 	result.ReferenceColumns(result_p, column_ids);
@@ -658,6 +670,12 @@ void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &en
 		auto global_column_id = id_to_global_column[field_id];
 		auto &col = global_columns[global_column_id];
 		auto &vec = result.data[col_idx];
+
+		if (!column_indexes.empty()) {
+			//! Map from global index to the index in the result chunk (the way it's projected)
+			D_ASSERT(global_id_to_result_id.count(global_column_id));
+			global_column_id = global_id_to_result_id.at(global_column_id);
+		}
 
 		for (idx_t i = 0; i < count; i++) {
 			auto &row = rows[i];
@@ -682,7 +700,8 @@ void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &en
 }
 
 void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry,
-                                          const vector<MultiFileColumnDefinition> &global_columns) const {
+                                          const vector<MultiFileColumnDefinition> &global_columns,
+                                          const vector<ColumnIndex> &column_indexes) const {
 	const auto &delete_file_path = entry.file_path;
 	auto &instance = DatabaseInstance::GetDatabase(context);
 	//! FIXME: delete files could also be made without row_ids,
@@ -739,7 +758,8 @@ void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry,
 			result.Reset();
 			parquet_scan.function(context, function_input, result);
 			result.Flatten();
-			ScanEqualityDeleteFile(entry, result, multi_file_local_state.reader->columns, global_columns);
+			ScanEqualityDeleteFile(entry, result, multi_file_local_state.reader->columns, global_columns,
+			                       column_indexes);
 		} while (result.size() != 0);
 	}
 }

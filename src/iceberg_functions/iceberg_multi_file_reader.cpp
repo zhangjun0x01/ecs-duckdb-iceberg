@@ -253,6 +253,34 @@ static void ApplyPartitionConstants(const IcebergMultiFileList &multi_file_list,
 	}
 }
 
+ReaderInitializeType IcebergMultiFileReader::InitializeReader(MultiFileReaderData &reader_data,
+                                                              const MultiFileBindData &bind_data,
+                                                              const vector<MultiFileColumnDefinition> &global_columns,
+                                                              const vector<ColumnIndex> &global_column_ids,
+                                                              optional_ptr<TableFilterSet> table_filters,
+                                                              ClientContext &context, MultiFileGlobalState &gstate) {
+	auto result = MultiFileReader::InitializeReader(reader_data, bind_data, global_columns, global_column_ids,
+	                                                table_filters, context, gstate);
+
+	auto global_state = gstate.multi_file_reader_state.get();
+	const auto &multi_file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state->file_list);
+	auto &reader = *reader_data.reader;
+	auto file_id = reader.file_list_idx.GetIndex();
+	const auto &data_file = multi_file_list.data_files[file_id];
+
+	// The path of the data file where this chunk was read from
+	const auto &file_path = data_file.file_path;
+	{
+		lock_guard<mutex> guard(multi_file_list.lock);
+		std::lock_guard<mutex> delete_guard(multi_file_list.delete_lock);
+		if (multi_file_list.current_delete_manifest != multi_file_list.delete_manifests.end()) {
+			multi_file_list.ProcessDeletes(global_columns, global_column_ids);
+		}
+		reader.deletion_filter = std::move(multi_file_list.GetPositionalDeletesForFile(file_path));
+	}
+	return result;
+}
+
 void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, const MultiFileOptions &file_options,
                                           const MultiFileReaderBindData &options,
                                           const vector<MultiFileColumnDefinition> &global_columns,
@@ -266,20 +294,6 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	{
 		lock_guard<mutex> guard(multi_file_list.lock);
 		D_ASSERT(multi_file_list.initialized);
-	}
-	auto &reader = *reader_data.reader;
-	auto file_id = reader.file_list_idx.GetIndex();
-	const auto &data_file = multi_file_list.data_files[file_id];
-
-	// The path of the data file where this chunk was read from
-	const auto &file_path = data_file.file_path;
-	{
-		lock_guard<mutex> guard(multi_file_list.lock);
-		std::lock_guard<mutex> delete_guard(multi_file_list.delete_lock);
-		if (multi_file_list.current_delete_manifest != multi_file_list.delete_manifests.end()) {
-			multi_file_list.ProcessDeletes(global_columns);
-		}
-		reader.deletion_filter = std::move(multi_file_list.GetPositionalDeletesForFile(file_path));
 	}
 
 	auto &local_columns = reader_data.reader->columns;
