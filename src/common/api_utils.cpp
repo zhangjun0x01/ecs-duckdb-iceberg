@@ -79,7 +79,9 @@ unique_ptr<HTTPResponse> APIUtils::GetRequest(ClientContext &context, const IRCE
 
 	HTTPHeaders headers(db);
 	headers.Insert("X-Iceberg-Access-Delegation", "vended-credentials");
-	headers.Insert("Authorization", StringUtil::Format("Bearer %s", token));
+	if (!token.empty()) {
+		headers.Insert("Authorization", StringUtil::Format("Bearer %s", token));
+	}
 
 	auto &http_util = HTTPUtil::Get(db);
 	unique_ptr<HTTPParams> params;
