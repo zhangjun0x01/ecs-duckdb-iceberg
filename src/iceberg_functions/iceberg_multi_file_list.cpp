@@ -671,11 +671,11 @@ void IcebergMultiFileList::ScanEqualityDeleteFile(const IcebergManifestEntry &en
 		auto &col = global_columns[global_column_id];
 		auto &vec = result.data[col_idx];
 
-		if (!column_indexes.empty()) {
-			//! Map from global index to the index in the result chunk (the way it's projected)
-			D_ASSERT(global_id_to_result_id.count(global_column_id));
-			global_column_id = global_id_to_result_id.at(global_column_id);
+		auto it = global_id_to_result_id.find(global_column_id);
+		if (it == global_id_to_result_id.end()) {
+			throw NotImplementedException("Equality deletes need the relevant columns to be selected");
 		}
+		global_column_id = it->second;
 
 		for (idx_t i = 0; i < count; i++) {
 			auto &row = rows[i];
