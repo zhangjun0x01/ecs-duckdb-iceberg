@@ -54,11 +54,20 @@ select * from my_datalake.default.table_unpartitioned order by all;
 2023-03-11	11	k
 2023-03-12	12	l
 
-# 2 head requests to the 2 avro files describing my_datalake.default.table_unpartitioned
+# 0 head requests to the 2 avro files describing my_datalake.default.table_unpartitioned
 query I
 select count(*) from duckdb_logs_parsed('HTTP') where request.type = 'HEAD';
 ----
-2
+0
+
+# 0 head requests to the 2 avro files describing my_datalake.default.table_unpartitioned
+query I
+select count(*) from duckdb_logs_parsed('HTTP')
+where request.type = 'GET'
+  and (request.url like '%.avro'
+  or request.url like '%.parquet');
+----
+13
 
 query III
 select * from my_datalake.default.table_unpartitioned order by all;
@@ -77,9 +86,17 @@ select * from my_datalake.default.table_unpartitioned order by all;
 2023-03-12	12	l
 
 
-# after reading the same table, the number of head requests should remain the same
+# after reading the same table, still only 2 head requests
 query I
 select count(*) from duckdb_logs_parsed('HTTP') where request.type = 'HEAD';
 ----
-2
+0
 
+# everything is in cache so no more network requests for files
+query I
+select count(*) from duckdb_logs_parsed('HTTP')
+where request.type = 'GET'
+  and (request.url like '%.avro'
+  or request.url like '%.parquet');
+----
+13
