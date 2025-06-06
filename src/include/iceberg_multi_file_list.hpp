@@ -108,11 +108,13 @@ public:
 	void ScanPositionalDeleteFile(DataChunk &result) const;
 	void ScanEqualityDeleteFile(const IcebergManifestEntry &entry, DataChunk &result,
 	                            vector<MultiFileColumnDefinition> &columns,
-	                            const vector<MultiFileColumnDefinition> &global_columns) const;
-	void ScanDeleteFile(const IcebergManifestEntry &entry,
-	                    const vector<MultiFileColumnDefinition> &global_columns) const;
+	                            const vector<MultiFileColumnDefinition> &global_columns,
+	                            const vector<ColumnIndex> &column_indexes) const;
+	void ScanDeleteFile(const IcebergManifestEntry &entry, const vector<MultiFileColumnDefinition> &global_columns,
+	                    const vector<ColumnIndex> &column_indexes) const;
 	unique_ptr<IcebergPositionalDeleteData> GetPositionalDeletesForFile(const string &file_path) const;
-	void ProcessDeletes(const vector<MultiFileColumnDefinition> &global_columns) const;
+	void ProcessDeletes(const vector<MultiFileColumnDefinition> &global_columns,
+	                    const vector<ColumnIndex> &column_indexes) const;
 
 public:
 	//! MultiFileList API
