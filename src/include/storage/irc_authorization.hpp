@@ -7,7 +7,7 @@
 
 namespace duckdb {
 
-enum class IRCAuthorizationType : uint8_t { OAUTH2, SIGV4, INVALID };
+enum class IRCAuthorizationType : uint8_t { OAUTH2, SIGV4, NONE, INVALID };
 
 struct IcebergAttachOptions {
 	string endpoint;

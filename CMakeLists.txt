@@ -42,6 +42,7 @@ set(EXTENSION_SOURCES
     src/iceberg_functions/iceberg_scan.cpp
     src/iceberg_functions/iceberg_metadata.cpp
     src/storage/authorization/sigv4.cpp
+    src/storage/authorization/none.cpp
     src/storage/authorization/oauth2.cpp
     src/storage/irc_authorization.cpp
     src/storage/irc_catalog.cpp
