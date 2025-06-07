@@ -51,6 +51,7 @@ TableFunctionSet IcebergFunctions::GetIcebergScanFunction(DatabaseInstance &inst
 	for (auto &function : parquet_scan_copy.functions) {
 		// Register the MultiFileReader as the driver for reads
 		function.get_multi_file_reader = IcebergMultiFileReader::CreateInstance;
+		function.late_materialization = false;
 
 		// Unset all of these: they are either broken, very inefficient.
 		// TODO: implement/fix these
