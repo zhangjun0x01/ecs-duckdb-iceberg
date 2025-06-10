@@ -314,43 +314,21 @@ bool IcebergMultiFileList::FileMatchesFilter(const IcebergManifestEntry &file) {
 	return true;
 }
 
-const IcebergManifestFile &IcebergMultiFileList::GetOrCreateManifestFile(const IcebergManifest &manifest) {
-	auto full_path = options.allow_moved_paths ? IcebergUtils::GetFullPath(path, manifest.manifest_path, fs)
-	                                           : manifest.manifest_path;
-
-	auto &manifest_file_cache = GetManifestFileCache();
-	auto cached_result = manifest_file_cache.GetManifestFile(full_path);
-
-	if (cached_result) {
-		return *cached_result;
-	}
-
-	auto scan = make_uniq<AvroScan>("IcebergManifest", context, full_path);
-	data_manifest_reader->Initialize(std::move(scan));
-	data_manifest_reader->SetSequenceNumber(manifest.sequence_number);
-	data_manifest_reader->SetPartitionSpecID(manifest.partition_spec_id);
-
-	IcebergManifestFile result(full_path);
-	while (!data_manifest_reader->Finished()) {
-		data_manifest_reader->Read(STANDARD_VECTOR_SIZE, result.data_files);
-	}
-
-	return manifest_file_cache.AddManifestFile(std::move(result));
-}
-
 optional_ptr<const IcebergManifestEntry> IcebergMultiFileList::GetDataFile(idx_t file_id) {
 	if (file_id < data_files.size()) {
 		//! Have we already scanned this data file and returned it? If so, return it
 		return data_files[file_id].get();
 	}
 
+	auto &manifest_file_cache = GetManifestFileCache();
 	if (!data_manifest_file || data_file_idx >= data_manifest_file->data_files.size()) {
 		//! Load the next manifest file
 		if (current_data_manifest == data_manifests.end()) {
 			//! No more data manifests to explore
 			return nullptr;
 		}
-		data_manifest_file = GetOrCreateManifestFile(*current_data_manifest);
+		data_manifest_file = manifest_file_cache.GetOrCreateFromManifest(*data_manifest_reader, options, path,
+		                                                                 *current_data_manifest, context, fs);
 		current_data_manifest++;
 		data_file_idx = 0;
 	}

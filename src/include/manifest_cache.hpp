@@ -3,8 +3,12 @@
 #include "metadata/iceberg_manifest_list.hpp"
 #include "metadata/iceberg_manifest.hpp"
 #include "duckdb/common/mutex.hpp"
+#include "duckdb/common/file_system.hpp"
+#include "iceberg_options.hpp"
 
 namespace duckdb {
+
+class ManifestFileReader;
 
 class IcebergManifestListCache {
 public:
@@ -21,6 +25,10 @@ class IcebergManifestFileCache {
 public:
 	optional_ptr<const IcebergManifestFile> GetManifestFile(const string &path) const;
 	const IcebergManifestFile &AddManifestFile(IcebergManifestFile &&manifest_file) const;
+	const IcebergManifestFile &GetOrCreateFromManifest(ManifestFileReader &manifest_reader,
+	                                                   const IcebergOptions &options, const string &iceberg_path,
+	                                                   const IcebergManifest &manifest, ClientContext &context,
+	                                                   FileSystem &fs) const;
 
 private:
 	//! Map from path to manifest file
