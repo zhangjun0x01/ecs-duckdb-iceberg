@@ -369,6 +369,7 @@ optional_ptr<const IcebergManifestEntry> IcebergMultiFileList::GetDataFile(idx_t
 
 		result = data_file;
 		data_file_idx++;
+		break;
 	}
 	if (!result) {
 		return nullptr;
