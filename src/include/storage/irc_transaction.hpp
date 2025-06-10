@@ -32,6 +32,9 @@ public:
 public:
 	IRCSchemaSet schemas;
 
+	IcebergManifestListCache manifest_list_cache;
+	IcebergManifestFileCache manifest_file_cache;
+
 private:
 	IRCTransactionState transaction_state;
 	AccessMode access_mode;
