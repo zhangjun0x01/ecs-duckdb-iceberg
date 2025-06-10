@@ -321,40 +321,44 @@ optional_ptr<const IcebergManifestEntry> IcebergMultiFileList::GetDataFile(idx_t
 	}
 
 	auto &manifest_file_cache = GetManifestFileCache();
-	if (!data_manifest_file || data_file_idx >= data_manifest_file->data_files.size()) {
-		//! Load the next manifest file
-		if (current_data_manifest == data_manifests.end()) {
-			//! No more data manifests to explore
+
+	while (file_id >= data_files.size()) {
+		if (!data_manifest_file || data_file_idx >= data_manifest_file->data_files.size()) {
+			//! Load the next manifest file
+			if (current_data_manifest == data_manifests.end()) {
+				//! No more data manifests to explore
+				return nullptr;
+			}
+			data_manifest_file = manifest_file_cache.GetOrCreateFromManifest(*data_manifest_reader, options, path,
+			                                                                 *current_data_manifest, context, fs);
+			current_data_manifest++;
+			data_file_idx = 0;
+		}
+
+		auto &manifest = *data_manifest_file;
+		optional_ptr<const IcebergManifestEntry> result;
+		while (data_file_idx < manifest.data_files.size()) {
+			auto &data_file = manifest.data_files[data_file_idx];
+			if (!table_filters.filters.empty() && !FileMatchesFilter(data_file)) {
+				DUCKDB_LOG(context, IcebergLogType, "Iceberg Filter Pushdown, skipped 'data_file': '%s'",
+				           data_file.file_path);
+				//! Skip this file
+				data_file_idx++;
+				continue;
+			}
+
+			result = data_file;
+			data_file_idx++;
+			break;
+		}
+		if (!result) {
 			return nullptr;
 		}
-		data_manifest_file = manifest_file_cache.GetOrCreateFromManifest(*data_manifest_reader, options, path,
-		                                                                 *current_data_manifest, context, fs);
-		current_data_manifest++;
-		data_file_idx = 0;
+
+		data_files.push_back(*result);
 	}
 
-	auto &manifest = *data_manifest_file;
-	optional_ptr<const IcebergManifestEntry> result;
-	while (data_file_idx < manifest.data_files.size()) {
-		auto &data_file = manifest.data_files[data_file_idx];
-		if (!table_filters.filters.empty() && !FileMatchesFilter(data_file)) {
-			DUCKDB_LOG(context, IcebergLogType, "Iceberg Filter Pushdown, skipped 'data_file': '%s'",
-			           data_file.file_path);
-			//! Skip this file
-			data_file_idx++;
-			continue;
-		}
-
-		result = data_file;
-		data_file_idx++;
-		break;
-	}
-	if (!result) {
-		return nullptr;
-	}
-
-	data_files.push_back(*result);
-	return result;
+	return data_files[file_id].get();
 }
 
 OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
@@ -520,35 +524,19 @@ void IcebergMultiFileList::ProcessDeletes(const vector<MultiFileColumnDefinition
 
 	auto iceberg_path = GetPath();
 	auto &fs = FileSystem::GetFileSystem(context);
+	auto &manifest_file_cache = GetManifestFileCache();
 
 	while (current_delete_manifest != delete_manifests.end()) {
-		if (delete_manifest_reader->Finished()) {
-			if (current_delete_manifest == delete_manifests.end()) {
-				break;
-			}
-			auto &manifest = current_delete_manifest->get();
-			auto manifest_entry_full_path = options.allow_moved_paths
-			                                    ? IcebergUtils::GetFullPath(iceberg_path, manifest.manifest_path, fs)
-			                                    : manifest.manifest_path;
-			auto scan = make_uniq<AvroScan>("IcebergManifest", context, manifest_entry_full_path);
-			delete_manifest_reader->Initialize(std::move(scan));
-			delete_manifest_reader->SetSequenceNumber(manifest.sequence_number);
-			delete_manifest_reader->SetPartitionSpecID(manifest.partition_spec_id);
-		}
-		vector<IcebergManifestEntry> delete_files;
-		delete_manifest_reader->Read(STANDARD_VECTOR_SIZE, delete_files);
+		auto &manifest_file = manifest_file_cache.GetOrCreateFromManifest(
+		    *delete_manifest_reader, options, iceberg_path, *current_delete_manifest, context, fs);
+		current_delete_manifest++;
 
-		for (auto &entry : delete_files) {
+		for (auto &entry : manifest_file.data_files) {
 			if (!StringUtil::CIEquals(entry.file_format, "parquet")) {
 				throw NotImplementedException(
 				    "File format '%s' not supported for deletes, only supports 'parquet' currently", entry.file_format);
 			}
 			ScanDeleteFile(entry, global_columns, column_indexes);
-		}
-
-		if (delete_manifest_reader->Finished()) {
-			current_delete_manifest++;
-			continue;
 		}
 	}
 

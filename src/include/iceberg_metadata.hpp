@@ -29,6 +29,8 @@
 #include "metadata/iceberg_field_mapping.hpp"
 #include "metadata/iceberg_manifest.hpp"
 
+#include "manifest_cache.hpp"
+
 using namespace duckdb_yyjson;
 
 namespace duckdb {
@@ -69,8 +71,14 @@ public:
 //! ------------- ICEBERG_METADATA TABLE FUNCTION -------------
 
 struct IcebergTableEntry {
-	IcebergManifest manifest;
-	vector<IcebergManifestEntry> manifest_entries;
+public:
+	IcebergTableEntry(const IcebergManifest &manifest, const IcebergManifestFile &manifest_file)
+	    : manifest(manifest), manifest_file(manifest_file) {
+	}
+
+public:
+	const IcebergManifest &manifest;
+	const IcebergManifestFile &manifest_file;
 };
 
 struct IcebergTable {
@@ -79,31 +87,32 @@ public:
 
 public:
 	//! Loads all(!) metadata of into IcebergTable object
-	static IcebergTable Load(const string &iceberg_path, const IcebergTableMetadata &metadata,
-	                         const IcebergSnapshot &snapshot, ClientContext &context, const IcebergOptions &options);
+	static unique_ptr<IcebergTable> Load(const string &iceberg_path, const IcebergTableMetadata &metadata,
+	                                     const IcebergSnapshot &snapshot, ClientContext &context,
+	                                     const IcebergOptions &options);
 
 public:
 	//! Returns all paths to be scanned for the IcebergManifestContentType
 	template <IcebergManifestContentType TYPE>
 	vector<string> GetPaths() {
 		vector<string> ret;
-		for (auto &entry : entries) {
-			if (entry.manifest.content != TYPE) {
+		for (auto &table_entry : entries) {
+			if (table_entry.manifest.content != TYPE) {
 				continue;
 			}
-			for (auto &manifest_entry : entry.manifest_entries) {
-				if (manifest_entry.status == IcebergManifestEntryStatusType::DELETED) {
+			for (auto &data_file : table_entry.manifest_file.data_files) {
+				if (data_file.status == IcebergManifestEntryStatusType::DELETED) {
 					continue;
 				}
-				ret.push_back(manifest_entry.file_path);
+				ret.push_back(data_file.file_path);
 			}
 		}
 		return ret;
 	}
 	vector<IcebergManifestEntry> GetAllPaths() {
 		vector<IcebergManifestEntry> ret;
-		for (auto &entry : entries) {
-			for (auto &manifest_entry : entry.manifest_entries) {
+		for (auto &table_entry : entries) {
+			for (auto &manifest_entry : table_entry.manifest_file.data_files) {
 				if (manifest_entry.status == IcebergManifestEntryStatusType::DELETED) {
 					continue;
 				}
@@ -117,6 +126,9 @@ public:
 	const IcebergSnapshot &snapshot;
 	//! The entries (manifests) of this table
 	vector<IcebergTableEntry> entries;
+
+	IcebergManifestListCache manifest_list_cache;
+	IcebergManifestFileCache manifest_file_cache;
 
 protected:
 	string path;

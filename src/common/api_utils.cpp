@@ -51,7 +51,6 @@ unique_ptr<HTTPResponse> APIUtils::DeleteRequest(ClientContext &context, const s
 unique_ptr<HTTPResponse> APIUtils::PostRequest(ClientContext &context, const string &url, const string &post_data,
                                                const string &content_type, const string &token) {
 	auto &db = DatabaseInstance::GetDatabase(context);
-	auto &config = DBConfig::GetConfig(context);
 
 	string request_url = AddHttpHostIfMissing(url);
 
