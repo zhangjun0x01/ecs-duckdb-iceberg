@@ -1,8 +1,11 @@
 #pragma once
 
 #include "iceberg_options.hpp"
-#include "iceberg_types.hpp"
-#include "iceberg_manifest.hpp"
+
+#include "metadata/iceberg_manifest.hpp"
+#include "metadata/iceberg_manifest_list.hpp"
+
+#include "avro_scan.hpp"
 
 namespace duckdb {
 

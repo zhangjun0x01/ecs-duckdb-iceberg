@@ -260,7 +260,9 @@ PhysicalOperator &IRCatalog::PlanInsert(ClientContext &context, PhysicalPlanGene
 		throw BinderException("ON CONFLICT clause not yet supported for insertion into Iceberg table");
 	}
 
-	string iceberg_path = op.table.Cast<ICTableEntry>().snapshot->GetPaths()[0].path; // TODO unsafe?
+	auto &table_entry = op.table.Cast<ICTableEntry>();
+	auto &table_info = table_entry.table_info;
+	auto iceberg_path = table_info.load_table_result.metadata_location;
 
 	// Create Copy Info
 	auto info = make_uniq<CopyInfo>();

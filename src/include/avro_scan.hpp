@@ -2,7 +2,6 @@
 
 #include "duckdb/common/types/vector.hpp"
 #include "duckdb/common/typedefs.hpp"
-#include "iceberg_types.hpp"
 #include "duckdb/common/column_index.hpp"
 #include "duckdb/common/types/string_type.hpp"
 #include "duckdb/common/types/data_chunk.hpp"

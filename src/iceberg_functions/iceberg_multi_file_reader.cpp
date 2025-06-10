@@ -178,7 +178,7 @@ static void ApplyPartitionConstants(const IcebergMultiFileList &multi_file_list,
 	// Get the metadata for this file
 	auto &reader = *reader_data.reader;
 	auto file_id = reader.file_list_idx.GetIndex();
-	auto &data_file = multi_file_list.data_files[file_id];
+	auto &data_file = multi_file_list.data_files[file_id].get();
 
 	// Get the partition spec for this file
 	auto &partition_specs = multi_file_list.GetMetadata().partition_specs;
@@ -267,9 +267,10 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 		lock_guard<mutex> guard(multi_file_list.lock);
 		D_ASSERT(multi_file_list.initialized);
 	}
+
 	auto &reader = *reader_data.reader;
 	auto file_id = reader.file_list_idx.GetIndex();
-	const auto &data_file = multi_file_list.data_files[file_id];
+	const auto &data_file = multi_file_list.data_files[file_id].get();
 
 	// The path of the data file where this chunk was read from
 	const auto &file_path = data_file.file_path;
@@ -277,7 +278,7 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 		lock_guard<mutex> guard(multi_file_list.lock);
 		std::lock_guard<mutex> delete_guard(multi_file_list.delete_lock);
 		if (multi_file_list.current_delete_manifest != multi_file_list.delete_manifests.end()) {
-			multi_file_list.ProcessDeletes(global_columns);
+			multi_file_list.ProcessDeletes(global_columns, global_column_ids);
 		}
 		reader.deletion_filter = std::move(multi_file_list.GetPositionalDeletesForFile(file_path));
 	}
@@ -412,7 +413,6 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 	auto file_id = reader.file_list_idx.GetIndex();
 	auto &data_file = multi_file_list.data_files[file_id];
 	auto &local_columns = reader.columns;
-
 	ApplyEqualityDeletes(context, output_chunk, multi_file_list, data_file, local_columns);
 }
 

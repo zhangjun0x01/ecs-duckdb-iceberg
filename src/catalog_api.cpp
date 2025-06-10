@@ -53,22 +53,6 @@ static string GetTableMetadata(ClientContext &context, IRCatalog &catalog, const
 	return api_result;
 }
 
-static string GetTableMetadataCached(ClientContext &context, IRCatalog &catalog, const string &schema,
-                                     const string &table) {
-	auto url = catalog.GetBaseUrl();
-	url.AddPathComponent(catalog.prefix);
-	url.AddPathComponent("namespaces");
-	url.AddPathComponent(schema);
-	url.AddPathComponent("tables");
-	url.AddPathComponent(table);
-	auto cached_value = catalog.OptionalGetCachedValue(url.GetURL());
-	if (!cached_value.empty()) {
-		return cached_value;
-	} else {
-		return GetTableMetadata(context, catalog, schema, table);
-	}
-}
-
 vector<string> IRCAPI::GetCatalogs(ClientContext &context, IRCatalog &catalog) {
 	throw NotImplementedException("ICAPI::GetCatalogs");
 }

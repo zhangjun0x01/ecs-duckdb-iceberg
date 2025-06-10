@@ -2,6 +2,7 @@
 #pragma once
 
 #include "storage/irc_table_entry.hpp"
+#include "manifest_cache.hpp"
 
 namespace duckdb {
 struct CreateTableInfo;
