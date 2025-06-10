@@ -304,6 +304,67 @@ bool IcebergMultiFileList::FileMatchesFilter(IcebergManifestEntry &file) {
 	return true;
 }
 
+const IcebergManifestFile &GetOrCreateManifestFile(const IcebergManifest &manifest) {
+	auto cached_result = manifest_file_cache.GetCachedResult(manifest);
+
+	if (cached_result) {
+		return *cached_result;
+	}
+
+	auto manifest_entry_full_path = options.allow_moved_paths
+	                                    ? IcebergUtils::GetFullPath(iceberg_path, manifest.manifest_path, fs)
+	                                    : manifest.manifest_path;
+	auto scan = make_uniq<AvroScan>("IcebergManifest", context, manifest_entry_full_path);
+	data_manifest_reader->Initialize(std::move(scan));
+	data_manifest_reader->SetSequenceNumber(manifest.sequence_number);
+	data_manifest_reader->SetPartitionSpecID(manifest.partition_spec_id);
+
+	IcebergManifestFile result;
+	while (!data_manifest_reader->Finished()) {
+		data_manifest_reader->Read(STANDARD_VECTOR_SIZE, result.data_files);
+	}
+
+	return manifest_file_cache.AddCachedResult(std::move(result));
+}
+
+optional_ptr<IcebergManifestEntry> GetDataFile(idx_t file_id) {
+	if (file_id < scanned_data_files.size()) {
+		//! Have we already scanned this data file and returned it? If so, return it
+		return scanned_data_files[file_id];
+	}
+
+	if (!data_manifest_file || data_file_idx >= data_manifest_file->data_files.size()) {
+		//! Load the next manifest file
+		if (current_data_manifest == data_manifests.end()) {
+			//! No more data manifests to explore
+			return nullptr;
+		}
+		data_manifest_file = GetOrCreateManifestFile(*current_data_manifest);
+		current_data_manifest++;
+		data_file_idx = 0;
+	}
+
+	auto &manifest = *data_manifest_file;
+	optional_ptr<IcebergManifestEntry> result;
+	while (data_file_idx < manifest.data_files.size()) {
+		auto &data_file = manifest.data_files[data_file_idx];
+		if (!table_filters.filters.empty() && !FileMatchesFilter(entry)) {
+			DUCKDB_LOG(context, IcebergLogType, "Iceberg Filter Pushdown, skipped 'data_file': '%s'", entry.file_path);
+			//! Skip this file
+			data_file_idx++;
+			continue;
+		}
+
+		result = data_file;
+		data_file_idx++;
+	}
+	if (!result) {
+		return nullptr;
+	}
+
+	scanned_data_files.push_back(*result);
+}
+
 OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 	lock_guard<mutex> guard(lock);
 	if (!initialized) {
@@ -323,7 +384,7 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 			if (current_data_manifest == data_manifests.end()) {
 				break;
 			}
-			auto &manifest = *current_data_manifest;
+			auto &manifest = current_data_manifest->get();
 			auto manifest_entry_full_path = options.allow_moved_paths
 			                                    ? IcebergUtils::GetFullPath(iceberg_path, manifest.manifest_path, fs)
 			                                    : manifest.manifest_path;
@@ -335,8 +396,6 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 
 		idx_t remaining = (file_id + 1) - data_files.size();
 		if (!table_filters.filters.empty()) {
-			// FIXME: push down the filter into the 'read_avro' scan, so the entries that don't match are just filtered
-			// out
 			vector<IcebergManifestEntry> intermediate_entries;
 			data_manifest_reader->Read(remaining, intermediate_entries);
 
@@ -364,6 +423,19 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 		D_ASSERT(entry.status != IcebergManifestEntryStatusType::DELETED);
 	}
 #endif
+
+	auto found_data_file = GetDataFile(file_id);
+
+	//! First check the current IcebergManifestFile to see if it has the data file we're looking for
+	optional_ptr<IcebergManifestEntry> found_data_file;
+
+	do {
+		if (file_id)
+	} while (current_data_manifest != data_manifests.end());
+
+	//! TODO: We have a list of data files, and a current index into this list
+	//! If we've reached the end of the list, see if there are additional data files to scan
+	//! If the data file gets filtered out, loop.
 
 	if (file_id >= data_files.size()) {
 		return OpenFileInfo();
@@ -457,6 +529,26 @@ bool IcebergMultiFileList::ManifestMatchesFilter(IcebergManifest &manifest) {
 	return true;
 }
 
+const IcebergManifestList &GetOrCreateManifestList(const string &full_path) {
+	auto cached_result = manifest_list_cache.GetCachedResult(full_path);
+	//! If the result is cached, return it directly
+	if (cached_result) {
+		return *cached_result;
+	}
+	IcebergManifestList result(full_path);
+
+	//! Read the manifest list
+	manifest_list = make_uniq<ManifestListReader>(metadata.iceberg_version);
+	auto scan = make_uniq<AvroScan>("IcebergManifestList", context, manifest_list_full_path);
+	manifest_list->Initialize(std::move(scan));
+	while (!manifest_list->Finished()) {
+		manifest_list->Read(STANDARD_VECTOR_SIZE, result.manifests);
+	}
+
+	//! Add it to the cache
+	return manifest_list_cache.AddCachedResult(std::move(result));
+}
+
 void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	if (initialized) {
 		return;
@@ -477,22 +569,15 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 
 	data_manifest_reader = make_uniq<ManifestFileReader>(metadata.iceberg_version);
 	delete_manifest_reader = make_uniq<ManifestFileReader>(metadata.iceberg_version);
-	manifest_list = make_uniq<ManifestListReader>(metadata.iceberg_version);
 
 	// Read the manifest list, we need all the manifests to determine if we've seen all deletes
 	auto manifest_list_full_path = options.allow_moved_paths
 	                                   ? IcebergUtils::GetFullPath(iceberg_path, snapshot.manifest_list, fs)
 	                                   : snapshot.manifest_list;
 
-	auto scan = make_uniq<AvroScan>("IcebergManifestList", context, manifest_list_full_path);
-	manifest_list->Initialize(std::move(scan));
+	auto &manifest_list = GetOrCreateManifestList(manifest_list_full_path);
 
-	vector<IcebergManifest> all_manifests;
-	while (!manifest_list->Finished()) {
-		manifest_list->Read(STANDARD_VECTOR_SIZE, all_manifests);
-	}
-
-	for (auto &manifest : all_manifests) {
+	for (auto &manifest : manifest_list.manifests) {
 		if (!ManifestMatchesFilter(manifest)) {
 			DUCKDB_LOG(context, IcebergLogType, "Iceberg Filter Pushdown, skipped 'manifest_file': '%s'",
 			           manifest.manifest_path);
@@ -501,10 +586,10 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 		}
 
 		if (manifest.content == IcebergManifestContentType::DATA) {
-			data_manifests.push_back(std::move(manifest));
+			data_manifests.push_back(manifest);
 		} else {
 			D_ASSERT(manifest.content == IcebergManifestContentType::DELETE);
-			delete_manifests.push_back(std::move(manifest));
+			delete_manifests.push_back(manifest);
 		}
 	}
 

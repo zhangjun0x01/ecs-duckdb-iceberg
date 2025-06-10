@@ -13,6 +13,8 @@
 #include "iceberg_metadata.hpp"
 #include "iceberg_utils.hpp"
 #include "manifest_reader.hpp"
+#include "manifest_cache.hpp"
+
 #include "duckdb/common/multi_file/multi_file_data.hpp"
 #include "duckdb/common/list.hpp"
 #include "duckdb/common/unordered_map.hpp"
@@ -152,13 +154,13 @@ public:
 	vector<LogicalType> types;
 	TableFilterSet table_filters;
 
-	unique_ptr<ManifestListReader> manifest_list;
 	unique_ptr<ManifestFileReader> data_manifest_reader;
 	unique_ptr<ManifestFileReader> delete_manifest_reader;
 
 	vector<IcebergManifestEntry> data_files;
-	vector<IcebergManifest> data_manifests;
-	vector<IcebergManifest> delete_manifests;
+	vector<reference<IcebergManifest>> data_manifests;
+	vector<reference<IcebergManifest>> delete_manifests;
+
 	vector<IcebergManifest>::iterator current_data_manifest;
 	mutable vector<IcebergManifest>::iterator current_delete_manifest;
 
@@ -167,6 +169,9 @@ public:
 	//! All equality deletes with sequence numbers higher than that of the data_file apply to that data_file
 	mutable map<sequence_number_t, unique_ptr<IcebergEqualityDeleteData>> equality_delete_data;
 	mutable mutex delete_lock;
+
+	IcebergManifestListCache manifest_list_cache;
+	IcebergManifestFileCache manifest_file_cache;
 
 	bool initialized = false;
 	const IcebergOptions &options;
