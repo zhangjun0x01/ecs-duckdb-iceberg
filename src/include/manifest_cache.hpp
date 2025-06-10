@@ -8,10 +8,6 @@ namespace duckdb {
 
 class IcebergManifestListCache {
 public:
-	IcebergManifestListCache() {
-	}
-
-public:
 	optional_ptr<const IcebergManifestList> GetManifestList(const string &path) const;
 	const IcebergManifestList &AddManifestList(IcebergManifestList &&manifest_list) const;
 
@@ -22,10 +18,6 @@ private:
 };
 
 class IcebergManifestFileCache {
-public:
-	IcebergManifestFileCache() {
-	}
-
 public:
 	optional_ptr<const IcebergManifestFile> GetManifestFile(const string &path) const;
 	const IcebergManifestFile &AddManifestFile(IcebergManifestFile &&manifest_file) const;
