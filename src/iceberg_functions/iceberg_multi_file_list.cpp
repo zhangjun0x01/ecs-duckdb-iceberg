@@ -330,7 +330,7 @@ const IcebergManifestFile &IcebergMultiFileList::GetOrCreateManifestFile(const I
 	data_manifest_reader->SetSequenceNumber(manifest.sequence_number);
 	data_manifest_reader->SetPartitionSpecID(manifest.partition_spec_id);
 
-	IcebergManifestFile result;
+	IcebergManifestFile result(full_path);
 	while (!data_manifest_reader->Finished()) {
 		data_manifest_reader->Read(STANDARD_VECTOR_SIZE, result.data_files);
 	}

@@ -2,6 +2,7 @@
 
 #include "metadata/iceberg_manifest_list.hpp"
 #include "metadata/iceberg_manifest.hpp"
+#include "duckdb/common/mutex.hpp"
 
 namespace duckdb {
 
@@ -16,8 +17,8 @@ public:
 
 private:
 	//! Map from path to manifest list
-	mutable case_insensitive_map_t<IcebergManifestList> manifest_list;
-	mutable std::mutex lock;
+	mutable case_insensitive_map_t<IcebergManifestList> entries;
+	mutable std::mutex l;
 };
 
 class IcebergManifestFileCache {
@@ -31,8 +32,8 @@ public:
 
 private:
 	//! Map from path to manifest file
-	case_insensitive_map_t<IcebergManifestFile> manifest_list;
-	std::mutex lock;
+	mutable case_insensitive_map_t<IcebergManifestFile> entries;
+	mutable std::mutex l;
 };
 
 } // namespace duckdb
