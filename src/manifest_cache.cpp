@@ -2,6 +2,7 @@
 #include "iceberg_utils.hpp"
 #include "avro_scan.hpp"
 #include "manifest_reader.hpp"
+#include "metadata/iceberg_table_metadata.hpp"
 
 namespace duckdb {
 
@@ -20,6 +21,28 @@ const IcebergManifestList &IcebergManifestListCache::AddManifestList(IcebergMani
 	//! The list could already be added, but that's okay, they're immutable anyways, so they should be the same
 	auto res = entries.emplace(path, std::move(input));
 	return res.first->second;
+}
+
+const IcebergManifestList &IcebergManifestListCache::GetOrCreateFromPath(const IcebergTableMetadata &metadata,
+                                                                         ClientContext &context,
+                                                                         const string &full_path) const {
+	auto cached_result = GetManifestList(full_path);
+	//! If the result is cached, return it directly
+	if (cached_result) {
+		return *cached_result;
+	}
+	IcebergManifestList result(full_path);
+
+	//! Read the manifest list
+	auto manifest_list = make_uniq<ManifestListReader>(metadata.iceberg_version);
+	auto scan = make_uniq<AvroScan>("IcebergManifestList", context, full_path);
+	manifest_list->Initialize(std::move(scan));
+	while (!manifest_list->Finished()) {
+		manifest_list->Read(STANDARD_VECTOR_SIZE, result.manifests);
+	}
+
+	//! Add it to the cache
+	return AddManifestList(std::move(result));
 }
 
 optional_ptr<const IcebergManifestFile> IcebergManifestFileCache::GetManifestFile(const string &path) const {

@@ -9,11 +9,14 @@
 namespace duckdb {
 
 class ManifestFileReader;
+struct IcebergTableMetadata;
 
 class IcebergManifestListCache {
 public:
 	optional_ptr<const IcebergManifestList> GetManifestList(const string &path) const;
 	const IcebergManifestList &AddManifestList(IcebergManifestList &&manifest_list) const;
+	const IcebergManifestList &GetOrCreateFromPath(const IcebergTableMetadata &metadata, ClientContext &context,
+	                                               const string &path) const;
 
 private:
 	//! Map from path to manifest list

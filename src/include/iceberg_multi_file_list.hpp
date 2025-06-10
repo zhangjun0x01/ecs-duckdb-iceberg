@@ -144,7 +144,6 @@ protected:
 	// TODO: How to guarantee we only call this after the filter pushdown?
 	void InitializeFiles(lock_guard<mutex> &guard);
 
-	const IcebergManifestList &GetOrCreateManifestList(const string &full_path);
 	optional_ptr<const IcebergManifestEntry> GetDataFile(idx_t file_id);
 
 public:

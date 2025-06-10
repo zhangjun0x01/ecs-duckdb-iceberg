@@ -459,28 +459,6 @@ bool IcebergMultiFileList::ManifestMatchesFilter(const IcebergManifest &manifest
 	return true;
 }
 
-const IcebergManifestList &IcebergMultiFileList::GetOrCreateManifestList(const string &full_path) {
-	auto &metadata = GetMetadata();
-	auto &manifest_list_cache = GetManifestListCache();
-	auto cached_result = manifest_list_cache.GetManifestList(full_path);
-	//! If the result is cached, return it directly
-	if (cached_result) {
-		return *cached_result;
-	}
-	IcebergManifestList result(full_path);
-
-	//! Read the manifest list
-	auto manifest_list = make_uniq<ManifestListReader>(metadata.iceberg_version);
-	auto scan = make_uniq<AvroScan>("IcebergManifestList", context, full_path);
-	manifest_list->Initialize(std::move(scan));
-	while (!manifest_list->Finished()) {
-		manifest_list->Read(STANDARD_VECTOR_SIZE, result.manifests);
-	}
-
-	//! Add it to the cache
-	return manifest_list_cache.AddManifestList(std::move(result));
-}
-
 void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	if (initialized) {
 		return;
@@ -507,7 +485,8 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	                                   ? IcebergUtils::GetFullPath(iceberg_path, snapshot.manifest_list, fs)
 	                                   : snapshot.manifest_list;
 
-	auto &manifest_list = GetOrCreateManifestList(manifest_list_full_path);
+	auto &manifest_list_cache = GetManifestListCache();
+	auto &manifest_list = manifest_list_cache.GetOrCreateFromPath(metadata, context, manifest_list_full_path);
 
 	for (auto &manifest : manifest_list.manifests) {
 		if (!ManifestMatchesFilter(manifest)) {
