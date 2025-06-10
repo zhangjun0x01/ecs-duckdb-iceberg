@@ -101,6 +101,8 @@ public:
 public:
 	static string ToDuckDBPath(const string &raw_path);
 	string GetPath() const;
+	const IcebergManifestListCache &GetManifestListCache() const;
+	const IcebergManifestFileCache &GetManifestFileCache() const;
 	const IcebergTableMetadata &GetMetadata() const;
 	optional_ptr<IcebergSnapshot> GetSnapshot() const;
 	const IcebergTableSchema &GetSchema() const;
@@ -137,13 +139,18 @@ protected:
 	OpenFileInfo GetFile(idx_t i) override;
 
 protected:
-	bool ManifestMatchesFilter(IcebergManifest &manifest);
-	bool FileMatchesFilter(IcebergManifestEntry &file);
+	bool ManifestMatchesFilter(const IcebergManifest &manifest);
+	bool FileMatchesFilter(const IcebergManifestEntry &file);
 	// TODO: How to guarantee we only call this after the filter pushdown?
 	void InitializeFiles(lock_guard<mutex> &guard);
 
+	const IcebergManifestFile &GetOrCreateManifestFile(const IcebergManifest &manifest);
+	const IcebergManifestList &GetOrCreateManifestList(const string &full_path);
+	optional_ptr<const IcebergManifestEntry> GetDataFile(idx_t file_id);
+
 public:
 	ClientContext &context;
+	FileSystem &fs;
 	shared_ptr<IcebergScanInfo> scan_info;
 	string path;
 
@@ -157,21 +164,21 @@ public:
 	unique_ptr<ManifestFileReader> data_manifest_reader;
 	unique_ptr<ManifestFileReader> delete_manifest_reader;
 
-	vector<IcebergManifestEntry> data_files;
-	vector<reference<IcebergManifest>> data_manifests;
-	vector<reference<IcebergManifest>> delete_manifests;
+	vector<reference<const IcebergManifestEntry>> data_files;
+	vector<reference<const IcebergManifest>> data_manifests;
+	vector<reference<const IcebergManifest>> delete_manifests;
 
-	vector<IcebergManifest>::iterator current_data_manifest;
-	mutable vector<IcebergManifest>::iterator current_delete_manifest;
+	vector<reference<const IcebergManifest>>::iterator current_data_manifest;
+	mutable vector<reference<const IcebergManifest>>::iterator current_delete_manifest;
+	//! Index into the currently open IcebergManifestFile's data files
+	idx_t data_file_idx = 0;
+	optional_ptr<const IcebergManifestFile> data_manifest_file = nullptr;
 
 	//! For each file that has a delete file, the state for processing that/those delete file(s)
 	mutable case_insensitive_map_t<unique_ptr<IcebergPositionalDeleteData>> positional_delete_data;
 	//! All equality deletes with sequence numbers higher than that of the data_file apply to that data_file
 	mutable map<sequence_number_t, unique_ptr<IcebergEqualityDeleteData>> equality_delete_data;
 	mutable mutex delete_lock;
-
-	IcebergManifestListCache manifest_list_cache;
-	IcebergManifestFileCache manifest_file_cache;
 
 	bool initialized = false;
 	const IcebergOptions &options;

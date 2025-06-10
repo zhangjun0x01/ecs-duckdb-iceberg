@@ -116,8 +116,9 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 		schema_id = snapshot->schema_id;
 	}
 	auto schema = metadata.GetSchemaFromId(schema_id);
-	iceberg_scan_function.function_info =
-	    make_shared_ptr<IcebergScanInfo>(table_info.load_table_result.metadata_location, metadata, snapshot, *schema);
+	iceberg_scan_function.function_info = make_shared_ptr<IcebergScanInfo>(
+	    table_info.load_table_result.metadata_location, metadata, table_info.manifest_list_cache,
+	    table_info.manifest_file_cache, snapshot, *schema);
 
 	// Set the S3 path as input to table function
 	vector<Value> inputs = {storage_location};

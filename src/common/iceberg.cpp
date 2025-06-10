@@ -1,8 +1,9 @@
 #include "duckdb.hpp"
 #include "iceberg_metadata.hpp"
-#include "iceberg_manifest.hpp"
+#include "avro_scan.hpp"
 #include "iceberg_utils.hpp"
-#include "iceberg_types.hpp"
+#include "metadata/iceberg_manifest.hpp"
+#include "metadata/iceberg_manifest_list.hpp"
 #include "manifest_reader.hpp"
 #include "catalog_utils.hpp"
 

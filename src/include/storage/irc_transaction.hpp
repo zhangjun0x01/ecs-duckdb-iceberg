@@ -3,6 +3,7 @@
 
 #include "duckdb/transaction/transaction.hpp"
 #include "storage/irc_schema_set.hpp"
+#include "manifest_cache.hpp"
 
 namespace duckdb {
 class IRCatalog;

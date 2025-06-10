@@ -1,5 +1,5 @@
 #include "manifest_reader.hpp"
-#include "iceberg_manifest.hpp"
+#include "avro_scan.hpp"
 #include "iceberg_extension.hpp"
 #include "duckdb/main/extension_helper.hpp"
 #include "duckdb/main/database.hpp"

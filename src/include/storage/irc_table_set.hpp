@@ -31,6 +31,9 @@ public:
 	rest_api_objects::LoadTableResult load_table_result;
 	IcebergTableMetadata table_metadata;
 	unordered_map<int32_t, unique_ptr<ICTableEntry>> schema_versions;
+
+	IcebergManifestListCache manifest_list_cache;
+	IcebergManifestFileCache manifest_file_cache;
 };
 
 class ICTableSet {
