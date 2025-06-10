@@ -3,6 +3,7 @@
 
 #include "duckdb/transaction/transaction.hpp"
 #include "storage/irc_schema_set.hpp"
+#include "manifest_cache.hpp"
 
 namespace duckdb {
 class IRCatalog;
@@ -30,6 +31,9 @@ public:
 
 public:
 	IRCSchemaSet schemas;
+
+	IcebergManifestListCache manifest_list_cache;
+	IcebergManifestFileCache manifest_file_cache;
 
 private:
 	IRCTransactionState transaction_state;

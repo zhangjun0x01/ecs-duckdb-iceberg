@@ -17,6 +17,7 @@
 #include "duckdb/planner/tableref/bound_at_clause.hpp"
 
 #include "rest_catalog/objects/list.hpp"
+#include "storage/irc_transaction.hpp"
 
 namespace duckdb {
 
@@ -115,9 +116,13 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 		D_ASSERT(snapshot);
 		schema_id = snapshot->schema_id;
 	}
+
+	auto &irc_transaction = IRCTransaction::Get(context, catalog);
+
 	auto schema = metadata.GetSchemaFromId(schema_id);
-	iceberg_scan_function.function_info =
-	    make_shared_ptr<IcebergScanInfo>(table_info.load_table_result.metadata_location, metadata, snapshot, *schema);
+	iceberg_scan_function.function_info = make_shared_ptr<IcebergScanInfo>(
+	    table_info.load_table_result.metadata_location, metadata, irc_transaction.manifest_list_cache,
+	    irc_transaction.manifest_file_cache, snapshot, *schema);
 
 	// Set the S3 path as input to table function
 	vector<Value> inputs = {storage_location};

@@ -101,8 +101,7 @@ static unique_ptr<FunctionData> IcebergMetaDataBind(ClientContext &context, Tabl
 	auto snapshot_to_scan = metadata.GetSnapshot(options.snapshot_lookup);
 
 	if (snapshot_to_scan) {
-		ret->iceberg_table =
-		    make_uniq<IcebergTable>(IcebergTable::Load(input_string, metadata, *snapshot_to_scan, context, options));
+		ret->iceberg_table = IcebergTable::Load(input_string, metadata, *snapshot_to_scan, context, options);
 	}
 
 	auto manifest_types = IcebergManifest::Types();
@@ -132,35 +131,35 @@ static void IcebergMetaDataFunction(ClientContext &context, TableFunctionInput &
 	}
 
 	idx_t out = 0;
-	auto manifests = bind_data.iceberg_table->entries;
-	for (; global_state.current_manifest_idx < manifests.size(); global_state.current_manifest_idx++) {
-		auto manifest_entries = manifests[global_state.current_manifest_idx].manifest_entries;
-		for (; global_state.current_manifest_entry_idx < manifest_entries.size();
-		     global_state.current_manifest_entry_idx++) {
+	auto &table_entries = bind_data.iceberg_table->entries;
+	for (; global_state.current_manifest_idx < table_entries.size(); global_state.current_manifest_idx++) {
+		auto &table_entry = table_entries[global_state.current_manifest_idx];
+		auto &data_files = table_entry.manifest_file.data_files;
+		for (; global_state.current_manifest_entry_idx < data_files.size(); global_state.current_manifest_entry_idx++) {
 			if (out >= STANDARD_VECTOR_SIZE) {
 				output.SetCardinality(out);
 				return;
 			}
-			auto manifest = manifests[global_state.current_manifest_idx];
-			auto manifest_entry = manifest_entries[global_state.current_manifest_entry_idx];
+			auto &manifest = table_entry.manifest;
+			auto &data_file = data_files[global_state.current_manifest_entry_idx];
 
 			//! manifest_path
-			AddString(output.data[0], out, string_t(manifest.manifest.manifest_path));
+			AddString(output.data[0], out, string_t(manifest.manifest_path));
 			//! manifest_sequence_number
-			FlatVector::GetData<int64_t>(output.data[1])[out] = manifest.manifest.sequence_number;
+			FlatVector::GetData<int64_t>(output.data[1])[out] = manifest.sequence_number;
 			//! manifest_content
-			AddString(output.data[2], out, string_t(IcebergManifest::ContentTypeToString(manifest.manifest.content)));
+			AddString(output.data[2], out, string_t(IcebergManifest::ContentTypeToString(manifest.content)));
 
 			//! status
-			AddString(output.data[3], out, string_t(IcebergManifestEntry::StatusTypeToString(manifest_entry.status)));
+			AddString(output.data[3], out, string_t(IcebergManifestEntry::StatusTypeToString(data_file.status)));
 			//! content
-			AddString(output.data[4], out, string_t(IcebergManifestEntry::ContentTypeToString(manifest_entry.content)));
+			AddString(output.data[4], out, string_t(IcebergManifestEntry::ContentTypeToString(data_file.content)));
 			//! file_path
-			AddString(output.data[5], out, string_t(manifest_entry.file_path));
+			AddString(output.data[5], out, string_t(data_file.file_path));
 			//! file_format
-			AddString(output.data[6], out, string_t(manifest_entry.file_format));
+			AddString(output.data[6], out, string_t(data_file.file_format));
 			//! record_count
-			FlatVector::GetData<int64_t>(output.data[7])[out] = manifest_entry.record_count;
+			FlatVector::GetData<int64_t>(output.data[7])[out] = data_file.record_count;
 			out++;
 		}
 		global_state.current_manifest_entry_idx = 0;
