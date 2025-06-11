@@ -150,6 +150,7 @@ static void AddWrittenFiles(IcebergInsertGlobalState &global_state, DataChunk &c
 		data_file.file_size_in_bytes = static_cast<int64_t>(chunk.GetValue(2, r).GetValue<idx_t>());
 		data_file.content = IcebergManifestEntryContentType::DATA;
 		data_file.status = IcebergManifestEntryStatusType::ADDED;
+		data_file.file_format = "parquet";
 
 		if (partition_id.IsValid()) {
 			data_file.partition_spec_id = static_cast<int32_t>(partition_id.GetIndex());

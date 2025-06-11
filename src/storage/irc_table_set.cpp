@@ -77,10 +77,12 @@ void IcebergTableInformation::Append(IRCTransaction &transaction, vector<Iceberg
 	auto &manifest_list = *new_manifest_list;
 	auto &manifest_file = *new_manifest_file;
 	auto &manifest = manifest_list.manifests.back();
+	auto &snapshot = *new_snapshot;
 
 	//! Add the data files
 	for (auto &data_file : data_files) {
 		manifest.added_rows_count += data_file.record_count;
+		data_file.sequence_number = snapshot.sequence_number;
 	}
 	manifest_file.data_files.insert(manifest_file.data_files.end(), std::make_move_iterator(data_files.begin()),
 	                                std::make_move_iterator(data_files.end()));
