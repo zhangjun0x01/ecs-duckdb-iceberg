@@ -36,14 +36,6 @@ string IcebergMultiFileList::GetPath() const {
 	return path;
 }
 
-const IcebergManifestListCache &IcebergMultiFileList::GetManifestListCache() const {
-	return scan_info->manifest_list_cache;
-}
-
-const IcebergManifestFileCache &IcebergMultiFileList::GetManifestFileCache() const {
-	return scan_info->manifest_file_cache;
-}
-
 const IcebergTableMetadata &IcebergMultiFileList::GetMetadata() const {
 	return scan_info->metadata;
 }
@@ -223,11 +215,11 @@ unique_ptr<NodeStatistics> IcebergMultiFileList::GetCardinality(ClientContext &c
 	(void)GetTotalFileCount();
 
 	for (idx_t i = 0; i < data_manifests.size(); i++) {
-		cardinality += data_manifests[i].get().added_rows_count;
-		cardinality += data_manifests[i].get().existing_rows_count;
+		cardinality += data_manifests[i].added_rows_count;
+		cardinality += data_manifests[i].existing_rows_count;
 	}
 	for (idx_t i = 0; i < delete_manifests.size(); i++) {
-		cardinality -= delete_manifests[i].get().added_rows_count;
+		cardinality -= delete_manifests[i].added_rows_count;
 	}
 	return make_uniq<NodeStatistics>(cardinality, cardinality);
 }
@@ -317,28 +309,38 @@ bool IcebergMultiFileList::FileMatchesFilter(const IcebergManifestEntry &file) {
 optional_ptr<const IcebergManifestEntry> IcebergMultiFileList::GetDataFile(idx_t file_id) {
 	if (file_id < data_files.size()) {
 		//! Have we already scanned this data file and returned it? If so, return it
-		return data_files[file_id].get();
+		return data_files[file_id];
 	}
 
-	auto &manifest_file_cache = GetManifestFileCache();
-
 	while (file_id >= data_files.size()) {
-		if (!data_manifest_file || data_file_idx >= data_manifest_file->data_files.size()) {
+		if (current_data_files.empty() || data_file_idx >= current_data_files.size()) {
 			//! Load the next manifest file
 			if (current_data_manifest == data_manifests.end()) {
 				//! No more data manifests to explore
 				return nullptr;
 			}
-			data_manifest_file = manifest_file_cache.GetOrCreateFromManifest(*data_manifest_reader, options, path,
-			                                                                 *current_data_manifest, context, fs);
+
+			auto &manifest = *current_data_manifest;
+			auto full_path = options.allow_moved_paths ? IcebergUtils::GetFullPath(path, manifest.manifest_path, fs)
+			                                           : manifest.manifest_path;
+			auto scan = make_uniq<AvroScan>("IcebergManifest", context, full_path);
+
+			data_manifest_reader->Initialize(std::move(scan));
+			data_manifest_reader->SetSequenceNumber(manifest.sequence_number);
+			data_manifest_reader->SetPartitionSpecID(manifest.partition_spec_id);
+
+			current_data_files.clear();
+			while (!data_manifest_reader->Finished()) {
+				data_manifest_reader->Read(STANDARD_VECTOR_SIZE, current_data_files);
+			}
+
 			current_data_manifest++;
 			data_file_idx = 0;
 		}
 
-		auto &manifest = *data_manifest_file;
 		optional_ptr<const IcebergManifestEntry> result;
-		while (data_file_idx < manifest.data_files.size()) {
-			auto &data_file = manifest.data_files[data_file_idx];
+		while (data_file_idx < current_data_files.size()) {
+			auto &data_file = current_data_files[data_file_idx];
 			if (!table_filters.filters.empty() && !FileMatchesFilter(data_file)) {
 				DUCKDB_LOG(context, IcebergLogType, "Iceberg Filter Pushdown, skipped 'data_file': '%s'",
 				           data_file.file_path);
@@ -358,7 +360,7 @@ optional_ptr<const IcebergManifestEntry> IcebergMultiFileList::GetDataFile(idx_t
 		data_files.push_back(*result);
 	}
 
-	return data_files[file_id].get();
+	return data_files[file_id];
 }
 
 OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
@@ -376,7 +378,7 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 		return OpenFileInfo();
 	}
 
-	const auto &data_file = data_files[file_id].get();
+	const auto &data_file = data_files[file_id];
 	const auto &path = data_file.file_path;
 
 	if (!StringUtil::CIEquals(data_file.file_format, "parquet")) {
@@ -489,8 +491,15 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 	                                   ? IcebergUtils::GetFullPath(iceberg_path, snapshot.manifest_list, fs)
 	                                   : snapshot.manifest_list;
 
-	auto &manifest_list_cache = GetManifestListCache();
-	auto &manifest_list = manifest_list_cache.GetOrCreateFromPath(metadata, context, manifest_list_full_path);
+	IcebergManifestList manifest_list(manifest_list_full_path);
+
+	//! Read the manifest list
+	auto manifest_list_reader = make_uniq<ManifestListReader>(metadata.iceberg_version);
+	auto scan = make_uniq<AvroScan>("IcebergManifestList", context, manifest_list_full_path);
+	manifest_list_reader->Initialize(std::move(scan));
+	while (!manifest_list_reader->Finished()) {
+		manifest_list_reader->Read(STANDARD_VECTOR_SIZE, manifest_list.manifests);
+	}
 
 	for (auto &manifest : manifest_list.manifests) {
 		if (!ManifestMatchesFilter(manifest)) {
@@ -524,11 +533,22 @@ void IcebergMultiFileList::ProcessDeletes(const vector<MultiFileColumnDefinition
 
 	auto iceberg_path = GetPath();
 	auto &fs = FileSystem::GetFileSystem(context);
-	auto &manifest_file_cache = GetManifestFileCache();
 
 	while (current_delete_manifest != delete_manifests.end()) {
-		auto &manifest_file = manifest_file_cache.GetOrCreateFromManifest(
-		    *delete_manifest_reader, options, iceberg_path, *current_delete_manifest, context, fs);
+		auto &manifest = *current_delete_manifest;
+		auto full_path = options.allow_moved_paths ? IcebergUtils::GetFullPath(iceberg_path, manifest.manifest_path, fs)
+		                                           : manifest.manifest_path;
+		auto scan = make_uniq<AvroScan>("IcebergManifest", context, full_path);
+
+		delete_manifest_reader->Initialize(std::move(scan));
+		delete_manifest_reader->SetSequenceNumber(manifest.sequence_number);
+		delete_manifest_reader->SetPartitionSpecID(manifest.partition_spec_id);
+
+		IcebergManifestFile manifest_file(full_path);
+		while (!delete_manifest_reader->Finished()) {
+			delete_manifest_reader->Read(STANDARD_VECTOR_SIZE, manifest_file.data_files);
+		}
+
 		current_delete_manifest++;
 
 		for (auto &entry : manifest_file.data_files) {
