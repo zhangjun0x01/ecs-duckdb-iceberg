@@ -13,7 +13,6 @@
 #include "iceberg_metadata.hpp"
 #include "iceberg_utils.hpp"
 #include "manifest_reader.hpp"
-#include "manifest_cache.hpp"
 
 #include "duckdb/common/multi_file/multi_file_data.hpp"
 #include "duckdb/common/list.hpp"
@@ -101,8 +100,6 @@ public:
 public:
 	static string ToDuckDBPath(const string &raw_path);
 	string GetPath() const;
-	const IcebergManifestListCache &GetManifestListCache() const;
-	const IcebergManifestFileCache &GetManifestFileCache() const;
 	const IcebergTableMetadata &GetMetadata() const;
 	optional_ptr<IcebergSnapshot> GetSnapshot() const;
 	const IcebergTableSchema &GetSchema() const;
@@ -162,15 +159,15 @@ public:
 	unique_ptr<ManifestFileReader> data_manifest_reader;
 	unique_ptr<ManifestFileReader> delete_manifest_reader;
 
-	vector<reference<const IcebergManifestEntry>> data_files;
-	vector<reference<const IcebergManifest>> data_manifests;
-	vector<reference<const IcebergManifest>> delete_manifests;
+	vector<IcebergManifestEntry> data_files;
+	vector<IcebergManifest> data_manifests;
+	vector<IcebergManifest> delete_manifests;
 
-	vector<reference<const IcebergManifest>>::iterator current_data_manifest;
-	mutable vector<reference<const IcebergManifest>>::iterator current_delete_manifest;
-	//! Index into the currently open IcebergManifestFile's data files
+	vector<IcebergManifest>::iterator current_data_manifest;
+	mutable vector<IcebergManifest>::iterator current_delete_manifest;
+	//! The data files of the manifest file that we last scanned
 	idx_t data_file_idx = 0;
-	optional_ptr<const IcebergManifestFile> data_manifest_file = nullptr;
+	vector<IcebergManifestEntry> current_data_files;
 
 	//! For each file that has a delete file, the state for processing that/those delete file(s)
 	mutable case_insensitive_map_t<unique_ptr<IcebergPositionalDeleteData>> positional_delete_data;

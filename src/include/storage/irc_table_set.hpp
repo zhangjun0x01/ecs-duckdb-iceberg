@@ -2,7 +2,6 @@
 #pragma once
 
 #include "storage/irc_table_entry.hpp"
-#include "manifest_cache.hpp"
 
 namespace duckdb {
 struct CreateTableInfo;
@@ -13,6 +12,21 @@ class IRCTransaction;
 struct IRCAPITableCredentials {
 	unique_ptr<CreateSecretInput> config;
 	vector<CreateSecretInput> storage_credentials;
+};
+
+struct IcebergTransactionData {
+public:
+	IcebergTransactionData(IcebergManifestFile &&manifest_file, IcebergManifestList &&manifest_list,
+	                       IcebergSnapshot &&snapshot)
+	    : manifest_file(std::move(manifest_file)), manifest_list(std::move(manifest_list)),
+	      snapshot(std::move(snapshot)) {
+	}
+	static unique_ptr<IcebergTransactionData> Create(ClientContext &context, IcebergTableInformation &table_info);
+
+public:
+	IcebergManifestFile manifest_file;
+	IcebergManifestList manifest_list;
+	IcebergSnapshot snapshot;
 };
 
 struct IcebergTableInformation {
@@ -38,9 +52,7 @@ public:
 	unordered_map<int32_t, unique_ptr<ICTableEntry>> schema_versions;
 
 public:
-	optional_ptr<IcebergManifestFile> new_manifest_file;
-	optional_ptr<IcebergManifestList> new_manifest_list;
-	optional_ptr<IcebergSnapshot> new_snapshot;
+	unique_ptr<IcebergTransactionData> transaction_data;
 };
 
 class ICTableSet {

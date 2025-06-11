@@ -3,7 +3,6 @@
 
 #include "duckdb/transaction/transaction.hpp"
 #include "storage/irc_schema_set.hpp"
-#include "manifest_cache.hpp"
 
 namespace duckdb {
 class IRCatalog;
@@ -33,9 +32,6 @@ public:
 	IRCSchemaSet schemas;
 	//! Tables marked dirty in this transaction, to be rewritten on commit
 	unordered_set<ICTableEntry *> dirty_tables;
-
-	IcebergManifestListCache manifest_list_cache;
-	IcebergManifestFileCache manifest_file_cache;
 
 private:
 	IRCTransactionState transaction_state;

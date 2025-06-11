@@ -23,7 +23,6 @@ set(EXTENSION_SOURCES
     src/base_manifest_reader.cpp
     src/manifest_list_reader.cpp
     src/manifest_file_reader.cpp
-    src/manifest_cache.cpp
     src/metadata/iceberg_transform.cpp
     src/metadata/iceberg_table_schema.cpp
     src/metadata/iceberg_partition_spec.cpp
