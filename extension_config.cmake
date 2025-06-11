@@ -18,7 +18,7 @@ duckdb_extension_load(tpch)
 
 ################## AWS
 if (NOT MINGW AND NOT ${WASM_ENABLED})
-    duckdb_extension_load(aws
+  duckdb_extension_load(aws
             LOAD_TESTS
             GIT_URL https://github.com/duckdb/duckdb-aws
             GIT_TAG main
@@ -27,6 +27,6 @@ endif ()
 
 duckdb_extension_load(httpfs
         GIT_URL https://github.com/duckdb/duckdb-httpfs
-        GIT_TAG eb1b04907c419d576f5fa4b34303810e8802e2f8
+        GIT_TAG 7b09112ad257249130375c0841d962eecb85662e
         INCLUDE_DIR extension/httpfs/include
 )
