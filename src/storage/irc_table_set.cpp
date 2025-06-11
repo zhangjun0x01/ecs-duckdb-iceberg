@@ -14,6 +14,8 @@
 #include "duckdb/parser/constraints/list.hpp"
 #include "storage/irc_schema_entry.hpp"
 #include "duckdb/parser/parser.hpp"
+#include "duckdb/common/types/uuid.hpp"
+#include "storage/irc_transaction.hpp"
 
 #include "storage/authorization/sigv4.hpp"
 #include "storage/authorization/oauth2.hpp"
@@ -23,6 +25,65 @@ namespace duckdb {
 IcebergTableInformation::IcebergTableInformation(IRCatalog &catalog, IRCSchemaEntry &schema, const string &name)
     : catalog(catalog), schema(schema), name(name) {
 	table_id = "uuid-" + schema.name + "-" + name;
+}
+
+void IcebergTableInformation::Append(IRCTransaction &transaction, vector<IcebergManifestEntry> &&data_files) {
+	if (!new_manifest_file) {
+		//! Add a new mutable manifest file to the cache
+		auto &manifest_file_cache = transaction.manifest_file_cache;
+		auto &manifest_list_cache = transaction.manifest_list_cache;
+
+		//! Generate a new snapshot id
+		auto snapshot_id = UUID::GenerateRandomUUID().upper;
+		auto sequence_number = table_metadata.last_sequence_number + 1;
+
+		//! Construct the manifest file
+		auto manifest_file_uuid = UUID::ToString(UUID::GenerateRandomUUID());
+		auto manifest_file_path = BaseFilePath() + "/metadata/" + manifest_file_uuid + "-m0.avro";
+		IcebergManifestFile manifest_file(manifest_file_path);
+		new_manifest_file = manifest_file_cache.AddManifestFileMutable(std::move(manifest_file));
+
+		//! Construct the manifest list
+		auto manifest_list_uuid = UUID::ToString(UUID::GenerateRandomUUID());
+		auto manifest_list_path =
+		    BaseFilePath() + "/metadata/snap-" + std::to_string(snapshot_id) + "-" + manifest_list_uuid + ".avro";
+		IcebergManifestList manifest_list(manifest_list_path);
+
+		IcebergManifest new_manifest;
+		new_manifest.manifest_path = manifest_file_path;
+		new_manifest.sequence_number = sequence_number;
+		new_manifest.content = IcebergManifestContentType::DATA;
+		new_manifest.added_rows_count = 0;
+		new_manifest.existing_rows_count = 0;
+		//! TODO: support partitions
+		new_manifest.partition_spec_id = 0;
+		//! new_manifest.partitions = CreateManifestPartition();
+
+		manifest_list.manifests.emplace_back(std::move(new_manifest));
+		new_manifest_list = manifest_list_cache.AddManifestListMutable(std::move(manifest_list));
+
+		auto context = transaction.context.lock();
+
+		//! Construct the snapshot
+		IcebergSnapshot snapshot;
+		snapshot.snapshot_id = snapshot_id;
+		snapshot.sequence_number = sequence_number;
+		snapshot.schema_id = table_metadata.current_schema_id;
+		snapshot.manifest_list = manifest_list_path;
+		snapshot.timestamp_ms = Timestamp::GetEpochMs(MetaTransaction::Get(*context).start_timestamp);
+		new_snapshot = table_metadata.AddSnapshot(std::move(snapshot));
+	}
+
+	auto &manifest_list = *new_manifest_list;
+	auto &manifest_file = *new_manifest_file;
+	auto &manifest = manifest_list.manifests.back();
+
+	//! Add the data files
+	for (auto &data_file : data_files) {
+		manifest.added_rows_count += data_file.record_count;
+	}
+	manifest_file.data_files.insert(manifest_file.data_files.end(), std::make_move_iterator(data_files.begin()),
+	                                std::make_move_iterator(data_files.end()));
 }
 
 static void ParseConfigOptions(const case_insensitive_map_t<string> &config, case_insensitive_map_t<Value> &options) {
@@ -78,6 +139,10 @@ static void ParseConfigOptions(const case_insensitive_map_t<string> &config, cas
 		endpoint = endpoint.substr(0, endpoint.size() - 1);
 	}
 	endpoint_it->second = endpoint;
+}
+
+const string &IcebergTableInformation::BaseFilePath() const {
+	return load_table_result.metadata.location;
 }
 
 IRCAPITableCredentials IcebergTableInformation::GetVendedCredentials(ClientContext &context) {

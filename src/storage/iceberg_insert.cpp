@@ -18,6 +18,7 @@
 #include "duckdb/execution/operator/scan/physical_table_scan.hpp"
 #include "duckdb/planner/expression/bound_cast_expression.hpp"
 #include "duckdb/planner/expression/bound_reference_expression.hpp"
+#include "duckdb/common/types/uuid.hpp"
 
 namespace duckdb {
 
@@ -38,7 +39,7 @@ IcebergInsert::IcebergInsert(LogicalOperator &op, SchemaCatalogEntry &schema, un
 class IcebergInsertGlobalState : public GlobalSinkState {
 public:
 	explicit IcebergInsertGlobalState() = default;
-	vector<IcebergDataFile> written_files;
+	vector<IcebergManifestEntry> written_files;
 
 	idx_t insert_count;
 };
@@ -143,19 +144,24 @@ static IcebergColumnStats ParseColumnStats(const vector<Value> col_stats) {
 
 static void AddWrittenFiles(IcebergInsertGlobalState &global_state, DataChunk &chunk, optional_idx partition_id) {
 	for (idx_t r = 0; r < chunk.size(); r++) {
-		IcebergDataFile data_file;
-		data_file.file_name = chunk.GetValue(0, r).GetValue<string>();
-		data_file.row_count = chunk.GetValue(1, r).GetValue<idx_t>();
-		data_file.file_size_bytes = chunk.GetValue(2, r).GetValue<idx_t>();
-		data_file.footer_size = chunk.GetValue(3, r).GetValue<idx_t>();
+		IcebergManifestEntry data_file;
+		data_file.file_path = chunk.GetValue(0, r).GetValue<string>();
+		data_file.record_count = static_cast<int64_t>(chunk.GetValue(1, r).GetValue<idx_t>());
+		data_file.file_size_in_bytes = static_cast<int64_t>(chunk.GetValue(2, r).GetValue<idx_t>());
+		data_file.content = IcebergManifestEntryContentType::DATA;
+		data_file.status = IcebergManifestEntryStatusType::ADDED;
+
 		if (partition_id.IsValid()) {
-			data_file.partition_id = partition_id.GetIndex();
+			data_file.partition_spec_id = static_cast<int32_t>(partition_id.GetIndex());
+		} else {
+			data_file.partition_spec_id = 0;
 		}
+
 		// extract the column stats
 		auto column_stats = chunk.GetValue(4, r);
 		auto &map_children = MapValue::GetChildren(column_stats);
 
-		global_state.insert_count += data_file.row_count;
+		global_state.insert_count += data_file.record_count;
 
 		for (idx_t col_idx = 0; col_idx < map_children.size(); col_idx++) {
 			auto &struct_children = StructValue::GetChildren(map_children[col_idx]);
@@ -163,22 +169,25 @@ static void AddWrittenFiles(IcebergInsertGlobalState &global_state, DataChunk &c
 			auto &col_stats = MapValue::GetChildren(struct_children[1]);
 			auto column_names = ParseQuotedList(col_name, '.');
 			auto stats = ParseColumnStats(col_stats);
+
+			//! TODO: convert 'stats' into 'data_file.lower_bounds', upper_bounds, value_counts, null_value_counts,
+			//! nan_value_counts ...
 		}
 
-		// extract the partition info
-		auto partition_info = chunk.GetValue(5, r);
-		if (!partition_info.IsNull()) {
-			auto &partition_children = MapValue::GetChildren(partition_info);
-			for (idx_t col_idx = 0; col_idx < partition_children.size(); col_idx++) {
-				auto &struct_children = StructValue::GetChildren(partition_children[col_idx]);
-				auto &part_value = StringValue::Get(struct_children[1]);
+		//! TODO: extract the partition info
+		// auto partition_info = chunk.GetValue(5, r);
+		// if (!partition_info.IsNull()) {
+		//	auto &partition_children = MapValue::GetChildren(partition_info);
+		//	for (idx_t col_idx = 0; col_idx < partition_children.size(); col_idx++) {
+		//		auto &struct_children = StructValue::GetChildren(partition_children[col_idx]);
+		//		auto &part_value = StringValue::Get(struct_children[1]);
 
-				IcebergPartition file_partition_info;
-				file_partition_info.partition_column_idx = col_idx;
-				file_partition_info.partition_value = part_value;
-				data_file.partition_values.push_back(std::move(file_partition_info));
-			}
-		}
+		//		IcebergPartition file_partition_info;
+		//		file_partition_info.partition_column_idx = col_idx;
+		//		file_partition_info.partition_value = part_value;
+		//		data_file.partition_values.push_back(std::move(file_partition_info));
+		//	}
+		//}
 
 		global_state.written_files.push_back(std::move(data_file));
 	}
@@ -216,14 +225,13 @@ SinkFinalizeType IcebergInsert::Finalize(Pipeline &pipeline, Event &event, Clien
                                          OperatorSinkFinalizeInput &input) const {
 	auto &global_state = input.global_state.Cast<IcebergInsertGlobalState>();
 
-	//! TODO: create a new IcebergSnapshot to add to the table
-	//! That includes:
-	//! - generating a UUID for the manifest list
-	//! - creating the parsed version of the manifests (in-memory)
+	auto &irc_table = table->Cast<ICTableEntry>();
+	auto &table_info = irc_table.table_info;
 	auto &transaction = IRCTransaction::Get(context, table->catalog);
-	vector<string> filenames;
-	transaction.Append(global_state.written_files);
 
+	table_info.Append(transaction, std::move(global_state.written_files));
+
+	// transaction.MarkTableAsDirty(irc_table); //! signal that it should be checked on commit/abort
 	return SinkFinalizeType::READY;
 }
 
@@ -262,11 +270,15 @@ PhysicalOperator &IRCatalog::PlanInsert(ClientContext &context, PhysicalPlanGene
 
 	auto &table_entry = op.table.Cast<ICTableEntry>();
 	auto &table_info = table_entry.table_info;
-	auto iceberg_path = table_info.load_table_result.metadata_location;
+	auto iceberg_path = table_info.BaseFilePath();
 
 	// Create Copy Info
 	auto info = make_uniq<CopyInfo>();
-	info->file_path = iceberg_path;
+
+	auto current_write_uuid = UUID::ToString(UUID::GenerateRandomUUID());
+	auto file_path = iceberg_path + "/data/" + current_write_uuid + ".parquet";
+
+	info->file_path = file_path;
 	info->format = "parquet";
 	info->is_from = false;
 
@@ -276,20 +288,21 @@ PhysicalOperator &IRCatalog::PlanInsert(ClientContext &context, PhysicalPlanGene
 		throw MissingExtensionException("Did not find parquet copy function required to write to iceberg table");
 	}
 
-	auto partitions = op.table.Cast<ICTableEntry>().snapshot->GetPartitionColumns();
 	vector<idx_t> partition_columns;
-	if (partitions.size() != 0) {
-		auto column_names = op.table.Cast<ICTableEntry>().GetColumns().GetColumnNames();
-		// TODO: yuck?
-		for (int64_t i = 0; i < partitions.size(); i++) {
-			for (int64_t j = 0; j < column_names.size(); j++) {
-				if (column_names[j] == partitions[i]) {
-					partition_columns.push_back(j);
-					break;
-				}
-			}
-		}
-	}
+	//! TODO: support partitions
+	// auto partitions = op.table.Cast<ICTableEntry>().snapshot->GetPartitionColumns();
+	// if (partitions.size() != 0) {
+	//	auto column_names = op.table.Cast<ICTableEntry>().GetColumns().GetColumnNames();
+	//	// TODO: yuck?
+	//	for (int64_t i = 0; i < partitions.size(); i++) {
+	//		for (int64_t j = 0; j < column_names.size(); j++) {
+	//			if (column_names[j] == partitions[i]) {
+	//				partition_columns.push_back(j);
+	//				break;
+	//			}
+	//		}
+	//	}
+	//}
 
 	// Bind Copy Function
 	auto &columns = op.table.Cast<ICTableEntry>().GetColumns();
@@ -311,17 +324,15 @@ PhysicalOperator &IRCatalog::PlanInsert(ClientContext &context, PhysicalPlanGene
 	    std::move(function_data), op.estimated_cardinality);
 	auto &physical_copy_ref = physical_copy.Cast<PhysicalCopyToFile>();
 
-	auto current_write_uuid = UUID::ToString(UUID::GenerateRandomUUID());
-
 	physical_copy_ref.use_tmp_file = false;
 	if (!partition_columns.empty()) {
-		physical_copy_ref.filename_pattern.SetFilenamePattern("duckdb_" + current_write_uuid + "_{i}");
-		physical_copy_ref.file_path = iceberg_path;
+		physical_copy_ref.filename_pattern.SetFilenamePattern(current_write_uuid + "_{i}");
+		physical_copy_ref.file_path = iceberg_path + "/data";
 		physical_copy_ref.partition_output = true;
 		physical_copy_ref.partition_columns = partition_columns;
 		physical_copy_ref.write_empty_file = true;
 	} else {
-		physical_copy_ref.file_path = iceberg_path + "/duckdb-" + current_write_uuid + ".parquet";
+		physical_copy_ref.file_path = file_path;
 		physical_copy_ref.partition_output = false;
 		physical_copy_ref.write_empty_file = false;
 	}

@@ -36,16 +36,22 @@ public:
 	optional_ptr<IcebergSnapshot> FindLatestSnapshotInternal();
 	optional_ptr<IcebergSnapshot> FindSnapshotByIdInternal(int64_t target_id);
 	optional_ptr<IcebergSnapshot> FindSnapshotByIdTimestampInternal(timestamp_t timestamp);
-
 	shared_ptr<IcebergTableSchema> GetSchemaFromId(int32_t schema_id);
-
 	optional_ptr<IcebergSnapshot> GetSnapshot(const IcebergSnapshotLookup &lookup);
+
+	IcebergSnapshot &AddSnapshot(IcebergSnapshot &&snapshot);
 
 public:
 	int32_t iceberg_version;
 	int32_t current_schema_id;
+	int64_t current_snapshot_id;
+	int64_t last_sequence_number;
+
+	//! partition_spec_id -> partition spec
 	unordered_map<int32_t, IcebergPartitionSpec> partition_specs;
+	//! snapshot_id -> snapshot
 	unordered_map<int64_t, IcebergSnapshot> snapshots;
+	//! schema_id -> schema
 	unordered_map<int32_t, shared_ptr<IcebergTableSchema>> schemas;
 	vector<IcebergFieldMapping> mappings;
 };

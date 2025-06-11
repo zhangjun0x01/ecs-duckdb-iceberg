@@ -61,22 +61,4 @@ public:
 	InsertionOrderPreservingMap<string> ParamsToString() const override;
 };
 
-struct IcebergPartition {
-	idx_t partition_column_idx;
-	string partition_value;
-};
-
-struct IcebergDataFile {
-	IcebergDataFile() = default;
-	// IcebergDataFile(const IcebergDataFile &other);
-	// IcebergDataFile &operator=(const IcebergDataFile &);
-
-	string file_name;
-	idx_t row_count;
-	idx_t file_size_bytes;
-	idx_t footer_size;
-	optional_idx partition_id;
-	vector<IcebergPartition> partition_values;
-};
-
 } // namespace duckdb

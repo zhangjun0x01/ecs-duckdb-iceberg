@@ -87,6 +87,17 @@ optional_ptr<IcebergSnapshot> IcebergTableMetadata::GetSnapshot(const IcebergSna
 	}
 }
 
+IcebergSnapshot &IcebergTableMetadata::AddSnapshot(IcebergSnapshot &&snapshot) {
+	auto snapshot_id = snapshot.snapshot_id;
+
+	current_snapshot_id = snapshot_id;
+	last_sequence_number = snapshot.sequence_number;
+
+	auto res = snapshots.emplace(snapshot_id, std::move(snapshot));
+	D_ASSERT(res.second);
+	return res.first->second;
+}
+
 //! ----------- Find Metadata -----------
 
 // Function to generate a metadata file url from version and format string
@@ -251,6 +262,8 @@ IcebergTableMetadata IcebergTableMetadata::FromTableMetadata(rest_api_objects::T
 		throw InvalidConfigurationException("'current_schema_id' field is missing from the metadata.json file");
 	}
 	res.current_schema_id = table_metadata.current_schema_id;
+	res.current_snapshot_id = table_metadata.current_snapshot_id;
+	res.last_sequence_number = table_metadata.last_sequence_number;
 
 	auto &properties = table_metadata.properties;
 	auto name_mapping = properties.find("schema.name-mapping.default");

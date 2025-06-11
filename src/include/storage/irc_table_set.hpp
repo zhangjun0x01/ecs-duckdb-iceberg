@@ -8,6 +8,7 @@ namespace duckdb {
 struct CreateTableInfo;
 class ICResult;
 class IRCSchemaEntry;
+class IRCTransaction;
 
 struct IRCAPITableCredentials {
 	unique_ptr<CreateSecretInput> config;
@@ -22,6 +23,9 @@ public:
 	optional_ptr<CatalogEntry> GetSchemaVersion(optional_ptr<BoundAtClause> at);
 	optional_ptr<CatalogEntry> CreateSchemaVersion(IcebergTableSchema &table_schema);
 	IRCAPITableCredentials GetVendedCredentials(ClientContext &context);
+	const string &BaseFilePath() const;
+
+	void Append(IRCTransaction &transaction, vector<IcebergManifestEntry> &&data_files);
 
 public:
 	IRCatalog &catalog;
@@ -33,10 +37,10 @@ public:
 	IcebergTableMetadata table_metadata;
 	unordered_map<int32_t, unique_ptr<ICTableEntry>> schema_versions;
 
-	//! The list of new data files, used to reconstruct the metadata for retry, or clean up for fail/abort
-	vector<IcebergDataFile> new_data_files;
-	//! The map of partition value to new manifests created in the transaction
-	unordered_map<string, IcebergManifest> new_manifests;
+public:
+	optional_ptr<IcebergManifestFile> new_manifest_file;
+	optional_ptr<IcebergManifestList> new_manifest_list;
+	optional_ptr<IcebergSnapshot> new_snapshot;
 };
 
 class ICTableSet {

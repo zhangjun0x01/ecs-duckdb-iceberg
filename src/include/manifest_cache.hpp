@@ -15,6 +15,7 @@ class IcebergManifestListCache {
 public:
 	optional_ptr<const IcebergManifestList> GetManifestList(const string &path) const;
 	const IcebergManifestList &AddManifestList(IcebergManifestList &&manifest_list) const;
+	IcebergManifestList &AddManifestListMutable(IcebergManifestList &&manifest_list);
 	const IcebergManifestList &GetOrCreateFromPath(const IcebergTableMetadata &metadata, ClientContext &context,
 	                                               const string &path) const;
 
@@ -28,6 +29,7 @@ class IcebergManifestFileCache {
 public:
 	optional_ptr<const IcebergManifestFile> GetManifestFile(const string &path) const;
 	const IcebergManifestFile &AddManifestFile(IcebergManifestFile &&manifest_file) const;
+	IcebergManifestFile &AddManifestFileMutable(IcebergManifestFile &&manifest_file);
 	const IcebergManifestFile &GetOrCreateFromManifest(ManifestFileReader &manifest_reader,
 	                                                   const IcebergOptions &options, const string &iceberg_path,
 	                                                   const IcebergManifest &manifest, ClientContext &context,

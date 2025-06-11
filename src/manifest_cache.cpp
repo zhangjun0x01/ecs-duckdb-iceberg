@@ -23,6 +23,14 @@ const IcebergManifestList &IcebergManifestListCache::AddManifestList(IcebergMani
 	return res.first->second;
 }
 
+IcebergManifestList &IcebergManifestListCache::AddManifestListMutable(IcebergManifestList &&input) {
+	lock_guard<mutex> guard(l);
+	auto path = input.path;
+	auto res = entries.emplace(path, std::move(input));
+	D_ASSERT(res.second);
+	return res.first->second;
+}
+
 const IcebergManifestList &IcebergManifestListCache::GetOrCreateFromPath(const IcebergTableMetadata &metadata,
                                                                          ClientContext &context,
                                                                          const string &full_path) const {
@@ -59,6 +67,14 @@ const IcebergManifestFile &IcebergManifestFileCache::AddManifestFile(IcebergMani
 	auto path = input.path;
 	//! The file could already be added, but that's okay, they're immutable anyways, so they should be the same
 	auto res = entries.emplace(path, std::move(input));
+	return res.first->second;
+}
+
+IcebergManifestFile &IcebergManifestFileCache::AddManifestFileMutable(IcebergManifestFile &&input) {
+	lock_guard<mutex> guard(l);
+	auto path = input.path;
+	auto res = entries.emplace(path, std::move(input));
+	D_ASSERT(res.second);
 	return res.first->second;
 }
 

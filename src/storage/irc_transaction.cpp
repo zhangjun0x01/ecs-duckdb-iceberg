@@ -26,6 +26,7 @@ void IRCTransaction::Rollback() {
 	if (transaction_state == IRCTransactionState::TRANSACTION_STARTED) {
 		transaction_state = IRCTransactionState::TRANSACTION_FINISHED;
 		//		connection.Execute("ROLLBACK");
+		throw InternalException("Transaction Rollback");
 	}
 }
 
