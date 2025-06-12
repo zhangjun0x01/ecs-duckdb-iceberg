@@ -3,6 +3,10 @@
 
 namespace duckdb {
 
+rest_api_objects::Snapshot IcebergSnapshot::ToRESTObject() {
+	throw InternalException("To REST Object");
+}
+
 IcebergSnapshot IcebergSnapshot::ParseSnapshot(rest_api_objects::Snapshot &snapshot, IcebergTableMetadata &metadata) {
 	IcebergSnapshot ret;
 	if (metadata.iceberg_version == 1) {

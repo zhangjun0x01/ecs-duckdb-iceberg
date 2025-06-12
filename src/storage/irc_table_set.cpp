@@ -26,6 +26,11 @@ IcebergTableInformation::IcebergTableInformation(IRCatalog &catalog, IRCSchemaEn
 	table_id = "uuid-" + schema.name + "-" + name;
 }
 
+rest_api_objects::AddSnapshotUpdate IcebergTableInformation::CreateSnapshotUpdate(DatabaseInstance &db) {
+	D_ASSERT(transaction_data);
+	return transaction_data->CreateSnapshotUpdate(db);
+}
+
 void IcebergTableInformation::Append(IRCTransaction &transaction, vector<IcebergManifestEntry> &&data_files) {
 	if (!transaction_data) {
 		auto context = transaction.context.lock();

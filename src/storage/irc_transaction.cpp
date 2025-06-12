@@ -20,14 +20,12 @@ void IRCTransaction::Start() {
 }
 
 void IRCTransaction::Commit() {
-	//! TODO: for every dirty table:
-	// - create the manifest list
-	// - create the manifest file
-	// - create a rest_api_objects::Snapshot from the IcebergSnapshot
-	// - create a rest_api_objects::AddSnapshotUpdate, containing the snapshot ^
-	// - serialize this to JSON
-	// - hit the REST API (POST to '/v1/{prefix}/transactions/commit'), sending along this payload
-	// - profit ???
+	for (auto &table : dirty_tables) {
+		auto update = table->table_info.CreateSnapshotUpdate(db);
+		// - serialize this to JSON
+		// - hit the REST API (POST to '/v1/{prefix}/transactions/commit'), sending along this payload
+		// - profit ???
+	}
 }
 
 void IRCTransaction::CleanupFiles() {

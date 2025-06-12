@@ -3,6 +3,7 @@
 
 #include "storage/irc_table_entry.hpp"
 #include "storage/iceberg_transaction_data.hpp"
+#include "rest_catalog/objects/add_snapshot_update.hpp"
 
 namespace duckdb {
 struct CreateTableInfo;
@@ -26,6 +27,7 @@ public:
 	const string &BaseFilePath() const;
 
 	void Append(IRCTransaction &transaction, vector<IcebergManifestEntry> &&data_files);
+	rest_api_objects::AddSnapshotUpdate CreateSnapshotUpdate(DatabaseInstance &db);
 
 public:
 	IRCatalog &catalog;

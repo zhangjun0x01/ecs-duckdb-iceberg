@@ -37,6 +37,9 @@ public:
 	int64_t file_size_in_bytes;
 
 public:
+	Value ToDataFileStruct(const LogicalType &type) const;
+
+public:
 	static vector<LogicalType> Types() {
 		return {
 		    LogicalType::VARCHAR, LogicalType::VARCHAR, LogicalType::VARCHAR, LogicalType::VARCHAR, LogicalType::BIGINT,
