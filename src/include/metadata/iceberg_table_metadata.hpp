@@ -23,6 +23,7 @@ public:
 	static string GetMetaDataPath(ClientContext &context, const string &path, FileSystem &fs,
 	                              const IcebergOptions &options);
 	optional_ptr<IcebergSnapshot> GetLatestSnapshot();
+	const IcebergTableSchema &GetLatestSchema() const;
 	optional_ptr<IcebergSnapshot> GetSnapshotById(int64_t snapshot_id);
 	optional_ptr<IcebergSnapshot> GetSnapshotByTimestamp(timestamp_t timestamp);
 
@@ -36,10 +37,8 @@ public:
 	optional_ptr<IcebergSnapshot> FindLatestSnapshotInternal();
 	optional_ptr<IcebergSnapshot> FindSnapshotByIdInternal(int64_t target_id);
 	optional_ptr<IcebergSnapshot> FindSnapshotByIdTimestampInternal(timestamp_t timestamp);
-	shared_ptr<IcebergTableSchema> GetSchemaFromId(int32_t schema_id);
+	shared_ptr<IcebergTableSchema> GetSchemaFromId(int32_t schema_id) const;
 	optional_ptr<IcebergSnapshot> GetSnapshot(const IcebergSnapshotLookup &lookup);
-
-	IcebergSnapshot &AddSnapshot(IcebergSnapshot &&snapshot);
 
 public:
 	int32_t iceberg_version;

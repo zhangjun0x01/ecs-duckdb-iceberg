@@ -46,7 +46,7 @@ optional_ptr<IcebergSnapshot> IcebergTableMetadata::FindSnapshotByIdTimestampInt
 	return max_snapshot;
 }
 
-shared_ptr<IcebergTableSchema> IcebergTableMetadata::GetSchemaFromId(int32_t schema_id) {
+shared_ptr<IcebergTableSchema> IcebergTableMetadata::GetSchemaFromId(int32_t schema_id) const {
 	auto it = schemas.find(schema_id);
 	D_ASSERT(it != schemas.end());
 	return it->second;
@@ -55,6 +55,12 @@ shared_ptr<IcebergTableSchema> IcebergTableMetadata::GetSchemaFromId(int32_t sch
 optional_ptr<IcebergSnapshot> IcebergTableMetadata::GetLatestSnapshot() {
 	auto latest_snapshot = FindLatestSnapshotInternal();
 	return latest_snapshot;
+}
+
+const IcebergTableSchema &IcebergTableMetadata::GetLatestSchema() const {
+	auto res = GetSchemaFromId(current_schema_id);
+	D_ASSERT(res);
+	return *res;
 }
 
 optional_ptr<IcebergSnapshot> IcebergTableMetadata::GetSnapshotById(int64_t snapshot_id) {
@@ -85,17 +91,6 @@ optional_ptr<IcebergSnapshot> IcebergTableMetadata::GetSnapshot(const IcebergSna
 	default:
 		throw InternalException("SnapshotSource type not implemented");
 	}
-}
-
-IcebergSnapshot &IcebergTableMetadata::AddSnapshot(IcebergSnapshot &&snapshot) {
-	auto snapshot_id = snapshot.snapshot_id;
-
-	current_snapshot_id = snapshot_id;
-	last_sequence_number = snapshot.sequence_number;
-
-	auto res = snapshots.emplace(snapshot_id, std::move(snapshot));
-	D_ASSERT(res.second);
-	return res.first->second;
 }
 
 //! ----------- Find Metadata -----------

@@ -260,6 +260,32 @@ static optional_ptr<CopyFunctionCatalogEntry> TryGetCopyFunction(DatabaseInstanc
 	return schema.GetEntry(data, CatalogType::COPY_FUNCTION_ENTRY, name)->Cast<CopyFunctionCatalogEntry>();
 }
 
+static Value GetFieldIdValue(const IcebergColumnDefinition &column) {
+	auto column_value = Value::BIGINT(column.id);
+	if (column.children.empty()) {
+		// primitive type - return the field-id directly
+		return column_value;
+	}
+	// nested type - generate a struct and recurse into children
+	child_list_t<Value> values;
+	values.emplace_back("__duckdb_field_id", std::move(column_value));
+	for (auto &child : column.children) {
+		values.emplace_back(child->name, GetFieldIdValue(*child));
+	}
+	return Value::STRUCT(std::move(values));
+}
+
+static Value WrittenFieldIds(const IcebergTableSchema &schema) {
+	auto &columns = schema.columns;
+
+	child_list_t<Value> values;
+	for (idx_t c_idx = 0; c_idx < columns.size(); c_idx++) {
+		auto &column = columns[c_idx];
+		values.emplace_back(column->name, GetFieldIdValue(*column));
+	}
+	return Value::STRUCT(std::move(values));
+}
+
 PhysicalOperator &IRCatalog::PlanInsert(ClientContext &context, PhysicalPlanGenerator &planner, LogicalInsert &op,
                                         optional_ptr<PhysicalOperator> plan) {
 	if (op.return_chunk) {
@@ -272,6 +298,7 @@ PhysicalOperator &IRCatalog::PlanInsert(ClientContext &context, PhysicalPlanGene
 	auto &table_entry = op.table.Cast<ICTableEntry>();
 	auto &table_info = table_entry.table_info;
 	auto iceberg_path = table_info.BaseFilePath();
+	auto &schema = table_info.table_metadata.GetLatestSchema();
 
 	// Create Copy Info
 	auto info = make_uniq<CopyInfo>();
@@ -282,6 +309,10 @@ PhysicalOperator &IRCatalog::PlanInsert(ClientContext &context, PhysicalPlanGene
 	info->file_path = file_path;
 	info->format = "parquet";
 	info->is_from = false;
+
+	vector<Value> field_input;
+	field_input.push_back(WrittenFieldIds(schema));
+	info->options["field_ids"] = std::move(field_input);
 
 	// Get Parquet Copy function
 	auto copy_fun = TryGetCopyFunction(*context.db, "parquet");
