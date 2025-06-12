@@ -26,30 +26,13 @@ IcebergTableInformation::IcebergTableInformation(IRCatalog &catalog, IRCSchemaEn
 	table_id = "uuid-" + schema.name + "-" + name;
 }
 
-rest_api_objects::AddSnapshotUpdate IcebergTableInformation::CreateSnapshotUpdate(DatabaseInstance &db,
-                                                                                  ClientContext &context) {
-	D_ASSERT(transaction_data);
-	return transaction_data->CreateSnapshotUpdate(db, context);
-}
-
-void IcebergTableInformation::Append(IRCTransaction &transaction, vector<IcebergManifestEntry> &&data_files) {
+void IcebergTableInformation::AddSnapshot(IRCTransaction &transaction, vector<IcebergManifestEntry> &&data_files) {
 	if (!transaction_data) {
 		auto context = transaction.context.lock();
-		transaction_data = IcebergTransactionData::Create(*context, *this);
+		transaction_data = make_uniq<IcebergTransactionData>(*context, *this);
 	}
 
-	auto &manifest_list = transaction_data->manifest_list;
-	auto &manifest_file = transaction_data->manifest_file;
-	auto &manifest = manifest_list.manifests.back();
-	auto &snapshot = transaction_data->snapshot;
-
-	//! Add the data files
-	for (auto &data_file : data_files) {
-		manifest.added_rows_count += data_file.record_count;
-		data_file.sequence_number = snapshot.sequence_number;
-	}
-	manifest_file.data_files.insert(manifest_file.data_files.end(), std::make_move_iterator(data_files.begin()),
-	                                std::make_move_iterator(data_files.end()));
+	transaction_data->AddSnapshot(IcebergSnapshotOperationType::APPEND, std::move(data_files));
 }
 
 static void ParseConfigOptions(const case_insensitive_map_t<string> &config, case_insensitive_map_t<Value> &options) {

@@ -7,6 +7,8 @@ namespace duckdb {
 
 struct IcebergTableMetadata;
 
+enum class IcebergSnapshotOperationType : uint8_t { APPEND, REPLACE, OVERWRITE, DELETE };
+
 //! An Iceberg snapshot https://iceberg.apache.org/spec/#snapshots
 class IcebergSnapshot {
 public:
@@ -20,6 +22,7 @@ public:
 	int64_t snapshot_id = NumericLimits<int64_t>::Maximum();
 	int64_t sequence_number;
 	int32_t schema_id;
+	IcebergSnapshotOperationType operation = IcebergSnapshotOperationType::APPEND;
 	timestamp_t timestamp_ms;
 	string manifest_list;
 };

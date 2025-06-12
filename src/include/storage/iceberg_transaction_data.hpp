@@ -7,6 +7,8 @@
 
 #include "duckdb/main/client_context.hpp"
 #include "duckdb/function/copy_function.hpp"
+#include "storage/iceberg_table_update.hpp"
+#include "storage/table_update/iceberg_add_snapshot.hpp"
 
 namespace duckdb {
 
@@ -14,28 +16,20 @@ struct IcebergTableInformation;
 
 struct IcebergTransactionData {
 public:
-	IcebergTransactionData(IcebergTableInformation &table_info, IcebergManifestFile &&manifest_file,
-	                       IcebergManifestList &&manifest_list, IcebergSnapshot &&snapshot)
-	    : table_info(table_info), manifest_file(std::move(manifest_file)), manifest_list(std::move(manifest_list)),
-	      snapshot(std::move(snapshot)) {
+	IcebergTransactionData(ClientContext &context, IcebergTableInformation &table_info)
+	    : context(context), table_info(table_info) {
 	}
 
 public:
-	static unique_ptr<IcebergTransactionData> Create(ClientContext &context, IcebergTableInformation &table_info);
+	void AddSnapshot(IcebergSnapshotOperationType operation, vector<IcebergManifestEntry> &&data_files);
 
 public:
-	rest_api_objects::AddSnapshotUpdate CreateSnapshotUpdate(DatabaseInstance &db, ClientContext &context);
-
-private:
-	void WriteManifestFile(CopyFunction &copy_function, DatabaseInstance &db, ClientContext &context);
-	void WriteManifestList(CopyFunction &copy_function, DatabaseInstance &db, ClientContext &context);
-
-public:
+	ClientContext &context;
 	IcebergTableInformation &table_info;
+	vector<unique_ptr<IcebergTableUpdate>> updates;
 
-	IcebergManifestFile manifest_file;
-	IcebergManifestList manifest_list;
-	IcebergSnapshot snapshot;
+	//! Every insert/update/delete creates an alter of the table data
+	vector<reference<IcebergAddSnapshot>> alters;
 };
 
 } // namespace duckdb

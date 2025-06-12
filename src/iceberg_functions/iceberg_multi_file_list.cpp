@@ -7,8 +7,8 @@
 #include "duckdb/catalog/catalog_entry/table_function_catalog_entry.hpp"
 #include "duckdb/common/exception.hpp"
 #include "duckdb/execution/execution_context.hpp"
-#include "duckdb/main/extension_util.hpp"
 #include "duckdb/parallel/thread_context.hpp"
+#include "duckdb/main/extension_util.hpp"
 #include "duckdb/parser/tableref/table_function_ref.hpp"
 #include "duckdb/parser/expression/constant_expression.hpp"
 #include "duckdb/planner/expression/bound_comparison_expression.hpp"
@@ -339,11 +339,16 @@ optional_ptr<const IcebergManifestEntry> IcebergMultiFileList::GetDataFile(idx_t
 					data_manifest_reader->Read(STANDARD_VECTOR_SIZE, current_data_files);
 				}
 				current_data_manifest++;
-			} else if (HasTransactionData() && !scanned_transaction_data) {
+			} else if (HasTransactionData()) {
 				auto &transaction_data = GetTransactionData();
-				auto &data_files = transaction_data.manifest_file.data_files;
+				if (transaction_data_idx >= transaction_data.alters.size()) {
+					//! Exhausted all the transaction-local data
+					return nullptr;
+				}
+				auto &alter = transaction_data.alters[transaction_data_idx].get();
+				auto &data_files = alter.manifest_file.data_files;
 				current_data_files.insert(current_data_files.end(), data_files.begin(), data_files.end());
-				scanned_transaction_data = true;
+				transaction_data_idx++;
 			} else {
 				//! No more data manifests to explore
 				return nullptr;

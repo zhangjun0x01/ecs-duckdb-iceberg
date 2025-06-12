@@ -3,19 +3,29 @@
 
 namespace duckdb {
 
+static string OperationTypeToString(IcebergSnapshotOperationType type) {
+	switch (type) {
+	case IcebergSnapshotOperationType::APPEND:
+		return "append";
+	case IcebergSnapshotOperationType::REPLACE:
+		return "replace";
+	case IcebergSnapshotOperationType::OVERWRITE:
+		return "overwrite";
+	case IcebergSnapshotOperationType::DELETE:
+		return "delete";
+	default:
+		throw InvalidConfigurationException("Operation type not implemented: %d", static_cast<uint8_t>(type));
+	}
+}
+
 rest_api_objects::Snapshot IcebergSnapshot::ToRESTObject() {
 	rest_api_objects::Snapshot res;
 
 	res.snapshot_id = snapshot_id;
 	res.timestamp_ms = Timestamp::GetEpochMs(timestamp_ms);
 	res.manifest_list = manifest_list;
-	//! FIXME: does this mean we can't mix multiple UPDATE / DELETE / INSERTS in the same transaction???
-	//! valid values are:
-	// - append
-	// - replace
-	// - overwrite
-	// - delete
-	res.summary.operation = "append";
+
+	res.summary.operation = OperationTypeToString(operation);
 
 	//! TODO: add the parent snapshot id to IcebergSnapshot
 	res.has_parent_snapshot_id = false;
