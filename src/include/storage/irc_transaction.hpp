@@ -32,6 +32,7 @@ private:
 
 private:
 	DatabaseInstance &db;
+	IRCatalog &catalog;
 	AccessMode access_mode;
 
 public:

@@ -17,4 +17,10 @@ unique_ptr<HTTPResponse> NoneAuthorization::GetRequest(ClientContext &context,
 	return APIUtils::GetRequest(context, endpoint_builder, "");
 }
 
+unique_ptr<HTTPResponse>
+NoneAuthorization::PostRequest(ClientContext &context, const IRCEndpointBuilder &endpoint_builder, const string &body) {
+	auto url = endpoint_builder.GetURL();
+	return APIUtils::PostRequest(context, url, body, "json", "");
+}
+
 } // namespace duckdb
