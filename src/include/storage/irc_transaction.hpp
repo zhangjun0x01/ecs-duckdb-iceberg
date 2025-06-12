@@ -9,8 +9,6 @@ class IRCatalog;
 class IRCSchemaEntry;
 class ICTableEntry;
 
-enum class IRCTransactionState { TRANSACTION_NOT_YET_STARTED, TRANSACTION_STARTED, TRANSACTION_FINISHED };
-
 class IRCTransaction : public Transaction {
 public:
 	IRCTransaction(IRCatalog &ic_catalog, TransactionManager &manager, ClientContext &context);
@@ -34,7 +32,6 @@ public:
 	unordered_set<ICTableEntry *> dirty_tables;
 
 private:
-	IRCTransactionState transaction_state;
 	AccessMode access_mode;
 };
 

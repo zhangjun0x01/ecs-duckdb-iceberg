@@ -8,26 +8,18 @@ namespace duckdb {
 
 IRCTransaction::IRCTransaction(IRCatalog &ic_catalog, TransactionManager &manager, ClientContext &context)
     : Transaction(manager, context), schemas(ic_catalog), access_mode(ic_catalog.access_mode) {
-	//	connection = ICConnection::Open(ic_catalog.path);
 }
 
 IRCTransaction::~IRCTransaction() = default;
 
 void IRCTransaction::Start() {
-	transaction_state = IRCTransactionState::TRANSACTION_NOT_YET_STARTED;
 }
+
 void IRCTransaction::Commit() {
-	if (transaction_state == IRCTransactionState::TRANSACTION_STARTED) {
-		transaction_state = IRCTransactionState::TRANSACTION_FINISHED;
-		//		connection.Execute("COMMIT");
-	}
 }
+
 void IRCTransaction::Rollback() {
-	if (transaction_state == IRCTransactionState::TRANSACTION_STARTED) {
-		transaction_state = IRCTransactionState::TRANSACTION_FINISHED;
-		//		connection.Execute("ROLLBACK");
-		throw InternalException("Transaction Rollback");
-	}
+	throw InternalException("ROLLBACK");
 }
 
 IRCTransaction &IRCTransaction::Get(ClientContext &context, Catalog &catalog) {
