@@ -24,11 +24,11 @@ public:
 	static unique_ptr<IcebergTransactionData> Create(ClientContext &context, IcebergTableInformation &table_info);
 
 public:
-	rest_api_objects::AddSnapshotUpdate CreateSnapshotUpdate(DatabaseInstance &db);
+	rest_api_objects::AddSnapshotUpdate CreateSnapshotUpdate(DatabaseInstance &db, ClientContext &context);
 
 private:
-	void WriteManifestFile(CopyFunction &copy_function, DatabaseInstance &db);
-	void WriteManifestList(CopyFunction &copy_function, DatabaseInstance &db);
+	void WriteManifestFile(CopyFunction &copy_function, DatabaseInstance &db, ClientContext &context);
+	void WriteManifestList(CopyFunction &copy_function, DatabaseInstance &db, ClientContext &context);
 
 public:
 	IcebergTableInformation &table_info;

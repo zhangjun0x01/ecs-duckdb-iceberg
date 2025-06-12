@@ -20,8 +20,9 @@ void IRCTransaction::Start() {
 }
 
 void IRCTransaction::Commit() {
+	auto context = this->context.lock();
 	for (auto &table : dirty_tables) {
-		auto update = table->table_info.CreateSnapshotUpdate(db);
+		auto update = table->table_info.CreateSnapshotUpdate(db, *context);
 		// - serialize this to JSON
 		// - hit the REST API (POST to '/v1/{prefix}/transactions/commit'), sending along this payload
 		// - profit ???

@@ -3,6 +3,7 @@
 #include "duckdb/common/types/uuid.hpp"
 #include "duckdb/common/enums/catalog_type.hpp"
 #include "duckdb/catalog/catalog_entry/copy_function_catalog_entry.hpp"
+#include "duckdb/parser/parsed_data/copy_info.hpp"
 
 namespace duckdb {
 
@@ -13,34 +14,62 @@ static LogicalType PartitionStructType(IcebergTableInformation &table_info) {
 	return LogicalType::STRUCT(children);
 }
 
-void IcebergTransactionData::WriteManifestFile(CopyFunction &copy, DatabaseInstance &db) {
+void IcebergTransactionData::WriteManifestFile(CopyFunction &copy, DatabaseInstance &db, ClientContext &context) {
 	auto &fs = FileSystem::GetFileSystem(db);
 	auto &allocator = db.GetBufferManager().GetBufferAllocator();
 
+	//! Create the types for the DataChunk
+
+	child_list_t<Value> field_ids;
+	vector<string> names;
 	vector<LogicalType> types;
 	// status: int - 0
+	names.push_back("status");
 	types.push_back(LogicalType::INTEGER);
+	field_ids.emplace_back("status", Value::INTEGER(0));
+
 	// snapshot_id: long - 1
+	names.push_back("snapshot_id");
 	types.push_back(LogicalType::BIGINT);
+	field_ids.emplace_back("snapshot_id", Value::INTEGER(1));
+
 	// sequence_number: long - 3
+	names.push_back("sequence_number");
 	types.push_back(LogicalType::BIGINT);
+	field_ids.emplace_back("sequence_number", Value::INTEGER(3));
+
 	// file_sequence_number: long - 4
+	names.push_back("file_sequence_number");
 	types.push_back(LogicalType::BIGINT);
+	field_ids.emplace_back("file_sequence_number", Value::INTEGER(4));
 
 	//! DataFile struct
+
+	child_list_t<Value> data_file_field_ids;
 	child_list_t<LogicalType> children;
 	// content: int - 134
 	children.emplace_back("content", LogicalType::INTEGER);
+	data_file_field_ids.emplace_back("content", Value::INTEGER(134));
+
 	// file_path: string - 100
 	children.emplace_back("file_path", LogicalType::VARCHAR);
+	data_file_field_ids.emplace_back("file_path", Value::INTEGER(100));
+
 	// file_format: string - 101
 	children.emplace_back("file_format", LogicalType::VARCHAR);
+	data_file_field_ids.emplace_back("file_format", Value::INTEGER(101));
+
 	// partition: struct(...) - 102
 	children.emplace_back("partition", PartitionStructType(table_info));
+	data_file_field_ids.emplace_back("partition", Value::INTEGER(102));
+
 	// record_count: long - 103
 	children.emplace_back("record_count", LogicalType::BIGINT);
+	data_file_field_ids.emplace_back("record_count", Value::INTEGER(103));
+
 	// file_size_in_bytes: long - 104
 	children.emplace_back("file_size_in_bytes", LogicalType::BIGINT);
+	data_file_field_ids.emplace_back("file_size_in_bytes", Value::INTEGER(104));
 
 	//// column_sizes: map<117: int, 118: long> - 108
 	// children.emplace_back("column_sizes", LogicalType::MAP(LogicalType::INTEGER, LogicalType::BIGINT));
@@ -56,7 +85,12 @@ void IcebergTransactionData::WriteManifestFile(CopyFunction &copy, DatabaseInsta
 	// children.emplace_back("upper_bounds", LogicalType::MAP(LogicalType::INTEGER, LogicalType::BLOB));
 
 	// data_file: struct(...) - 2
+	names.push_back("data_file");
 	types.push_back(LogicalType::STRUCT(std::move(children)));
+	data_file_field_ids.emplace_back("__duckdb_field_id", Value::INTEGER(2));
+	field_ids.emplace_back("data_file", Value::STRUCT(data_file_field_ids));
+
+	//! Populate the DataChunk with the data files
 
 	DataChunk data;
 	data.Initialize(allocator, types, manifest_file.data_files.size());
@@ -80,16 +114,25 @@ void IcebergTransactionData::WriteManifestFile(CopyFunction &copy, DatabaseInsta
 		data.SetValue(col_idx, i, data_file.ToDataFileStruct(data.data[col_idx].GetType()));
 		col_idx++;
 	}
+	data.SetCardinality(manifest_file.data_files.size());
 
-	(void)copy;
-	auto test = 1 + 42;
+	CopyInfo copy_info;
+	copy_info.is_from = false;
+	copy_info.options["root_name"].push_back(Value("manifest_file"));
+	copy_info.options["field_ids"].push_back(Value::STRUCT(field_ids));
+
+	CopyFunctionBindInput input(copy_info);
+	input.file_extension = "avro";
+
+	auto bind_data = copy.copy_to_bind(context, input, names, types);
 }
 
-void IcebergTransactionData::WriteManifestList(CopyFunction &copy, DatabaseInstance &db) {
+void IcebergTransactionData::WriteManifestList(CopyFunction &copy, DatabaseInstance &db, ClientContext &context) {
 	throw InternalException("WriteManifestList");
 }
 
-rest_api_objects::AddSnapshotUpdate IcebergTransactionData::CreateSnapshotUpdate(DatabaseInstance &db) {
+rest_api_objects::AddSnapshotUpdate IcebergTransactionData::CreateSnapshotUpdate(DatabaseInstance &db,
+                                                                                 ClientContext &context) {
 	auto &system_catalog = Catalog::GetSystemCatalog(db);
 	auto data = CatalogTransaction::GetSystemTransaction(db);
 	auto &schema = system_catalog.GetSchema(data, DEFAULT_SCHEMA);
@@ -97,8 +140,8 @@ rest_api_objects::AddSnapshotUpdate IcebergTransactionData::CreateSnapshotUpdate
 	D_ASSERT(avro_copy_p);
 	auto &avro_copy = avro_copy_p->Cast<CopyFunctionCatalogEntry>().function;
 
-	WriteManifestFile(avro_copy, db);
-	WriteManifestList(avro_copy, db);
+	WriteManifestFile(avro_copy, db, context);
+	WriteManifestList(avro_copy, db, context);
 
 	rest_api_objects::AddSnapshotUpdate update;
 	update.base_update.action = "add-snapshot";

@@ -27,7 +27,7 @@ public:
 	const string &BaseFilePath() const;
 
 	void Append(IRCTransaction &transaction, vector<IcebergManifestEntry> &&data_files);
-	rest_api_objects::AddSnapshotUpdate CreateSnapshotUpdate(DatabaseInstance &db);
+	rest_api_objects::AddSnapshotUpdate CreateSnapshotUpdate(DatabaseInstance &db, ClientContext &context);
 
 public:
 	IRCatalog &catalog;
