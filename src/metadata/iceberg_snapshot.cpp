@@ -4,7 +4,29 @@
 namespace duckdb {
 
 rest_api_objects::Snapshot IcebergSnapshot::ToRESTObject() {
-	throw InternalException("To REST Object");
+	rest_api_objects::Snapshot res;
+
+	res.snapshot_id = snapshot_id;
+	res.timestamp_ms = Timestamp::GetEpochMs(timestamp_ms);
+	res.manifest_list = manifest_list;
+	//! FIXME: does this mean we can't mix multiple UPDATE / DELETE / INSERTS in the same transaction???
+	//! valid values are:
+	// - append
+	// - replace
+	// - overwrite
+	// - delete
+	res.summary.operation = "append";
+
+	//! TODO: add the parent snapshot id to IcebergSnapshot
+	res.has_parent_snapshot_id = false;
+
+	res.has_sequence_number = true;
+	res.sequence_number = sequence_number;
+
+	res.has_schema_id = true;
+	res.schema_id = schema_id;
+
+	return res;
 }
 
 IcebergSnapshot IcebergSnapshot::ParseSnapshot(rest_api_objects::Snapshot &snapshot, IcebergTableMetadata &metadata) {

@@ -318,7 +318,7 @@ void IcebergTransactionData::WriteManifestList(CopyFunction &copy, DatabaseInsta
 	copy.copy_to_sink(execution_context, *bind_data, *global_state, *local_state, data);
 	copy.copy_to_combine(execution_context, *bind_data, *global_state, *local_state);
 	copy.copy_to_finalize(context, *bind_data, *global_state);
-	Printer::PrintF("Manifest List path: %s", manifest_list.path);
+	// Printer::PrintF("Manifest List path: %s", manifest_list.path);
 }
 
 rest_api_objects::AddSnapshotUpdate IcebergTransactionData::CreateSnapshotUpdate(DatabaseInstance &db,
