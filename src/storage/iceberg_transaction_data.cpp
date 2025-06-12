@@ -5,6 +5,9 @@
 #include "duckdb/catalog/catalog_entry/copy_function_catalog_entry.hpp"
 #include "duckdb/parser/parsed_data/copy_info.hpp"
 
+#include "duckdb/execution/execution_context.hpp"
+#include "duckdb/parallel/thread_context.hpp"
+
 namespace duckdb {
 
 static LogicalType PartitionStructType(IcebergTableInformation &table_info) {
@@ -124,7 +127,22 @@ void IcebergTransactionData::WriteManifestFile(CopyFunction &copy, DatabaseInsta
 	CopyFunctionBindInput input(copy_info);
 	input.file_extension = "avro";
 
+	ThreadContext thread_context(context);
+	ExecutionContext execution_context(context, thread_context, nullptr);
 	auto bind_data = copy.copy_to_bind(context, input, names, types);
+
+	auto global_state = copy.copy_to_initialize_global(context, *bind_data, manifest_file.path);
+	auto local_state = copy.copy_to_initialize_local(execution_context, *bind_data);
+
+	// copy_to_sink_t (ExecutionContext &context, FunctionData &bind_data, GlobalFunctionData &gstate, LocalFunctionData
+	// &lstate, DataChunk &input); copy_to_combine_t (ExecutionContext &context, FunctionData &bind_data,
+	// GlobalFunctionData &gstate, LocalFunctionData &lstate); copy_to_finalize_t (ClientContext &context, FunctionData
+	// &bind_data, GlobalFunctionData &gstate);
+
+	Printer::PrintF("Manifest File path: %s", manifest_file.path);
+	copy.copy_to_sink(execution_context, *bind_data, *global_state, *local_state, data);
+	copy.copy_to_combine(execution_context, *bind_data, *global_state, *local_state);
+	copy.copy_to_finalize(context, *bind_data, *global_state);
 }
 
 void IcebergTransactionData::WriteManifestList(CopyFunction &copy, DatabaseInstance &db, ClientContext &context) {

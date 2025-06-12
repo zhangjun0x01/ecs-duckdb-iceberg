@@ -20,13 +20,17 @@ void IRCTransaction::Start() {
 }
 
 void IRCTransaction::Commit() {
-	auto context = this->context.lock();
+	Connection temp_con(db);
+	auto &context = temp_con.context;
+	context->transaction.BeginTransaction();
+
 	for (auto &table : dirty_tables) {
 		auto update = table->table_info.CreateSnapshotUpdate(db, *context);
 		// - serialize this to JSON
 		// - hit the REST API (POST to '/v1/{prefix}/transactions/commit'), sending along this payload
 		// - profit ???
 	}
+	context->transaction.ClearTransaction();
 }
 
 void IRCTransaction::CleanupFiles() {
