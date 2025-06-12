@@ -120,9 +120,8 @@ TableFunction ICTableEntry::GetScanFunction(ClientContext &context, unique_ptr<F
 	auto &irc_transaction = IRCTransaction::Get(context, catalog);
 
 	auto schema = metadata.GetSchemaFromId(schema_id);
-	iceberg_scan_function.function_info = make_shared_ptr<IcebergScanInfo>(
-	    table_info.load_table_result.metadata_location, metadata, irc_transaction.manifest_list_cache,
-	    irc_transaction.manifest_file_cache, snapshot, *schema);
+	iceberg_scan_function.function_info =
+	    make_shared_ptr<IcebergScanInfo>(table_info.load_table_result.metadata_location, metadata, snapshot, *schema);
 
 	// Set the S3 path as input to table function
 	vector<Value> inputs = {storage_location};
