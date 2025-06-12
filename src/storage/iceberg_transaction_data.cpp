@@ -18,7 +18,6 @@ static LogicalType PartitionStructType(IcebergTableInformation &table_info) {
 }
 
 void IcebergTransactionData::WriteManifestFile(CopyFunction &copy, DatabaseInstance &db, ClientContext &context) {
-	auto &fs = FileSystem::GetFileSystem(db);
 	auto &allocator = db.GetBufferManager().GetBufferAllocator();
 
 	//! Create the types for the DataChunk
@@ -134,19 +133,192 @@ void IcebergTransactionData::WriteManifestFile(CopyFunction &copy, DatabaseInsta
 	auto global_state = copy.copy_to_initialize_global(context, *bind_data, manifest_file.path);
 	auto local_state = copy.copy_to_initialize_local(execution_context, *bind_data);
 
-	// copy_to_sink_t (ExecutionContext &context, FunctionData &bind_data, GlobalFunctionData &gstate, LocalFunctionData
-	// &lstate, DataChunk &input); copy_to_combine_t (ExecutionContext &context, FunctionData &bind_data,
-	// GlobalFunctionData &gstate, LocalFunctionData &lstate); copy_to_finalize_t (ClientContext &context, FunctionData
-	// &bind_data, GlobalFunctionData &gstate);
-
-	Printer::PrintF("Manifest File path: %s", manifest_file.path);
 	copy.copy_to_sink(execution_context, *bind_data, *global_state, *local_state, data);
 	copy.copy_to_combine(execution_context, *bind_data, *global_state, *local_state);
 	copy.copy_to_finalize(context, *bind_data, *global_state);
 }
 
+static LogicalType FieldSummaryType() {
+	child_list_t<LogicalType> children;
+	children.emplace_back("contains_null", LogicalType::BOOLEAN);
+	children.emplace_back("contains_nan", LogicalType::BOOLEAN);
+	children.emplace_back("lower_bound", LogicalType::BLOB);
+	children.emplace_back("upper_bound", LogicalType::BLOB);
+	auto field_summary = LogicalType::STRUCT(children);
+
+	return LogicalType::LIST(field_summary);
+}
+
+static Value FieldSummaryFieldIds() {
+	child_list_t<Value> children;
+	children.emplace_back("contains_null", Value::INTEGER(509));
+	children.emplace_back("contains_nan", Value::INTEGER(518));
+	children.emplace_back("lower_bound", Value::INTEGER(510));
+	children.emplace_back("upper_bound", Value::INTEGER(511));
+	children.emplace_back("__duckdb_field_id", Value::INTEGER(508));
+	auto field_summary = Value::STRUCT(children);
+
+	child_list_t<Value> list_children;
+	list_children.emplace_back("element", field_summary);
+	list_children.emplace_back("__duckdb_field_id", Value::INTEGER(507));
+	return Value::STRUCT(list_children);
+}
+
 void IcebergTransactionData::WriteManifestList(CopyFunction &copy, DatabaseInstance &db, ClientContext &context) {
-	throw InternalException("WriteManifestList");
+	auto &allocator = db.GetBufferManager().GetBufferAllocator();
+
+	//! Create the types for the DataChunk
+
+	child_list_t<Value> field_ids;
+	vector<string> names;
+	vector<LogicalType> types;
+
+	// manifest_path: string - 500
+	names.push_back("manifest_path");
+	types.push_back(LogicalType::VARCHAR);
+	field_ids.emplace_back("manifest_path", Value::INTEGER(500));
+
+	// manifest_length: long - 501
+	names.push_back("manifest_length");
+	types.push_back(LogicalType::BIGINT);
+	field_ids.emplace_back("manifest_length", Value::INTEGER(501));
+
+	// partition_spec_id: long - 502
+	names.push_back("partition_spec_id");
+	types.push_back(LogicalType::BIGINT);
+	field_ids.emplace_back("partition_spec_id", Value::INTEGER(502));
+
+	// content: int - 517
+	names.push_back("content");
+	types.push_back(LogicalType::INTEGER);
+	field_ids.emplace_back("content", Value::INTEGER(517));
+
+	// sequence_number: long - 515
+	names.push_back("sequence_number");
+	types.push_back(LogicalType::BIGINT);
+	field_ids.emplace_back("sequence_number", Value::INTEGER(515));
+
+	// min_sequence_number: long - 516
+	names.push_back("min_sequence_number");
+	types.push_back(LogicalType::BIGINT);
+	field_ids.emplace_back("min_sequence_number", Value::INTEGER(516));
+
+	// added_snapshot_id: long - 503
+	names.push_back("added_snapshot_id");
+	types.push_back(LogicalType::BIGINT);
+	field_ids.emplace_back("added_snapshot_id", Value::INTEGER(503));
+
+	// added_files_count: int - 504
+	names.push_back("added_files_count");
+	types.push_back(LogicalType::INTEGER);
+	field_ids.emplace_back("added_files_count", Value::INTEGER(504));
+
+	// existing_files_count: int - 505
+	names.push_back("existing_files_count");
+	types.push_back(LogicalType::INTEGER);
+	field_ids.emplace_back("existing_files_count", Value::INTEGER(505));
+
+	// deleted_files_count: int - 506
+	names.push_back("deleted_files_count");
+	types.push_back(LogicalType::INTEGER);
+	field_ids.emplace_back("deleted_files_count", Value::INTEGER(506));
+
+	// added_rows_count: long - 512
+	names.push_back("added_rows_count");
+	types.push_back(LogicalType::BIGINT);
+	field_ids.emplace_back("added_rows_count", Value::INTEGER(512));
+
+	// existing_rows_count: long - 513
+	names.push_back("existing_rows_count");
+	types.push_back(LogicalType::BIGINT);
+	field_ids.emplace_back("existing_rows_count", Value::INTEGER(513));
+
+	// deleted_rows_count: long - 514
+	names.push_back("deleted_rows_count");
+	types.push_back(LogicalType::BIGINT);
+	field_ids.emplace_back("deleted_rows_count", Value::INTEGER(514));
+
+	// partitions: list<508: field_summary> - 507
+	names.push_back("partitions");
+	types.push_back(FieldSummaryType());
+	field_ids.emplace_back("partitions", FieldSummaryFieldIds());
+
+	//! Populate the DataChunk with the manifests
+
+	DataChunk data;
+	data.Initialize(allocator, types, manifest_list.manifests.size());
+
+	for (idx_t i = 0; i < manifest_list.manifests.size(); i++) {
+		auto &manifest = manifest_list.manifests[i];
+		idx_t col_idx = 0;
+
+		// manifest_path: string - 500
+		data.SetValue(col_idx++, i, Value(manifest.manifest_path));
+
+		// manifest_length: long - 501
+		//! TODO: collect the length from the manifest file write.
+		data.SetValue(col_idx++, i, Value(42069));
+
+		// partition_spec_id: long - 502
+		data.SetValue(col_idx++, i, Value::BIGINT(manifest.partition_spec_id));
+
+		// content: int - 517
+		data.SetValue(col_idx++, i, Value::INTEGER(static_cast<int32_t>(manifest.content)));
+
+		// sequence_number: long - 515
+		data.SetValue(col_idx++, i, Value::BIGINT(manifest.sequence_number));
+
+		// min_sequence_number: long - 516
+		//! TODO: keep track of the min sequence number
+		data.SetValue(col_idx++, i, Value::BIGINT(manifest.sequence_number));
+
+		// added_snapshot_id: long - 503
+		//! TODO: add the snapshot id to the IcebergManifest
+		data.SetValue(col_idx++, i, Value::BIGINT(42069));
+
+		// added_files_count: int - 504
+		//! TODO: write this into the IcebergManifest, instead of relying on the manifest_file
+		data.SetValue(col_idx++, i, Value::INTEGER(manifest_file.data_files.size()));
+
+		// existing_files_count: int - 505
+		data.SetValue(col_idx++, i, Value::INTEGER(0));
+
+		// deleted_files_count: int - 506
+		data.SetValue(col_idx++, i, Value::INTEGER(0));
+
+		// added_rows_count: long - 512
+		data.SetValue(col_idx++, i, Value::BIGINT(static_cast<int64_t>(manifest.added_rows_count)));
+
+		// existing_rows_count: long - 513
+		data.SetValue(col_idx++, i, Value::BIGINT(static_cast<int64_t>(manifest.existing_rows_count)));
+
+		// deleted_rows_count: long - 514
+		data.SetValue(col_idx++, i, Value::BIGINT(static_cast<int64_t>(0)));
+
+		// partitions: list<508: field_summary> - 507
+		data.SetValue(col_idx++, i, manifest.partitions.ToValue());
+	}
+	data.SetCardinality(manifest_list.manifests.size());
+
+	CopyInfo copy_info;
+	copy_info.is_from = false;
+	copy_info.options["root_name"].push_back(Value("manifest_list"));
+	copy_info.options["field_ids"].push_back(Value::STRUCT(field_ids));
+
+	CopyFunctionBindInput input(copy_info);
+	input.file_extension = "avro";
+
+	ThreadContext thread_context(context);
+	ExecutionContext execution_context(context, thread_context, nullptr);
+	auto bind_data = copy.copy_to_bind(context, input, names, types);
+
+	auto global_state = copy.copy_to_initialize_global(context, *bind_data, manifest_list.path);
+	auto local_state = copy.copy_to_initialize_local(execution_context, *bind_data);
+
+	copy.copy_to_sink(execution_context, *bind_data, *global_state, *local_state, data);
+	copy.copy_to_combine(execution_context, *bind_data, *global_state, *local_state);
+	copy.copy_to_finalize(context, *bind_data, *global_state);
+	Printer::PrintF("Manifest List path: %s", manifest_list.path);
 }
 
 rest_api_objects::AddSnapshotUpdate IcebergTransactionData::CreateSnapshotUpdate(DatabaseInstance &db,

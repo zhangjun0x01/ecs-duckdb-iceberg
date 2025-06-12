@@ -10,6 +10,19 @@ namespace duckdb {
 using sequence_number_t = int64_t;
 
 struct FieldSummary {
+public:
+	Value ToValue() const {
+		child_list_t<Value> children;
+		children.emplace_back("contains_null", Value::BOOLEAN(contains_null));
+		children.emplace_back("contains_nan", Value::BOOLEAN(contains_nan));
+		D_ASSERT(lower_bound.type().id() == LogicalType::BLOB);
+		D_ASSERT(upper_bound.type().id() == LogicalType::BLOB);
+		children.emplace_back("lower_bound", lower_bound);
+		children.emplace_back("upper_bound", upper_bound);
+		return Value::STRUCT(children);
+	}
+
+public:
 	bool contains_null = false;
 	//! Optional
 	bool contains_nan = false;
@@ -20,6 +33,26 @@ struct FieldSummary {
 };
 
 struct ManifestPartitions {
+public:
+	Value ToValue() const {
+		child_list_t<LogicalType> children;
+		children.emplace_back("contains_null", LogicalType::BOOLEAN);
+		children.emplace_back("contains_nan", LogicalType::BOOLEAN);
+		children.emplace_back("lower_bound", LogicalType::BLOB);
+		children.emplace_back("upper_bound", LogicalType::BLOB);
+		auto field_summary_struct = LogicalType::STRUCT(children);
+
+		if (!has_partitions) {
+			return Value(LogicalType::LIST(field_summary_struct));
+		}
+		vector<Value> fields;
+		for (auto &field : field_summary) {
+			fields.push_back(field.ToValue());
+		}
+		return Value::LIST(field_summary_struct, fields);
+	}
+
+public:
 	bool has_partitions = false;
 	vector<FieldSummary> field_summary;
 };
