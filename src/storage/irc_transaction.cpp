@@ -26,16 +26,26 @@ void IRCTransaction::Commit() {
 	auto &context = temp_con.context;
 	context->transaction.BeginTransaction();
 
+	rest_api_objects::CommitTransactionRequest transaction;
 	for (auto &table : dirty_tables) {
+		rest_api_objects::CommitTableRequest table_change;
+		table_change.identifier._namespace.value.push_back(table->ParentSchema().name);
+		table_change.identifier.name = table->name;
+		table_change.has_identifier = true;
+
 		auto &transaction_data = *table->table_info.transaction_data;
 		for (auto &update : transaction_data.updates) {
 			auto table_update = update->CreateUpdate(db, *context);
-			// - serialize this to JSON
-			// - hit the REST API (POST to '/v1/{prefix}/transactions/commit'), sending along this payload
-			// - profit ???
+			table_change.updates.push_back(std::move(table_update));
 		}
+		transaction.table_changes.push_back(std::move(table_change));
 	}
-	context->transaction.ClearTransaction();
+
+	// - serialize this to JSON
+	// - hit the REST API (POST to '/v1/{prefix}/transactions/commit'), sending along this payload
+	// - profit ???
+	throw NotImplementedException("Serialize CommitTransactionRequest to JSON");
+	context->transaction.Commit();
 }
 
 void IRCTransaction::CleanupFiles() {
