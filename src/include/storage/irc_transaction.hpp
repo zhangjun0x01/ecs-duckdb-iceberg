@@ -25,14 +25,19 @@ public:
 	IRCSchemaSet &GetSchemas() {
 		return schemas;
 	}
+	void MarkTableAsDirty(const ICTableEntry &table);
+
+private:
+	void CleanupFiles();
+
+private:
+	DatabaseInstance &db;
+	AccessMode access_mode;
 
 public:
 	IRCSchemaSet schemas;
 	//! Tables marked dirty in this transaction, to be rewritten on commit
-	unordered_set<ICTableEntry *> dirty_tables;
-
-private:
-	AccessMode access_mode;
+	unordered_set<const ICTableEntry *> dirty_tables;
 };
 
 } // namespace duckdb

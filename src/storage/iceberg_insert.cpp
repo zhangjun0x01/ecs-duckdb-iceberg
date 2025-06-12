@@ -231,8 +231,7 @@ SinkFinalizeType IcebergInsert::Finalize(Pipeline &pipeline, Event &event, Clien
 	auto &transaction = IRCTransaction::Get(context, table->catalog);
 
 	table_info.Append(transaction, std::move(global_state.written_files));
-
-	// transaction.MarkTableAsDirty(irc_table); //! signal that it should be checked on commit/abort
+	transaction.MarkTableAsDirty(irc_table);
 	return SinkFinalizeType::READY;
 }
 
