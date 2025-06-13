@@ -67,12 +67,15 @@ struct IcebergManifest {
 public:
 	//! Path to the manifest AVRO file
 	string manifest_path;
+	//! Length of the manifest file in bytes
+	int64_t manifest_length;
 	//! sequence_number when manifest was added to table (0 for Iceberg v1)
 	sequence_number_t sequence_number = 0;
 	bool has_min_sequence_number = false;
 	sequence_number_t min_sequence_number = 0;
 	//! either data or deletes
 	IcebergManifestContentType content;
+	int64_t added_snapshot_id = -1;
 	//! added files count
 	idx_t added_files_count = 0;
 	//! existing files count

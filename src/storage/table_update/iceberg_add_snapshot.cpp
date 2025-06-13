@@ -7,6 +7,7 @@
 #include "duckdb/execution/execution_context.hpp"
 #include "duckdb/parallel/thread_context.hpp"
 #include "duckdb/storage/buffer_manager.hpp"
+#include "duckdb/storage/caching_file_system.hpp"
 
 namespace duckdb {
 
@@ -142,6 +143,14 @@ void IcebergAddSnapshot::WriteManifestFile(CopyFunction &copy, DatabaseInstance 
 	copy.copy_to_sink(execution_context, *bind_data, *global_state, *local_state, data);
 	copy.copy_to_combine(execution_context, *bind_data, *global_state, *local_state);
 	copy.copy_to_finalize(context, *bind_data, *global_state);
+
+	auto caching_file_system = CachingFileSystem::Get(context);
+	auto caching_file_handle = caching_file_system.OpenFile(manifest_file.path, FileOpenFlags::FILE_FLAGS_READ);
+	auto manifest_length = caching_file_handle->GetFileSize();
+
+	D_ASSERT(manifest_list.manifests.size() == 1);
+	auto &manifest = manifest_list.manifests[0];
+	manifest.manifest_length = manifest_length;
 }
 
 static LogicalType FieldSummaryType() {
@@ -262,8 +271,7 @@ void IcebergAddSnapshot::WriteManifestList(CopyFunction &copy, DatabaseInstance 
 		data.SetValue(col_idx++, i, Value(manifest.manifest_path));
 
 		// manifest_length: long - 501
-		//! TODO: collect the length from the manifest file write.
-		data.SetValue(col_idx++, i, Value(42069));
+		data.SetValue(col_idx++, i, Value::BIGINT(manifest.manifest_length));
 
 		// partition_spec_id: long - 502
 		data.SetValue(col_idx++, i, Value::BIGINT(manifest.partition_spec_id));
@@ -283,18 +291,16 @@ void IcebergAddSnapshot::WriteManifestList(CopyFunction &copy, DatabaseInstance 
 		}
 
 		// added_snapshot_id: long - 503
-		//! TODO: add the snapshot id to the IcebergManifest
-		data.SetValue(col_idx++, i, Value::BIGINT(42069));
+		data.SetValue(col_idx++, i, Value::BIGINT(manifest.added_snapshot_id));
 
 		// added_files_count: int - 504
-		//! TODO: write this into the IcebergManifest, instead of relying on the manifest_file
-		data.SetValue(col_idx++, i, Value::INTEGER(manifest_file.data_files.size()));
+		data.SetValue(col_idx++, i, Value::INTEGER(manifest.added_files_count));
 
 		// existing_files_count: int - 505
-		data.SetValue(col_idx++, i, Value::INTEGER(0));
+		data.SetValue(col_idx++, i, Value::INTEGER(manifest.existing_files_count));
 
 		// deleted_files_count: int - 506
-		data.SetValue(col_idx++, i, Value::INTEGER(0));
+		data.SetValue(col_idx++, i, Value::INTEGER(manifest.deleted_files_count));
 
 		// added_rows_count: long - 512
 		data.SetValue(col_idx++, i, Value::BIGINT(static_cast<int64_t>(manifest.added_rows_count)));
@@ -303,7 +309,7 @@ void IcebergAddSnapshot::WriteManifestList(CopyFunction &copy, DatabaseInstance 
 		data.SetValue(col_idx++, i, Value::BIGINT(static_cast<int64_t>(manifest.existing_rows_count)));
 
 		// deleted_rows_count: long - 514
-		data.SetValue(col_idx++, i, Value::BIGINT(static_cast<int64_t>(0)));
+		data.SetValue(col_idx++, i, Value::BIGINT(static_cast<int64_t>(manifest.deleted_rows_count)));
 
 		// partitions: list<508: field_summary> - 507
 		data.SetValue(col_idx++, i, manifest.partitions.ToValue());
@@ -328,7 +334,6 @@ void IcebergAddSnapshot::WriteManifestList(CopyFunction &copy, DatabaseInstance 
 	copy.copy_to_sink(execution_context, *bind_data, *global_state, *local_state, data);
 	copy.copy_to_combine(execution_context, *bind_data, *global_state, *local_state);
 	copy.copy_to_finalize(context, *bind_data, *global_state);
-	// Printer::PrintF("Manifest List path: %s", manifest_list.path);
 }
 
 rest_api_objects::TableUpdate IcebergAddSnapshot::CreateUpdate(DatabaseInstance &db, ClientContext &context) {

@@ -87,6 +87,7 @@ void IcebergTransactionData::AddSnapshot(IcebergSnapshotOperationType operation,
 		}
 		manifest.has_min_sequence_number = true;
 	}
+	manifest.added_snapshot_id = snapshot.snapshot_id;
 	manifest_file.data_files.insert(manifest_file.data_files.end(), std::make_move_iterator(data_files.begin()),
 	                                std::make_move_iterator(data_files.end()));
 	alters.push_back(*add_snapshot);

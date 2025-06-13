@@ -29,6 +29,10 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 	D_ASSERT(offset + count <= chunk.size());
 
 	auto manifest_path = FlatVector::GetData<string_t>(chunk.data[name_to_vec.at("manifest_path").GetPrimaryIndex()]);
+	auto manifest_length =
+	    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("manifest_length").GetPrimaryIndex()]);
+	auto added_snapshot_id =
+	    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("added_snapshot_id").GetPrimaryIndex()]);
 	auto partition_spec_id =
 	    FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("partition_spec_id").GetPrimaryIndex()]);
 
@@ -112,6 +116,8 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 
 		IcebergManifest manifest;
 		manifest.manifest_path = manifest_path[index].GetString();
+		manifest.manifest_length = manifest_length[index];
+		manifest.added_snapshot_id = added_snapshot_id[index];
 		manifest.partition_spec_id = partition_spec_id[index];
 		//! This flag is only used for writing, not for reading
 		manifest.has_min_sequence_number = true;
