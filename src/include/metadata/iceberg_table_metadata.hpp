@@ -24,6 +24,7 @@ public:
 	                              const IcebergOptions &options);
 	optional_ptr<IcebergSnapshot> GetLatestSnapshot();
 	const IcebergTableSchema &GetLatestSchema() const;
+	const IcebergPartitionSpec &GetLatestPartitionSpec() const;
 	optional_ptr<IcebergSnapshot> GetSnapshotById(int64_t snapshot_id);
 	optional_ptr<IcebergSnapshot> GetSnapshotByTimestamp(timestamp_t timestamp);
 
@@ -38,11 +39,13 @@ public:
 	optional_ptr<IcebergSnapshot> FindSnapshotByIdInternal(int64_t target_id);
 	optional_ptr<IcebergSnapshot> FindSnapshotByIdTimestampInternal(timestamp_t timestamp);
 	shared_ptr<IcebergTableSchema> GetSchemaFromId(int32_t schema_id) const;
+	optional_ptr<const IcebergPartitionSpec> FindPartitionSpecById(int32_t spec_id) const;
 	optional_ptr<IcebergSnapshot> GetSnapshot(const IcebergSnapshotLookup &lookup);
 
 public:
 	int32_t iceberg_version;
 	int32_t current_schema_id;
+	int32_t default_spec_id;
 
 	bool has_current_snapshot = false;
 	int64_t current_snapshot_id;

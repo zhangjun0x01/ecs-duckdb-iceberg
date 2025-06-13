@@ -294,6 +294,11 @@ PhysicalOperator &IRCatalog::PlanInsert(ClientContext &context, PhysicalPlanGene
 	auto iceberg_path = table_info.BaseFilePath();
 	auto &schema = table_info.table_metadata.GetLatestSchema();
 
+	auto &partition_spec = table_info.table_metadata.GetLatestPartitionSpec();
+	if (!partition_spec.IsUnpartitioned()) {
+		throw NotImplementedException("INSERT into a partitioned table is not supported yet");
+	}
+
 	// Create Copy Info
 	auto info = make_uniq<CopyInfo>();
 

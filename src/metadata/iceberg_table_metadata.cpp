@@ -52,6 +52,12 @@ shared_ptr<IcebergTableSchema> IcebergTableMetadata::GetSchemaFromId(int32_t sch
 	return it->second;
 }
 
+optional_ptr<const IcebergPartitionSpec> IcebergTableMetadata::FindPartitionSpecById(int32_t spec_id) const {
+	auto it = partition_specs.find(spec_id);
+	D_ASSERT(it != partition_specs.end());
+	return it->second;
+}
+
 optional_ptr<IcebergSnapshot> IcebergTableMetadata::GetLatestSnapshot() {
 	auto latest_snapshot = FindLatestSnapshotInternal();
 	return latest_snapshot;
@@ -59,6 +65,12 @@ optional_ptr<IcebergSnapshot> IcebergTableMetadata::GetLatestSnapshot() {
 
 const IcebergTableSchema &IcebergTableMetadata::GetLatestSchema() const {
 	auto res = GetSchemaFromId(current_schema_id);
+	D_ASSERT(res);
+	return *res;
+}
+
+const IcebergPartitionSpec &IcebergTableMetadata::GetLatestPartitionSpec() const {
+	auto res = FindPartitionSpecById(default_spec_id);
 	D_ASSERT(res);
 	return *res;
 }
@@ -264,6 +276,7 @@ IcebergTableMetadata IcebergTableMetadata::FromTableMetadata(rest_api_objects::T
 		res.has_current_snapshot = false;
 	}
 	res.last_sequence_number = table_metadata.last_sequence_number;
+	res.default_spec_id = table_metadata.default_spec_id;
 
 	auto &properties = table_metadata.properties;
 	auto name_mapping = properties.find("schema.name-mapping.default");
