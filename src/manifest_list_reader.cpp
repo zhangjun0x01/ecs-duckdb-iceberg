@@ -155,7 +155,10 @@ bool ManifestListReader::ValidateVectorMapping() {
 }
 
 void ManifestListReader::CreateVectorMapping(idx_t column_id, MultiFileColumnDefinition &column) {
-	D_ASSERT(!column.identifier.IsNull() && column.identifier.type().id() == LogicalTypeId::INTEGER);
+	if (column.identifier.IsNull()) {
+		throw InvalidConfigurationException("Column '%s' of the manifest list is missing a field_id!", column.name);
+	}
+	D_ASSERT(column.identifier.type().id() == LogicalTypeId::INTEGER);
 
 	auto field_id = column.identifier.GetValue<int32_t>();
 	if (field_id != PARTITIONS) {
