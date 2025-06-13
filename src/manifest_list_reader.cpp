@@ -2,6 +2,8 @@
 
 namespace duckdb {
 
+namespace manifest_list {
+
 ManifestListReader::ManifestListReader(idx_t iceberg_version) : BaseManifestReader(iceberg_version) {
 }
 
@@ -69,28 +71,16 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 		field_summary = FlatVector::GetData<list_entry_t>(partitions);
 		auto &child_vectors = StructVector::GetEntries(field_summary_vec);
 
-		//! TODO: get the fields of the 'field_summary' based on the mappings in the 'vector_mapping', not using their
-		//! name...
-		// auto contains_null = .GetChildIndex(0).GetPrimaryIndex()
-		// FlatVector::GetData<int32_t>(*child_entries[vector_mapping.at(CONTENT).GetChildIndex(0).GetPrimaryIndex()]);
-
-		auto &child_types = StructType::GetChildTypes(ListType::GetChildType(partitions.GetType()));
-		for (idx_t i = 0; i < child_types.size(); i++) {
-			auto &kv = child_types[i];
-			auto &name = kv.first;
-
-			if (StringUtil::CIEquals(name, FIELD_SUMMARY_CONTAINS_NULL)) {
-				contains_null = child_vectors[i].get();
-				contains_null_data = FlatVector::GetData<bool>(*child_vectors[i]);
-			} else if (StringUtil::CIEquals(name, FIELD_SUMMARY_CONTAINS_NAN)) {
-				contains_nan = child_vectors[i].get();
-				contains_nan_data = FlatVector::GetData<bool>(*child_vectors[i]);
-			} else if (StringUtil::CIEquals(name, FIELD_SUMMARY_LOWER_BOUND)) {
-				lower_bound = child_vectors[i].get();
-			} else if (StringUtil::CIEquals(name, FIELD_SUMMARY_UPPER_BOUND)) {
-				upper_bound = child_vectors[i].get();
-			}
-		}
+		contains_null =
+		    child_vectors[vector_mapping.at(FIELD_SUMMARY_CONTAINS_NULL).GetChildIndex(0).GetPrimaryIndex()].get();
+		contains_null_data = FlatVector::GetData<bool>(*contains_null);
+		contains_nan =
+		    child_vectors[vector_mapping.at(FIELD_SUMMARY_CONTAINS_NAN).GetChildIndex(0).GetPrimaryIndex()].get();
+		contains_nan_data = FlatVector::GetData<bool>(*contains_nan);
+		lower_bound =
+		    child_vectors[vector_mapping.at(FIELD_SUMMARY_LOWER_BOUND).GetChildIndex(0).GetPrimaryIndex()].get();
+		upper_bound =
+		    child_vectors[vector_mapping.at(FIELD_SUMMARY_UPPER_BOUND).GetChildIndex(0).GetPrimaryIndex()].get();
 	}
 
 	for (idx_t i = 0; i < count; i++) {
@@ -189,5 +179,7 @@ void ManifestListReader::CreateVectorMapping(idx_t column_id, MultiFileColumnDef
 		vector_mapping.emplace(child_field_id, ColumnIndex(column_id, {ColumnIndex(child_idx)}));
 	}
 }
+
+} // namespace manifest_list
 
 } // namespace duckdb

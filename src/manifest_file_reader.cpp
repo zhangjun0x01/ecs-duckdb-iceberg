@@ -2,6 +2,8 @@
 
 namespace duckdb {
 
+namespace manifest_file {
+
 ManifestFileReader::ManifestFileReader(idx_t iceberg_version, bool skip_deleted)
     : BaseManifestReader(iceberg_version), skip_deleted(skip_deleted) {
 }
@@ -269,5 +271,7 @@ idx_t ManifestFileReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 	}
 	return produced;
 }
+
+} // namespace manifest_file
 
 } // namespace duckdb
