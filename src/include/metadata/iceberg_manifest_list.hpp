@@ -5,6 +5,10 @@
 #include "duckdb/common/vector.hpp"
 #include "duckdb/common/types/value.hpp"
 
+#include "duckdb/function/copy_function.hpp"
+#include "duckdb/execution/execution_context.hpp"
+#include "duckdb/parallel/thread_context.hpp"
+
 namespace duckdb {
 
 using sequence_number_t = int64_t;
@@ -127,5 +131,34 @@ public:
 	string path;
 	vector<IcebergManifest> manifests;
 };
+
+namespace manifest_list {
+
+static constexpr const int32_t MANIFEST_PATH = 500;
+static constexpr const int32_t MANIFEST_LENGTH = 501;
+static constexpr const int32_t PARTITION_SPEC_ID = 502;
+static constexpr const int32_t CONTENT = 517;
+static constexpr const int32_t SEQUENCE_NUMBER = 515;
+static constexpr const int32_t MIN_SEQUENCE_NUMBER = 516;
+static constexpr const int32_t ADDED_SNAPSHOT_ID = 503;
+static constexpr const int32_t ADDED_FILES_COUNT = 504;
+static constexpr const int32_t EXISTING_FILES_COUNT = 505;
+static constexpr const int32_t DELETED_FILES_COUNT = 506;
+static constexpr const int32_t ADDED_ROWS_COUNT = 512;
+static constexpr const int32_t EXISTING_ROWS_COUNT = 513;
+static constexpr const int32_t DELETED_ROWS_COUNT = 514;
+static constexpr const int32_t PARTITIONS = 507;
+static constexpr const int32_t PARTITIONS_ELEMENT = 508;
+static constexpr const int32_t FIELD_SUMMARY_CONTAINS_NULL = 509;
+static constexpr const int32_t FIELD_SUMMARY_CONTAINS_NAN = 518;
+static constexpr const int32_t FIELD_SUMMARY_LOWER_BOUND = 510;
+static constexpr const int32_t FIELD_SUMMARY_UPPER_BOUND = 511;
+static constexpr const int32_t KEY_METADATA = 519;
+static constexpr const int32_t FIRST_ROW_ID = 520;
+
+void WriteToFile(const IcebergManifestList &manifest_list, CopyFunction &copy_function, DatabaseInstance &db,
+                 ClientContext &context);
+
+} // namespace manifest_list
 
 } // namespace duckdb

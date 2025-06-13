@@ -6,6 +6,11 @@
 #include "metadata/iceberg_manifest_list.hpp"
 #include "metadata/iceberg_snapshot.hpp"
 
+#include "duckdb/common/vector.hpp"
+#include "duckdb/common/string.hpp"
+#include "duckdb/common/types.hpp"
+#include "duckdb/common/types/value.hpp"
+
 namespace duckdb {
 
 struct IcebergTableInformation;
@@ -19,10 +24,6 @@ public:
 
 public:
 	rest_api_objects::TableUpdate CreateUpdate(DatabaseInstance &db, ClientContext &context) override;
-
-private:
-	void WriteManifestFile(CopyFunction &copy_function, DatabaseInstance &db, ClientContext &context);
-	void WriteManifestList(CopyFunction &copy_function, DatabaseInstance &db, ClientContext &context);
 
 public:
 	IcebergManifestFile manifest_file;

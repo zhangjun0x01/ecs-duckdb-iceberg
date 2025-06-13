@@ -14,6 +14,7 @@ set(EXTENSION_SOURCES
     src/iceberg_extension.cpp
     src/iceberg_functions.cpp
     src/iceberg_manifest.cpp
+    src/iceberg_manifest_list.cpp
     src/avro_scan.cpp
     src/iceberg_snapshot_lookup.cpp
     src/catalog_api.cpp
