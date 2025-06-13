@@ -161,8 +161,8 @@ void ManifestListReader::CreateVectorMapping(idx_t column_id, MultiFileColumnDef
 	D_ASSERT(column.identifier.type().id() == LogicalTypeId::INTEGER);
 
 	auto field_id = column.identifier.GetValue<int32_t>();
+	vector_mapping.emplace(field_id, ColumnIndex(column_id));
 	if (field_id != PARTITIONS) {
-		vector_mapping.emplace(field_id, ColumnIndex(column_id));
 		return;
 	}
 
