@@ -28,9 +28,9 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 	D_ASSERT(offset < chunk.size());
 	D_ASSERT(offset + count <= chunk.size());
 
-	auto manifest_path = FlatVector::GetData<string_t>(chunk.data[name_to_vec.at("manifest_path").GetPrimaryIndex()]);
+	auto manifest_path = FlatVector::GetData<string_t>(chunk.data[vector_mapping.at(MANIFEST_PATH).GetPrimaryIndex()]);
 	auto partition_spec_id =
-	    FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("partition_spec_id").GetPrimaryIndex()]);
+	    FlatVector::GetData<int32_t>(chunk.data[vector_mapping.at(PARTITION_SPEC_ID).GetPrimaryIndex()]);
 
 	int32_t *content = nullptr;
 	int64_t *sequence_number = nullptr;
@@ -39,15 +39,16 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 
 	if (iceberg_version > 1) {
 		//! 'content'
-		content = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("content").GetPrimaryIndex()]);
+		content = FlatVector::GetData<int32_t>(chunk.data[vector_mapping.at(CONTENT).GetPrimaryIndex()]);
 		//! 'sequence_number'
-		sequence_number = FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("sequence_number").GetPrimaryIndex()]);
+		sequence_number =
+		    FlatVector::GetData<int64_t>(chunk.data[vector_mapping.at(SEQUENCE_NUMBER).GetPrimaryIndex()]);
 		//! 'added_rows_count'
 		added_rows_count =
-		    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("added_rows_count").GetPrimaryIndex()]);
+		    FlatVector::GetData<int64_t>(chunk.data[vector_mapping.at(ADDED_ROWS_COUNT).GetPrimaryIndex()]);
 		//! 'existing_rows_count'
 		existing_rows_count =
-		    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("existing_rows_count").GetPrimaryIndex()]);
+		    FlatVector::GetData<int64_t>(chunk.data[vector_mapping.at(EXISTING_ROWS_COUNT).GetPrimaryIndex()]);
 	}
 
 	//! 'partitions'
@@ -60,27 +61,33 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 	bool *contains_null_data = nullptr;
 	bool *contains_nan_data = nullptr;
 
-	auto partitions_it = name_to_vec.find("partitions");
-	if (partitions_it != name_to_vec.end()) {
-		auto &partitions = chunk.data[name_to_vec.at("partitions").GetPrimaryIndex()];
+	auto partitions_it = vector_mapping.find(PARTITIONS);
+	if (partitions_it != vector_mapping.end()) {
+		auto &partitions = chunk.data[vector_mapping.at(PARTITIONS).GetPrimaryIndex()];
 
 		auto &field_summary_vec = ListVector::GetEntry(partitions);
 		field_summary = FlatVector::GetData<list_entry_t>(partitions);
 		auto &child_vectors = StructVector::GetEntries(field_summary_vec);
+
+		//! TODO: get the fields of the 'field_summary' based on the mappings in the 'vector_mapping', not using their
+		//! name...
+		// auto contains_null = .GetChildIndex(0).GetPrimaryIndex()
+		// FlatVector::GetData<int32_t>(*child_entries[vector_mapping.at(CONTENT).GetChildIndex(0).GetPrimaryIndex()]);
+
 		auto &child_types = StructType::GetChildTypes(ListType::GetChildType(partitions.GetType()));
 		for (idx_t i = 0; i < child_types.size(); i++) {
 			auto &kv = child_types[i];
 			auto &name = kv.first;
 
-			if (StringUtil::CIEquals(name, "contains_null")) {
+			if (StringUtil::CIEquals(name, FIELD_SUMMARY_CONTAINS_NULL)) {
 				contains_null = child_vectors[i].get();
 				contains_null_data = FlatVector::GetData<bool>(*child_vectors[i]);
-			} else if (StringUtil::CIEquals(name, "contains_nan")) {
+			} else if (StringUtil::CIEquals(name, FIELD_SUMMARY_CONTAINS_NAN)) {
 				contains_nan = child_vectors[i].get();
 				contains_nan_data = FlatVector::GetData<bool>(*child_vectors[i]);
-			} else if (StringUtil::CIEquals(name, "lower_bound")) {
+			} else if (StringUtil::CIEquals(name, FIELD_SUMMARY_LOWER_BOUND)) {
 				lower_bound = child_vectors[i].get();
-			} else if (StringUtil::CIEquals(name, "upper_bound")) {
+			} else if (StringUtil::CIEquals(name, FIELD_SUMMARY_UPPER_BOUND)) {
 				upper_bound = child_vectors[i].get();
 			}
 		}
@@ -133,23 +140,54 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 	return count;
 }
 
-bool ManifestListReader::ValidateNameMapping() {
-	if (!name_to_vec.count("manifest_path")) {
-		return false;
-	}
-	if (!name_to_vec.count("partition_spec_id")) {
-		return false;
-	}
-	if (iceberg_version > 1) {
-		if (!name_to_vec.count("content")) {
+bool ManifestListReader::ValidateVectorMapping() {
+	static const int32_t V1_REQUIRED_FIELDS[] = {
+	    MANIFEST_PATH,
+	    PARTITION_SPEC_ID,
+	};
+	static const idx_t V1_REQUIRED_FIELDS_SIZE = sizeof(V1_REQUIRED_FIELDS) / sizeof(int32_t);
+	for (idx_t i = 0; i < V1_REQUIRED_FIELDS_SIZE; i++) {
+		if (!vector_mapping.count(V1_REQUIRED_FIELDS[i])) {
 			return false;
+		}
+	}
+
+	static const int32_t V2_REQUIRED_FIELDS[] = {CONTENT};
+	static const idx_t V2_REQUIRED_FIELDS_SIZE = sizeof(V2_REQUIRED_FIELDS) / sizeof(int32_t);
+	if (iceberg_version >= 2) {
+		for (idx_t i = 0; i < V2_REQUIRED_FIELDS_SIZE; i++) {
+			if (!vector_mapping.count(V2_REQUIRED_FIELDS[i])) {
+				return false;
+			}
 		}
 	}
 	return true;
 }
 
-void ManifestListReader::CreateNameMapping(idx_t column_id, const LogicalType &type, const string &name) {
-	name_to_vec[name] = ColumnIndex(column_id);
+void ManifestListReader::CreateVectorMapping(idx_t column_id, MultiFileColumnDefinition &column) {
+	D_ASSERT(!column.identifier.IsNull() && column.identifier.type().id() == LogicalTypeId::INTEGER);
+
+	auto field_id = column.identifier.GetValue<int32_t>();
+	if (field_id != PARTITIONS) {
+		vector_mapping.emplace(field_id, ColumnIndex(column_id));
+		return;
+	}
+
+	auto &type = column.type;
+	if (type.id() != LogicalTypeId::LIST) {
+		throw InvalidInputException("The 'partitions' of the manifest entry should be a STRUCT(...)[]");
+	}
+	D_ASSERT(column.children.size() == 1);
+	auto &field_summary = column.children[0];
+
+	auto &children = field_summary.children;
+	for (idx_t child_idx = 0; child_idx < children.size(); child_idx++) {
+		auto &child = children[child_idx];
+		D_ASSERT(!child.identifier.IsNull() && child.identifier.type().id() == LogicalTypeId::INTEGER);
+		auto child_field_id = child.identifier.GetValue<int32_t>();
+
+		vector_mapping.emplace(child_field_id, ColumnIndex(column_id, {ColumnIndex(child_idx)}));
+	}
 }
 
 } // namespace duckdb
