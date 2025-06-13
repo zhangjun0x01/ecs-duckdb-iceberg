@@ -46,6 +46,17 @@ void IcebergTransactionData::AddSnapshot(IcebergSnapshotOperationType operation,
 	new_snapshot.operation = operation;
 	new_snapshot.timestamp_ms = Timestamp::GetEpochMs(MetaTransaction::Get(context).start_timestamp);
 
+	new_snapshot.has_parent_snapshot = !table_info.table_metadata.snapshots.empty() || !alters.empty();
+	if (new_snapshot.has_parent_snapshot) {
+		if (!alters.empty()) {
+			auto &last_alter = alters.back().get();
+			new_snapshot.parent_snapshot_id = last_alter.snapshot.snapshot_id;
+		} else {
+			D_ASSERT(table_info.table_metadata.has_current_snapshot);
+			new_snapshot.parent_snapshot_id = table_info.table_metadata.current_snapshot_id;
+		}
+	}
+
 	auto add_snapshot = make_uniq<IcebergAddSnapshot>(table_info, std::move(new_manifest_file),
 	                                                  std::move(new_manifest_list), std::move(new_snapshot));
 

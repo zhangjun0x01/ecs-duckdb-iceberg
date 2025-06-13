@@ -27,8 +27,12 @@ rest_api_objects::Snapshot IcebergSnapshot::ToRESTObject() {
 
 	res.summary.operation = OperationTypeToString(operation);
 
-	//! TODO: add the parent snapshot id to IcebergSnapshot
-	res.has_parent_snapshot_id = false;
+	if (!has_parent_snapshot) {
+		res.has_parent_snapshot_id = false;
+	} else {
+		res.has_parent_snapshot_id = true;
+		res.parent_snapshot_id = parent_snapshot_id;
+	}
 
 	res.has_sequence_number = true;
 	res.sequence_number = sequence_number;

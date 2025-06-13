@@ -50,7 +50,9 @@ string CommitTransactionToJSON(const rest_api_objects::CommitTransactionRequest 
 
 				auto &snapshot = update.add_snapshot_update.snapshot;
 				yyjson_mut_obj_add_uint(doc, snapshot_json, "snapshot-id", snapshot.snapshot_id);
-				yyjson_mut_obj_add_uint(doc, snapshot_json, "parent-snapshot-id", snapshot.parent_snapshot_id);
+				if (snapshot.has_parent_snapshot_id) {
+					yyjson_mut_obj_add_uint(doc, snapshot_json, "parent-snapshot-id", snapshot.parent_snapshot_id);
+				}
 				yyjson_mut_obj_add_uint(doc, snapshot_json, "sequence-number", snapshot.sequence_number);
 				yyjson_mut_obj_add_uint(doc, snapshot_json, "timestamp-ms", snapshot.timestamp_ms);
 				yyjson_mut_obj_add_strcpy(doc, snapshot_json, "manifest_list", snapshot.manifest_list.c_str());
