@@ -48,11 +48,6 @@ unique_ptr<GlobalSinkState> IcebergInsert::GetGlobalSinkState(ClientContext &con
 	return make_uniq<IcebergInsertGlobalState>();
 }
 
-//
-// unique_ptr<LocalSinkState> IcebergInsert::GetLocalSinkState(ExecutionContext &context) const {
-//     return physical_copy_to_file->GetLocalSinkState(context);
-// }
-
 //===--------------------------------------------------------------------===//
 // Sink
 //===--------------------------------------------------------------------===//
@@ -324,7 +319,6 @@ PhysicalOperator &IRCatalog::PlanInsert(ClientContext &context, PhysicalPlanGene
 	// auto partitions = op.table.Cast<ICTableEntry>().snapshot->GetPartitionColumns();
 	// if (partitions.size() != 0) {
 	//	auto column_names = op.table.Cast<ICTableEntry>().GetColumns().GetColumnNames();
-	//	// TODO: yuck?
 	//	for (int64_t i = 0; i < partitions.size(); i++) {
 	//		for (int64_t j = 0; j < column_names.size(); j++) {
 	//			if (column_names[j] == partitions[i]) {
