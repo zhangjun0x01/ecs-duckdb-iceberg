@@ -82,6 +82,10 @@ void IcebergTransactionData::AddSnapshot(IcebergSnapshotOperationType operation,
 	for (auto &data_file : data_files) {
 		manifest.added_rows_count += data_file.record_count;
 		data_file.sequence_number = snapshot.sequence_number;
+		if (!manifest.has_min_sequence_number || data_file.sequence_number < manifest.min_sequence_number) {
+			manifest.min_sequence_number = data_file.sequence_number;
+		}
+		manifest.has_min_sequence_number = true;
 	}
 	manifest_file.data_files.insert(manifest_file.data_files.end(), std::make_move_iterator(data_files.begin()),
 	                                std::make_move_iterator(data_files.end()));

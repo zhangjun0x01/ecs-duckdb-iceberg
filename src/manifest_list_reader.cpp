@@ -34,6 +34,7 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 
 	int32_t *content = nullptr;
 	int64_t *sequence_number = nullptr;
+	int64_t *min_sequence_number = nullptr;
 	int64_t *added_files_count = nullptr;
 	int64_t *existing_files_count = nullptr;
 	int64_t *deleted_files_count = nullptr;
@@ -46,6 +47,9 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 		content = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("content").GetPrimaryIndex()]);
 		//! 'sequence_number'
 		sequence_number = FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("sequence_number").GetPrimaryIndex()]);
+		//! 'min_sequence_number'
+		min_sequence_number =
+		    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("min_sequence_number").GetPrimaryIndex()]);
 		//! 'added_files_count'
 		added_files_count =
 		    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("added_files_count").GetPrimaryIndex()]);
@@ -109,11 +113,13 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 		IcebergManifest manifest;
 		manifest.manifest_path = manifest_path[index].GetString();
 		manifest.partition_spec_id = partition_spec_id[index];
-		manifest.sequence_number = 0;
+		//! This flag is only used for writing, not for reading
+		manifest.has_min_sequence_number = true;
 
 		if (iceberg_version > 1) {
 			manifest.content = IcebergManifestContentType(content[index]);
 			manifest.sequence_number = sequence_number[index];
+			manifest.min_sequence_number = min_sequence_number[index];
 			manifest.added_files_count = added_files_count[index];
 			manifest.existing_files_count = existing_files_count[index];
 			manifest.deleted_files_count = deleted_files_count[index];
@@ -123,6 +129,7 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 		} else {
 			manifest.content = IcebergManifestContentType::DATA;
 			manifest.sequence_number = 0;
+			manifest.min_sequence_number = 0;
 			//! NOTE: these are optional in v1, they *could* be written
 			manifest.added_files_count = 0;
 			manifest.existing_files_count = 0;

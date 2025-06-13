@@ -68,7 +68,9 @@ public:
 	//! Path to the manifest AVRO file
 	string manifest_path;
 	//! sequence_number when manifest was added to table (0 for Iceberg v1)
-	sequence_number_t sequence_number;
+	sequence_number_t sequence_number = 0;
+	bool has_min_sequence_number = false;
+	sequence_number_t min_sequence_number = 0;
 	//! either data or deletes
 	IcebergManifestContentType content;
 	//! added files count

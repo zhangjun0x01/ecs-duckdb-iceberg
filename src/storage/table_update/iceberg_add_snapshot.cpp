@@ -275,8 +275,12 @@ void IcebergAddSnapshot::WriteManifestList(CopyFunction &copy, DatabaseInstance 
 		data.SetValue(col_idx++, i, Value::BIGINT(manifest.sequence_number));
 
 		// min_sequence_number: long - 516
-		//! TODO: keep track of the min sequence number
-		data.SetValue(col_idx++, i, Value::BIGINT(manifest.sequence_number));
+		if (!manifest.has_min_sequence_number) {
+			//! Behavior copied from pyiceberg
+			data.SetValue(col_idx++, i, Value::BIGINT(-1));
+		} else {
+			data.SetValue(col_idx++, i, Value::BIGINT(manifest.min_sequence_number));
+		}
 
 		// added_snapshot_id: long - 503
 		//! TODO: add the snapshot id to the IcebergManifest
