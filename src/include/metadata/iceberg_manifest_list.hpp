@@ -71,10 +71,18 @@ public:
 	sequence_number_t sequence_number;
 	//! either data or deletes
 	IcebergManifestContentType content;
+	//! added files count
+	idx_t added_files_count = 0;
+	//! existing files count
+	idx_t existing_files_count = 0;
+	//! deleted files count
+	idx_t deleted_files_count = 0;
 	//! added rows in the manifest
 	idx_t added_rows_count = 0;
 	//! existing rows in the manifest
 	idx_t existing_rows_count = 0;
+	//! deleted rows in the manifest
+	idx_t deleted_rows_count = 0;
 	//! The id of the partition spec referenced by this manifest (and the data files that are part of it)
 	int32_t partition_spec_id;
 	//! The field summaries of the partition (if present)

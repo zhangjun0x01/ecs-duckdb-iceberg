@@ -34,20 +34,36 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 
 	int32_t *content = nullptr;
 	int64_t *sequence_number = nullptr;
+	int64_t *added_files_count = nullptr;
+	int64_t *existing_files_count = nullptr;
+	int64_t *deleted_files_count = nullptr;
 	int64_t *added_rows_count = nullptr;
 	int64_t *existing_rows_count = nullptr;
+	int64_t *deleted_rows_count = nullptr;
 
 	if (iceberg_version > 1) {
 		//! 'content'
 		content = FlatVector::GetData<int32_t>(chunk.data[name_to_vec.at("content").GetPrimaryIndex()]);
 		//! 'sequence_number'
 		sequence_number = FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("sequence_number").GetPrimaryIndex()]);
+		//! 'added_files_count'
+		added_files_count =
+		    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("added_files_count").GetPrimaryIndex()]);
+		//! 'existing_files_count'
+		existing_files_count =
+		    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("existing_files_count").GetPrimaryIndex()]);
+		//! 'deleted_files_count'
+		deleted_files_count =
+		    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("deleted_files_count").GetPrimaryIndex()]);
 		//! 'added_rows_count'
 		added_rows_count =
 		    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("added_rows_count").GetPrimaryIndex()]);
 		//! 'existing_rows_count'
 		existing_rows_count =
 		    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("existing_rows_count").GetPrimaryIndex()]);
+		//! 'deleted_rows_count'
+		deleted_rows_count =
+		    FlatVector::GetData<int64_t>(chunk.data[name_to_vec.at("deleted_rows_count").GetPrimaryIndex()]);
 	}
 
 	//! 'partitions'
@@ -98,13 +114,22 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 		if (iceberg_version > 1) {
 			manifest.content = IcebergManifestContentType(content[index]);
 			manifest.sequence_number = sequence_number[index];
+			manifest.added_files_count = added_files_count[index];
+			manifest.existing_files_count = existing_files_count[index];
+			manifest.deleted_files_count = deleted_files_count[index];
 			manifest.added_rows_count = added_rows_count[index];
 			manifest.existing_rows_count = existing_rows_count[index];
+			manifest.deleted_rows_count = deleted_rows_count[index];
 		} else {
 			manifest.content = IcebergManifestContentType::DATA;
 			manifest.sequence_number = 0;
+			//! NOTE: these are optional in v1, they *could* be written
+			manifest.added_files_count = 0;
+			manifest.existing_files_count = 0;
+			manifest.deleted_files_count = 0;
 			manifest.added_rows_count = 0;
 			manifest.existing_rows_count = 0;
+			manifest.deleted_rows_count = 0;
 		}
 
 		if (field_summary && FlatVector::Validity(*partitions).RowIsValid(index)) {

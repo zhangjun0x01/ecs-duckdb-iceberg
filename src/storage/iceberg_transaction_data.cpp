@@ -38,8 +38,12 @@ void IcebergTransactionData::AddSnapshot(IcebergSnapshotOperationType operation,
 	new_manifest.manifest_path = manifest_file_path;
 	new_manifest.sequence_number = sequence_number;
 	new_manifest.content = IcebergManifestContentType::DATA;
+	new_manifest.added_files_count = data_files.size();
+	new_manifest.existing_files_count = 0;
+	new_manifest.deleted_files_count = 0;
 	new_manifest.added_rows_count = 0;
 	new_manifest.existing_rows_count = 0;
+	new_manifest.deleted_rows_count = 0;
 	//! TODO: support partitions
 	new_manifest.partition_spec_id = 0;
 	//! new_manifest.partitions = CreateManifestPartition();
