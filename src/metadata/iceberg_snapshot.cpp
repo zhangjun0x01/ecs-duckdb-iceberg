@@ -22,7 +22,7 @@ rest_api_objects::Snapshot IcebergSnapshot::ToRESTObject() {
 	rest_api_objects::Snapshot res;
 
 	res.snapshot_id = snapshot_id;
-	res.timestamp_ms = Timestamp::GetEpochMs(timestamp_ms);
+	res.timestamp_ms = timestamp_ms.value;
 	res.manifest_list = manifest_list;
 
 	res.summary.operation = OperationTypeToString(operation);

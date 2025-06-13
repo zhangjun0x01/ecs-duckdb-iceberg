@@ -51,6 +51,7 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 	}
 
 	//! 'partitions'
+	optional_ptr<Vector> partitions;
 	list_entry_t *field_summary = nullptr;
 	optional_ptr<Vector> contains_null = nullptr;
 	optional_ptr<Vector> contains_nan = nullptr;
@@ -62,12 +63,12 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 
 	auto partitions_it = name_to_vec.find("partitions");
 	if (partitions_it != name_to_vec.end()) {
-		auto &partitions = chunk.data[name_to_vec.at("partitions").GetPrimaryIndex()];
+		partitions = chunk.data[name_to_vec.at("partitions").GetPrimaryIndex()];
 
-		auto &field_summary_vec = ListVector::GetEntry(partitions);
-		field_summary = FlatVector::GetData<list_entry_t>(partitions);
+		auto &field_summary_vec = ListVector::GetEntry(*partitions);
+		field_summary = FlatVector::GetData<list_entry_t>(*partitions);
 		auto &child_vectors = StructVector::GetEntries(field_summary_vec);
-		auto &child_types = StructType::GetChildTypes(ListType::GetChildType(partitions.GetType()));
+		auto &child_types = StructType::GetChildTypes(ListType::GetChildType(partitions->GetType()));
 		for (idx_t i = 0; i < child_types.size(); i++) {
 			auto &kv = child_types[i];
 			auto &name = kv.first;
@@ -106,7 +107,7 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 			manifest.existing_rows_count = 0;
 		}
 
-		if (field_summary) {
+		if (field_summary && FlatVector::Validity(*partitions).RowIsValid(index)) {
 			manifest.partitions.has_partitions = true;
 			auto &summaries = manifest.partitions.field_summary;
 			auto list_entry = field_summary[index];

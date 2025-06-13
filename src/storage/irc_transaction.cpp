@@ -47,10 +47,10 @@ void CommitTableToJSON(yyjson_mut_doc *doc, yyjson_mut_val *root_object,
 			}
 			yyjson_mut_obj_add_uint(doc, snapshot_json, "sequence-number", snapshot.sequence_number);
 			yyjson_mut_obj_add_uint(doc, snapshot_json, "timestamp-ms", snapshot.timestamp_ms);
-			yyjson_mut_obj_add_strcpy(doc, snapshot_json, "manifest_list", snapshot.manifest_list.c_str());
+			yyjson_mut_obj_add_strcpy(doc, snapshot_json, "manifest-list", snapshot.manifest_list.c_str());
 			auto summary_json = yyjson_mut_obj_add_obj(doc, snapshot_json, "summary");
 			yyjson_mut_obj_add_strcpy(doc, summary_json, "operation", snapshot.summary.operation.c_str());
-			yyjson_mut_obj_add_uint(doc, snapshot_json, "schema_id", snapshot.schema_id);
+			yyjson_mut_obj_add_uint(doc, snapshot_json, "schema-id", snapshot.schema_id);
 		} else {
 			throw NotImplementedException("Can't serialize this TableUpdate type to JSON");
 		}
@@ -92,6 +92,10 @@ string JsonDocToString(std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> doc) {
 }
 
 void IRCTransaction::Commit() {
+	if (dirty_tables.empty()) {
+		return;
+	}
+
 	Connection temp_con(db);
 	auto &context = temp_con.context;
 	context->transaction.BeginTransaction();
@@ -115,6 +119,7 @@ void IRCTransaction::Commit() {
 	auto doc = doc_p.get();
 	auto root_object = yyjson_mut_obj(doc);
 	yyjson_mut_doc_set_root(doc, root_object);
+
 	CommitTransactionToJSON(doc, root_object, transaction);
 	auto transaction_json = JsonDocToString(std::move(doc_p));
 
@@ -125,6 +130,11 @@ void IRCTransaction::Commit() {
 	url_builder.AddPathComponent("commit");
 
 	auto response = authentication.PostRequest(*context, url_builder, transaction_json);
+	if (response->status != HTTPStatusCode::OK_200) {
+		throw InvalidConfigurationException(
+		    "Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s", url_builder.GetURL(),
+		    EnumUtil::ToString(response->status), response->reason, response->body);
+	}
 	context->transaction.Commit();
 }
 

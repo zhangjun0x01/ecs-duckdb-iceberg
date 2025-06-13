@@ -6,11 +6,20 @@
 
 namespace duckdb {
 
+static int64_t NewSnapshotId() {
+	auto random_number = UUID::GenerateRandomUUID().upper;
+	if (random_number < 0) {
+		// Flip the sign bit using XOR with 1LL shifted left 63 bits
+		random_number ^= (1LL << 63);
+	}
+	return random_number;
+}
+
 void IcebergTransactionData::AddSnapshot(IcebergSnapshotOperationType operation,
                                          vector<IcebergManifestEntry> &&data_files) {
 	//! Generate a new snapshot id
 	auto &table_metadata = table_info.table_metadata;
-	auto snapshot_id = UUID::GenerateRandomUUID().upper;
+	auto snapshot_id = NewSnapshotId();
 	auto sequence_number = table_metadata.last_sequence_number + 1;
 
 	//! Construct the manifest file
