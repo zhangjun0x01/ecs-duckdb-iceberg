@@ -131,10 +131,7 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 }
 
 bool ManifestListReader::ValidateVectorMapping() {
-	static const int32_t V1_REQUIRED_FIELDS[] = {
-	    MANIFEST_PATH,
-	    PARTITION_SPEC_ID,
-	};
+	static const int32_t V1_REQUIRED_FIELDS[] = {MANIFEST_PATH, MANIFEST_LENGTH, ADDED_SNAPSHOT_ID, PARTITION_SPEC_ID};
 	static const idx_t V1_REQUIRED_FIELDS_SIZE = sizeof(V1_REQUIRED_FIELDS) / sizeof(int32_t);
 	for (idx_t i = 0; i < V1_REQUIRED_FIELDS_SIZE; i++) {
 		if (!vector_mapping.count(V1_REQUIRED_FIELDS[i])) {
@@ -142,7 +139,9 @@ bool ManifestListReader::ValidateVectorMapping() {
 		}
 	}
 
-	static const int32_t V2_REQUIRED_FIELDS[] = {CONTENT};
+	static const int32_t V2_REQUIRED_FIELDS[] = {CONTENT,           SEQUENCE_NUMBER,      MIN_SEQUENCE_NUMBER,
+	                                             ADDED_FILES_COUNT, EXISTING_FILES_COUNT, DELETED_FILES_COUNT,
+	                                             ADDED_ROWS_COUNT,  EXISTING_ROWS_COUNT,  DELETED_ROWS_COUNT};
 	static const idx_t V2_REQUIRED_FIELDS_SIZE = sizeof(V2_REQUIRED_FIELDS) / sizeof(int32_t);
 	if (iceberg_version >= 2) {
 		for (idx_t i = 0; i < V2_REQUIRED_FIELDS_SIZE; i++) {
