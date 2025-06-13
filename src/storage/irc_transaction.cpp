@@ -24,58 +24,62 @@ void IRCTransaction::MarkTableAsDirty(const ICTableEntry &table) {
 void IRCTransaction::Start() {
 }
 
-string CommitTransactionToJSON(const rest_api_objects::CommitTransactionRequest &req) {
-	std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> doc_p(yyjson_mut_doc_new(nullptr));
-	auto doc = doc_p.get();
-	auto root_object = yyjson_mut_obj(doc);
-	yyjson_mut_doc_set_root(doc, root_object);
+void CommitTableToJSON(yyjson_mut_doc *doc, yyjson_mut_val *root_object,
+                       const rest_api_objects::CommitTableRequest &table) {
+	//! requirements
+	auto requirements_array = yyjson_mut_obj_add_arr(doc, root_object, "requirements");
+	D_ASSERT(table.requirements.empty());
 
+	//! updates
+	auto updates_array = yyjson_mut_obj_add_arr(doc, root_object, "updates");
+	for (auto &update : table.updates) {
+		if (update.has_add_snapshot_update) {
+			auto update_json = yyjson_mut_arr_add_obj(doc, updates_array);
+			//! updates[...].action
+			yyjson_mut_obj_add_strcpy(doc, update_json, "action", "add-snapshot");
+			//! updates[...].snapshot
+			auto snapshot_json = yyjson_mut_obj_add_obj(doc, update_json, "snapshot");
+
+			auto &snapshot = update.add_snapshot_update.snapshot;
+			yyjson_mut_obj_add_uint(doc, snapshot_json, "snapshot-id", snapshot.snapshot_id);
+			if (snapshot.has_parent_snapshot_id) {
+				yyjson_mut_obj_add_uint(doc, snapshot_json, "parent-snapshot-id", snapshot.parent_snapshot_id);
+			}
+			yyjson_mut_obj_add_uint(doc, snapshot_json, "sequence-number", snapshot.sequence_number);
+			yyjson_mut_obj_add_uint(doc, snapshot_json, "timestamp-ms", snapshot.timestamp_ms);
+			yyjson_mut_obj_add_strcpy(doc, snapshot_json, "manifest_list", snapshot.manifest_list.c_str());
+			auto summary_json = yyjson_mut_obj_add_obj(doc, snapshot_json, "summary");
+			yyjson_mut_obj_add_strcpy(doc, summary_json, "operation", snapshot.summary.operation.c_str());
+			yyjson_mut_obj_add_uint(doc, snapshot_json, "schema_id", snapshot.schema_id);
+		} else {
+			throw NotImplementedException("Can't serialize this TableUpdate type to JSON");
+		}
+	}
+
+	//! identifier
+	D_ASSERT(table.has_identifier);
+	auto &_namespace = table.identifier._namespace.value;
+	auto identifier_json = yyjson_mut_obj_add_obj(doc, root_object, "identifier");
+
+	//! identifier.name
+	yyjson_mut_obj_add_strcpy(doc, identifier_json, "name", table.identifier.name.c_str());
+	//! identifier.namespace
+	auto namespace_arr = yyjson_mut_obj_add_arr(doc, identifier_json, "namespace");
+	D_ASSERT(_namespace.size() == 1);
+	yyjson_mut_arr_add_strcpy(doc, namespace_arr, _namespace[0].c_str());
+}
+
+void CommitTransactionToJSON(yyjson_mut_doc *doc, yyjson_mut_val *root_object,
+                             const rest_api_objects::CommitTransactionRequest &req) {
 	auto table_changes_array = yyjson_mut_obj_add_arr(doc, root_object, "table-changes");
 	for (auto &table : req.table_changes) {
 		auto table_obj = yyjson_mut_arr_add_obj(doc, table_changes_array);
-
-		//! requirements
-		auto requirements_array = yyjson_mut_obj_add_arr(doc, table_obj, "requirements");
-		D_ASSERT(table.requirements.empty());
-
-		//! updates
-		auto updates_array = yyjson_mut_obj_add_arr(doc, table_obj, "updates");
-		for (auto &update : table.updates) {
-			if (update.has_add_snapshot_update) {
-				auto update_json = yyjson_mut_arr_add_obj(doc, updates_array);
-				//! updates[...].action
-				yyjson_mut_obj_add_strcpy(doc, update_json, "action", "add-snapshot");
-				//! updates[...].snapshot
-				auto snapshot_json = yyjson_mut_obj_add_obj(doc, update_json, "snapshot");
-
-				auto &snapshot = update.add_snapshot_update.snapshot;
-				yyjson_mut_obj_add_uint(doc, snapshot_json, "snapshot-id", snapshot.snapshot_id);
-				if (snapshot.has_parent_snapshot_id) {
-					yyjson_mut_obj_add_uint(doc, snapshot_json, "parent-snapshot-id", snapshot.parent_snapshot_id);
-				}
-				yyjson_mut_obj_add_uint(doc, snapshot_json, "sequence-number", snapshot.sequence_number);
-				yyjson_mut_obj_add_uint(doc, snapshot_json, "timestamp-ms", snapshot.timestamp_ms);
-				yyjson_mut_obj_add_strcpy(doc, snapshot_json, "manifest_list", snapshot.manifest_list.c_str());
-				auto summary_json = yyjson_mut_obj_add_obj(doc, snapshot_json, "summary");
-				yyjson_mut_obj_add_strcpy(doc, summary_json, "operation", snapshot.summary.operation.c_str());
-				yyjson_mut_obj_add_uint(doc, snapshot_json, "schema_id", snapshot.schema_id);
-			} else {
-				throw NotImplementedException("Can't serialize this TableUpdate type to JSON");
-			}
-		}
-
-		//! identifier
-		D_ASSERT(table.has_identifier);
-		auto &_namespace = table.identifier._namespace.value;
-		auto identifier_json = yyjson_mut_obj_add_obj(doc, table_obj, "identifier");
-
-		//! identifier.name
-		yyjson_mut_obj_add_strcpy(doc, identifier_json, "name", table.identifier.name.c_str());
-		//! identifier.namespace
-		auto namespace_arr = yyjson_mut_obj_add_arr(doc, identifier_json, "namespace");
-		D_ASSERT(_namespace.size() == 1);
-		yyjson_mut_arr_add_strcpy(doc, namespace_arr, _namespace[0].c_str());
+		CommitTableToJSON(doc, table_obj, table);
 	}
+}
+
+string JsonDocToString(std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> doc) {
+	auto root_object = yyjson_mut_doc_get_root(doc.get());
 
 	//! Write the result to a string
 	auto data = yyjson_mut_val_write_opts(root_object, YYJSON_WRITE_ALLOW_INF_AND_NAN, nullptr, nullptr, nullptr);
@@ -107,12 +111,14 @@ void IRCTransaction::Commit() {
 		transaction.table_changes.push_back(std::move(table_change));
 	}
 
-	// - serialize this to JSON
-	// - hit the REST API (POST to '/v1/{prefix}/transactions/commit'), sending along this payload
-	// - profit ???
-	auto transaction_json = CommitTransactionToJSON(transaction);
-	auto &authentication = *catalog.auth_handler;
+	std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> doc_p(yyjson_mut_doc_new(nullptr));
+	auto doc = doc_p.get();
+	auto root_object = yyjson_mut_obj(doc);
+	yyjson_mut_doc_set_root(doc, root_object);
+	CommitTransactionToJSON(doc, root_object, transaction);
+	auto transaction_json = JsonDocToString(std::move(doc_p));
 
+	auto &authentication = *catalog.auth_handler;
 	auto url_builder = catalog.GetBaseUrl();
 	url_builder.AddPathComponent(catalog.prefix);
 	url_builder.AddPathComponent("transactions");
