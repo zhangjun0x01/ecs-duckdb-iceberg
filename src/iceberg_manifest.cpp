@@ -1,7 +1,7 @@
 #include "metadata/iceberg_manifest.hpp"
 #include "storage/irc_table_set.hpp"
 
-#include "duckdb/storage/caching_file_system.hpp"
+#include "duckdb/common/file_system.hpp"
 
 namespace duckdb {
 
@@ -154,10 +154,11 @@ idx_t WriteToFile(IcebergTableInformation &table_info, const IcebergManifestFile
 	copy.copy_to_combine(execution_context, *bind_data, *global_state, *local_state);
 	copy.copy_to_finalize(context, *bind_data, *global_state);
 
-	auto caching_file_system = CachingFileSystem::Get(context);
-	auto caching_file_handle = caching_file_system.OpenFile(manifest_file.path, FileOpenFlags::FILE_FLAGS_READ);
-	auto manifest_length = caching_file_handle->GetFileSize();
-	return manifest_length;
+	// auto &file_system = FileSystem::GetFileSystem(db);
+	// auto file_handle = file_system.OpenFile(manifest_file.path, FileOpenFlags::FILE_FLAGS_READ);
+	// auto manifest_length = file_handle->GetFileSize();
+	// return manifest_length;
+	return 42069;
 }
 
 } // namespace manifest_file

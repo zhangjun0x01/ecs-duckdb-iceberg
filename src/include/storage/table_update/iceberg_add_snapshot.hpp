@@ -20,14 +20,17 @@ struct IcebergAddSnapshot : public IcebergTableUpdate {
 
 public:
 	IcebergAddSnapshot(IcebergTableInformation &table_info, IcebergManifestFile &&manifest_file,
-	                   IcebergManifestList &&manifest_list, IcebergSnapshot &&snapshot);
+	                   const string &manifest_list_path, IcebergSnapshot &&snapshot);
 
 public:
-	rest_api_objects::TableUpdate CreateUpdate(DatabaseInstance &db, ClientContext &context) override;
+	rest_api_objects::TableUpdate CreateUpdate(DatabaseInstance &db, ClientContext &context,
+	                                           IcebergCommitState &commit_state) override;
 
 public:
 	IcebergManifestFile manifest_file;
 	IcebergManifestList manifest_list;
+	IcebergManifest manifest;
+
 	IcebergSnapshot snapshot;
 };
 

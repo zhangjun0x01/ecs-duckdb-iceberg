@@ -12,12 +12,13 @@
 namespace duckdb {
 
 IcebergAddSnapshot::IcebergAddSnapshot(IcebergTableInformation &table_info, IcebergManifestFile &&manifest_file,
-                                       IcebergManifestList &&manifest_list, IcebergSnapshot &&snapshot)
+                                       const string &manifest_list_path, IcebergSnapshot &&snapshot)
     : IcebergTableUpdate(IcebergTableUpdateType::ADD_SNAPSHOT, table_info), manifest_file(std::move(manifest_file)),
-      manifest_list(std::move(manifest_list)), snapshot(std::move(snapshot)) {
+      manifest_list(manifest_list_path), snapshot(std::move(snapshot)) {
 }
 
-rest_api_objects::TableUpdate IcebergAddSnapshot::CreateUpdate(DatabaseInstance &db, ClientContext &context) {
+rest_api_objects::TableUpdate IcebergAddSnapshot::CreateUpdate(DatabaseInstance &db, ClientContext &context,
+                                                               IcebergCommitState &commit_state) {
 	auto &system_catalog = Catalog::GetSystemCatalog(db);
 	auto data = CatalogTransaction::GetSystemTransaction(db);
 	auto &schema = system_catalog.GetSchema(data, DEFAULT_SCHEMA);
@@ -26,11 +27,13 @@ rest_api_objects::TableUpdate IcebergAddSnapshot::CreateUpdate(DatabaseInstance 
 	auto &avro_copy = avro_copy_p->Cast<CopyFunctionCatalogEntry>().function;
 
 	auto manifest_length = manifest_file::WriteToFile(table_info, manifest_file, avro_copy, db, context);
-	D_ASSERT(manifest_list.manifests.size() == 1);
-	auto &manifest = manifest_list.manifests[0];
 	manifest.manifest_length = manifest_length;
 
+	D_ASSERT(manifest_list.manifests.empty());
+	manifest_list.manifests = std::move(commit_state.manifests);
+	manifest_list.manifests.push_back(std::move(manifest));
 	manifest_list::WriteToFile(manifest_list, avro_copy, db, context);
+	commit_state.manifests = std::move(manifest_list.manifests);
 
 	rest_api_objects::TableUpdate table_update;
 	table_update.has_add_snapshot_update = true;

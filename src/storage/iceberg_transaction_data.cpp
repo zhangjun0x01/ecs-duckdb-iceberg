@@ -31,24 +31,6 @@ void IcebergTransactionData::AddSnapshot(IcebergSnapshotOperationType operation,
 	auto manifest_list_uuid = UUID::ToString(UUID::GenerateRandomUUID());
 	auto manifest_list_path = table_info.BaseFilePath() + "/metadata/snap-" + std::to_string(snapshot_id) + "-" +
 	                          manifest_list_uuid + ".avro";
-	IcebergManifestList new_manifest_list(manifest_list_path);
-
-	//! Construct the manifest, part of the manifest list
-	IcebergManifest new_manifest;
-	new_manifest.manifest_path = manifest_file_path;
-	new_manifest.sequence_number = sequence_number;
-	new_manifest.content = IcebergManifestContentType::DATA;
-	new_manifest.added_files_count = data_files.size();
-	new_manifest.existing_files_count = 0;
-	new_manifest.deleted_files_count = 0;
-	new_manifest.added_rows_count = 0;
-	new_manifest.existing_rows_count = 0;
-	new_manifest.deleted_rows_count = 0;
-	//! TODO: support partitions
-	new_manifest.partition_spec_id = 0;
-	//! new_manifest.partitions = CreateManifestPartition();
-
-	new_manifest_list.manifests.emplace_back(std::move(new_manifest));
 
 	//! Construct the snapshot
 	IcebergSnapshot new_snapshot;
@@ -70,13 +52,24 @@ void IcebergTransactionData::AddSnapshot(IcebergSnapshotOperationType operation,
 		}
 	}
 
-	auto add_snapshot = make_uniq<IcebergAddSnapshot>(table_info, std::move(new_manifest_file),
-	                                                  std::move(new_manifest_list), std::move(new_snapshot));
-
-	auto &manifest_list = add_snapshot->manifest_list;
+	auto add_snapshot = make_uniq<IcebergAddSnapshot>(table_info, std::move(new_manifest_file), manifest_list_path,
+	                                                  std::move(new_snapshot));
 	auto &manifest_file = add_snapshot->manifest_file;
-	auto &manifest = manifest_list.manifests.back();
+	auto &manifest = add_snapshot->manifest;
 	auto &snapshot = add_snapshot->snapshot;
+
+	manifest.manifest_path = manifest_file_path;
+	manifest.sequence_number = sequence_number;
+	manifest.content = IcebergManifestContentType::DATA;
+	manifest.added_files_count = data_files.size();
+	manifest.existing_files_count = 0;
+	manifest.deleted_files_count = 0;
+	manifest.added_rows_count = 0;
+	manifest.existing_rows_count = 0;
+	manifest.deleted_rows_count = 0;
+	//! TODO: support partitions
+	manifest.partition_spec_id = 0;
+	//! manifest.partitions = CreateManifestPartition();
 
 	//! Add the data files
 	for (auto &data_file : data_files) {

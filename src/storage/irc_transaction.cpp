@@ -1,6 +1,7 @@
 #include "duckdb/parser/parsed_data/create_view_info.hpp"
 #include "duckdb/catalog/catalog_entry/index_catalog_entry.hpp"
 #include "duckdb/catalog/catalog_entry/view_catalog_entry.hpp"
+#include "manifest_reader.hpp"
 
 #include "storage/irc_transaction.hpp"
 #include "storage/irc_catalog.hpp"
@@ -107,9 +108,23 @@ void IRCTransaction::Commit() {
 		table_change.identifier.name = table->name;
 		table_change.has_identifier = true;
 
+		IcebergCommitState commit_state;
+		auto &metadata = table->table_info.table_metadata;
+		auto current_snapshot = metadata.GetLatestSnapshot();
+		if (current_snapshot) {
+			auto &manifest_list_path = current_snapshot->manifest_list;
+			//! Read the manifest list
+			auto manifest_list_reader = make_uniq<manifest_list::ManifestListReader>(metadata.iceberg_version);
+			auto scan = make_uniq<AvroScan>("IcebergManifestList", *context, manifest_list_path);
+			manifest_list_reader->Initialize(std::move(scan));
+			while (!manifest_list_reader->Finished()) {
+				manifest_list_reader->Read(STANDARD_VECTOR_SIZE, commit_state.manifests);
+			}
+		}
+
 		auto &transaction_data = *table->table_info.transaction_data;
 		for (auto &update : transaction_data.updates) {
-			auto table_update = update->CreateUpdate(db, *context);
+			auto table_update = update->CreateUpdate(db, *context, commit_state);
 			table_change.updates.push_back(std::move(table_update));
 		}
 		transaction.table_changes.push_back(std::move(table_change));

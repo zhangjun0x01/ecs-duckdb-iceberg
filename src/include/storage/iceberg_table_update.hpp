@@ -3,6 +3,7 @@
 #include "rest_catalog/objects/list.hpp"
 #include "duckdb/main/database.hpp"
 #include "duckdb/main/client_context.hpp"
+#include "metadata/iceberg_manifest_list.hpp"
 
 namespace duckdb {
 
@@ -31,6 +32,10 @@ enum class IcebergTableUpdateType : uint8_t {
 	ENABLE_ROW_LINEAGE
 };
 
+struct IcebergCommitState {
+	vector<IcebergManifest> manifests;
+};
+
 struct IcebergTableUpdate {
 public:
 	IcebergTableUpdate(IcebergTableUpdateType type, IcebergTableInformation &table_info)
@@ -40,7 +45,8 @@ public:
 	}
 
 public:
-	virtual rest_api_objects::TableUpdate CreateUpdate(DatabaseInstance &db, ClientContext &context) = 0;
+	virtual rest_api_objects::TableUpdate CreateUpdate(DatabaseInstance &db, ClientContext &context,
+	                                                   IcebergCommitState &commit_state) = 0;
 
 public:
 	template <class TARGET>
