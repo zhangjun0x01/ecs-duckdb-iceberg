@@ -17,8 +17,34 @@ IcebergAddSnapshot::IcebergAddSnapshot(IcebergTableInformation &table_info, Iceb
       manifest_list(manifest_list_path), snapshot(std::move(snapshot)) {
 }
 
-rest_api_objects::TableUpdate IcebergAddSnapshot::CreateUpdate(DatabaseInstance &db, ClientContext &context,
-                                                               IcebergCommitState &commit_state) {
+rest_api_objects::TableUpdate CreateAddSnapshotUpdate(const IcebergSnapshot &snapshot) {
+	rest_api_objects::TableUpdate table_update;
+
+	table_update.has_add_snapshot_update = true;
+	auto &update = table_update.add_snapshot_update;
+	update.base_update.action = "add-snapshot";
+	update.has_action = true;
+	update.action = "add-snapshot";
+	update.snapshot = snapshot.ToRESTObject();
+	return table_update;
+}
+
+rest_api_objects::TableUpdate CreateSetSnapshotRefUpdate(const IcebergSnapshot &snapshot) {
+	rest_api_objects::TableUpdate table_update;
+
+	table_update.has_set_snapshot_ref_update = true;
+	auto &update = table_update.set_snapshot_ref_update;
+	update.base_update.action = "set-snapshot-ref";
+	update.has_action = true;
+	update.action = "set-snapshot-ref";
+
+	update.ref_name = "main";
+	update.snapshot_reference.type = "branch";
+	update.snapshot_reference.snapshot_id = snapshot.snapshot_id;
+	return table_update;
+}
+
+void IcebergAddSnapshot::CreateUpdate(DatabaseInstance &db, ClientContext &context, IcebergCommitState &commit_state) {
 	auto &system_catalog = Catalog::GetSystemCatalog(db);
 	auto data = CatalogTransaction::GetSystemTransaction(db);
 	auto &schema = system_catalog.GetSchema(data, DEFAULT_SCHEMA);
@@ -35,15 +61,8 @@ rest_api_objects::TableUpdate IcebergAddSnapshot::CreateUpdate(DatabaseInstance 
 	manifest_list::WriteToFile(manifest_list, avro_copy, db, context);
 	commit_state.manifests = std::move(manifest_list.manifests);
 
-	rest_api_objects::TableUpdate table_update;
-	table_update.has_add_snapshot_update = true;
-
-	auto &update = table_update.add_snapshot_update;
-	update.base_update.action = "add-snapshot";
-	update.has_action = true;
-	update.action = "add-snapshot";
-	update.snapshot = snapshot.ToRESTObject();
-	return table_update;
+	commit_state.table_change.updates.push_back(CreateAddSnapshotUpdate(snapshot));
+	commit_state.table_change.updates.push_back(CreateSetSnapshotRefUpdate(snapshot));
 }
 
 } // namespace duckdb

@@ -18,7 +18,7 @@ static string OperationTypeToString(IcebergSnapshotOperationType type) {
 	}
 }
 
-rest_api_objects::Snapshot IcebergSnapshot::ToRESTObject() {
+rest_api_objects::Snapshot IcebergSnapshot::ToRESTObject() const {
 	rest_api_objects::Snapshot res;
 
 	res.snapshot_id = snapshot_id;

@@ -103,12 +103,12 @@ void IRCTransaction::Commit() {
 
 	rest_api_objects::CommitTransactionRequest transaction;
 	for (auto &table : dirty_tables) {
-		rest_api_objects::CommitTableRequest table_change;
+		IcebergCommitState commit_state;
+		auto &table_change = commit_state.table_change;
 		table_change.identifier._namespace.value.push_back(table->ParentSchema().name);
 		table_change.identifier.name = table->name;
 		table_change.has_identifier = true;
 
-		IcebergCommitState commit_state;
 		auto &metadata = table->table_info.table_metadata;
 		auto current_snapshot = metadata.GetLatestSnapshot();
 		if (current_snapshot) {
@@ -124,8 +124,7 @@ void IRCTransaction::Commit() {
 
 		auto &transaction_data = *table->table_info.transaction_data;
 		for (auto &update : transaction_data.updates) {
-			auto table_update = update->CreateUpdate(db, *context, commit_state);
-			table_change.updates.push_back(std::move(table_update));
+			update->CreateUpdate(db, *context, commit_state);
 		}
 		transaction.table_changes.push_back(std::move(table_change));
 	}

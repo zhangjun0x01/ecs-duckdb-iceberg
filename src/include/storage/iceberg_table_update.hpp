@@ -34,6 +34,7 @@ enum class IcebergTableUpdateType : uint8_t {
 
 struct IcebergCommitState {
 	vector<IcebergManifest> manifests;
+	rest_api_objects::CommitTableRequest table_change;
 };
 
 struct IcebergTableUpdate {
@@ -45,8 +46,7 @@ public:
 	}
 
 public:
-	virtual rest_api_objects::TableUpdate CreateUpdate(DatabaseInstance &db, ClientContext &context,
-	                                                   IcebergCommitState &commit_state) = 0;
+	virtual void CreateUpdate(DatabaseInstance &db, ClientContext &context, IcebergCommitState &commit_state) = 0;
 
 public:
 	template <class TARGET>
