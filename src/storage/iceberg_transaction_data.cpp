@@ -48,7 +48,7 @@ void IcebergTransactionData::AddSnapshot(IcebergSnapshotOperationType operation,
 	new_snapshot.operation = operation;
 	new_snapshot.timestamp_ms = Timestamp::GetEpochMs(MetaTransaction::Get(context).start_timestamp);
 
-	new_snapshot.has_parent_snapshot = !table_info.table_metadata.snapshots.empty() || !alters.empty();
+	new_snapshot.has_parent_snapshot = table_info.table_metadata.has_current_snapshot || !alters.empty();
 	if (new_snapshot.has_parent_snapshot) {
 		if (!alters.empty()) {
 			auto &last_alter = alters.back().get();

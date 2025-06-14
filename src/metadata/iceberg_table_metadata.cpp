@@ -8,20 +8,6 @@ namespace duckdb {
 
 //! ----------- Select Snapshot -----------
 
-optional_ptr<IcebergSnapshot> IcebergTableMetadata::FindLatestSnapshotInternal() {
-	int64_t max_timestamp = NumericLimits<int64_t>::Minimum();
-	optional_ptr<IcebergSnapshot> max_snapshot;
-	for (auto &it : snapshots) {
-		auto &snapshot = it.second;
-		auto current_timestamp = Timestamp::GetEpochMs(snapshot.timestamp_ms);
-		if (current_timestamp >= max_timestamp) {
-			max_timestamp = current_timestamp;
-			max_snapshot = snapshot;
-		}
-	}
-	return max_snapshot;
-}
-
 optional_ptr<IcebergSnapshot> IcebergTableMetadata::FindSnapshotByIdInternal(int64_t target_id) {
 	auto it = snapshots.find(target_id);
 	if (it == snapshots.end()) {
@@ -59,7 +45,10 @@ optional_ptr<const IcebergPartitionSpec> IcebergTableMetadata::FindPartitionSpec
 }
 
 optional_ptr<IcebergSnapshot> IcebergTableMetadata::GetLatestSnapshot() {
-	auto latest_snapshot = FindLatestSnapshotInternal();
+	if (!has_current_snapshot) {
+		return nullptr;
+	}
+	auto latest_snapshot = GetSnapshotById(current_snapshot_id);
 	return latest_snapshot;
 }
 

@@ -35,7 +35,6 @@ public:
 	static string PickTableVersion(vector<OpenFileInfo> &found_metadata, string &version_pattern, string &glob);
 
 	//! Internal JSON parsing functions
-	optional_ptr<IcebergSnapshot> FindLatestSnapshotInternal();
 	optional_ptr<IcebergSnapshot> FindSnapshotByIdInternal(int64_t target_id);
 	optional_ptr<IcebergSnapshot> FindSnapshotByIdTimestampInternal(timestamp_t timestamp);
 	shared_ptr<IcebergTableSchema> GetSchemaFromId(int32_t schema_id) const;
