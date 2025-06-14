@@ -85,7 +85,8 @@ unique_ptr<HTTPResponse> OAuth2Authorization::PostRequest(ClientContext &context
                                                           const IRCEndpointBuilder &endpoint_builder,
                                                           const string &body) {
 	auto url = endpoint_builder.GetURL();
-	return APIUtils::PostRequest(context, url, body, "json", token);
+	unordered_map<string, string> empty_headers;
+	return APIUtils::PostRequest(context, url, body, empty_headers, "json", token);
 }
 
 unique_ptr<OAuth2Authorization> OAuth2Authorization::FromAttachOptions(ClientContext &context,
