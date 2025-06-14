@@ -1,7 +1,7 @@
 #include "metadata/iceberg_manifest.hpp"
 #include "storage/irc_table_set.hpp"
 
-#include "duckdb/common/file_system.hpp"
+#include "duckdb/storage/caching_file_system.hpp"
 
 namespace duckdb {
 
@@ -143,22 +143,23 @@ idx_t WriteToFile(IcebergTableInformation &table_info, const IcebergManifestFile
 	CopyFunctionBindInput input(copy_info);
 	input.file_extension = "avro";
 
-	ThreadContext thread_context(context);
-	ExecutionContext execution_context(context, thread_context, nullptr);
-	auto bind_data = copy.copy_to_bind(context, input, names, types);
+	{
+		ThreadContext thread_context(context);
+		ExecutionContext execution_context(context, thread_context, nullptr);
+		auto bind_data = copy.copy_to_bind(context, input, names, types);
 
-	auto global_state = copy.copy_to_initialize_global(context, *bind_data, manifest_file.path);
-	auto local_state = copy.copy_to_initialize_local(execution_context, *bind_data);
+		auto global_state = copy.copy_to_initialize_global(context, *bind_data, manifest_file.path);
+		auto local_state = copy.copy_to_initialize_local(execution_context, *bind_data);
 
-	copy.copy_to_sink(execution_context, *bind_data, *global_state, *local_state, data);
-	copy.copy_to_combine(execution_context, *bind_data, *global_state, *local_state);
-	copy.copy_to_finalize(context, *bind_data, *global_state);
+		copy.copy_to_sink(execution_context, *bind_data, *global_state, *local_state, data);
+		copy.copy_to_combine(execution_context, *bind_data, *global_state, *local_state);
+		copy.copy_to_finalize(context, *bind_data, *global_state);
+	}
 
-	// auto &file_system = FileSystem::GetFileSystem(db);
-	// auto file_handle = file_system.OpenFile(manifest_file.path, FileOpenFlags::FILE_FLAGS_READ);
-	// auto manifest_length = file_handle->GetFileSize();
-	// return manifest_length;
-	return 42069;
+	auto file_system = CachingFileSystem::Get(context);
+	auto file_handle = file_system.OpenFile(manifest_file.path, FileOpenFlags::FILE_FLAGS_READ);
+	auto manifest_length = file_handle->GetFileSize();
+	return manifest_length;
 }
 
 } // namespace manifest_file
