@@ -137,7 +137,7 @@ idx_t WriteToFile(IcebergTableInformation &table_info, const IcebergManifestFile
 
 	CopyInfo copy_info;
 	copy_info.is_from = false;
-	copy_info.options["root_name"].push_back(Value("manifest_file"));
+	copy_info.options["root_name"].push_back(Value("manifest_entry"));
 	copy_info.options["field_ids"].push_back(Value::STRUCT(field_ids));
 
 	CopyFunctionBindInput input(copy_info);

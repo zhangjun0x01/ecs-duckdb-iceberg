@@ -173,7 +173,7 @@ void WriteToFile(const IcebergManifestList &manifest_list, CopyFunction &copy, D
 
 	CopyInfo copy_info;
 	copy_info.is_from = false;
-	copy_info.options["root_name"].push_back(Value("manifest_list"));
+	copy_info.options["root_name"].push_back(Value("manifest_file"));
 	copy_info.options["field_ids"].push_back(Value::STRUCT(field_ids));
 
 	CopyFunctionBindInput input(copy_info);
