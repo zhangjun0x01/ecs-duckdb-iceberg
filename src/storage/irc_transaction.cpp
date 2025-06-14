@@ -52,6 +52,18 @@ void CommitTableToJSON(yyjson_mut_doc *doc, yyjson_mut_val *root_object,
 			auto summary_json = yyjson_mut_obj_add_obj(doc, snapshot_json, "summary");
 			yyjson_mut_obj_add_strcpy(doc, summary_json, "operation", snapshot.summary.operation.c_str());
 			yyjson_mut_obj_add_uint(doc, snapshot_json, "schema-id", snapshot.schema_id);
+		} else if (update.has_set_snapshot_ref_update) {
+			auto update_json = yyjson_mut_arr_add_obj(doc, updates_array);
+			auto &ref_update = update.set_snapshot_ref_update;
+
+			//! updates[...].action
+			yyjson_mut_obj_add_strcpy(doc, update_json, "action", "set-snapshot-ref");
+			//! updates[...].ref-name
+			yyjson_mut_obj_add_strcpy(doc, update_json, "ref-name", ref_update.ref_name.c_str());
+			//! updates[...].type
+			yyjson_mut_obj_add_strcpy(doc, update_json, "type", ref_update.snapshot_reference.type.c_str());
+			//! updates[...].snapshot-id
+			yyjson_mut_obj_add_uint(doc, update_json, "snapshot-id", ref_update.snapshot_reference.snapshot_id);
 		} else {
 			throw NotImplementedException("Can't serialize this TableUpdate type to JSON");
 		}

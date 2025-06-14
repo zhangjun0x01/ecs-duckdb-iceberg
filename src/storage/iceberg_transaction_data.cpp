@@ -20,7 +20,14 @@ void IcebergTransactionData::AddSnapshot(IcebergSnapshotOperationType operation,
 	//! Generate a new snapshot id
 	auto &table_metadata = table_info.table_metadata;
 	auto snapshot_id = NewSnapshotId();
-	auto sequence_number = table_metadata.last_sequence_number + 1;
+
+	auto last_sequence_number = table_metadata.last_sequence_number;
+	if (!alters.empty()) {
+		auto &last_alter = alters.back().get();
+		last_sequence_number = last_alter.snapshot.sequence_number;
+	}
+
+	auto sequence_number = last_sequence_number + 1;
 
 	//! Construct the manifest file
 	auto manifest_file_uuid = UUID::ToString(UUID::GenerateRandomUUID());
