@@ -176,8 +176,6 @@ void WriteToFile(const IcebergManifestList &manifest_list, CopyFunction &copy, D
 	copy_info.options["root_name"].push_back(Value("manifest_file"));
 	copy_info.options["field_ids"].push_back(Value::STRUCT(field_ids));
 
-	Printer::PrintF("field_ids: %s", copy_info.options["field_ids"][0].ToString());
-
 	CopyFunctionBindInput input(copy_info);
 	input.file_extension = "avro";
 
