@@ -140,6 +140,8 @@ idx_t WriteToFile(IcebergTableInformation &table_info, const IcebergManifestFile
 	copy_info.options["root_name"].push_back(Value("manifest_entry"));
 	copy_info.options["field_ids"].push_back(Value::STRUCT(field_ids));
 
+	Printer::PrintF("field_ids: %s", copy_info.options["field_ids"][0].ToString());
+
 	CopyFunctionBindInput input(copy_info);
 	input.file_extension = "avro";
 
