@@ -214,7 +214,7 @@ select * from my_datalake.default.insert_all_types;
 ----
 127	1340	2147483647	9223372036854775807	3.14	-1.7976931348623157	1234567890.12345	2023-12-31
 
-query I
+query III
 select count(sequence_number), min(sequence_number), max(sequence_number) from (select * from iceberg_snapshots(my_datalake.default.insert_test) order by timestamp_ms, sequence_number);
 ----
 6	1	6
@@ -234,7 +234,7 @@ select distinct manifest_content from iceberg_metadata('my_datalake.default.inse
 ----
 DATA
 
-query I
+query III
 select count(manifest_sequence_number), min(manifest_sequence_number), max(manifest_sequence_number) from iceberg_metadata('my_datalake.default.insert_test');
 ----
 6	1	6
