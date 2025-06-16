@@ -13,6 +13,7 @@
 #include "iceberg_metadata.hpp"
 #include "iceberg_utils.hpp"
 #include "manifest_reader.hpp"
+
 #include "duckdb/common/multi_file/multi_file_data.hpp"
 #include "duckdb/common/list.hpp"
 #include "duckdb/common/unordered_map.hpp"
@@ -108,11 +109,13 @@ public:
 	void ScanPositionalDeleteFile(DataChunk &result) const;
 	void ScanEqualityDeleteFile(const IcebergManifestEntry &entry, DataChunk &result,
 	                            vector<MultiFileColumnDefinition> &columns,
-	                            const vector<MultiFileColumnDefinition> &global_columns) const;
-	void ScanDeleteFile(const IcebergManifestEntry &entry,
-	                    const vector<MultiFileColumnDefinition> &global_columns) const;
+	                            const vector<MultiFileColumnDefinition> &global_columns,
+	                            const vector<ColumnIndex> &column_indexes) const;
+	void ScanDeleteFile(const IcebergManifestEntry &entry, const vector<MultiFileColumnDefinition> &global_columns,
+	                    const vector<ColumnIndex> &column_indexes) const;
 	unique_ptr<IcebergPositionalDeleteData> GetPositionalDeletesForFile(const string &file_path) const;
-	void ProcessDeletes(const vector<MultiFileColumnDefinition> &global_columns) const;
+	void ProcessDeletes(const vector<MultiFileColumnDefinition> &global_columns,
+	                    const vector<ColumnIndex> &column_indexes) const;
 
 public:
 	//! MultiFileList API
@@ -133,13 +136,16 @@ protected:
 	OpenFileInfo GetFile(idx_t i) override;
 
 protected:
-	bool ManifestMatchesFilter(IcebergManifest &manifest);
-	bool FileMatchesFilter(IcebergManifestEntry &file);
+	bool ManifestMatchesFilter(const IcebergManifest &manifest);
+	bool FileMatchesFilter(const IcebergManifestEntry &file);
 	// TODO: How to guarantee we only call this after the filter pushdown?
 	void InitializeFiles(lock_guard<mutex> &guard);
 
+	optional_ptr<const IcebergManifestEntry> GetDataFile(idx_t file_id);
+
 public:
 	ClientContext &context;
+	FileSystem &fs;
 	shared_ptr<IcebergScanInfo> scan_info;
 	string path;
 
@@ -150,15 +156,18 @@ public:
 	vector<LogicalType> types;
 	TableFilterSet table_filters;
 
-	unique_ptr<ManifestListReader> manifest_list;
-	unique_ptr<ManifestFileReader> data_manifest_reader;
-	unique_ptr<ManifestFileReader> delete_manifest_reader;
+	unique_ptr<manifest_file::ManifestFileReader> data_manifest_reader;
+	unique_ptr<manifest_file::ManifestFileReader> delete_manifest_reader;
 
 	vector<IcebergManifestEntry> data_files;
 	vector<IcebergManifest> data_manifests;
 	vector<IcebergManifest> delete_manifests;
+
 	vector<IcebergManifest>::iterator current_data_manifest;
 	mutable vector<IcebergManifest>::iterator current_delete_manifest;
+	//! The data files of the manifest file that we last scanned
+	idx_t data_file_idx = 0;
+	vector<IcebergManifestEntry> current_data_files;
 
 	//! For each file that has a delete file, the state for processing that/those delete file(s)
 	mutable case_insensitive_map_t<unique_ptr<IcebergPositionalDeleteData>> positional_delete_data;

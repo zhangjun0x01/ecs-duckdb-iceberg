@@ -36,11 +36,13 @@ set(EXTENSION_SOURCES
     src/common/iceberg.cpp
     src/common/api_utils.cpp
     src/iceberg_functions/iceberg_multi_file_reader.cpp
+    src/iceberg_functions/iceberg_avro_multi_file_reader.cpp
     src/iceberg_functions/iceberg_multi_file_list.cpp
     src/iceberg_functions/iceberg_snapshots.cpp
     src/iceberg_functions/iceberg_scan.cpp
     src/iceberg_functions/iceberg_metadata.cpp
     src/storage/authorization/sigv4.cpp
+    src/storage/authorization/none.cpp
     src/storage/authorization/oauth2.cpp
     src/storage/irc_authorization.cpp
     src/storage/irc_catalog.cpp

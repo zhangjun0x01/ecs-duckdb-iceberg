@@ -49,15 +49,18 @@ unique_ptr<HTTPResponse> APIUtils::DeleteRequest(ClientContext &context, const s
 }
 
 unique_ptr<HTTPResponse> APIUtils::PostRequest(ClientContext &context, const string &url, const string &post_data,
+                                               const unordered_map<string, string> &additional_headers,
                                                const string &content_type, const string &token) {
 	auto &db = DatabaseInstance::GetDatabase(context);
-	auto &config = DBConfig::GetConfig(context);
 
 	string request_url = AddHttpHostIfMissing(url);
 
 	HTTPHeaders headers(db);
 	headers.Insert("X-Iceberg-Access-Delegation", "vended-credentials");
 	headers.Insert("Content-Type", StringUtil::Format("application/%s", content_type));
+	for (auto it : additional_headers) {
+		headers.Insert(it.first, it.second);
+	}
 	if (!token.empty()) {
 		headers.Insert("Authorization", StringUtil::Format("Bearer %s", token));
 	}
@@ -79,7 +82,9 @@ unique_ptr<HTTPResponse> APIUtils::GetRequest(ClientContext &context, const IRCE
 
 	HTTPHeaders headers(db);
 	headers.Insert("X-Iceberg-Access-Delegation", "vended-credentials");
-	headers.Insert("Authorization", StringUtil::Format("Bearer %s", token));
+	if (!token.empty()) {
+		headers.Insert("Authorization", StringUtil::Format("Bearer %s", token));
+	}
 
 	auto &http_util = HTTPUtil::Get(db);
 	unique_ptr<HTTPParams> params;

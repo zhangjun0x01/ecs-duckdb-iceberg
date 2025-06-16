@@ -267,6 +267,7 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 		lock_guard<mutex> guard(multi_file_list.lock);
 		D_ASSERT(multi_file_list.initialized);
 	}
+
 	auto &reader = *reader_data.reader;
 	auto file_id = reader.file_list_idx.GetIndex();
 	const auto &data_file = multi_file_list.data_files[file_id];
@@ -277,7 +278,7 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 		lock_guard<mutex> guard(multi_file_list.lock);
 		std::lock_guard<mutex> delete_guard(multi_file_list.delete_lock);
 		if (multi_file_list.current_delete_manifest != multi_file_list.delete_manifests.end()) {
-			multi_file_list.ProcessDeletes(global_columns);
+			multi_file_list.ProcessDeletes(global_columns, global_column_ids);
 		}
 		reader.deletion_filter = std::move(multi_file_list.GetPositionalDeletesForFile(file_path));
 	}
@@ -412,7 +413,6 @@ void IcebergMultiFileReader::FinalizeChunk(ClientContext &context, const MultiFi
 	auto file_id = reader.file_list_idx.GetIndex();
 	auto &data_file = multi_file_list.data_files[file_id];
 	auto &local_columns = reader.columns;
-
 	ApplyEqualityDeletes(context, output_chunk, multi_file_list, data_file, local_columns);
 }
 

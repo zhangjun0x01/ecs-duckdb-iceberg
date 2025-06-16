@@ -14,7 +14,7 @@ duckdb_extension_load(icu)
 duckdb_extension_load(avro
         LOAD_TESTS
         GIT_URL https://github.com/duckdb/duckdb_avro
-        GIT_TAG ff766174cc6cc9c4ed93fc4b75871bcdffcc6e65
+        GIT_TAG 141c70afa871d437bfdc689b826baf55409b1f72
 )
 endif()
 
@@ -30,7 +30,7 @@ endif ()
 if (NOT ${EMSCRIPTEN})
 duckdb_extension_load(httpfs
         GIT_URL https://github.com/duckdb/duckdb-httpfs
-        GIT_TAG eb1b04907c419d576f5fa4b34303810e8802e2f8
+        GIT_TAG 7b09112ad257249130375c0841d962eecb85662e
         INCLUDE_DIR extension/httpfs/include
 )
 endif ()
