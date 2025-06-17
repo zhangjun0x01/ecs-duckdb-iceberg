@@ -84,6 +84,7 @@ select count(*) from read_parquet('data/generated/intermediates/spark-rest/linei
 0
 
 
+
 # Verify reading from large partitioned table
 # add tests for partitioned tables.
 query II nosort result_4

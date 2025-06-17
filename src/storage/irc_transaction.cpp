@@ -8,6 +8,7 @@
 #include "storage/irc_authorization.hpp"
 #include "storage/table_update/iceberg_add_snapshot.hpp"
 #include "catalog_utils.hpp"
+#include <numeric>
 
 namespace duckdb {
 
@@ -104,6 +105,12 @@ string JsonDocToString(std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> doc) {
 	return res;
 }
 
+static string ConstructNamespace(vector<string> namespaces) {
+	auto table_namespace = std::accumulate(namespaces.begin() + 1, namespaces.end(), namespaces[0],
+	                                       [](const std::string &a, const std::string &b) { return a + "." + b; });
+	return table_namespace;
+}
+
 void IRCTransaction::Commit() {
 	if (dirty_tables.empty()) {
 		return;
@@ -120,7 +127,6 @@ void IRCTransaction::Commit() {
 		table_change.identifier._namespace.value.push_back(table->ParentSchema().name);
 		table_change.identifier.name = table->name;
 		table_change.has_identifier = true;
-
 		auto &metadata = table->table_info.table_metadata;
 		auto current_snapshot = metadata.GetLatestSnapshot();
 		if (current_snapshot) {
@@ -141,26 +147,36 @@ void IRCTransaction::Commit() {
 		transaction.table_changes.push_back(std::move(table_change));
 	}
 
-	std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> doc_p(yyjson_mut_doc_new(nullptr));
-	auto doc = doc_p.get();
-	auto root_object = yyjson_mut_obj(doc);
-	yyjson_mut_doc_set_root(doc, root_object);
-
-	CommitTransactionToJSON(doc, root_object, transaction);
-	auto transaction_json = JsonDocToString(std::move(doc_p));
-
 	auto &authentication = *catalog.auth_handler;
-	auto url_builder = catalog.GetBaseUrl();
-	url_builder.AddPathComponent(catalog.prefix);
-	url_builder.AddPathComponent("transactions");
-	url_builder.AddPathComponent("commit");
 
-	auto response = authentication.PostRequest(*context, url_builder, transaction_json);
-	if (response->status != HTTPStatusCode::OK_200) {
-		throw InvalidConfigurationException(
-		    "Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s", url_builder.GetURL(),
-		    EnumUtil::ToString(response->status), response->reason, response->body);
+	// each table change is going to have it's own request
+	for (auto &table_change : transaction.table_changes) {
+		D_ASSERT(table_change.has_identifier);
+
+		auto table_namespace = ConstructNamespace(table_change.identifier._namespace.value);
+		auto url_builder = catalog.GetBaseUrl();
+		url_builder.AddPathComponent(catalog.prefix);
+		url_builder.AddPathComponent("namespaces");
+		url_builder.AddPathComponent(table_namespace);
+		url_builder.AddPathComponent("tables");
+		url_builder.AddPathComponent(table_change.identifier.name);
+
+		std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> doc_p(yyjson_mut_doc_new(nullptr));
+		auto doc = doc_p.get();
+		auto root_object = yyjson_mut_obj(doc);
+		yyjson_mut_doc_set_root(doc, root_object);
+		CommitTableToJSON(doc, root_object, table_change);
+
+		auto transaction_json = JsonDocToString(std::move(doc_p));
+		auto response = authentication.PostRequest(*context, url_builder, transaction_json);
+		if (response->status != HTTPStatusCode::OK_200) {
+			context->transaction.Rollback(nullptr);
+			throw InvalidConfigurationException(
+			    "Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s", url_builder.GetURL(),
+			    EnumUtil::ToString(response->status), response->reason, response->body);
+		}
 	}
+
 	context->transaction.Commit();
 }
 
