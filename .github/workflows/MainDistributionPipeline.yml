@@ -48,7 +48,7 @@ jobs:
 
   duckdb-wasm-deploy:
     name: Deploy extension binaries for duckdb-wasm (experimental)
-    needs: duckdb-stable-build
+    needs: duckdb-wasm-build
     uses: duckdb/extension-ci-tools/.github/workflows/_extension_deploy.yml@main
     secrets: inherit
     with:
