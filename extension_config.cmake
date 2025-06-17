@@ -11,12 +11,13 @@ duckdb_extension_load(iceberg
 if (NOT ${EMSCRIPTEN})
 duckdb_extension_load(tpch)
 duckdb_extension_load(icu)
+endif()
+
 duckdb_extension_load(avro
         LOAD_TESTS
         GIT_URL https://github.com/duckdb/duckdb_avro
-        GIT_TAG 1b53c8af9973b0267406ca5a24d7e0b52f22cec3
+        GIT_TAG 7bf0d70f6d5be2ac601e69c41d39882a578a8e65
 )
-endif()
 
 #duckdb_extension_load(avro
 #        SOURCE_DIR "/Users/thijs/DuckDBLabs/duckdb_avro"
