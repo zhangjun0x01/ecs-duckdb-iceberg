@@ -12,6 +12,7 @@
 
 #include "duckdb/parser/parsed_data/attach_info.hpp"
 #include "duckdb/storage/storage_extension.hpp"
+#include "duckdb/common/http_util.hpp"
 
 namespace duckdb {
 
@@ -70,6 +71,8 @@ public:
 	unique_ptr<LogicalOperator> BindCreateIndex(Binder &binder, CreateStatement &stmt, TableCatalogEntry &table,
 	                                            unique_ptr<LogicalOperator> plan) override;
 	DatabaseSize GetDatabaseSize(ClientContext &context) override;
+	void AddDefaultSupportedEndpoints();
+	void AddS3TablesEndpoints();
 	//! Whether or not this is an in-memory Iceberg database
 	bool InMemory() override;
 	string GetDBPath() override;
@@ -86,12 +89,18 @@ public:
 	const string version;
 	//! optional prefix
 	string prefix;
+	//! Endpoint Type
+	IcebergAttachOptions attach_options;
 
 private:
 	// defaults and overrides provided by a catalog.
 	case_insensitive_map_t<string> defaults;
 	case_insensitive_map_t<string> overrides;
 
+public:
+	unordered_set<string> supported_urls;
+
+private:
 	std::mutex metadata_cache_mutex;
 	unordered_map<string, unique_ptr<MetadataCacheValue>> metadata_cache;
 };

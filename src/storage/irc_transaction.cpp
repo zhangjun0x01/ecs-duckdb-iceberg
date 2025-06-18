@@ -111,6 +111,15 @@ static string ConstructNamespace(vector<string> namespaces) {
 	return table_namespace;
 }
 
+static string ConstructTableUpdateJSON(rest_api_objects::CommitTableRequest &table_change) {
+	std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> doc_p(yyjson_mut_doc_new(nullptr));
+	auto doc = doc_p.get();
+	auto root_object = yyjson_mut_obj(doc);
+	yyjson_mut_doc_set_root(doc, root_object);
+	CommitTableToJSON(doc, root_object, table_change);
+	return JsonDocToString(std::move(doc_p));
+}
+
 void IRCTransaction::Commit() {
 	if (dirty_tables.empty()) {
 		return;
@@ -149,31 +158,32 @@ void IRCTransaction::Commit() {
 
 	auto &authentication = *catalog.auth_handler;
 
-	// each table change is going to have it's own request
-	for (auto &table_change : transaction.table_changes) {
-		D_ASSERT(table_change.has_identifier);
+	if (catalog.supported_urls.find("POST /v1/{prefix}/transactions/commit") != catalog.supported_urls.end()) {
+		throw InternalException("need to implement this real quick");
+		// commit all transactions at once
+	} else {
+		D_ASSERT(catalog.supported_urls.find("POST /v1/{prefix}/namespaces/{namespace}/tables/{table}") !=
+		         catalog.supported_urls.end());
+		// each table change will make a separate request
+		for (auto &table_change : transaction.table_changes) {
+			D_ASSERT(table_change.has_identifier);
 
-		auto table_namespace = ConstructNamespace(table_change.identifier._namespace.value);
-		auto url_builder = catalog.GetBaseUrl();
-		url_builder.AddPathComponent(catalog.prefix);
-		url_builder.AddPathComponent("namespaces");
-		url_builder.AddPathComponent(table_namespace);
-		url_builder.AddPathComponent("tables");
-		url_builder.AddPathComponent(table_change.identifier.name);
+			auto table_namespace = ConstructNamespace(table_change.identifier._namespace.value);
+			auto url_builder = catalog.GetBaseUrl();
+			url_builder.AddPathComponent(catalog.prefix);
+			url_builder.AddPathComponent("namespaces");
+			url_builder.AddPathComponent(table_namespace);
+			url_builder.AddPathComponent("tables");
+			url_builder.AddPathComponent(table_change.identifier.name);
 
-		std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> doc_p(yyjson_mut_doc_new(nullptr));
-		auto doc = doc_p.get();
-		auto root_object = yyjson_mut_obj(doc);
-		yyjson_mut_doc_set_root(doc, root_object);
-		CommitTableToJSON(doc, root_object, table_change);
-
-		auto transaction_json = JsonDocToString(std::move(doc_p));
-		auto response = authentication.PostRequest(*context, url_builder, transaction_json);
-		if (response->status != HTTPStatusCode::OK_200) {
-			context->transaction.Rollback(nullptr);
-			throw InvalidConfigurationException(
-			    "Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s", url_builder.GetURL(),
-			    EnumUtil::ToString(response->status), response->reason, response->body);
+			auto transaction_json = ConstructTableUpdateJSON(table_change);
+			auto response = authentication.PostRequest(*context, url_builder, transaction_json);
+			if (response->status != HTTPStatusCode::OK_200) {
+				context->transaction.Rollback(nullptr);
+				throw InvalidConfigurationException(
+				    "Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s",
+				    url_builder.GetURL(), EnumUtil::ToString(response->status), response->reason, response->body);
+			}
 		}
 	}
 
@@ -182,6 +192,11 @@ void IRCTransaction::Commit() {
 
 void IRCTransaction::CleanupFiles() {
 	// remove any files that were written
+	if (catalog.attach_options.endpoint_type == IcebergEndpointType::AWS_S3TABLES) {
+		// aws s3 tables rejects deletes and will handle garbage collection on its own, any attempt to delete the files
+		// on the aws side will result in an error.
+		return;
+	}
 	auto &fs = FileSystem::GetFileSystem(db);
 	for (auto &table : dirty_tables) {
 		auto &transaction_data = *table->table_info.transaction_data;
