@@ -16,7 +16,7 @@ endif()
 duckdb_extension_load(avro
         LOAD_TESTS
         GIT_URL https://github.com/duckdb/duckdb_avro
-        GIT_TAG 7bf0d70f6d5be2ac601e69c41d39882a578a8e65
+        GIT_TAG f861995afa955b75b0543019113479424ce96cfe
 )
 
 #duckdb_extension_load(avro
