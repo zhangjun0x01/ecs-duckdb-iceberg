@@ -1,23 +1,25 @@
 # This file is included by DuckDB's build system. It specifies which extension to load
 
-duckdb_extension_load(icu)
-duckdb_extension_load(avro
-        LOAD_TESTS
-        GIT_URL https://github.com/duckdb/duckdb_avro
-        GIT_TAG ff766174cc6cc9c4ed93fc4b75871bcdffcc6e65
-)
-
 # Extension from this repo
 duckdb_extension_load(iceberg
     SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}
     LOAD_TESTS
+    LINKED_LIBS "../../vcpkg_installed/wasm32-emscripten/lib/*.a"
 )
 
-duckdb_extension_load(tpch)
 
+if (NOT ${EMSCRIPTEN})
+duckdb_extension_load(tpch)
+duckdb_extension_load(icu)
+duckdb_extension_load(avro
+        LOAD_TESTS
+        GIT_URL https://github.com/duckdb/duckdb_avro
+        GIT_TAG 141c70afa871d437bfdc689b826baf55409b1f72
+)
+endif()
 
 ################## AWS
-if (NOT MINGW AND NOT ${WASM_ENABLED})
+if (NOT MINGW AND NOT ${EMSCRIPTEN})
     duckdb_extension_load(aws
             LOAD_TESTS
             GIT_URL https://github.com/duckdb/duckdb-aws
@@ -25,8 +27,10 @@ if (NOT MINGW AND NOT ${WASM_ENABLED})
     )
 endif ()
 
+if (NOT ${EMSCRIPTEN})
 duckdb_extension_load(httpfs
         GIT_URL https://github.com/duckdb/duckdb-httpfs
-        GIT_TAG eb1b04907c419d576f5fa4b34303810e8802e2f8
+        GIT_TAG 7b09112ad257249130375c0841d962eecb85662e
         INCLUDE_DIR extension/httpfs/include
 )
+endif ()

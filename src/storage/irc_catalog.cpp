@@ -17,6 +17,7 @@
 #include "storage/irc_authorization.hpp"
 #include "storage/authorization/oauth2.hpp"
 #include "storage/authorization/sigv4.hpp"
+#include "storage/authorization/none.hpp"
 
 using namespace duckdb_yyjson;
 
@@ -176,6 +177,10 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	url.AddPathComponent("config");
 	url.SetParam("warehouse", warehouse);
 	auto response = auth_handler->GetRequest(context, url);
+	if (response->status != HTTPStatusCode::OK_200) {
+		throw InvalidConfigurationException("Request to '%s' returned a non-200 status code (%s), with reason: %s",
+		                                    url.GetURL(), EnumUtil::ToString(response->status), response->reason);
+	}
 	std::unique_ptr<yyjson_doc, YyjsonDocDeleter> doc(ICUtils::api_result_to_doc(response->body));
 	auto *root = yyjson_doc_get_root(doc.get());
 	auto catalog_config = rest_api_objects::CatalogConfig::FromJSON(root);
@@ -408,6 +413,10 @@ unique_ptr<Catalog> IRCatalog::Attach(StorageExtensionInfo *storage_info, Client
 	}
 	case IRCAuthorizationType::SIGV4: {
 		auth_handler = SIGV4Authorization::FromAttachOptions(attach_options);
+		break;
+	}
+	case IRCAuthorizationType::NONE: {
+		auth_handler = NoneAuthorization::FromAttachOptions(attach_options);
 		break;
 	}
 	default:

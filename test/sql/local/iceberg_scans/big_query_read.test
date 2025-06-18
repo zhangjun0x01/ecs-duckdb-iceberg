@@ -1,0 +1,22 @@
+# name: test/sql/local/iceberg_scans/big_query_read.test
+# group: [iceberg_scans]
+
+require parquet
+
+require iceberg
+
+require avro
+
+statement error
+select * from iceberg_scan('data/persistent/big_query_error');
+----
+Invalid Configuration Error: Column 'added_files_count' of the manifest list is missing a field_id!
+
+# The produced avro files are malformed, field ids are not optional
+mode skip
+
+query III
+select * from iceberg_scan('data/persistent/big_query_error');
+----
+1	Alice	2024-01-01 10:00:00
+2	Bob	2024-02-01 11:30:00

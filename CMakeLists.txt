@@ -36,11 +36,13 @@ set(EXTENSION_SOURCES
     src/common/iceberg.cpp
     src/common/api_utils.cpp
     src/iceberg_functions/iceberg_multi_file_reader.cpp
+    src/iceberg_functions/iceberg_avro_multi_file_reader.cpp
     src/iceberg_functions/iceberg_multi_file_list.cpp
     src/iceberg_functions/iceberg_snapshots.cpp
     src/iceberg_functions/iceberg_scan.cpp
     src/iceberg_functions/iceberg_metadata.cpp
     src/storage/authorization/sigv4.cpp
+    src/storage/authorization/none.cpp
     src/storage/authorization/oauth2.cpp
     src/storage/irc_authorization.cpp
     src/storage/irc_catalog.cpp
@@ -57,7 +59,7 @@ add_subdirectory(src/rest_catalog/objects)
 add_library(${EXTENSION_NAME} STATIC ${EXTENSION_SOURCES} ${ALL_OBJECT_FILES})
 
 set(PARAMETERS "-warnings")
-build_loadable_extension(${TARGET_NAME} ${PARAMETERS} ${EXTENSION_SOURCES})
+build_loadable_extension(${TARGET_NAME} ${PARAMETERS} ${EXTENSION_SOURCES} ${ALL_OBJECT_FILES})
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
     find_package(CURL REQUIRED)
