@@ -27,19 +27,13 @@ AssertTableUUID AssertTableUUID::FromJSON(yyjson_val *obj) {
 
 string AssertTableUUID::TryFromJSON(yyjson_val *obj) {
 	string error;
-	error = table_requirement.TryFromJSON(obj);
-	if (!error.empty()) {
-		return error;
-	}
 	auto type_val = yyjson_obj_get(obj, "type");
 	if (!type_val) {
 		return "AssertTableUUID required property 'type' is missing";
 	} else {
-		if (yyjson_is_str(type_val)) {
-			type = yyjson_get_str(type_val);
-		} else {
-			return StringUtil::Format("AssertTableUUID property 'type' is not of type 'string', found '%s' instead",
-			                          yyjson_get_type_desc(type_val));
+		error = type.TryFromJSON(type_val);
+		if (!error.empty()) {
+			return error;
 		}
 	}
 	auto uuid_val = yyjson_obj_get(obj, "uuid");

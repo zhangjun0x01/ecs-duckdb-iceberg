@@ -42,6 +42,18 @@ string DataFile::TryFromJSON(yyjson_val *obj) {
 			                          yyjson_get_type_desc(content_val));
 		}
 	}
+	auto first_row_id_val = yyjson_obj_get(obj, "first-row-id");
+	if (first_row_id_val) {
+		has_first_row_id = true;
+		if (yyjson_is_sint(first_row_id_val)) {
+			first_row_id = yyjson_get_sint(first_row_id_val);
+		} else if (yyjson_is_uint(first_row_id_val)) {
+			first_row_id = yyjson_get_uint(first_row_id_val);
+		} else {
+			return StringUtil::Format("DataFile property 'first_row_id' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(first_row_id_val));
+		}
+	}
 	auto column_sizes_val = yyjson_obj_get(obj, "column-sizes");
 	if (column_sizes_val) {
 		has_column_sizes = true;

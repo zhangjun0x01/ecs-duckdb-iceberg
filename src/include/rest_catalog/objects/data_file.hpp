@@ -32,6 +32,8 @@ public:
 public:
 	ContentFile content_file;
 	string content;
+	int64_t first_row_id;
+	bool has_first_row_id = false;
 	CountMap column_sizes;
 	bool has_column_sizes = false;
 	CountMap value_counts;

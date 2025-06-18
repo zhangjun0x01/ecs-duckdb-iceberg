@@ -29,7 +29,17 @@ void CommitTableToJSON(yyjson_mut_doc *doc, yyjson_mut_val *root_object,
                        const rest_api_objects::CommitTableRequest &table) {
 	//! requirements
 	auto requirements_array = yyjson_mut_obj_add_arr(doc, root_object, "requirements");
-	D_ASSERT(table.requirements.empty());
+	for (auto &requirement : table.requirements) {
+		if (requirement.has_assert_ref_snapshot_id) {
+			auto &assert_ref_snapshot_id = requirement.assert_ref_snapshot_id;
+			auto requirement_json = yyjson_mut_arr_add_obj(doc, requirements_array);
+			yyjson_mut_obj_add_strcpy(doc, requirement_json, "type", assert_ref_snapshot_id.type.value.c_str());
+			yyjson_mut_obj_add_strcpy(doc, requirement_json, "ref", assert_ref_snapshot_id.ref.c_str());
+			yyjson_mut_obj_add_uint(doc, requirement_json, "snapshot-id", assert_ref_snapshot_id.snapshot_id);
+		} else {
+			throw NotImplementedException("Can't serialize this TableRequirement type to JSON");
+		}
+	}
 
 	//! updates
 	auto updates_array = yyjson_mut_obj_add_arr(doc, root_object, "updates");
@@ -104,6 +114,17 @@ string JsonDocToString(std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> doc) {
 	return res;
 }
 
+static rest_api_objects::TableRequirement CreateAssertRefSnapshotIdRequirement(IcebergSnapshot &old_snapshot) {
+	rest_api_objects::TableRequirement req;
+	req.has_assert_ref_snapshot_id = true;
+
+	auto &res = req.assert_ref_snapshot_id;
+	res.ref = "main";
+	res.snapshot_id = old_snapshot.snapshot_id;
+	res.type.value = "assert-ref-snapshot-id";
+	return req;
+}
+
 void IRCTransaction::Commit() {
 	if (dirty_tables.empty()) {
 		return;
@@ -135,6 +156,11 @@ void IRCTransaction::Commit() {
 		}
 
 		auto &transaction_data = *table->table_info.transaction_data;
+		if (current_snapshot && !transaction_data.alters.empty()) {
+			//! If any changes were made to the data of the table, we should assert that our parent snapshot has not
+			//! changed
+			commit_state.table_change.requirements.push_back(CreateAssertRefSnapshotIdRequirement(*current_snapshot));
+		}
 		for (auto &update : transaction_data.updates) {
 			update->CreateUpdate(db, *context, commit_state);
 		}

@@ -73,6 +73,19 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 			    yyjson_get_type_desc(last_updated_ms_val));
 		}
 	}
+	auto next_row_id_val = yyjson_obj_get(obj, "next-row-id");
+	if (next_row_id_val) {
+		has_next_row_id = true;
+		if (yyjson_is_sint(next_row_id_val)) {
+			next_row_id = yyjson_get_sint(next_row_id_val);
+		} else if (yyjson_is_uint(next_row_id_val)) {
+			next_row_id = yyjson_get_uint(next_row_id_val);
+		} else {
+			return StringUtil::Format(
+			    "TableMetadata property 'next_row_id' is not of type 'integer', found '%s' instead",
+			    yyjson_get_type_desc(next_row_id_val));
+		}
+	}
 	auto properties_val = yyjson_obj_get(obj, "properties");
 	if (properties_val) {
 		has_properties = true;
@@ -206,6 +219,26 @@ string TableMetadata::TryFromJSON(yyjson_val *obj) {
 			return StringUtil::Format(
 			    "TableMetadata property 'default_sort_order_id' is not of type 'integer', found '%s' instead",
 			    yyjson_get_type_desc(default_sort_order_id_val));
+		}
+	}
+	auto encryption_keys_val = yyjson_obj_get(obj, "encryption-keys");
+	if (encryption_keys_val) {
+		has_encryption_keys = true;
+		if (yyjson_is_arr(encryption_keys_val)) {
+			size_t idx, max;
+			yyjson_val *val;
+			yyjson_arr_foreach(encryption_keys_val, idx, max, val) {
+				EncryptedKey tmp;
+				error = tmp.TryFromJSON(val);
+				if (!error.empty()) {
+					return error;
+				}
+				encryption_keys.emplace_back(std::move(tmp));
+			}
+		} else {
+			return StringUtil::Format(
+			    "TableMetadata property 'encryption_keys' is not of type 'array', found '%s' instead",
+			    yyjson_get_type_desc(encryption_keys_val));
 		}
 	}
 	auto snapshots_val = yyjson_obj_get(obj, "snapshots");
