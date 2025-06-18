@@ -192,11 +192,6 @@ static void AddWrittenFiles(IcebergInsertGlobalState &global_state, DataChunk &c
 SinkResultType IcebergInsert::Sink(ExecutionContext &context, DataChunk &chunk, OperatorSinkInput &input) const {
 	auto &global_state = input.global_state.Cast<IcebergInsertGlobalState>();
 
-	if (chunk.size() != 1) {
-		throw InternalException(
-		    "IcebergInsert::Sink expects a single row containing output of the PhysicalCopy that should be its Source");
-	}
-
 	// TODO: pass through the partition id?
 	AddWrittenFiles(global_state, chunk, {});
 
@@ -302,10 +297,8 @@ PhysicalOperator &IRCatalog::PlanInsert(ClientContext &context, PhysicalPlanGene
 	// Create Copy Info
 	auto info = make_uniq<CopyInfo>();
 
-	auto current_write_uuid = UUID::ToString(UUID::GenerateRandomUUID());
-	auto file_path = iceberg_path + "/data/" + current_write_uuid + ".parquet";
-
-	info->file_path = file_path;
+	auto data_path = iceberg_path + "/data";
+	info->file_path = data_path;
 	info->format = "parquet";
 	info->is_from = false;
 
@@ -356,21 +349,24 @@ PhysicalOperator &IRCatalog::PlanInsert(ClientContext &context, PhysicalPlanGene
 
 	physical_copy_ref.use_tmp_file = false;
 	if (!partition_columns.empty()) {
-		physical_copy_ref.filename_pattern.SetFilenamePattern(current_write_uuid + "_{i}");
-		physical_copy_ref.file_path = iceberg_path + "/data";
+		physical_copy_ref.filename_pattern.SetFilenamePattern("{uuidv7}");
+		physical_copy_ref.file_path = data_path;
 		physical_copy_ref.partition_output = true;
 		physical_copy_ref.partition_columns = partition_columns;
 		physical_copy_ref.write_empty_file = true;
+		physical_copy_ref.rotate = false;
 	} else {
-		physical_copy_ref.file_path = file_path;
+		physical_copy_ref.filename_pattern.SetFilenamePattern("{uuidv7}");
+		physical_copy_ref.file_path = data_path;
 		physical_copy_ref.partition_output = false;
 		physical_copy_ref.write_empty_file = false;
+		physical_copy_ref.file_size_bytes = IRCatalog::DEFAULT_TARGET_FILE_SIZE;
+		physical_copy_ref.rotate = true;
 	}
 
 	physical_copy_ref.file_extension = "parquet";
 	physical_copy_ref.overwrite_mode = CopyOverwriteMode::COPY_OVERWRITE_OR_IGNORE;
 	physical_copy_ref.per_thread_output = false;
-	physical_copy_ref.rotate = false;
 	physical_copy_ref.return_type = CopyFunctionReturnType::WRITTEN_FILE_STATISTICS; // TODO: capture stats
 	physical_copy_ref.write_partition_columns = true;
 	physical_copy_ref.children.push_back(*plan);
