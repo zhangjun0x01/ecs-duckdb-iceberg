@@ -8,7 +8,6 @@ duckdb_extension_load(iceberg
 )
 
 
-if (NOT ${EMSCRIPTEN})
 duckdb_extension_load(tpch)
 duckdb_extension_load(icu)
 duckdb_extension_load(avro
@@ -16,10 +15,9 @@ duckdb_extension_load(avro
         GIT_URL https://github.com/duckdb/duckdb_avro
         GIT_TAG 141c70afa871d437bfdc689b826baf55409b1f72
 )
-endif()
 
 ################## AWS
-if (NOT MINGW AND NOT ${EMSCRIPTEN})
+if (NOT MINGW)
     duckdb_extension_load(aws
             LOAD_TESTS
             GIT_URL https://github.com/duckdb/duckdb-aws
@@ -27,10 +25,8 @@ if (NOT MINGW AND NOT ${EMSCRIPTEN})
     )
 endif ()
 
-if (NOT ${EMSCRIPTEN})
 duckdb_extension_load(httpfs
         GIT_URL https://github.com/duckdb/duckdb-httpfs
         GIT_TAG 7b09112ad257249130375c0841d962eecb85662e
         INCLUDE_DIR extension/httpfs/include
 )
-endif ()
