@@ -130,12 +130,10 @@ void IRCTransaction::Commit() {
 		return;
 	}
 
+	Connection temp_con(db);
+	temp_con.BeginTransaction();
+	auto &context = temp_con.context;
 	try {
-		Connection temp_con(db);
-		//! This automatically starts a transaction
-		temp_con.BeginTransaction();
-		auto &context = temp_con.context;
-
 		rest_api_objects::CommitTransactionRequest transaction;
 		for (auto &table : dirty_tables) {
 			IcebergCommitState commit_state;
@@ -190,12 +188,14 @@ void IRCTransaction::Commit() {
 			    "Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s", url_builder.GetURL(),
 			    EnumUtil::ToString(response->status), response->reason, response->body);
 		}
-		temp_con.Commit();
 	} catch (std::exception &ex) {
 		ErrorData error(ex);
 		CleanupFiles();
+		temp_con.Rollback();
 		error.Throw("Failed to commit Iceberg transaction: ");
 	}
+
+	temp_con.Rollback();
 }
 
 void IRCTransaction::CleanupFiles() {
