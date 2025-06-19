@@ -114,7 +114,7 @@ string AWSInput::GetRequest(ClientContext &context) {
 	std::shared_ptr<Aws::Http::HttpClient> MyHttpClient;
 	MyHttpClient = Aws::Http::CreateHttpClient(*clientConfig);
 
-	// LogAWSRequest(context, request);
+	LogAWSRequest(context, request);
 	std::shared_ptr<Aws::Http::HttpResponse> res = MyHttpClient->MakeRequest(request);
 	Aws::Http::HttpResponseCode resCode = res->GetResponseCode();
 	DUCKDB_LOG(context, IcebergLogType,
