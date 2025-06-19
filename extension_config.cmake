@@ -7,11 +7,8 @@ duckdb_extension_load(iceberg
     LINKED_LIBS "../../vcpkg_installed/wasm32-emscripten/lib/*.a"
 )
 
-
-if (NOT ${EMSCRIPTEN})
 duckdb_extension_load(tpch)
 duckdb_extension_load(icu)
-endif()
 
 duckdb_extension_load(avro
         LOAD_TESTS
@@ -24,7 +21,7 @@ duckdb_extension_load(avro
 #)
 
 ################## AWS
-if (NOT MINGW AND NOT ${EMSCRIPTEN})
+if (NOT MINGW)
     duckdb_extension_load(aws
             LOAD_TESTS
             GIT_URL https://github.com/duckdb/duckdb-aws
@@ -32,10 +29,8 @@ if (NOT MINGW AND NOT ${EMSCRIPTEN})
     )
 endif ()
 
-if (NOT ${EMSCRIPTEN})
 duckdb_extension_load(httpfs
         GIT_URL https://github.com/duckdb/duckdb-httpfs
         GIT_TAG 7b09112ad257249130375c0841d962eecb85662e
         INCLUDE_DIR extension/httpfs/include
 )
-endif ()
