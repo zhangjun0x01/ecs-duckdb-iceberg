@@ -121,11 +121,10 @@ statement ok con1
 commit
 
 # The second commit failed because both transactions tried to add sequence number: 2
-# Invalid Configuration Error: Request to 'http://127.0.0.1:8181/v1/transactions/commit' returned a non-200 status code
-statement error
+statement error con2
 commit
 ----
-TransactionContext Error
+<REGEX>:.*Requirement failed: branch main has changed.*
 
 query III
 select * from my_datalake.default.insert_test;
