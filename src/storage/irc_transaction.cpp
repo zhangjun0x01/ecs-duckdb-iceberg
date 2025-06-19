@@ -206,12 +206,12 @@ void IRCTransaction::Commit() {
 			auto response = authentication.PostRequest(*context, url_builder, transaction_json);
 			if (response->status != HTTPStatusCode::OK_200) {
 				throw InvalidConfigurationException(
-					"Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s", url_builder.GetURL(),
-					EnumUtil::ToString(response->status), response->reason, response->body);
+				    "Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s",
+				    url_builder.GetURL(), EnumUtil::ToString(response->status), response->reason, response->body);
 			}
 		} else {
 			D_ASSERT(catalog.supported_urls.find("POST /v1/{prefix}/namespaces/{namespace}/tables/{table}") !=
-							 catalog.supported_urls.end());
+			         catalog.supported_urls.end());
 			// each table change will make a separate request
 			for (auto &table_change : transaction.table_changes) {
 				D_ASSERT(table_change.has_identifier);
@@ -229,8 +229,8 @@ void IRCTransaction::Commit() {
 				if (response->status != HTTPStatusCode::OK_200) {
 					context->transaction.Rollback(nullptr);
 					throw InvalidConfigurationException(
-						"Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s",
-						url_builder.GetURL(), EnumUtil::ToString(response->status), response->reason, response->body);
+					    "Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s",
+					    url_builder.GetURL(), EnumUtil::ToString(response->status), response->reason, response->body);
 				}
 			}
 		}

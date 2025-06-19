@@ -1,18 +1,10 @@
 from pyiceberg.catalog import load_catalog
 from pyiceberg.catalog.rest import RestCatalog
-from pyiceberg.exceptions import NamespaceAlreadyExistsError
 import os
 import pyarrow as pa
-import pandas as pd
-from pyiceberg.expressions import EqualTo
-import boto3
-import json
 import sys
-import argparse
 import duckdb
-from botocore.exceptions import ProfileNotFound
 from datetime import date
-from tabulate import tabulate
 
 REGION = "us-east-2"
 CATALOG = "iceberg-testing"
@@ -39,6 +31,7 @@ def get_glue_catalog():
     )
     return rest_catalog
 
+
 def get_s3tables_catalog():
     rest_catalog = load_catalog(
         CATALOG,
@@ -53,6 +46,7 @@ def get_s3tables_catalog():
     )
     return rest_catalog
 
+
 def get_r2_catalog():
     catalog = RestCatalog(
         name="r2_catalog",
@@ -62,8 +56,12 @@ def get_r2_catalog():
     )
     return catalog
 
+
 def print_help():
-    print("default usage: python3 create_s3_insert_table.py --action=[delete-and-create|delete|create] --catalogs=s3tables,glue,r2")
+    print(
+        "default usage: python3 create_s3_insert_table.py --action=[delete-and-create|delete|create] --catalogs=s3tables,glue,r2"
+    )
+
 
 def main():
 
@@ -72,9 +70,9 @@ def main():
 
     for arg in sys.argv:
         if arg.startswith("--action="):
-            action = arg.replace("--action=","")
+            action = arg.replace("--action=", "")
         if arg.startswith("--catalogs="):
-            catalogs_str = arg.replace("--catalogs=","")
+            catalogs_str = arg.replace("--catalogs=", "")
             for cat in catalogs_str.split(","):
                 if cat == "s3tables":
                     catalogs.append(get_s3tables_catalog())
@@ -83,7 +81,6 @@ def main():
                 if cat == "r2":
                     catalogs.append(get_r2_catalog())
 
-    
     if len(catalogs) == 0 or action == "":
         print_help()
         exit(1)
@@ -117,8 +114,10 @@ def create_basic_schema() -> pa.Schema:
 def get_namespaces(rest_catalog):
     return rest_catalog.list_namespaces()
 
+
 def get_tables(rest_catalog, namespace):
     return rest_catalog.list_tables(namespace)
+
 
 def delete_table(rest_catalog):
     global DATABASE_NAME, TABLE_NAME
@@ -128,7 +127,7 @@ def delete_table(rest_catalog):
         print(f"known namespaces: " + str(get_namespaces(rest_catalog)))
         print(f"creating namespace {DATABASE_NAME}")
         rest_catalog.create_namespace(f"{DATABASE_NAME}")
-    
+
     namespace = (DATABASE_NAME,)  # Tuple format
     # List tables in the namespace
     tables = list(map(lambda t: t[1], get_tables(rest_catalog, namespace)))
@@ -139,8 +138,9 @@ def delete_table(rest_catalog):
 
     identifier = (f"{DATABASE_NAME}", f"{TABLE_NAME}")
     # Drop the table
-    rest_catalog.drop_table(identifier,  purge_requested=True)
+    rest_catalog.drop_table(identifier, purge_requested=True)
     print("table dropped succesfully")
+
 
 def create_table(rest_catalog):
     global DATABASE_NAME, TABLE_NAME
@@ -149,7 +149,7 @@ def create_table(rest_catalog):
         print(f"schema {DATABASE_NAME} does not exist")
         print(f"known namespaces: " + str(get_namespaces(rest_catalog)))
         print(f"creating namespace {DATABASE_NAME}")
-    
+
     namespace = (DATABASE_NAME,)  # Tuple format
     # List tables in the namespace
     tables = list(map(lambda t: t[1], get_tables(rest_catalog, namespace)))
@@ -158,9 +158,7 @@ def create_table(rest_catalog):
         return
 
     table_schema = create_basic_schema()
-    rest_catalog.create_table(
-        identifier=f"{DATABASE_NAME}.{TABLE_NAME}", schema=table_schema
-    )
+    rest_catalog.create_table(identifier=f"{DATABASE_NAME}.{TABLE_NAME}", schema=table_schema)
 
     basic_table = rest_catalog.load_table(f"{DATABASE_NAME}.{TABLE_NAME}")
     data = [

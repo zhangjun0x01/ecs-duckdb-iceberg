@@ -1,6 +1,6 @@
 # name: test/sql/cloud/r2_catalog/test_r2_inserts.test
 # description: test integration with iceberg catalog read
-# group: [s3tables]
+# group: [r2_catalog]
 
 require-env ICEBERG_REMOTE_INSERT_READY
 
