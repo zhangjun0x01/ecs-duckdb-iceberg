@@ -5,7 +5,6 @@
 #include "duckdb/common/string.hpp"
 #include "duckdb/common/vector.hpp"
 #include "duckdb/common/case_insensitive_map.hpp"
-#include "rest_catalog/response_objects.hpp"
 #include "rest_catalog/objects/add_encryption_key_update.hpp"
 #include "rest_catalog/objects/add_partition_spec_update.hpp"
 #include "rest_catalog/objects/add_schema_update.hpp"
