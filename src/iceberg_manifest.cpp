@@ -2,6 +2,7 @@
 #include "storage/irc_table_set.hpp"
 
 #include "duckdb/storage/caching_file_system.hpp"
+#include "catalog_utils.hpp"
 
 namespace duckdb {
 
@@ -29,7 +30,7 @@ namespace manifest_file {
 static LogicalType PartitionStructType(IcebergTableInformation &table_info) {
 	//! TODO: actually use the partition info
 	child_list_t<LogicalType> children;
-	children.emplace_back("dummy", LogicalType::INTEGER);
+	children.emplace_back("__duckdb_empty_struct_marker", LogicalType::INTEGER);
 	return LogicalType::STRUCT(children);
 }
 
@@ -37,77 +38,180 @@ idx_t WriteToFile(IcebergTableInformation &table_info, const IcebergManifestFile
                   DatabaseInstance &db, ClientContext &context) {
 	auto &allocator = db.GetBufferManager().GetBufferAllocator();
 
+	//! We need to create an iceberg-schema for the manifest file, written in the metadata of the Avro file.
+	std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> doc_p(yyjson_mut_doc_new(nullptr));
+	auto doc = doc_p.get();
+	auto root_obj = yyjson_mut_obj(doc);
+	yyjson_mut_doc_set_root(doc, root_obj);
+	yyjson_mut_obj_add_strcpy(doc, root_obj, "type", "struct");
+	yyjson_mut_obj_add_uint(doc, root_obj, "schema-id", 0);
+	auto fields_arr = yyjson_mut_obj_add_arr(doc, root_obj, "fields");
+
 	//! Create the types for the DataChunk
 
 	child_list_t<Value> field_ids;
 	vector<string> names;
 	vector<LogicalType> types;
-	// status: int - 0
-	names.push_back("status");
-	types.push_back(LogicalType::INTEGER);
-	field_ids.emplace_back("status", Value::INTEGER(STATUS));
 
-	// snapshot_id: long - 1
-	names.push_back("snapshot_id");
-	types.push_back(LogicalType::BIGINT);
-	field_ids.emplace_back("snapshot_id", Value::INTEGER(SNAPSHOT_ID));
+	{
+		// status: int - 0
+		names.push_back("status");
+		types.push_back(LogicalType::INTEGER);
+		field_ids.emplace_back("status", Value::INTEGER(STATUS));
 
-	// sequence_number: long - 3
-	names.push_back("sequence_number");
-	types.push_back(LogicalType::BIGINT);
-	field_ids.emplace_back("sequence_number", Value::INTEGER(SEQUENCE_NUMBER));
+		auto field_obj = yyjson_mut_arr_add_obj(doc, fields_arr);
+		yyjson_mut_obj_add_uint(doc, field_obj, "id", STATUS);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "name", "status");
+		yyjson_mut_obj_add_bool(doc, field_obj, "required", true);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "type", "int");
+	}
 
-	// file_sequence_number: long - 4
-	names.push_back("file_sequence_number");
-	types.push_back(LogicalType::BIGINT);
-	field_ids.emplace_back("file_sequence_number", Value::INTEGER(FILE_SEQUENCE_NUMBER));
+	{
+		// snapshot_id: long - 1
+		names.push_back("snapshot_id");
+		types.push_back(LogicalType::BIGINT);
+		field_ids.emplace_back("snapshot_id", Value::INTEGER(SNAPSHOT_ID));
+
+		auto field_obj = yyjson_mut_arr_add_obj(doc, fields_arr);
+		yyjson_mut_obj_add_uint(doc, field_obj, "id", SNAPSHOT_ID);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "name", "snapshot_id");
+		yyjson_mut_obj_add_bool(doc, field_obj, "required", false);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "type", "long");
+	}
+
+	{
+		// sequence_number: long - 3
+		names.push_back("sequence_number");
+		types.push_back(LogicalType::BIGINT);
+		field_ids.emplace_back("sequence_number", Value::INTEGER(SEQUENCE_NUMBER));
+
+		auto field_obj = yyjson_mut_arr_add_obj(doc, fields_arr);
+		yyjson_mut_obj_add_uint(doc, field_obj, "id", SEQUENCE_NUMBER);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "name", "sequence_number");
+		yyjson_mut_obj_add_bool(doc, field_obj, "required", false);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "type", "long");
+	}
+
+	{
+		// file_sequence_number: long - 4
+		names.push_back("file_sequence_number");
+		types.push_back(LogicalType::BIGINT);
+		field_ids.emplace_back("file_sequence_number", Value::INTEGER(FILE_SEQUENCE_NUMBER));
+
+		auto field_obj = yyjson_mut_arr_add_obj(doc, fields_arr);
+		yyjson_mut_obj_add_uint(doc, field_obj, "id", FILE_SEQUENCE_NUMBER);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "name", "file_sequence_number");
+		yyjson_mut_obj_add_bool(doc, field_obj, "required", false);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "type", "long");
+	}
 
 	//! DataFile struct
 
 	child_list_t<Value> data_file_field_ids;
 	child_list_t<LogicalType> children;
-	// content: int - 134
-	children.emplace_back("content", LogicalType::INTEGER);
-	data_file_field_ids.emplace_back("content", Value::INTEGER(CONTENT));
 
-	// file_path: string - 100
-	children.emplace_back("file_path", LogicalType::VARCHAR);
-	data_file_field_ids.emplace_back("file_path", Value::INTEGER(FILE_PATH));
+	auto child_fields_arr = yyjson_mut_arr(doc);
+	{
+		// content: int - 134
+		children.emplace_back("content", LogicalType::INTEGER);
+		data_file_field_ids.emplace_back("content", Value::INTEGER(CONTENT));
 
-	// file_format: string - 101
-	children.emplace_back("file_format", LogicalType::VARCHAR);
-	data_file_field_ids.emplace_back("file_format", Value::INTEGER(FILE_FORMAT));
+		auto field_obj = yyjson_mut_arr_add_obj(doc, child_fields_arr);
+		yyjson_mut_obj_add_uint(doc, field_obj, "id", CONTENT);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "name", "content");
+		yyjson_mut_obj_add_bool(doc, field_obj, "required", true);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "type", "int");
+	}
 
-	// partition: struct(...) - 102
-	children.emplace_back("partition", PartitionStructType(table_info));
-	data_file_field_ids.emplace_back("partition", Value::INTEGER(PARTITION));
+	{
+		// file_path: string - 100
+		children.emplace_back("file_path", LogicalType::VARCHAR);
+		data_file_field_ids.emplace_back("file_path", Value::INTEGER(FILE_PATH));
 
-	// record_count: long - 103
-	children.emplace_back("record_count", LogicalType::BIGINT);
-	data_file_field_ids.emplace_back("record_count", Value::INTEGER(RECORD_COUNT));
+		auto field_obj = yyjson_mut_arr_add_obj(doc, child_fields_arr);
+		yyjson_mut_obj_add_uint(doc, field_obj, "id", FILE_PATH);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "name", "file_path");
+		yyjson_mut_obj_add_bool(doc, field_obj, "required", true);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "type", "string");
+	}
 
-	// file_size_in_bytes: long - 104
-	children.emplace_back("file_size_in_bytes", LogicalType::BIGINT);
-	data_file_field_ids.emplace_back("file_size_in_bytes", Value::INTEGER(FILE_SIZE_IN_BYTES));
+	{
+		// file_format: string - 101
+		children.emplace_back("file_format", LogicalType::VARCHAR);
+		data_file_field_ids.emplace_back("file_format", Value::INTEGER(FILE_FORMAT));
 
-	//// column_sizes: map<117: int, 118: long> - 108
-	// children.emplace_back("column_sizes", LogicalType::MAP(LogicalType::INTEGER, LogicalType::BIGINT));
-	//// value_counts: map<119: int, 120: long> - 109
-	// children.emplace_back("value_counts", LogicalType::MAP(LogicalType::INTEGER, LogicalType::BIGINT));
-	//// null_value_counts: map<121: int, 122: long> - 110
-	// children.emplace_back("null_value_counts", LogicalType::MAP(LogicalType::INTEGER, LogicalType::BIGINT));
-	//// nan_value_counts: map<138: int, 139: long> - 137
-	// children.emplace_back("nan_value_counts", LogicalType::MAP(LogicalType::INTEGER, LogicalType::BIGINT));
-	//// lower_bounds: map<126: int, 127: binary> - 125
-	// children.emplace_back("lower_bounds", LogicalType::MAP(LogicalType::INTEGER, LogicalType::BLOB));
-	//// upper_bounds: map<129: int, 130: binary> - 128
-	// children.emplace_back("upper_bounds", LogicalType::MAP(LogicalType::INTEGER, LogicalType::BLOB));
+		auto field_obj = yyjson_mut_arr_add_obj(doc, child_fields_arr);
+		yyjson_mut_obj_add_uint(doc, field_obj, "id", FILE_FORMAT);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "name", "file_format");
+		yyjson_mut_obj_add_bool(doc, field_obj, "required", true);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "type", "string");
+	}
 
-	// data_file: struct(...) - 2
-	names.push_back("data_file");
-	types.push_back(LogicalType::STRUCT(std::move(children)));
-	data_file_field_ids.emplace_back("__duckdb_field_id", Value::INTEGER(DATA_FILE));
-	field_ids.emplace_back("data_file", Value::STRUCT(data_file_field_ids));
+	{
+		// partition: struct(...) - 102
+		children.emplace_back("partition", PartitionStructType(table_info));
+		data_file_field_ids.emplace_back("partition", Value::INTEGER(PARTITION));
+
+		auto field_obj = yyjson_mut_arr_add_obj(doc, child_fields_arr);
+		yyjson_mut_obj_add_uint(doc, field_obj, "id", PARTITION);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "name", "partition");
+		yyjson_mut_obj_add_bool(doc, field_obj, "required", true);
+
+		auto partition_struct = yyjson_mut_obj_add_obj(doc, field_obj, "type");
+		yyjson_mut_obj_add_strcpy(doc, partition_struct, "type", "struct");
+		//! NOTE: this has to be populated with the fields of the partition spec when we support INSERT into a
+		//! partitioned table
+		auto partition_fields = yyjson_mut_obj_add_arr(doc, partition_struct, "fields");
+	}
+
+	{
+		// record_count: long - 103
+		children.emplace_back("record_count", LogicalType::BIGINT);
+		data_file_field_ids.emplace_back("record_count", Value::INTEGER(RECORD_COUNT));
+
+		auto field_obj = yyjson_mut_arr_add_obj(doc, child_fields_arr);
+		yyjson_mut_obj_add_uint(doc, field_obj, "id", RECORD_COUNT);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "name", "record_count");
+		yyjson_mut_obj_add_bool(doc, field_obj, "required", true);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "type", "long");
+	}
+
+	{
+		// file_size_in_bytes: long - 104
+		children.emplace_back("file_size_in_bytes", LogicalType::BIGINT);
+		data_file_field_ids.emplace_back("file_size_in_bytes", Value::INTEGER(FILE_SIZE_IN_BYTES));
+
+		auto field_obj = yyjson_mut_arr_add_obj(doc, child_fields_arr);
+		yyjson_mut_obj_add_uint(doc, field_obj, "id", FILE_SIZE_IN_BYTES);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "name", "file_size_in_bytes");
+		yyjson_mut_obj_add_bool(doc, field_obj, "required", true);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "type", "long");
+	}
+
+	//! NOTE: These are optional but we should probably add them, to support better filtering
+	//! column_sizes
+	//! value_counts
+	//! null_value_counts
+	//! nan_value_counts
+	//! lower_bounds
+	//! upper_bounds
+
+	{
+		// data_file: struct(...) - 2
+		names.push_back("data_file");
+		types.push_back(LogicalType::STRUCT(std::move(children)));
+		data_file_field_ids.emplace_back("__duckdb_field_id", Value::INTEGER(DATA_FILE));
+		field_ids.emplace_back("data_file", Value::STRUCT(data_file_field_ids));
+
+		auto field_obj = yyjson_mut_arr_add_obj(doc, fields_arr);
+		yyjson_mut_obj_add_uint(doc, field_obj, "id", DATA_FILE);
+		yyjson_mut_obj_add_strcpy(doc, field_obj, "name", "data_file");
+		yyjson_mut_obj_add_bool(doc, field_obj, "required", true);
+
+		auto data_file_struct = yyjson_mut_obj_add_obj(doc, field_obj, "type");
+		yyjson_mut_obj_add_strcpy(doc, data_file_struct, "type", "struct");
+		yyjson_mut_obj_add_val(doc, data_file_struct, "fields", child_fields_arr);
+	}
 
 	//! Populate the DataChunk with the data files
 
@@ -135,10 +239,23 @@ idx_t WriteToFile(IcebergTableInformation &table_info, const IcebergManifestFile
 	}
 	data.SetCardinality(manifest_file.data_files.size());
 
+	auto &current_partition_spec = table_info.table_metadata.GetLatestPartitionSpec();
+	auto iceberg_schema_string = ICUtils::JsonToString(std::move(doc_p));
+
+	child_list_t<Value> metadata_values;
+	metadata_values.emplace_back("schema", iceberg_schema_string);
+	metadata_values.emplace_back("schema-id", std::to_string(table_info.table_metadata.current_schema_id));
+	metadata_values.emplace_back("partition-spec", current_partition_spec.FieldsToJSON());
+	metadata_values.emplace_back("partition-spec-id", std::to_string(current_partition_spec.spec_id));
+	metadata_values.emplace_back("format-version", std::to_string(table_info.table_metadata.iceberg_version));
+	metadata_values.emplace_back("content", "data");
+	auto metadata_map = Value::STRUCT(std::move(metadata_values));
+
 	CopyInfo copy_info;
 	copy_info.is_from = false;
 	copy_info.options["root_name"].push_back(Value("manifest_entry"));
 	copy_info.options["field_ids"].push_back(Value::STRUCT(field_ids));
+	copy_info.options["metadata"].push_back(metadata_map);
 
 	CopyFunctionBindInput input(copy_info);
 	input.file_extension = "avro";

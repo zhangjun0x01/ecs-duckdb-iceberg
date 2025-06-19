@@ -55,7 +55,7 @@ void WriteToFile(const IcebergManifestList &manifest_list, CopyFunction &copy, D
 
 	// partition_spec_id: long - 502
 	names.push_back("partition_spec_id");
-	types.push_back(LogicalType::BIGINT);
+	types.push_back(LogicalType::INTEGER);
 	field_ids.emplace_back("partition_spec_id", Value::INTEGER(PARTITION_SPEC_ID));
 
 	// content: int - 517

@@ -121,11 +121,10 @@ statement ok con1
 commit
 
 # The second commit failed because both transactions tried to add sequence number: 2
-# Invalid Configuration Error: Request to 'http://127.0.0.1:8181/v1/transactions/commit' returned a non-200 status code
-statement error
+statement error con2
 commit
 ----
-Transaction Error
+<REGEX>:.*Requirement failed: branch main has changed.*
 
 query III
 select * from my_datalake.default.insert_test;
@@ -213,3 +212,28 @@ query IIIIIIII
 select * from my_datalake.default.insert_all_types;
 ----
 127	1340	2147483647	9223372036854775807	3.14	-1.7976931348623157	1234567890.12345	2023-12-31
+
+query III
+select count(sequence_number), min(sequence_number), max(sequence_number) from (select * from iceberg_snapshots(my_datalake.default.insert_test) order by timestamp_ms, sequence_number);
+----
+6	1	6
+
+query I
+select distinct status from iceberg_metadata('my_datalake.default.insert_test');
+----
+ADDED
+
+query I
+select distinct content from iceberg_metadata('my_datalake.default.insert_test');
+----
+EXISTING
+
+query I
+select distinct manifest_content from iceberg_metadata('my_datalake.default.insert_test');
+----
+DATA
+
+query III
+select count(manifest_sequence_number), min(manifest_sequence_number), max(manifest_sequence_number) from iceberg_metadata('my_datalake.default.insert_test');
+----
+6	1	6

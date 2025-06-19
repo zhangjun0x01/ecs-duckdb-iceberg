@@ -30,7 +30,17 @@ void CommitTableToJSON(yyjson_mut_doc *doc, yyjson_mut_val *root_object,
                        const rest_api_objects::CommitTableRequest &table) {
 	//! requirements
 	auto requirements_array = yyjson_mut_obj_add_arr(doc, root_object, "requirements");
-	D_ASSERT(table.requirements.empty());
+	for (auto &requirement : table.requirements) {
+		if (requirement.has_assert_ref_snapshot_id) {
+			auto &assert_ref_snapshot_id = requirement.assert_ref_snapshot_id;
+			auto requirement_json = yyjson_mut_arr_add_obj(doc, requirements_array);
+			yyjson_mut_obj_add_strcpy(doc, requirement_json, "type", assert_ref_snapshot_id.type.value.c_str());
+			yyjson_mut_obj_add_strcpy(doc, requirement_json, "ref", assert_ref_snapshot_id.ref.c_str());
+			yyjson_mut_obj_add_uint(doc, requirement_json, "snapshot-id", assert_ref_snapshot_id.snapshot_id);
+		} else {
+			throw NotImplementedException("Can't serialize this TableRequirement type to JSON");
+		}
+	}
 
 	//! updates
 	auto updates_array = yyjson_mut_obj_add_arr(doc, root_object, "updates");
@@ -120,74 +130,116 @@ static string ConstructTableUpdateJSON(rest_api_objects::CommitTableRequest &tab
 	return JsonDocToString(std::move(doc_p));
 }
 
+static rest_api_objects::TableRequirement CreateAssertRefSnapshotIdRequirement(IcebergSnapshot &old_snapshot) {
+	rest_api_objects::TableRequirement req;
+	req.has_assert_ref_snapshot_id = true;
+
+	auto &res = req.assert_ref_snapshot_id;
+	res.ref = "main";
+	res.snapshot_id = old_snapshot.snapshot_id;
+	res.type.value = "assert-ref-snapshot-id";
+	return req;
+}
+
 void IRCTransaction::Commit() {
 	if (dirty_tables.empty()) {
 		return;
 	}
 
-	Connection temp_con(db);
-	auto &context = temp_con.context;
-	context->transaction.BeginTransaction();
+	try {
+		Connection temp_con(db);
+		//! This automatically starts a transaction
+		temp_con.BeginTransaction();
+		auto &context = temp_con.context;
 
-	rest_api_objects::CommitTransactionRequest transaction;
-	for (auto &table : dirty_tables) {
-		IcebergCommitState commit_state;
-		auto &table_change = commit_state.table_change;
-		table_change.identifier._namespace.value.push_back(table->ParentSchema().name);
-		table_change.identifier.name = table->name;
-		table_change.has_identifier = true;
-		auto &metadata = table->table_info.table_metadata;
-		auto current_snapshot = metadata.GetLatestSnapshot();
-		if (current_snapshot) {
-			auto &manifest_list_path = current_snapshot->manifest_list;
-			//! Read the manifest list
-			auto manifest_list_reader = make_uniq<manifest_list::ManifestListReader>(metadata.iceberg_version);
-			auto scan = make_uniq<AvroScan>("IcebergManifestList", *context, manifest_list_path);
-			manifest_list_reader->Initialize(std::move(scan));
-			while (!manifest_list_reader->Finished()) {
-				manifest_list_reader->Read(STANDARD_VECTOR_SIZE, commit_state.manifests);
+		rest_api_objects::CommitTransactionRequest transaction;
+		for (auto &table : dirty_tables) {
+			IcebergCommitState commit_state;
+			auto &table_change = commit_state.table_change;
+			table_change.identifier._namespace.value.push_back(table->ParentSchema().name);
+			table_change.identifier.name = table->name;
+			table_change.has_identifier = true;
+
+			auto &metadata = table->table_info.table_metadata;
+			auto current_snapshot = metadata.GetLatestSnapshot();
+			if (current_snapshot) {
+				auto &manifest_list_path = current_snapshot->manifest_list;
+				//! Read the manifest list
+				auto manifest_list_reader = make_uniq<manifest_list::ManifestListReader>(metadata.iceberg_version);
+				auto scan = make_uniq<AvroScan>("IcebergManifestList", *context, manifest_list_path);
+				manifest_list_reader->Initialize(std::move(scan));
+				while (!manifest_list_reader->Finished()) {
+					manifest_list_reader->Read(STANDARD_VECTOR_SIZE, commit_state.manifests);
+				}
 			}
+
+			auto &transaction_data = *table->table_info.transaction_data;
+			if (current_snapshot && !transaction_data.alters.empty()) {
+				//! If any changes were made to the data of the table, we should assert that our parent snapshot has not
+				//! changed
+				commit_state.table_change.requirements.push_back(
+				    CreateAssertRefSnapshotIdRequirement(*current_snapshot));
+			}
+			for (auto &update : transaction_data.updates) {
+				update->CreateUpdate(db, *context, commit_state);
+			}
+			transaction.table_changes.push_back(std::move(table_change));
 		}
 
-		auto &transaction_data = *table->table_info.transaction_data;
-		for (auto &update : transaction_data.updates) {
-			update->CreateUpdate(db, *context, commit_state);
-		}
-		transaction.table_changes.push_back(std::move(table_change));
-	}
+		auto &authentication = *catalog.auth_handler;
+		if (catalog.supported_urls.find("POST /v1/{prefix}/transactions/commit") != catalog.supported_urls.end()) {
+			// commit all transactions at once
+			std::unique_ptr<yyjson_mut_doc, YyjsonDocDeleter> doc_p(yyjson_mut_doc_new(nullptr));
+			auto doc = doc_p.get();
+			auto root_object = yyjson_mut_obj(doc);
+			yyjson_mut_doc_set_root(doc, root_object);
 
-	auto &authentication = *catalog.auth_handler;
+			CommitTransactionToJSON(doc, root_object, transaction);
+			auto transaction_json = JsonDocToString(std::move(doc_p));
 
-	if (catalog.supported_urls.find("POST /v1/{prefix}/transactions/commit") != catalog.supported_urls.end()) {
-		throw InternalException("need to implement this real quick");
-		// commit all transactions at once
-	} else {
-		D_ASSERT(catalog.supported_urls.find("POST /v1/{prefix}/namespaces/{namespace}/tables/{table}") !=
-		         catalog.supported_urls.end());
-		// each table change will make a separate request
-		for (auto &table_change : transaction.table_changes) {
-			D_ASSERT(table_change.has_identifier);
-
-			auto table_namespace = ConstructNamespace(table_change.identifier._namespace.value);
+			auto &authentication = *catalog.auth_handler;
 			auto url_builder = catalog.GetBaseUrl();
 			url_builder.AddPathComponent(catalog.prefix);
-			url_builder.AddPathComponent("namespaces");
-			url_builder.AddPathComponent(table_namespace);
-			url_builder.AddPathComponent("tables");
-			url_builder.AddPathComponent(table_change.identifier.name);
+			url_builder.AddPathComponent("transactions");
+			url_builder.AddPathComponent("commit");
 
-			auto transaction_json = ConstructTableUpdateJSON(table_change);
 			auto response = authentication.PostRequest(*context, url_builder, transaction_json);
 			if (response->status != HTTPStatusCode::OK_200) {
-				context->transaction.Rollback(nullptr);
 				throw InvalidConfigurationException(
-				    "Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s",
-				    url_builder.GetURL(), EnumUtil::ToString(response->status), response->reason, response->body);
+					"Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s", url_builder.GetURL(),
+					EnumUtil::ToString(response->status), response->reason, response->body);
+			}
+		} else {
+			D_ASSERT(catalog.supported_urls.find("POST /v1/{prefix}/namespaces/{namespace}/tables/{table}") !=
+							 catalog.supported_urls.end());
+			// each table change will make a separate request
+			for (auto &table_change : transaction.table_changes) {
+				D_ASSERT(table_change.has_identifier);
+
+				auto table_namespace = ConstructNamespace(table_change.identifier._namespace.value);
+				auto url_builder = catalog.GetBaseUrl();
+				url_builder.AddPathComponent(catalog.prefix);
+				url_builder.AddPathComponent("namespaces");
+				url_builder.AddPathComponent(table_namespace);
+				url_builder.AddPathComponent("tables");
+				url_builder.AddPathComponent(table_change.identifier.name);
+
+				auto transaction_json = ConstructTableUpdateJSON(table_change);
+				auto response = authentication.PostRequest(*context, url_builder, transaction_json);
+				if (response->status != HTTPStatusCode::OK_200) {
+					context->transaction.Rollback(nullptr);
+					throw InvalidConfigurationException(
+						"Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s",
+						url_builder.GetURL(), EnumUtil::ToString(response->status), response->reason, response->body);
+				}
 			}
 		}
+		temp_con.Commit();
+	} catch (std::exception &ex) {
+		ErrorData error(ex);
+		CleanupFiles();
+		error.Throw("Failed to commit Iceberg transaction: ");
 	}
-
-	context->transaction.Commit();
 }
 
 void IRCTransaction::CleanupFiles() {

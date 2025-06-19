@@ -339,14 +339,13 @@ optional_ptr<const IcebergManifestEntry> IcebergMultiFileList::GetDataFile(idx_t
 					data_manifest_reader->Read(STANDARD_VECTOR_SIZE, current_data_files);
 				}
 				current_data_manifest++;
-			} else if (HasTransactionData()) {
-				auto &transaction_data = GetTransactionData();
-				if (transaction_data_idx >= transaction_data.alters.size()) {
+			} else if (!transaction_data_manifests.empty()) {
+				if (transaction_data_idx >= transaction_data_manifests.size()) {
 					//! Exhausted all the transaction-local data
 					return nullptr;
 				}
-				auto &alter = transaction_data.alters[transaction_data_idx].get();
-				auto &data_files = alter.manifest_file.data_files;
+				auto &manifest_file = transaction_data_manifests[transaction_data_idx].get();
+				auto &data_files = manifest_file.data_files;
 				current_data_files.insert(current_data_files.end(), data_files.begin(), data_files.end());
 				transaction_data_idx++;
 			} else {
@@ -485,50 +484,67 @@ void IcebergMultiFileList::InitializeFiles(lock_guard<mutex> &guard) {
 		return;
 	}
 	initialized = true;
-	if (!scan_info->snapshot) {
-		// we are reading from an empty table
-		current_data_manifest = data_manifests.begin();
-		current_delete_manifest = delete_manifests.begin();
-		return;
-	}
 
-	//! Load the snapshot
-	auto iceberg_path = GetPath();
-	auto &snapshot = *GetSnapshot();
-	auto &metadata = GetMetadata();
-	auto &fs = FileSystem::GetFileSystem(context);
+	if (scan_info->snapshot) {
+		//! Load the snapshot
+		auto iceberg_path = GetPath();
+		auto &snapshot = *GetSnapshot();
+		auto &metadata = GetMetadata();
+		auto &fs = FileSystem::GetFileSystem(context);
 
-	data_manifest_reader = make_uniq<manifest_file::ManifestFileReader>(metadata.iceberg_version);
-	delete_manifest_reader = make_uniq<manifest_file::ManifestFileReader>(metadata.iceberg_version);
+		data_manifest_reader = make_uniq<manifest_file::ManifestFileReader>(metadata.iceberg_version);
+		delete_manifest_reader = make_uniq<manifest_file::ManifestFileReader>(metadata.iceberg_version);
 
-	// Read the manifest list, we need all the manifests to determine if we've seen all deletes
-	auto manifest_list_full_path = options.allow_moved_paths
-	                                   ? IcebergUtils::GetFullPath(iceberg_path, snapshot.manifest_list, fs)
-	                                   : snapshot.manifest_list;
+		// Read the manifest list, we need all the manifests to determine if we've seen all deletes
+		auto manifest_list_full_path = options.allow_moved_paths
+		                                   ? IcebergUtils::GetFullPath(iceberg_path, snapshot.manifest_list, fs)
+		                                   : snapshot.manifest_list;
 
-	IcebergManifestList manifest_list(manifest_list_full_path);
+		IcebergManifestList manifest_list(manifest_list_full_path);
 
-	//! Read the manifest list
-	auto manifest_list_reader = make_uniq<manifest_list::ManifestListReader>(metadata.iceberg_version);
-	auto scan = make_uniq<AvroScan>("IcebergManifestList", context, manifest_list_full_path);
-	manifest_list_reader->Initialize(std::move(scan));
-	while (!manifest_list_reader->Finished()) {
-		manifest_list_reader->Read(STANDARD_VECTOR_SIZE, manifest_list.manifests);
-	}
-
-	for (auto &manifest : manifest_list.manifests) {
-		if (!ManifestMatchesFilter(manifest)) {
-			DUCKDB_LOG(context, IcebergLogType, "Iceberg Filter Pushdown, skipped 'manifest_file': '%s'",
-			           manifest.manifest_path);
-			//! Skip this manifest
-			continue;
+		//! Read the manifest list
+		auto manifest_list_reader = make_uniq<manifest_list::ManifestListReader>(metadata.iceberg_version);
+		auto scan = make_uniq<AvroScan>("IcebergManifestList", context, manifest_list_full_path);
+		manifest_list_reader->Initialize(std::move(scan));
+		while (!manifest_list_reader->Finished()) {
+			manifest_list_reader->Read(STANDARD_VECTOR_SIZE, manifest_list.manifests);
 		}
 
-		if (manifest.content == IcebergManifestContentType::DATA) {
-			data_manifests.push_back(manifest);
-		} else {
-			D_ASSERT(manifest.content == IcebergManifestContentType::DELETE);
-			delete_manifests.push_back(manifest);
+		for (auto &manifest : manifest_list.manifests) {
+			if (!ManifestMatchesFilter(manifest)) {
+				DUCKDB_LOG(context, IcebergLogType, "Iceberg Filter Pushdown, skipped 'manifest_file': '%s'",
+				           manifest.manifest_path);
+				//! Skip this manifest
+				continue;
+			}
+
+			if (manifest.content == IcebergManifestContentType::DATA) {
+				data_manifests.push_back(manifest);
+			} else {
+				D_ASSERT(manifest.content == IcebergManifestContentType::DELETE);
+				delete_manifests.push_back(manifest);
+			}
+		}
+	}
+
+	if (HasTransactionData()) {
+		auto &transaction_data = GetTransactionData();
+		for (auto &alter_p : transaction_data.alters) {
+			auto &alter = alter_p.get();
+
+			if (!ManifestMatchesFilter(alter.manifest)) {
+				DUCKDB_LOG(context, IcebergLogType, "Iceberg Filter Pushdown, skipped 'manifest_file': '%s'",
+				           alter.manifest.manifest_path);
+				//! Skip this manifest
+				continue;
+			}
+
+			if (alter.snapshot.operation == IcebergSnapshotOperationType::APPEND) {
+				transaction_data_manifests.push_back(alter.manifest_file);
+			} else {
+				throw NotImplementedException("IcebergSnapshotOperationType: %d",
+				                              static_cast<uint8_t>(alter.snapshot.operation));
+			}
 		}
 	}
 

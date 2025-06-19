@@ -7,14 +7,18 @@ duckdb_extension_load(iceberg
     LINKED_LIBS "../../vcpkg_installed/wasm32-emscripten/lib/*.a"
 )
 
-
 duckdb_extension_load(tpch)
 duckdb_extension_load(icu)
+
 duckdb_extension_load(avro
         LOAD_TESTS
         GIT_URL https://github.com/duckdb/duckdb_avro
-        GIT_TAG 1b53c8af9973b0267406ca5a24d7e0b52f22cec3
+        GIT_TAG f861995afa955b75b0543019113479424ce96cfe
 )
+
+#duckdb_extension_load(avro
+#        SOURCE_DIR "/Users/thijs/DuckDBLabs/duckdb_avro"
+#)
 
 ################## AWS
 if (NOT MINGW)
