@@ -143,6 +143,18 @@ string Snapshot::TryFromJSON(yyjson_val *obj) {
 			    yyjson_get_type_desc(sequence_number_val));
 		}
 	}
+	auto first_row_id_val = yyjson_obj_get(obj, "first-row-id");
+	if (first_row_id_val) {
+		has_first_row_id = true;
+		if (yyjson_is_sint(first_row_id_val)) {
+			first_row_id = yyjson_get_sint(first_row_id_val);
+		} else if (yyjson_is_uint(first_row_id_val)) {
+			first_row_id = yyjson_get_uint(first_row_id_val);
+		} else {
+			return StringUtil::Format("Snapshot property 'first_row_id' is not of type 'integer', found '%s' instead",
+			                          yyjson_get_type_desc(first_row_id_val));
+		}
+	}
 	auto schema_id_val = yyjson_obj_get(obj, "schema-id");
 	if (schema_id_val) {
 		has_schema_id = true;

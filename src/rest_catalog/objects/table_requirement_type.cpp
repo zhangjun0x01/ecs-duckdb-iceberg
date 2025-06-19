@@ -1,5 +1,5 @@
 
-#include "rest_catalog/objects/assert_create.hpp"
+#include "rest_catalog/objects/table_requirement_type.hpp"
 
 #include "yyjson.hpp"
 #include "duckdb/common/string.hpp"
@@ -13,11 +13,11 @@ using namespace duckdb_yyjson;
 namespace duckdb {
 namespace rest_api_objects {
 
-AssertCreate::AssertCreate() {
+TableRequirementType::TableRequirementType() {
 }
 
-AssertCreate AssertCreate::FromJSON(yyjson_val *obj) {
-	AssertCreate res;
+TableRequirementType TableRequirementType::FromJSON(yyjson_val *obj) {
+	TableRequirementType res;
 	auto error = res.TryFromJSON(obj);
 	if (!error.empty()) {
 		throw InvalidInputException(error);
@@ -25,16 +25,13 @@ AssertCreate AssertCreate::FromJSON(yyjson_val *obj) {
 	return res;
 }
 
-string AssertCreate::TryFromJSON(yyjson_val *obj) {
+string TableRequirementType::TryFromJSON(yyjson_val *obj) {
 	string error;
-	auto type_val = yyjson_obj_get(obj, "type");
-	if (!type_val) {
-		return "AssertCreate required property 'type' is missing";
+	if (yyjson_is_str(obj)) {
+		value = yyjson_get_str(obj);
 	} else {
-		error = type.TryFromJSON(type_val);
-		if (!error.empty()) {
-			return error;
-		}
+		return StringUtil::Format("TableRequirementType property 'value' is not of type 'string', found '%s' instead",
+		                          yyjson_get_type_desc(obj));
 	}
 	return string();
 }
