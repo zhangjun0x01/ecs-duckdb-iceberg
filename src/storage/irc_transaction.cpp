@@ -244,7 +244,8 @@ void IRCTransaction::Commit() {
 
 void IRCTransaction::CleanupFiles() {
 	// remove any files that were written
-	if (catalog.attach_options.endpoint_type == IcebergEndpointType::AWS_S3TABLES) {
+	if (!catalog.attach_options.allows_deletes) {
+		// certain catalogs don't allow deletes and will have a s3.deletes attribute in the config describing this
 		// aws s3 tables rejects deletes and will handle garbage collection on its own, any attempt to delete the files
 		// on the aws side will result in an error.
 		return;

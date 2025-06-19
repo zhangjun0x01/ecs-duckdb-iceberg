@@ -16,7 +16,7 @@ struct IcebergAttachOptions {
 	string warehouse;
 	string secret;
 	string name;
-	IcebergEndpointType endpoint_type = IcebergEndpointType::INVALID;
+	bool allows_deletes = true;
 	IRCAuthorizationType authorization_type = IRCAuthorizationType::INVALID;
 	unordered_map<string, Value> options;
 };

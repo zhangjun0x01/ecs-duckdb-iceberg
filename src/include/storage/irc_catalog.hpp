@@ -42,7 +42,7 @@ public:
 public:
 	static unique_ptr<SecretEntry> GetStorageSecret(ClientContext &context, const string &secret_name);
 	static unique_ptr<SecretEntry> GetIcebergSecret(ClientContext &context, const string &secret_name);
-	void GetConfig(ClientContext &context);
+	void GetConfig(ClientContext &context, IcebergEndpointType &endpoint_type);
 	IRCEndpointBuilder GetBaseUrl() const;
 	string OptionalGetCachedValue(const string &url);
 	bool SetCachedValue(const string &url, const string &value, const rest_api_objects::LoadTableResult &result);

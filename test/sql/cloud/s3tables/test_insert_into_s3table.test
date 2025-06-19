@@ -4,9 +4,11 @@
 
 require-env ICEBERG_AWS_REMOTE_AVAILABLE
 
-# require-env AWS_ACCESS_KEY_ID
-#
-# require-env AWS_SECRET_ACCESS_KEY
+require-env ICEBERG_REMOTE_INSERT_READY
+
+require-env AWS_ACCESS_KEY_ID
+
+require-env AWS_SECRET_ACCESS_KEY
 
 require avro
 
@@ -32,7 +34,7 @@ attach 'arn:aws:s3tables:us-east-2:840140254803:bucket/iceberg-testing' as s3_ca
 );
 
 query IIII
-select * from s3_catalog.test_inserts.basic_insert_test order by id
+select * from s3_catalog.test_inserts.basic_insert_test order by id;
 ----
 1	Alice	Smith	1990-01-01
 2	Bob	Jones	1985-06-15
@@ -68,7 +70,7 @@ mode skip
 # ----
 # 1	Alice	Smith	1990-01-01
 # 2	Bob	Jones	1985-06-15
-# 3	Charlie	Brown	2000-12-31
+# 3	Charlie	Brown	2000-12-31vc
 
 
 # Perform an insert into the same table from two separate transactions

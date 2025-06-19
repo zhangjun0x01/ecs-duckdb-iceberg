@@ -1,0 +1,65 @@
+# name: test/sql/cloud/r2_catalog/test_r2_inserts.test
+# description: test integration with iceberg catalog read
+# group: [s3tables]
+
+require-env ICEBERG_REMOTE_INSERT_READY
+
+require-env r2_token
+
+require avro
+
+require parquet
+
+require iceberg
+
+require httpfs
+
+require aws
+
+statement ok
+CREATE SECRET r2_secret (
+    TYPE ICEBERG,
+    TOKEN 'qq5IoEUuIImHrBQSjz_7Sa2gcNvyEuk_8ruKXkD1'
+);
+
+statement ok
+attach '6b17833f308abc1e1cc343c552b51f51_r2-catalog' AS my_datalake (
+    TYPE ICEBERG,
+    ENDPOINT 'https://catalog.cloudflarestorage.com/6b17833f308abc1e1cc343c552b51f51/r2-catalog'
+);
+
+query IIII
+select * from my_datalake.test_inserts.basic_insert_test order by id;
+----
+1	Alice	Smith	1990-01-01
+2	Bob	Jones	1985-06-15
+3	Charlie	Brown	2000-12-31
+
+
+statement ok
+begin transaction;
+
+statement ok
+insert into my_datalake.test_inserts.basic_insert_test select * from VALUES
+    (5,
+    'mr.duck' ,
+    '404 lane' ,
+    '2010/06/11'::DATE) t(id, name, address, date);
+
+query IIII
+select * from my_datalake.test_inserts.basic_insert_test order by id;
+----
+1	Alice	Smith	1990-01-01
+2	Bob	Jones	1985-06-15
+3	Charlie	Brown	2000-12-31
+5	mr.duck	404 lane	2010-06-11
+
+statement ok
+rollback;
+
+query IIII
+select * from my_datalake.test_inserts.basic_insert_test order by id;
+----
+1	Alice	Smith	1990-01-01
+2	Bob	Jones	1985-06-15
+3	Charlie	Brown	2000-12-31

@@ -227,7 +227,7 @@ void IRCatalog::AddS3TablesEndpoints() {
 	supported_urls.insert("POST /v1/{prefix}/transactions/commit)");
 }
 
-void IRCatalog::GetConfig(ClientContext &context) {
+void IRCatalog::GetConfig(ClientContext &context, IcebergEndpointType &endpoint_type) {
 	auto url = GetBaseUrl();
 	// set the prefix to be empty. To get the config endpoint,
 	// we cannot add a default prefix.
@@ -248,7 +248,6 @@ void IRCatalog::GetConfig(ClientContext &context) {
 	// save overrides and defaults.
 	// See https://iceberg.apache.org/docs/latest/configuration/#catalog-properties for sometimes used catalog
 	// properties
-
 	auto default_prefix_it = defaults.find("prefix");
 	auto override_prefix_it = overrides.find("prefix");
 
@@ -269,7 +268,7 @@ void IRCatalog::GetConfig(ClientContext &context) {
 		}
 	}
 	// should be if s3tables
-	if (true) {
+	if (!catalog_config.has_endpoints && endpoint_type == IcebergEndpointType::AWS_S3TABLES) {
 		supported_urls.clear();
 		AddS3TablesEndpoints();
 	} else {
@@ -444,19 +443,20 @@ unique_ptr<Catalog> IRCatalog::Attach(StorageExtensionInfo *storage_info, Client
 			attach_options.options.emplace(std::move(entry));
 		}
 	}
-	IcebergEndpointType endpoint_type_local;
+	IcebergEndpointType endpoint_type = IcebergEndpointType::INVALID;
 	//! Then check any if the 'endpoint_type' is set, for any well known catalogs
 	if (!endpoint_type_string.empty()) {
-		endpoint_type_local = EndpointTypeFromString(endpoint_type_string);
-		switch (endpoint_type_local) {
+		endpoint_type = EndpointTypeFromString(endpoint_type_string);
+		switch (endpoint_type) {
 		case IcebergEndpointType::AWS_GLUE: {
 			GlueAttach(context, attach_options);
-			attach_options.endpoint_type = IcebergEndpointType::AWS_GLUE;
+			endpoint_type = IcebergEndpointType::AWS_GLUE;
 			break;
 		}
 		case IcebergEndpointType::AWS_S3TABLES: {
 			S3TablesAttach(attach_options);
-			attach_options.endpoint_type = IcebergEndpointType::AWS_S3TABLES;
+			endpoint_type = IcebergEndpointType::AWS_S3TABLES;
+			attach_options.allows_deletes = false;
 			break;
 		}
 		default:
@@ -510,7 +510,7 @@ unique_ptr<Catalog> IRCatalog::Attach(StorageExtensionInfo *storage_info, Client
 
 	D_ASSERT(auth_handler);
 	auto catalog = make_uniq<IRCatalog>(db, access_mode, std::move(auth_handler), attach_options);
-	catalog->GetConfig(context);
+	catalog->GetConfig(context, endpoint_type);
 	return std::move(catalog);
 }
 
