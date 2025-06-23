@@ -20,38 +20,11 @@
 #include "duckdb/planner/filter/constant_filter.hpp"
 #include "duckdb/planner/filter/null_filter.hpp"
 #include "duckdb/planner/table_filter.hpp"
+
 #include "deletes/equality_delete.hpp"
+#include "deletes/positional_delete.hpp"
 
 namespace duckdb {
-
-struct IcebergPositionalDeleteData : public DeleteFilter {
-public:
-	IcebergPositionalDeleteData() {
-	}
-
-public:
-	void AddRow(int64_t row_id) {
-		temp_invalid_rows.insert(row_id);
-	}
-
-	idx_t Filter(row_t start_row_index, idx_t count, SelectionVector &result_sel) override {
-		if (count == 0) {
-			return 0;
-		}
-		result_sel.Initialize(STANDARD_VECTOR_SIZE);
-		idx_t selection_idx = 0;
-		for (idx_t i = 0; i < count; i++) {
-			if (!temp_invalid_rows.count(i + start_row_index)) {
-				result_sel.set_index(selection_idx++, i);
-			}
-		}
-		return selection_idx;
-	}
-
-public:
-	//! Store invalid rows here before finalizing into a SelectionVector
-	unordered_set<int64_t> temp_invalid_rows;
-};
 
 struct IcebergMultiFileList : public MultiFileList {
 public:
@@ -76,7 +49,8 @@ public:
 	                            const vector<ColumnIndex> &column_indexes) const;
 	void ScanDeleteFile(const IcebergManifestEntry &entry, const vector<MultiFileColumnDefinition> &global_columns,
 	                    const vector<ColumnIndex> &column_indexes) const;
-	unique_ptr<IcebergPositionalDeleteData> GetPositionalDeletesForFile(const string &file_path) const;
+	void ScanPuffinFile(const IcebergManifestEntry &entry) const;
+	unique_ptr<DeleteFilter> GetPositionalDeletesForFile(const string &file_path) const;
 	void ProcessDeletes(const vector<MultiFileColumnDefinition> &global_columns,
 	                    const vector<ColumnIndex> &column_indexes) const;
 
@@ -137,7 +111,7 @@ public:
 	vector<IcebergManifestEntry> current_data_files;
 
 	//! For each file that has a delete file, the state for processing that/those delete file(s)
-	mutable case_insensitive_map_t<unique_ptr<IcebergPositionalDeleteData>> positional_delete_data;
+	mutable case_insensitive_map_t<unique_ptr<DeleteFilter>> positional_delete_data;
 	//! All equality deletes with sequence numbers higher than that of the data_file apply to that data_file
 	mutable map<sequence_number_t, unique_ptr<IcebergEqualityDeleteData>> equality_delete_data;
 	mutable mutex delete_lock;

@@ -578,51 +578,19 @@ void IcebergMultiFileList::ProcessDeletes(const vector<MultiFileColumnDefinition
 		current_delete_manifest++;
 
 		for (auto &entry : manifest_file.data_files) {
-			if (!StringUtil::CIEquals(entry.file_format, "parquet")) {
+			if (StringUtil::CIEquals(entry.file_format, "parquet")) {
+				ScanDeleteFile(entry, global_columns, column_indexes);
+			} else if (StringUtil::CIEquals(entry.file_format, "puffin")) {
+				ScanPuffinFile(entry);
+			} else {
 				throw NotImplementedException(
-				    "File format '%s' not supported for deletes, only supports 'parquet' currently", entry.file_format);
+				    "File format '%s' not supported for deletes, only supports 'parquet' and 'puffin' currently",
+				    entry.file_format);
 			}
-			ScanDeleteFile(entry, global_columns, column_indexes);
 		}
 	}
 
 	D_ASSERT(current_delete_manifest == delete_manifests.end());
-}
-
-void IcebergMultiFileList::ScanPositionalDeleteFile(DataChunk &result) const {
-	//! FIXME: might want to check the 'columns' of the 'reader' to check, field-ids are:
-	auto names = FlatVector::GetData<string_t>(result.data[0]);  //! 2147483546
-	auto row_ids = FlatVector::GetData<int64_t>(result.data[1]); //! 2147483545
-
-	auto count = result.size();
-	if (count == 0) {
-		return;
-	}
-	reference<string_t> current_file_path = names[0];
-
-	auto initial_key = current_file_path.get().GetString();
-	auto it = positional_delete_data.find(initial_key);
-	if (it == positional_delete_data.end()) {
-		it = positional_delete_data.emplace(initial_key, make_uniq<IcebergPositionalDeleteData>()).first;
-	}
-	reference<IcebergPositionalDeleteData> deletes = *it->second;
-
-	for (idx_t i = 0; i < count; i++) {
-		auto &name = names[i];
-		auto &row_id = row_ids[i];
-
-		if (name != current_file_path.get()) {
-			current_file_path = name;
-			auto key = current_file_path.get().GetString();
-			auto it = positional_delete_data.find(key);
-			if (it == positional_delete_data.end()) {
-				it = positional_delete_data.emplace(key, make_uniq<IcebergPositionalDeleteData>()).first;
-			}
-			deletes = *it->second;
-		}
-
-		deletes.get().AddRow(row_id);
-	}
 }
 
 void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry,
@@ -690,8 +658,8 @@ void IcebergMultiFileList::ScanDeleteFile(const IcebergManifestEntry &entry,
 	}
 }
 
-unique_ptr<IcebergPositionalDeleteData>
-IcebergMultiFileList::GetPositionalDeletesForFile(const string &file_path) const {
+//! FIXME: isn't this problematic if we need to scan the same delete file multiple times??
+unique_ptr<DeleteFilter> IcebergMultiFileList::GetPositionalDeletesForFile(const string &file_path) const {
 	auto it = positional_delete_data.find(file_path);
 	if (it != positional_delete_data.end()) {
 		// There is delete data for this file, return it
