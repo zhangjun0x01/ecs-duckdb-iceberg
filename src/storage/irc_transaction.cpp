@@ -8,7 +8,6 @@
 #include "storage/irc_authorization.hpp"
 #include "storage/table_update/iceberg_add_snapshot.hpp"
 #include "catalog_utils.hpp"
-#include <numeric>
 
 namespace duckdb {
 

@@ -51,26 +51,24 @@ insert into s3_catalog.test_inserts.basic_insert_test select * from VALUES
     '2010/06/11'::DATE) t(id, name, address, date);
 
 # # read new data before committing
-# query IIII
-# select * from s3_catalog.test_inserts.basic_insert_test order by id
-# ----
-# 1	Alice	Smith	1990-01-01
-# 2	Bob	Jones	1985-06-15
-# 3	Charlie	Brown	2000-12-31
-# 5	mr.duck	404 lane	2010-06-11
+query IIII
+select * from s3_catalog.test_inserts.basic_insert_test order by id
+----
+1	Alice	Smith	1990-01-01
+2	Bob	Jones	1985-06-15
+3	Charlie	Brown	2000-12-31
+5	mr.duck	404 lane	2010-06-11
 
 statement ok
 rollback;
 
-mode skip
-
-# # we see the original data after an abort
-# query IIII
-# select * from s3_catalog.test_inserts.basic_insert_test order by id
-# ----
-# 1	Alice	Smith	1990-01-01
-# 2	Bob	Jones	1985-06-15
-# 3	Charlie	Brown	2000-12-31vc
+# we see the original data after an abort
+query IIII
+select * from s3_catalog.test_inserts.basic_insert_test order by id
+----
+1	Alice	Smith	1990-01-01
+2	Bob	Jones	1985-06-15
+3	Charlie	Brown	2000-12-31
 
 
 # Perform an insert into the same table from two separate transactions
@@ -91,24 +89,48 @@ begin
 statement ok con2
 insert into s3_catalog.test_inserts.basic_insert_test select * from VALUES
     (10,
-    'duckmane' ,
+    'duckman' ,
     'byteway' ,
     '2010/06/11'::DATE) t(id, name, address, date);
+
+# con1 only sees con1
+query IIII con1
+select * from s3_catalog.test_inserts.basic_insert_test;
+----
+1	Alice	Smith	1990-01-01
+2	Bob	Jones	1985-06-15
+3	Charlie	Brown	2000-12-31
+8	mr.scroog	bitlane	2010-06-11
+
+# con2 only sees con2
+query IIII con2
+select * from s3_catalog.test_inserts.basic_insert_test;
+----
+1	Alice	Smith	1990-01-01
+2	Bob	Jones	1985-06-15
+3	Charlie	Brown	2000-12-31
+10	duckman	byteway	2010-06-11
 
 statement ok con2
 commit
 
 # The second commit failed because both transactions tried to add sequence number: 2
 # Invalid Configuration Error: Request to 'http://127.0.0.1:8181/v1/transactions/commit' returned a non-200 status code
-statement error
+statement error con1
 commit
 ----
 TransactionContext Error
 
-mode skip
+# we see the con2 update
+query IIII
+select * from s3_catalog.test_inserts.basic_insert_test;
+----
+1	Alice	Smith	1990-01-01
+2	Bob	Jones	1985-06-15
+3	Charlie	Brown	2000-12-31
+10	duckman	byteway	2010-06-11
 
 # Insert multiple times into the same table in the same transaction
-
 statement ok
 begin
 
@@ -129,57 +151,20 @@ insert into s3_catalog.test_inserts.basic_insert_test select * from VALUES
 statement ok
 insert into s3_catalog.test_inserts.basic_insert_test select * from VALUES
     (17,
-    'ms.Swas' ,
+    'ms.Swan' ,
     'lakeway' ,
     '2010/06/11'::DATE) t(id, name, address, date);
 
 statement ok
 commit
 
-# query IIII
-# select * from my_datalake.default.insert_test;
-# ----
-
-
-# # Insert into both 'insert_test' and 'insert_all_types' in the same transaction
-#
-# statement ok
-# begin
-#
-# statement ok
-# insert into my_datalake.default.insert_test select
-# 	'2020/08/16'::DATE a,
-# 	4 b,
-# 	'insert 4' c
-# ;
-#
-# statement ok
-# INSERT INTO my_datalake.default.insert_all_types
-# SELECT
-# 	127::TINYINT, -- byte_col (max for TINYINT)
-# 	1340::SMALLINT, -- short_col (min for SMALLINT)
-# 	2147483647::INT, -- int_col (max for INT)
-# 	9223372036854775807::BIGINT, -- long_col (max for BIGINT)
-# 	3.14::FLOAT, -- float_col (typical float)
-# 	-1.7976931348623157::DOUBLE, -- double_col (min for DOUBLE)
-# 	1234567890.12345::DECIMAL(15, 5), -- decimal_col
-# 	DATE '2023-12-31' -- date_col
-# ;
-#
-# statement ok
-# commit
-#
-# query III
-# select * from my_datalake.default.insert_test;
-# ----
-# 2010-06-11	42	test
-# 2020-08-12	45345	inserted by con1
-# 2020-08-13	1	insert 1
-# 2020-08-14	2	insert 2
-# 2020-08-15	3	insert 3
-# 2020-08-16	4	insert 4
-#
-# query IIIIIIII
-# select * from my_datalake.default.insert_all_types;
-# ----
-# 127	1340	2147483647	9223372036854775807	3.14	-1.7976931348623157	1234567890.12345	2023-12-31
+query IIII
+select * from s3_catalog.test_inserts.basic_insert_test;
+----
+1	Alice	Smith	1990-01-01
+2	Bob	Jones	1985-06-15
+3	Charlie	Brown	2000-12-31
+10	duckman	byteway	2010-06-11
+15	mr.scroog	bitlane	2010-06-11
+16	mr.Goose	ponder	2010-06-11
+17	ms.Swan	lakeway	2010-06-11

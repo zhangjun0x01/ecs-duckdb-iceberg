@@ -106,7 +106,6 @@ string AWSInput::GetRequest(ClientContext &context) {
 	const Aws::Http::URI uri_const = Aws::Http::URI(uri);
 	auto request = Aws::Http::CreateHttpRequest(uri_const, Aws::Http::HttpMethod::HTTP_GET,
 	                                            Aws::Utils::Stream::DefaultResponseStreamFactoryMethod);
-	std::shared_ptr<Aws::Http::HttpRequest> req(request);
 	request->SetUserAgent(user_agent);
 
 	signer->SignRequest(*request);
@@ -164,7 +163,6 @@ string AWSInput::PostRequest(ClientContext &context, string post_body) {
 	*body << post_body;
 	request->AddContentBody(body);
 	request->SetContentLength(to_string(post_body.size()));
-
 	request->SetUserAgent(user_agent);
 
 	std::shared_ptr<Aws::Auth::AWSCredentialsProviderChain> provider =
@@ -172,7 +170,6 @@ string AWSInput::PostRequest(ClientContext &context, string post_body) {
 	auto signer = make_uniq<Aws::Client::AWSAuthV4Signer>(provider, service.c_str(), region.c_str());
 
 	if (!signer->SignRequest(*request)) {
-		Printer::Print("failed to sign request");
 		throw HTTPException(StringUtil::Format("Failed to sign request"));
 	}
 	std::shared_ptr<Aws::Http::HttpClient> MyHttpClient;

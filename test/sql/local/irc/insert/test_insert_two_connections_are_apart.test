@@ -1,0 +1,99 @@
+# name: test/sql/local/irc/insert/test_insert_two_connections_are_apart.test
+# group: [insert]
+
+require-env ICEBERG_SERVER_AVAILABLE
+
+require avro
+
+require parquet
+
+require iceberg
+
+require httpfs
+
+# Do not ignore 'HTTP' error messages!
+set ignore_error_messages
+
+statement ok
+set enable_logging=true
+
+statement ok
+set logging_level='debug'
+
+statement ok
+CREATE SECRET (
+    TYPE S3,
+    KEY_ID 'admin',
+    SECRET 'password',
+    ENDPOINT '127.0.0.1:9000',
+    URL_STYLE 'path',
+    USE_SSL 0
+);
+
+
+statement ok
+ATTACH '' AS my_datalake (
+    TYPE ICEBERG,
+    CLIENT_ID 'admin',
+    CLIENT_SECRET 'password',
+    ENDPOINT 'http://127.0.0.1:8181'
+);
+
+# Perform an INSERT and COMMIT it
+
+statement ok
+insert into my_datalake.default.insert_test select
+	'2010/06/11'::DATE a,
+	42 b,
+	'test' c
+;
+
+# Read the new data before committing
+query III
+select * from my_datalake.default.insert_test;
+----
+2010-06-11	42	test
+
+
+statement ok con1
+begin
+
+statement ok con1
+insert into my_datalake.default.insert_test select
+	'2020/08/12'::DATE a,
+	45345 b,
+	'inserted by con1' c
+;
+
+statement ok con2
+begin
+
+statement ok con2
+insert into my_datalake.default.insert_test select
+	'2020/08/12'::DATE a,
+	45345 b,
+	'inserted by con2' c
+;
+
+query III con2
+select * from my_datalake.default.insert_test;
+----
+2010-06-11	42	test
+2020-08-12	45345	inserted by con2
+
+
+query III con1
+select * from my_datalake.default.insert_test;
+----
+2010-06-11	42	test
+2020-08-12	45345	inserted by con1
+
+statement ok con1
+commit;
+
+
+# The second commit failed because both transactions tried to add sequence number: 2
+statement error con2
+commit
+----
+<REGEX>:.*Requirement failed: branch main has changed.*

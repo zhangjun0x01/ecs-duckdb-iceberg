@@ -7,7 +7,6 @@ import duckdb
 from datetime import date
 
 REGION = "us-east-2"
-CATALOG = "iceberg-testing"
 DATABASE = "iceberg-testing"
 database_name = "iceberg-testing"
 TABLE_BUCKET = "iceberg-testing"
@@ -19,14 +18,14 @@ TABLE_NAME = "basic_insert_test"
 
 def get_glue_catalog():
     rest_catalog = load_catalog(
-        CATALOG,
+        "glue_catalog",
         **{
             "type": "rest",
             "warehouse": "840140254803:s3tablescatalog/duckdblabs-iceberg-testing",
-            "uri": f"https://glue.{REGION}.amazonaws.com/iceberg",
+            "uri": f"https://glue.us-east-1.amazonaws.com/iceberg",
             "rest.sigv4-enabled": "true",
             "rest.signing-name": "glue",
-            "rest.signing-region": REGION,
+            "rest.signing-region": "us-east-1",
         },
     )
     return rest_catalog
@@ -34,7 +33,7 @@ def get_glue_catalog():
 
 def get_s3tables_catalog():
     rest_catalog = load_catalog(
-        CATALOG,
+        "s3tables_catalog",
         **{
             "type": "rest",
             "warehouse": "arn:aws:s3tables:us-east-2:840140254803:bucket/iceberg-testing",
@@ -88,6 +87,7 @@ def main():
     print(f"performing {action} for {str(len(catalogs))} catalogs")
 
     for catalog in catalogs:
+        print(f"---- {catalog.name} ----")
         if action == "delete-and-create":
             delete_table(catalog)
             create_table(catalog)
@@ -139,7 +139,7 @@ def delete_table(rest_catalog):
     identifier = (f"{DATABASE_NAME}", f"{TABLE_NAME}")
     # Drop the table
     rest_catalog.drop_table(identifier, purge_requested=True)
-    print("table dropped succesfully")
+    print(f"{rest_catalog.name}: table {TABLE_NAME} dropped succesfully")
 
 
 def create_table(rest_catalog):
@@ -154,7 +154,7 @@ def create_table(rest_catalog):
     # List tables in the namespace
     tables = list(map(lambda t: t[1], get_tables(rest_catalog, namespace)))
     if TABLE_NAME in tables:
-        print(f"table already exists in database {DATABASE_NAME}")
+        print(f"{rest_catalog.name}: table {TABLE_NAME} already exists in database {DATABASE_NAME}")
         return
 
     table_schema = create_basic_schema()
@@ -177,7 +177,7 @@ def create_table(rest_catalog):
 
     table_data = pa.Table.from_arrays(data, schema=table_schema)
     basic_table.append(table_data)
-    print("appended data")
+    print(f"{rest_catalog.name}: appended data to {TABLE_NAME}")
 
 
 if __name__ == "__main__":

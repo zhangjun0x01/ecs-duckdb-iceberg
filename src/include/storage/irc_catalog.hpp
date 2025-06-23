@@ -93,7 +93,7 @@ public:
 	const string version;
 	//! optional prefix
 	string prefix;
-	//! Endpoint Type
+	//! attach options
 	IcebergAttachOptions attach_options;
 
 private:

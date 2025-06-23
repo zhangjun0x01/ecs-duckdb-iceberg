@@ -271,15 +271,13 @@ void IRCatalog::GetConfig(ClientContext &context, IcebergEndpointType &endpoint_
 	if (!catalog_config.has_endpoints && endpoint_type == IcebergEndpointType::AWS_S3TABLES) {
 		supported_urls.clear();
 		AddS3TablesEndpoints();
-	} else {
+	} else if (!catalog_config.has_endpoints) {
 		AddDefaultSupportedEndpoints();
 	}
 
 	if (prefix.empty()) {
 		DUCKDB_LOG(context, IcebergLogType, "No prefix found for catalog with warehouse value %s", warehouse);
 	}
-	// TODO: store optional endpoints param as well. We can enforce per catalog the endpoints that
-	//  are allowed to be hit
 }
 
 string IRCatalog::OptionalGetCachedValue(const string &url) {

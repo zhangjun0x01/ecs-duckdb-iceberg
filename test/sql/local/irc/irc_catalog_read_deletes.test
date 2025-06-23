@@ -84,7 +84,6 @@ select count(*) from read_parquet('__WORKING_DIRECTORY__/data/generated/intermed
 0
 
 
-
 # Verify reading from large partitioned table
 # add tests for partitioned tables.
 query II nosort result_4
