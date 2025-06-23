@@ -1,0 +1,73 @@
+# name: test/sql/local/irc/insert/test_always_ok_insert.test
+# group: [insert]
+
+require-env ICEBERG_SERVER_AVAILABLE
+
+require avro
+
+require parquet
+
+require iceberg
+
+require httpfs
+
+# Do not ignore 'HTTP' error messages!
+set ignore_error_messages
+
+statement ok
+set enable_logging=true
+
+statement ok
+set logging_level='debug'
+
+statement ok
+CREATE SECRET (
+    TYPE S3,
+    KEY_ID 'admin',
+    SECRET 'password',
+    ENDPOINT '127.0.0.1:9000',
+    URL_STYLE 'path',
+    USE_SSL 0
+);
+
+
+statement ok
+ATTACH '' AS my_datalake (
+    TYPE ICEBERG,
+    CLIENT_ID 'admin',
+    CLIENT_SECRET 'password',
+    ENDPOINT 'http://127.0.0.1:8181'
+);
+
+# Perform an INSERT and COMMIT it
+
+statement ok con1
+begin;
+
+statement ok con1
+insert into my_datalake.default.insert_test select
+	'2010/06/11'::DATE a,
+	42 b,
+	'delete_me' c
+;
+
+statement ok con2;
+insert into my_datalake.default.insert_test select
+	'2010/06/11'::DATE a,
+	42 b,
+	'delete_me con2' c
+;
+
+statement ok con1
+commit;
+
+statement error con2
+commit;
+----
+TransactionError
+
+
+query I
+select count(*) from duckdb_secrets() where name like '%__internal_ic%';
+----
+0

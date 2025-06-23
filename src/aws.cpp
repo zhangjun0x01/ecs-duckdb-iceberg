@@ -79,7 +79,7 @@ static void LogAWSRequest(ClientContext &context, std::shared_ptr<Aws::Http::Htt
 	}
 }
 
-string AWSInput::GetRequest(ClientContext &context) {
+unique_ptr<HTTPResponse> AWSInput::GetRequest(ClientContext &context) {
 	InitAWSAPI();
 	auto clientConfig = make_uniq<Aws::Client::ClientConfiguration>();
 
@@ -120,19 +120,15 @@ string AWSInput::GetRequest(ClientContext &context) {
 	           "GET %s (response %d) (signed with key_id '%s' for service '%s', in region '%s')", uri.GetURIString(),
 	           resCode, key_id, service.c_str(), region.c_str());
 
-	if (resCode != Aws::Http::HttpResponseCode::OK) {
-		Aws::StringStream resBody;
-		resBody << res->GetResponseBody().rdbuf();
-		throw HTTPException(StringUtil::Format("Failed to query %s, http error %d thrown. Message: %s",
-		                                       request->GetUri().GetURIString(true), res->GetResponseCode(),
-		                                       resBody.str()));
-	}
+	unique_ptr<HTTPResponse> result = make_uniq<HTTPResponse>(HTTPStatusCode(static_cast<idx_t>(resCode)));
+	result->url = uri.GetURIString();
 	Aws::StringStream resBody;
 	resBody << res->GetResponseBody().rdbuf();
-	return resBody.str();
+	result->body = resBody.str();
+	return result;
 }
 
-string AWSInput::PostRequest(ClientContext &context, string post_body) {
+unique_ptr<HTTPResponse> AWSInput::PostRequest(ClientContext &context, string post_body) {
 
 	InitAWSAPI();
 	auto clientConfig = make_uniq<Aws::Client::ClientConfiguration>();
@@ -182,16 +178,12 @@ string AWSInput::PostRequest(ClientContext &context, string post_body) {
 	           "POST %s (response %d) (signed with key_id '%s' for service '%s', in region '%s')", uri.GetURIString(),
 	           resCode, key_id, service.c_str(), region.c_str());
 
-	if (resCode != Aws::Http::HttpResponseCode::OK) {
-		Aws::StringStream resBody;
-		resBody << res->GetResponseBody().rdbuf();
-		throw HTTPException(StringUtil::Format("Failed to query %s, http error %d thrown. Message: %s",
-		                                       request->GetUri().GetURLEncodedPath(), res->GetResponseCode(),
-		                                       resBody.str()));
-	}
+	unique_ptr<HTTPResponse> result = make_uniq<HTTPResponse>(HTTPStatusCode(static_cast<idx_t>(resCode)));
+	result->url = uri.GetURIString();
 	Aws::StringStream resBody;
 	resBody << res->GetResponseBody().rdbuf();
-	return resBody.str();
+	result->body = resBody.str();
+	return result;
 }
 
 #endif

@@ -116,7 +116,7 @@ commit
 statement error con1
 commit
 ----
-TransactionContext Error
+<REGEX>:.*HTTP Error.*branch main has changed.*
 
 # we see the con2 update
 query IIII

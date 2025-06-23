@@ -140,6 +140,13 @@ static rest_api_objects::TableRequirement CreateAssertRefSnapshotIdRequirement(I
 	return req;
 }
 
+void IRCTransaction::DropSecrets(ClientContext &context) {
+	auto &secret_manager = SecretManager::Get(context);
+	for (auto &secret_name : created_secrets) {
+		(void)secret_manager.DropSecretByName(context, secret_name, OnEntryNotFound::RETURN_NULL);
+	}
+}
+
 void IRCTransaction::Commit() {
 	if (dirty_tables.empty()) {
 		return;
@@ -204,6 +211,7 @@ void IRCTransaction::Commit() {
 
 			auto response = authentication.PostRequest(*context, url_builder, transaction_json);
 			if (response->status != HTTPStatusCode::OK_200) {
+				//				DropSecrets(*context);
 				throw InvalidConfigurationException(
 				    "Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s",
 				    url_builder.GetURL(), EnumUtil::ToString(response->status), response->reason, response->body);
@@ -226,13 +234,14 @@ void IRCTransaction::Commit() {
 				auto transaction_json = ConstructTableUpdateJSON(table_change);
 				auto response = authentication.PostRequest(*context, url_builder, transaction_json);
 				if (response->status != HTTPStatusCode::OK_200) {
-					context->transaction.Rollback(nullptr);
+					//					DropSecrets(*context);
 					throw InvalidConfigurationException(
 					    "Request to '%s' returned a non-200 status code (%s), with reason: %s, body: %s",
 					    url_builder.GetURL(), EnumUtil::ToString(response->status), response->reason, response->body);
 				}
 			}
 		}
+		//		DropSecrets(*context);
 		temp_con.Commit();
 	} catch (std::exception &ex) {
 		ErrorData error(ex);

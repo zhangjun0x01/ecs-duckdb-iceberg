@@ -99,10 +99,7 @@ unique_ptr<HTTPResponse> SIGV4Authorization::PostRequest(ClientContext &context,
 	aws_input.session_token =
 	    kv_secret.secret_map["session_token"].IsNull() ? "" : kv_secret.secret_map["session_token"].GetValue<string>();
 
-	auto response_body = aws_input.PostRequest(context, body);
-	auto response = make_uniq<HTTPResponse>(HTTPStatusCode::OK_200);
-	response->body = response_body;
-	return response;
+	return aws_input.PostRequest(context, body);
 }
 
 unique_ptr<HTTPResponse> SIGV4Authorization::GetRequest(ClientContext &context,
@@ -139,10 +136,7 @@ unique_ptr<HTTPResponse> SIGV4Authorization::GetRequest(ClientContext &context,
 	aws_input.session_token =
 	    kv_secret.secret_map["session_token"].IsNull() ? "" : kv_secret.secret_map["session_token"].GetValue<string>();
 
-	auto body = aws_input.GetRequest(context);
-	auto response = make_uniq<HTTPResponse>(HTTPStatusCode::OK_200);
-	response->body = body;
-	return response;
+	return aws_input.GetRequest(context);
 }
 
 } // namespace duckdb
