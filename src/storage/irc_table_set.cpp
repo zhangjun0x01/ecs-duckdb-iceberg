@@ -238,10 +238,10 @@ void ICTableSet::Scan(ClientContext &context, const std::function<void(CatalogEn
 	lock_guard<mutex> l(entry_lock);
 	LoadEntries(context);
 	for (auto &entry : entries) {
-		FillEntry(context, entry.second);
-		for (auto &schema : entry.second.schema_versions) {
-			callback(*schema.second);
-		}
+		auto &table_info = entry.second;
+		FillEntry(context, table_info);
+		auto schema_id = table_info.table_metadata.current_schema_id;
+		callback(*table_info.schema_versions[schema_id]);
 	}
 }
 
