@@ -57,6 +57,13 @@ public:
 
 public:
 	unordered_map<int32_t, roaring::Roaring> bitmaps;
+
+	//! State shared between Filter calls
+	roaring::BulkContext bulk_context;
+	optional_ptr<roaring::Roaring> current_bitmap;
+	bool has_current_high = false;
+	//! High bits of the current bitmap (the key in the map)
+	int32_t current_high;
 };
 
 } // namespace duckdb

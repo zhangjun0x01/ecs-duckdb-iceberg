@@ -250,21 +250,32 @@ idx_t IcebergDeletionVector::Filter(row_t start_row_index, idx_t count, Selectio
 		//! FIXME: How do we test this? These offsets are **huge**
 		const idx_t next_offset = MinValue<idx_t>(start_row_index + count, next_high_boundary) - start_row_index;
 
-		auto it = bitmaps.find(high);
-		if (it == bitmaps.end()) {
+		//! Update the state
+		if (!has_current_high || current_high != high) {
+			auto it = bitmaps.find(high);
+			if (it == bitmaps.end()) {
+				current_bitmap = nullptr;
+			} else {
+				current_bitmap = it->second;
+				bulk_context = roaring::BulkContext();
+			}
+			current_high = high;
+			has_current_high = true;
+		}
+
+		if (!current_bitmap) {
 			for (idx_t i = offset; i < next_offset; ++i) {
 				result_sel.set_index(selection_idx++, i);
 			}
 		} else {
-			const roaring::Roaring &bitmap = it->second;
+			const roaring::Roaring &bitmap = *current_bitmap;
 			for (idx_t i = offset; i < next_offset; ++i) {
 				uint32_t low_bits = static_cast<uint32_t>((start_row_index + i) & 0xFFFFFFFF);
-				const bool is_deleted = bitmap.contains(low_bits);
+				const bool is_deleted = bitmap.containsBulk(bulk_context, low_bits);
 				result_sel.set_index(selection_idx, i);
 				selection_idx += !is_deleted;
 			}
 		}
-
 		offset = next_offset;
 	}
 	return selection_idx;
