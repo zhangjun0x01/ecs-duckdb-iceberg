@@ -10,14 +10,10 @@ duckdb_extension_load(iceberg
 duckdb_extension_load(tpch)
 duckdb_extension_load(icu)
 
-#duckdb_extension_load(avro
-#        LOAD_TESTS
-#        GIT_URL https://github.com/duckdb/duckdb_avro
-#        GIT_TAG f861995afa955b75b0543019113479424ce96cfe
-#)
-
 duckdb_extension_load(avro
-        SOURCE_DIR "/Users/thijs/DuckDBLabs/duckdb_avro"
+        LOAD_TESTS
+        GIT_URL https://github.com/duckdb/duckdb_avro
+        GIT_TAG f861995afa955b75b0543019113479424ce96cfe
 )
 
 ################## AWS
