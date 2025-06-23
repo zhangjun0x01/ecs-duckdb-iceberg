@@ -1,5 +1,6 @@
 #include "iceberg_value.hpp"
 #include "duckdb/common/helper.hpp"
+#include "duckdb/common/types/uuid.hpp"
 
 namespace duckdb {
 
@@ -104,6 +105,34 @@ static DeserializeResult DeserializeDecimal(const string_t &blob, const LogicalT
 		throw InternalException("DeserializeDecimal not implemented for physical type '%s'",
 		                        TypeIdToString(physical_type));
 	}
+}
+
+static DeserializeResult DeserializeUUID(const string_t &blob, const LogicalType &type) {
+	uhugeint_t ret;
+
+	D_ASSERT(type.id() == LogicalTypeId::UUID);
+
+	if (blob.GetSize() != sizeof(uhugeint_t)) {
+		return DeserializeError(blob, type);
+	}
+
+	// Convert from big-endian to host byte order
+	const uint8_t *src = reinterpret_cast<const uint8_t *>(blob.GetData());
+	uint64_t upper_val = 0;
+	uint64_t lower_val = 0;
+
+	// Read upper part (big-endian)
+	for (idx_t i = 0; i < 8; i++) {
+		upper_val = (upper_val << 8) | src[i];
+	}
+
+	// Read lower part (big-endian)
+	for (idx_t i = 8; i < 16; i++) {
+		lower_val = (lower_val << 8) | src[i];
+	}
+
+	ret = uhugeint_t(upper_val, lower_val);
+	return Value::UUID(UUID::FromUHugeint(ret));
 }
 
 //! FIXME: because of schema evolution, there are rules for inferring the correct type that we need to apply:
@@ -219,8 +248,7 @@ DeserializeResult IcebergValue::DeserializeValue(const string_t &blob, const Log
 		//! TIMESTAMP_NS is added as part of Iceberg V3
 		return DeserializeError(blob, type);
 	case LogicalTypeId::UUID:
-		//! UUID not implemented yet
-		return DeserializeError(blob, type);
+		return DeserializeUUID(blob, type);
 	// Add more types as needed
 	default:
 		break;
