@@ -13,6 +13,10 @@ unique_ptr<IcebergDeletionVector> IcebergDeletionVector::FromBlob(data_ptr_t blo
 	vector_size = BSwap(vector_size);
 	blob_start += sizeof(uint32_t);
 
+	if (blob_length < 12) {
+		throw InvalidConfigurationException("Blob is too small (length of %d bytes) to be a deletion-vector-v1",
+		                                    blob_length);
+	}
 	constexpr char DELETION_VECTOR_MAGIC[] = {'\xD1', '\xD3', '\x39', '\x64'};
 	char magic_bytes[4];
 	memcpy(magic_bytes, blob_start, 4);
