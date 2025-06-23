@@ -241,25 +241,32 @@ idx_t IcebergDeletionVector::Filter(row_t start_row_index, idx_t count, Selectio
 	result_sel.Initialize(STANDARD_VECTOR_SIZE);
 	idx_t selection_idx = 0;
 
-	for (idx_t i = 0; i < count; ++i) {
-		row_t row = start_row_index + i;
-		uint32_t low_bits = static_cast<uint32_t>(row & 0xFFFFFFFF);
-		int32_t high_bits = static_cast<int32_t>((row >> 32) & 0xFFFFFFFF);
+	idx_t offset = 0;
+	while (offset < count) {
+		const row_t current_row = start_row_index + offset;
+		const int32_t high = static_cast<int32_t>(current_row >> 32);
 
-		auto it = bitmaps.find(high_bits);
-		bool is_deleted = false;
+		const row_t next_high_boundary = ((static_cast<row_t>(high) + 1) << 32);
+		//! FIXME: How do we test this? These offsets are **huge**
+		const idx_t next_offset = MinValue<idx_t>(start_row_index + count, next_high_boundary) - start_row_index;
 
-		if (it != bitmaps.end()) {
+		auto it = bitmaps.find(high);
+		if (it == bitmaps.end()) {
+			for (idx_t i = offset; i < next_offset; ++i) {
+				result_sel.set_index(selection_idx++, i);
+			}
+		} else {
 			const roaring::Roaring &bitmap = it->second;
-			is_deleted = bitmap.contains(low_bits);
+			for (idx_t i = offset; i < next_offset; ++i) {
+				uint32_t low_bits = static_cast<uint32_t>((start_row_index + i) & 0xFFFFFFFF);
+				const bool is_deleted = bitmap.contains(low_bits);
+				result_sel.set_index(selection_idx, i);
+				selection_idx += !is_deleted;
+			}
 		}
 
-		if (!is_deleted) {
-			result_sel.set_index(selection_idx++, i);
-		}
+		offset = next_offset;
 	}
-	throw NotImplementedException("IcebergDeletionVector::Filter");
-
 	return selection_idx;
 }
 
