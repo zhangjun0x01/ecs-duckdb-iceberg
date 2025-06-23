@@ -27,6 +27,7 @@ public:
 	}
 	void MarkTableAsDirty(const ICTableEntry &table);
 	void DropSecrets(ClientContext &context);
+	rest_api_objects::CommitTransactionRequest GetTransactionRequest(ClientContext &context);
 
 private:
 	void CleanupFiles();

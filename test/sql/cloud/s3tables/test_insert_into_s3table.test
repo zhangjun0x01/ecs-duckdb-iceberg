@@ -120,7 +120,7 @@ commit
 statement error con1
 commit
 ----
-<REGEX>:.*Invalid Configuration Error.*
+<REGEX>:.*TransactionContext Error.*Conflict_409.*
 
 statement ok
 select 1;
