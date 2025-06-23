@@ -175,13 +175,18 @@ insert into s3_catalog.test_inserts.basic_insert_test select * from VALUES
 statement ok con3
 commit
 
-# query IIII
-# select * from s3_catalog.test_inserts.basic_insert_test;
-# ----
-# 1	Alice	Smith	1990-01-01
-# 2	Bob	Jones	1985-06-15
-# 3	Charlie	Brown	2000-12-31
-# 10	duckman	byteway	2010-06-11
-# 15	mr.scroog	bitlane	2010-06-11
-# 16	mr.Goose	ponder	2010-06-11
-# 17	ms.Swan	lakeway	2010-06-11
+query IIII
+select * from s3_catalog.test_inserts.basic_insert_test;
+----
+1	Alice	Smith	1990-01-01
+2	Bob	Jones	1985-06-15
+3	Charlie	Brown	2000-12-31
+10	duckman	byteway	2010-06-11
+15	mr.scroog	bitlane	2010-06-11
+16	mr.Goose	ponder	2010-06-11
+17	ms.Swan	lakeway	2010-06-11
+
+query I
+select count(*) from duckdb_secrets() where name like '%__internal_ic%';
+----
+0

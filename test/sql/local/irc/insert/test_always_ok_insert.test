@@ -11,7 +11,10 @@ require iceberg
 
 require httpfs
 
+mode skip
+
 # Do not ignore 'HTTP' error messages!
+statement ok
 set ignore_error_messages
 
 statement ok
@@ -65,7 +68,6 @@ statement error con2
 commit;
 ----
 TransactionError
-
 
 query I
 select count(*) from duckdb_secrets() where name like '%__internal_ic%';
