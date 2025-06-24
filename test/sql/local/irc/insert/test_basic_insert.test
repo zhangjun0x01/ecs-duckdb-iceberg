@@ -134,8 +134,6 @@ commit
 ----
 <REGEX>:.*Requirement failed: branch main has changed.*
 
-mode skip
-
 query III
 select * from my_datalake.default.insert_test;
 ----
