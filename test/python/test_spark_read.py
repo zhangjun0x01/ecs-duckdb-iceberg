@@ -60,10 +60,11 @@ class TestSparkRead:
         """
         )
         res = df.collect()
-        pprint(res)
         assert res == [
             Row(col1=datetime.date(2010, 6, 11), col2=42, col3='test'),
             Row(col1=datetime.date(2020, 8, 12), col2=45345, col3='inserted by con1'),
             Row(col1=datetime.date(2020, 8, 13), col2=1, col3='insert 1'),
+            Row(col1=datetime.date(2020, 8, 14), col2=2, col3='insert 2'),
+            Row(col1=datetime.date(2020, 8, 15), col2=3, col3='insert 3'),
             Row(col1=datetime.date(2020, 8, 16), col2=4, col3='insert 4'),
         ]

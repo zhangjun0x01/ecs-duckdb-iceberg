@@ -41,9 +41,9 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 	int32_t *content = nullptr;
 	int64_t *sequence_number = nullptr;
 	int64_t *min_sequence_number = nullptr;
-	int64_t *added_files_count = nullptr;
-	int64_t *existing_files_count = nullptr;
-	int64_t *deleted_files_count = nullptr;
+	int32_t *added_files_count = nullptr;
+	int32_t *existing_files_count = nullptr;
+	int32_t *deleted_files_count = nullptr;
 	int64_t *added_rows_count = nullptr;
 	int64_t *existing_rows_count = nullptr;
 	int64_t *deleted_rows_count = nullptr;
@@ -59,13 +59,13 @@ idx_t ManifestListReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 		    FlatVector::GetData<int64_t>(chunk.data[vector_mapping.at(MIN_SEQUENCE_NUMBER).GetPrimaryIndex()]);
 		//! 'added_files_count'
 		added_files_count =
-		    FlatVector::GetData<int64_t>(chunk.data[vector_mapping.at(ADDED_FILES_COUNT).GetPrimaryIndex()]);
+		    FlatVector::GetData<int32_t>(chunk.data[vector_mapping.at(ADDED_FILES_COUNT).GetPrimaryIndex()]);
 		//! 'existing_files_count'
 		existing_files_count =
-		    FlatVector::GetData<int64_t>(chunk.data[vector_mapping.at(EXISTING_FILES_COUNT).GetPrimaryIndex()]);
+		    FlatVector::GetData<int32_t>(chunk.data[vector_mapping.at(EXISTING_FILES_COUNT).GetPrimaryIndex()]);
 		//! 'deleted_files_count'
 		deleted_files_count =
-		    FlatVector::GetData<int64_t>(chunk.data[vector_mapping.at(DELETED_FILES_COUNT).GetPrimaryIndex()]);
+		    FlatVector::GetData<int32_t>(chunk.data[vector_mapping.at(DELETED_FILES_COUNT).GetPrimaryIndex()]);
 		//! 'added_rows_count'
 		added_rows_count =
 		    FlatVector::GetData<int64_t>(chunk.data[vector_mapping.at(ADDED_ROWS_COUNT).GetPrimaryIndex()]);
