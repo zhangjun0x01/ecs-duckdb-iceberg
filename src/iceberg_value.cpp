@@ -1,6 +1,7 @@
 #include "iceberg_value.hpp"
 #include "duckdb/common/helper.hpp"
 #include "duckdb/common/types/uuid.hpp"
+#include "duckdb/common/bswap.hpp"
 
 namespace duckdb {
 
@@ -108,8 +109,6 @@ static DeserializeResult DeserializeDecimal(const string_t &blob, const LogicalT
 }
 
 static DeserializeResult DeserializeUUID(const string_t &blob, const LogicalType &type) {
-	uhugeint_t ret;
-
 	D_ASSERT(type.id() == LogicalTypeId::UUID);
 
 	if (blob.GetSize() != sizeof(uhugeint_t)) {
@@ -117,21 +116,10 @@ static DeserializeResult DeserializeUUID(const string_t &blob, const LogicalType
 	}
 
 	// Convert from big-endian to host byte order
-	const uint8_t *src = reinterpret_cast<const uint8_t *>(blob.GetData());
-	uint64_t upper_val = 0;
-	uint64_t lower_val = 0;
-
-	// Read upper part (big-endian)
-	for (idx_t i = 0; i < 8; i++) {
-		upper_val = (upper_val << 8) | src[i];
-	}
-
-	// Read lower part (big-endian)
-	for (idx_t i = 8; i < 16; i++) {
-		lower_val = (lower_val << 8) | src[i];
-	}
-
-	ret = uhugeint_t(upper_val, lower_val);
+	auto src = reinterpret_cast<const_data_ptr_t>(blob.GetData());
+	uhugeint_t ret;
+	ret.upper = BSwap(Load<uint64_t>(src));
+	ret.lower = BSwap(Load<uint64_t>(src + sizeof(uint64_t)));
 	return Value::UUID(UUID::FromUHugeint(ret));
 }
 
