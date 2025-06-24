@@ -156,14 +156,19 @@ void IRCTransaction::Commit() {
 			}
 
 			auto &transaction_data = *table->table_info.transaction_data;
-			if (current_snapshot && !transaction_data.alters.empty()) {
-				//! If any changes were made to the data of the table, we should assert that our parent snapshot has not
-				//! changed
-				commit_state.table_change.requirements.push_back(
-				    CreateAssertRefSnapshotIdRequirement(*current_snapshot));
-			}
 			for (auto &update : transaction_data.updates) {
 				update->CreateUpdate(db, *context, commit_state);
+			}
+			if (!transaction_data.alters.empty()) {
+				if (current_snapshot) {
+					//! If any changes were made to the data of the table, we should assert that our parent snapshot has
+					//! not changed
+					commit_state.table_change.requirements.push_back(
+					    CreateAssertRefSnapshotIdRequirement(*current_snapshot));
+				}
+
+				auto &last_alter = transaction_data.alters.back();
+				commit_state.table_change.updates.push_back(last_alter.get().CreateSetSnapshotRefUpdate());
 			}
 			transaction.table_changes.push_back(std::move(table_change));
 		}

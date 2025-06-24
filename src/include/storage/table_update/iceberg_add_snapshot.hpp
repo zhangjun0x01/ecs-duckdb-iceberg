@@ -24,6 +24,7 @@ public:
 
 public:
 	void CreateUpdate(DatabaseInstance &db, ClientContext &context, IcebergCommitState &commit_state) override;
+	rest_api_objects::TableUpdate CreateSetSnapshotRefUpdate();
 
 public:
 	IcebergManifestFile manifest_file;
