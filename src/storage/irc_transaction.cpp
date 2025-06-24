@@ -170,14 +170,22 @@ rest_api_objects::CommitTransactionRequest IRCTransaction::GetTransactionRequest
 		}
 
 		auto &transaction_data = *table->table_info.transaction_data;
-		if (current_snapshot && !transaction_data.alters.empty()) {
-			//! If any changes were made to the data of the table, we should assert that our parent snapshot has not
-			//! changed
-			commit_state.table_change.requirements.push_back(CreateAssertRefSnapshotIdRequirement(*current_snapshot));
-		}
 		for (auto &update : transaction_data.updates) {
 			update->CreateUpdate(db, context, commit_state);
 		}
+
+		if (!transaction_data.alters.empty()) {
+			if (current_snapshot) {
+				//! If any changes were made to the data of the table, we should assert that our parent snapshot has
+				//! not changed
+				commit_state.table_change.requirements.push_back(
+				    CreateAssertRefSnapshotIdRequirement(*current_snapshot));
+			}
+
+			auto &last_alter = transaction_data.alters.back();
+			commit_state.table_change.updates.push_back(last_alter.get().CreateSetSnapshotRefUpdate());
+		}
+
 		transaction.table_changes.push_back(std::move(table_change));
 	}
 	return transaction;
@@ -193,7 +201,6 @@ void IRCTransaction::Commit() {
 	auto &context = temp_con.context;
 	try {
 		auto transaction = GetTransactionRequest(*context);
-
 		auto &authentication = *catalog.auth_handler;
 		if (catalog.supported_urls.find("POST /v1/{prefix}/transactions/commit") != catalog.supported_urls.end()) {
 			// commit all transactions at once
@@ -233,6 +240,8 @@ void IRCTransaction::Commit() {
 				url_builder.AddPathComponent(table_change.identifier.name);
 
 				auto transaction_json = ConstructTableUpdateJSON(table_change);
+				Printer::Print("posting one update: " + transaction_json);
+
 				auto response = authentication.PostRequest(*context, url_builder, transaction_json);
 				if (response->status != HTTPStatusCode::OK_200) {
 					throw InvalidConfigurationException(

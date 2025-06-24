@@ -29,7 +29,7 @@ rest_api_objects::TableUpdate CreateAddSnapshotUpdate(const IcebergSnapshot &sna
 	return table_update;
 }
 
-rest_api_objects::TableUpdate CreateSetSnapshotRefUpdate(const IcebergSnapshot &snapshot) {
+rest_api_objects::TableUpdate IcebergAddSnapshot::CreateSetSnapshotRefUpdate() {
 	rest_api_objects::TableUpdate table_update;
 
 	table_update.has_set_snapshot_ref_update = true;
@@ -62,7 +62,6 @@ void IcebergAddSnapshot::CreateUpdate(DatabaseInstance &db, ClientContext &conte
 	commit_state.manifests = std::move(manifest_list.manifests);
 
 	commit_state.table_change.updates.push_back(CreateAddSnapshotUpdate(snapshot));
-	commit_state.table_change.updates.push_back(CreateSetSnapshotRefUpdate(snapshot));
 }
 
 } // namespace duckdb

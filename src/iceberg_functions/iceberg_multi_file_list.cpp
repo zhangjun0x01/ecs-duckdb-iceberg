@@ -16,6 +16,7 @@
 #include "duckdb/planner/expression/bound_operator_expression.hpp"
 #include "duckdb/planner/expression/bound_reference_expression.hpp"
 #include "duckdb/planner/expression/bound_conjunction_expression.hpp"
+#include "duckdb/planner/filter/struct_filter.hpp"
 
 #include "metadata/iceberg_predicate_stats.hpp"
 #include "metadata/iceberg_table_metadata.hpp"
@@ -183,15 +184,18 @@ unique_ptr<MultiFileList> IcebergMultiFileList::ComplexFilterPushdown(ClientCont
 
 vector<OpenFileInfo> IcebergMultiFileList::GetAllFiles() {
 	vector<OpenFileInfo> file_list;
+	//! Lock is required because it reads the 'data_files' vector
+	lock_guard<mutex> guard(lock);
 	for (idx_t i = 0; i < data_files.size(); i++) {
-		file_list.push_back(GetFile(i));
+		file_list.push_back(GetFileInternal(i, guard));
 	}
 	return file_list;
 }
 
 FileExpandResult IcebergMultiFileList::GetExpandResult() {
-	// GetFile(1) will ensure files with index 0 and index 1 are expanded if they are available
-	GetFile(1);
+	// GetFileInternal(1) will ensure files with index 0 and index 1 are expanded if they are available
+	lock_guard<mutex> guard(lock);
+	GetFileInternal(1, guard);
 
 	if (data_files.size() > 1) {
 		return FileExpandResult::MULTIPLE_FILES;
@@ -205,8 +209,10 @@ FileExpandResult IcebergMultiFileList::GetExpandResult() {
 idx_t IcebergMultiFileList::GetTotalFileCount() {
 	// FIXME: the 'added_files_count' + the 'existing_files_count'
 	// in the Manifest List should give us this information without scanning the manifest list
+	lock_guard<mutex> guard(lock);
+
 	idx_t i = data_files.size();
-	while (!GetFile(i).path.empty()) {
+	while (!GetFileInternal(i, guard).path.empty()) {
 		i++;
 	}
 	return data_files.size();
@@ -315,7 +321,7 @@ bool IcebergMultiFileList::FileMatchesFilter(const IcebergManifestEntry &file) {
 	return true;
 }
 
-optional_ptr<const IcebergManifestEntry> IcebergMultiFileList::GetDataFile(idx_t file_id) {
+optional_ptr<const IcebergManifestEntry> IcebergMultiFileList::GetDataFile(idx_t file_id, lock_guard<mutex> &guard) {
 	if (file_id < data_files.size()) {
 		//! Have we already scanned this data file and returned it? If so, return it
 		return data_files[file_id];
@@ -381,18 +387,18 @@ optional_ptr<const IcebergManifestEntry> IcebergMultiFileList::GetDataFile(idx_t
 	return data_files[file_id];
 }
 
-OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
-	lock_guard<mutex> guard(lock);
+OpenFileInfo IcebergMultiFileList::GetFileInternal(idx_t file_id, lock_guard<mutex> &guard) {
+
 	if (!initialized) {
 		InitializeFiles(guard);
 	}
 
-	auto found_data_file = GetDataFile(file_id);
+	auto found_data_file = GetDataFile(file_id, guard);
 	if (!found_data_file) {
 		return OpenFileInfo();
 	}
 
-	const auto &data_file = data_files[file_id];
+	const auto &data_file = *found_data_file;
 	const auto &path = data_file.file_path;
 
 	if (!StringUtil::CIEquals(data_file.file_format, "parquet")) {
@@ -416,6 +422,83 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 	extended_info->options["last_modified"] = Value::TIMESTAMP(timestamp_t(0));
 	res.extended_info = extended_info;
 	return res;
+}
+
+OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
+	lock_guard<mutex> guard(lock);
+	return GetFileInternal(file_id, guard);
+}
+
+static void PopulateSourceIdMap(unordered_map<uint64_t, ColumnIndex> &source_to_column_id,
+                                const vector<unique_ptr<IcebergColumnDefinition>> &columns,
+                                optional_ptr<ColumnIndex> parent) {
+	for (idx_t i = 0; i < columns.size(); i++) {
+		auto &column = columns[i];
+
+		ColumnIndex new_index;
+		if (parent) {
+			auto primary = parent->GetPrimaryIndex();
+			auto child_indexes = parent->GetChildIndexes();
+			child_indexes.push_back(ColumnIndex(i));
+			new_index = ColumnIndex(primary, child_indexes);
+		} else {
+			new_index = ColumnIndex(i);
+		}
+
+		PopulateSourceIdMap(source_to_column_id, column->children, new_index);
+		source_to_column_id.emplace(static_cast<uint64_t>(column->id), std::move(new_index));
+	}
+}
+
+static const IcebergColumnDefinition &GetFromColumnIndex(const vector<unique_ptr<IcebergColumnDefinition>> &columns,
+                                                         const ColumnIndex &column_index, idx_t depth) {
+	auto &child_indexes = column_index.GetChildIndexes();
+	auto &selected_index = depth ? child_indexes[depth - 1] : column_index;
+
+	auto index = selected_index.GetPrimaryIndex();
+	if (index >= columns.size()) {
+		throw InvalidConfigurationException("ColumnIndex out of bounds for columns (index %d, 'columns' size: %d)",
+		                                    index, columns.size());
+	}
+	auto &column = columns[index];
+	if (depth == child_indexes.size()) {
+		return *column;
+	}
+	if (column->children.empty()) {
+		throw InvalidConfigurationException(
+		    "Expected column to have children, ColumnIndex has a depth of %d, we reached only %d",
+		    column_index.ChildIndexCount(), depth);
+	}
+	return GetFromColumnIndex(column->children, column_index, depth + 1);
+}
+
+static optional_ptr<const TableFilter> GetFilterForColumnIndex(TableFilterSet &filter_set,
+                                                               const ColumnIndex &column_index) {
+	auto primary_index = column_index.GetPrimaryIndex();
+	auto filter_it = filter_set.filters.find(primary_index);
+	if (filter_it == filter_set.filters.end()) {
+		return nullptr;
+	}
+
+	auto &parent_filter = *filter_it->second;
+	auto &child_indexes = column_index.GetChildIndexes();
+
+	reference<const TableFilter> current_filter(parent_filter);
+	for (idx_t i = 0; i < child_indexes.size(); i++) {
+		auto &table_filter = current_filter.get();
+		auto &child_index = child_indexes[i];
+		auto index = child_index.GetPrimaryIndex();
+		if (table_filter.filter_type != TableFilterType::STRUCT_EXTRACT) {
+			return nullptr;
+		}
+		auto &struct_extract = table_filter.Cast<StructFilter>();
+		if (struct_extract.child_idx != index) {
+			throw InvalidConfigurationException("Expected to find a StructFilter for child_index: %d, found %d instead",
+			                                    index, struct_extract.child_idx);
+		}
+		current_filter = *struct_extract.child_filter;
+	}
+	return current_filter.get();
 }
 
 bool IcebergMultiFileList::ManifestMatchesFilter(const IcebergManifest &manifest) {
@@ -446,33 +529,29 @@ bool IcebergMultiFileList::ManifestMatchesFilter(const IcebergManifest &manifest
 	}
 
 	auto &schema = GetSchema().columns;
-	unordered_map<uint64_t, idx_t> source_to_column_id;
-	for (idx_t i = 0; i < schema.size(); i++) {
-		auto &column = schema[i];
-		source_to_column_id[static_cast<uint64_t>(column->id)] = i;
-	}
+	unordered_map<uint64_t, ColumnIndex> source_to_column_id;
+	PopulateSourceIdMap(source_to_column_id, schema, nullptr);
 
 	for (idx_t i = 0; i < field_summaries.size(); i++) {
 		auto &field_summary = field_summaries[i];
 		auto &field = partition_spec.fields[i];
 
-		auto column_id = source_to_column_id.at(field.source_id);
+		const auto &column_id = source_to_column_id.at(field.source_id);
 
 		// Find if we have a filter for this source column
-		auto filter_it = table_filters.filters.find(column_id);
-		if (filter_it == table_filters.filters.end()) {
+		auto table_filter = GetFilterForColumnIndex(table_filters, column_id);
+		if (!table_filter) {
 			continue;
 		}
 
-		auto &column = schema[column_id];
+		auto &column = GetFromColumnIndex(schema, column_id, 0);
 		IcebergPredicateStats stats;
-		auto result_type = field.transform.GetSerializedType(column->type);
-		DeserializeBounds(field_summary.lower_bound, field_summary.upper_bound, column->name, result_type, stats);
+		auto result_type = field.transform.GetSerializedType(column.type);
+		DeserializeBounds(field_summary.lower_bound, field_summary.upper_bound, column.name, result_type, stats);
 		stats.has_nan = field_summary.contains_nan;
 		stats.has_null = field_summary.contains_null;
 
-		auto &filter = *filter_it->second;
-		if (!IcebergPredicate::MatchBounds(filter, stats, field.transform)) {
+		if (!IcebergPredicate::MatchBounds(*table_filter, stats, field.transform)) {
 			return false;
 		}
 	}
@@ -562,6 +641,7 @@ void IcebergMultiFileList::ProcessDeletes(const vector<MultiFileColumnDefinition
 
 	// From the spec: "At most one deletion vector is allowed per data file in a snapshot"
 
+	//! NOTE: The lock is required because we're reading from the 'data_files' vector
 	auto iceberg_path = GetPath();
 	auto &fs = FileSystem::GetFileSystem(context);
 
