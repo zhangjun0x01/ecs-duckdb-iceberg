@@ -9,9 +9,11 @@ namespace duckdb {
 unique_ptr<IcebergDeletionVector> IcebergDeletionVector::FromBlob(data_ptr_t blob_start, idx_t blob_length) {
 	//! https://iceberg.apache.org/puffin-spec/#deletion-vector-v1-blob-type
 
+	auto blob_end = blob_start + blob_length;
 	auto vector_size = Load<uint32_t>(blob_start);
 	vector_size = BSwap(vector_size);
 	blob_start += sizeof(uint32_t);
+	D_ASSERT(blob_start < blob_end);
 
 	if (blob_length < 12) {
 		throw InvalidConfigurationException("Blob is too small (length of %d bytes) to be a deletion-vector-v1",
@@ -22,6 +24,7 @@ unique_ptr<IcebergDeletionVector> IcebergDeletionVector::FromBlob(data_ptr_t blo
 	memcpy(magic_bytes, blob_start, 4);
 	blob_start += 4;
 	vector_size -= 4;
+	D_ASSERT(blob_start < blob_end);
 
 	if (memcmp(DELETION_VECTOR_MAGIC, magic_bytes, 4)) {
 		throw InvalidInputException("Magic bytes mismatch, deletion vector is corrupt!");
@@ -30,6 +33,7 @@ unique_ptr<IcebergDeletionVector> IcebergDeletionVector::FromBlob(data_ptr_t blo
 	int64_t amount_of_bitmaps = Load<int64_t>(blob_start);
 	blob_start += sizeof(int64_t);
 	vector_size -= sizeof(int64_t);
+	D_ASSERT(blob_start < blob_end);
 
 	auto result_p = make_uniq<IcebergDeletionVector>();
 	auto &result = *result_p;
@@ -38,15 +42,18 @@ unique_ptr<IcebergDeletionVector> IcebergDeletionVector::FromBlob(data_ptr_t blo
 		auto key = Load<int32_t>(blob_start);
 		blob_start += sizeof(int32_t);
 		vector_size -= sizeof(int32_t);
+		D_ASSERT(blob_start < blob_end);
 
 		size_t bitmap_size =
 		    roaring::api::roaring_bitmap_portable_deserialize_size((const char *)blob_start, vector_size);
 		auto bitmap = roaring::Roaring::readSafe((const char *)blob_start, bitmap_size);
 		blob_start += bitmap_size;
 		vector_size -= bitmap_size;
-
+		D_ASSERT(blob_start < blob_end);
 		result.bitmaps.emplace(key, std::move(bitmap));
 	}
+	//! The CRC checksum we ignore
+	D_ASSERT((blob_end - blob_start) == 4);
 	return result_p;
 }
 
@@ -57,11 +64,7 @@ void IcebergMultiFileList::ScanPuffinFile(const IcebergManifestEntry &entry) con
 	auto caching_file_system = CachingFileSystem::Get(context);
 
 	auto caching_file_handle = caching_file_system.OpenFile(file_path, FileOpenFlags::FILE_FLAGS_READ);
-	auto total_size = caching_file_handle->GetFileSize();
 	data_ptr_t data = nullptr;
-
-	auto buf_handle = caching_file_handle->Read(data, total_size);
-	auto buffer_data = buf_handle.Ptr();
 
 	D_ASSERT(!entry.content_offset.IsNull());
 	D_ASSERT(!entry.content_size_in_bytes.IsNull());
@@ -69,8 +72,10 @@ void IcebergMultiFileList::ScanPuffinFile(const IcebergManifestEntry &entry) con
 	auto offset = entry.content_offset.GetValue<int64_t>();
 	auto length = entry.content_size_in_bytes.GetValue<int64_t>();
 
-	auto blob_start = buffer_data + offset;
-	positional_delete_data.emplace(entry.referenced_data_file, IcebergDeletionVector::FromBlob(blob_start, length));
+	auto buf_handle = caching_file_handle->Read(data, length, offset);
+	auto buffer_data = buf_handle.Ptr();
+
+	positional_delete_data.emplace(entry.referenced_data_file, IcebergDeletionVector::FromBlob(buffer_data, length));
 }
 
 idx_t IcebergDeletionVector::Filter(row_t start_row_index, idx_t count, SelectionVector &result_sel) {
