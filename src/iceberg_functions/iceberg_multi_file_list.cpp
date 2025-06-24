@@ -542,7 +542,6 @@ void IcebergMultiFileList::ProcessDeletes(const vector<MultiFileColumnDefinition
 	// From the spec: "At most one deletion vector is allowed per data file in a snapshot"
 
 	//! NOTE: The lock is required because we're reading from the 'data_files' vector
-	lock_guard<mutex> guard(lock);
 	auto iceberg_path = GetPath();
 	auto &fs = FileSystem::GetFileSystem(context);
 

@@ -263,11 +263,6 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 	D_ASSERT(global_state);
 	// Get the metadata for this file
 	const auto &multi_file_list = dynamic_cast<const IcebergMultiFileList &>(*global_state->file_list);
-	{
-		lock_guard<mutex> guard(multi_file_list.lock);
-		D_ASSERT(multi_file_list.initialized);
-	}
-
 	auto &reader = *reader_data.reader;
 	auto file_id = reader.file_list_idx.GetIndex();
 
@@ -277,7 +272,7 @@ void IcebergMultiFileReader::FinalizeBind(MultiFileReaderData &reader_data, cons
 		// The path of the data file where this chunk was read from
 		const auto &file_path = data_file.file_path;
 
-		std::lock_guard<mutex> delete_guard(multi_file_list.delete_lock);
+		lock_guard<mutex> delete_guard(multi_file_list.delete_lock);
 		if (multi_file_list.current_delete_manifest != multi_file_list.delete_manifests.end()) {
 			multi_file_list.ProcessDeletes(global_columns, global_column_ids);
 		}
