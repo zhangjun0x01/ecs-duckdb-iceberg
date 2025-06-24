@@ -7,13 +7,13 @@ duckdb_extension_load(iceberg
     LINKED_LIBS "../../vcpkg_installed/wasm32-emscripten/lib/*.a"
 )
 
-
 duckdb_extension_load(tpch)
 duckdb_extension_load(icu)
+
 duckdb_extension_load(avro
         LOAD_TESTS
         GIT_URL https://github.com/duckdb/duckdb_avro
-        GIT_TAG 141c70afa871d437bfdc689b826baf55409b1f72
+        GIT_TAG f861995afa955b75b0543019113479424ce96cfe
 )
 
 ################## AWS

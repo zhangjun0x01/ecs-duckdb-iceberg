@@ -37,7 +37,7 @@ idx_t ManifestFileReader::Read(idx_t count, vector<IcebergManifestEntry> &result
 
 void ManifestFileReader::CreateVectorMapping(idx_t column_id, MultiFileColumnDefinition &column) {
 	if (column.identifier.IsNull()) {
-		throw InvalidConfigurationException("Column '%s' of the manifest list is missing a field_id!", column.name);
+		throw InvalidConfigurationException("Column '%s' of the manifest file is missing a field_id!", column.name);
 	}
 	D_ASSERT(column.identifier.type().id() == LogicalTypeId::INTEGER);
 
@@ -54,7 +54,11 @@ void ManifestFileReader::CreateVectorMapping(idx_t column_id, MultiFileColumnDef
 	auto &children = column.children;
 	for (idx_t child_idx = 0; child_idx < children.size(); child_idx++) {
 		auto &child = children[child_idx];
-		D_ASSERT(!child.identifier.IsNull() && child.identifier.type().id() == LogicalTypeId::INTEGER);
+		if (child.identifier.IsNull()) {
+			throw InvalidConfigurationException("Column '%s.%s' of the manifest file is missing a field_id!",
+			                                    column.name, child.name);
+		}
+		D_ASSERT(child.identifier.type().id() == LogicalTypeId::INTEGER);
 		auto child_field_id = child.identifier.GetValue<int32_t>();
 
 		vector_mapping.emplace(child_field_id, ColumnIndex(column_id, {ColumnIndex(child_idx)}));

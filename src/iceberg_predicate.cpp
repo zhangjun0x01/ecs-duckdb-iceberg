@@ -7,10 +7,11 @@
 namespace duckdb {
 
 template <class TRANSFORM>
-bool MatchBoundsTemplated(TableFilter &filter, const IcebergPredicateStats &stats, const IcebergTransform &transform);
+bool MatchBoundsTemplated(const TableFilter &filter, const IcebergPredicateStats &stats,
+                          const IcebergTransform &transform);
 
 template <class TRANSFORM>
-static bool MatchBoundsConstantFilter(ConstantFilter &constant_filter, const IcebergPredicateStats &stats,
+static bool MatchBoundsConstantFilter(const ConstantFilter &constant_filter, const IcebergPredicateStats &stats,
                                       const IcebergTransform &transform) {
 	auto constant_value = TRANSFORM::ApplyTransform(constant_filter.constant, transform);
 
@@ -47,8 +48,8 @@ static bool MatchBoundsIsNotNullFilter(const IcebergPredicateStats &stats, const
 }
 
 template <class TRANSFORM>
-static bool MatchBoundsConjunctionAndFilter(ConjunctionAndFilter &conjunction_and, const IcebergPredicateStats &stats,
-                                            const IcebergTransform &transform) {
+static bool MatchBoundsConjunctionAndFilter(const ConjunctionAndFilter &conjunction_and,
+                                            const IcebergPredicateStats &stats, const IcebergTransform &transform) {
 	for (auto &child : conjunction_and.child_filters) {
 		if (!MatchBoundsTemplated<TRANSFORM>(*child, stats, transform)) {
 			return false;
@@ -58,7 +59,8 @@ static bool MatchBoundsConjunctionAndFilter(ConjunctionAndFilter &conjunction_an
 }
 
 template <class TRANSFORM>
-bool MatchBoundsTemplated(TableFilter &filter, const IcebergPredicateStats &stats, const IcebergTransform &transform) {
+bool MatchBoundsTemplated(const TableFilter &filter, const IcebergPredicateStats &stats,
+                          const IcebergTransform &transform) {
 	//! TODO: support more filter types
 	switch (filter.filter_type) {
 	case TableFilterType::CONSTANT_COMPARISON: {
@@ -95,7 +97,7 @@ bool MatchBoundsTemplated(TableFilter &filter, const IcebergPredicateStats &stat
 	}
 }
 
-bool IcebergPredicate::MatchBounds(TableFilter &filter, const IcebergPredicateStats &stats,
+bool IcebergPredicate::MatchBounds(const TableFilter &filter, const IcebergPredicateStats &stats,
                                    const IcebergTransform &transform) {
 	switch (transform.Type()) {
 	case IcebergTransformType::IDENTITY:
