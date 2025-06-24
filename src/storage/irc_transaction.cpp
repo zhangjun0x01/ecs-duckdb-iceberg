@@ -240,7 +240,6 @@ void IRCTransaction::Commit() {
 				url_builder.AddPathComponent(table_change.identifier.name);
 
 				auto transaction_json = ConstructTableUpdateJSON(table_change);
-				Printer::Print("posting one update: " + transaction_json);
 
 				auto response = authentication.PostRequest(*context, url_builder, transaction_json);
 				if (response->status != HTTPStatusCode::OK_200) {

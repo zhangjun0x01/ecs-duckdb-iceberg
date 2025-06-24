@@ -20,8 +20,6 @@ require httpfs
 
 require aws
 
-mode skip
-
 statement ok
 CREATE SECRET glue_secret (
     TYPE S3,
