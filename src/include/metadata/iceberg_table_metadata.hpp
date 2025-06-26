@@ -42,6 +42,8 @@ public:
 	optional_ptr<IcebergSnapshot> GetSnapshot(const IcebergSnapshotLookup &lookup);
 
 public:
+	string table_uuid;
+
 	int32_t iceberg_version;
 	int32_t current_schema_id;
 	int32_t default_spec_id;
