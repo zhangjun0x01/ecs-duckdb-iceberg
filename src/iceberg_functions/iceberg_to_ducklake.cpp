@@ -27,6 +27,22 @@
 
 namespace duckdb {
 
+struct DuckLakeSnapshot {
+public:
+	DuckLakeSnapshot(timestamp_t timestamp) : snapshot_time(timestamp) {
+	}
+
+public:
+	timestamp_t snapshot_time;
+
+	//! schemas/tables/views changed
+	idx_t schema_changes = 0;
+	//! schemas/tables/views added
+	idx_t schema_additions = 0;
+	//! data or delete files added
+	idx_t files_added = 0;
+};
+
 struct IcebergToDuckLakeBindData : public TableFunctionData {
 public:
 	IcebergToDuckLakeBindData() {
@@ -71,8 +87,64 @@ public:
 		//! NOTE: We default to use the 'main' schema in the DuckLake Catalog
 	}
 
+	void ConvertMetadata(IcebergTableMetadata &metadata) {
+		map<int32_t, reference<IcebergPartitionSpec>> partitions;
+		map<int32_t, reference<IcebergTableSchema>> schemas;
+		map<int64_t, reference<IcebergSnapshot>> snapshots;
+
+		//! Create ordered maps, to iterate sequentially through
+		for (auto &it : metadata.partition_specs) {
+			partitions.emplace(it.first, it.second);
+		}
+		for (auto &it : metadata.schemas) {
+			schemas.emplace(it.first, *it.second);
+		}
+		for (auto &it : metadata.snapshots) {
+			snapshots.emplace(it.first, it.second);
+		}
+
+		//! Convert the iceberg schemas
+		for (auto &it : schemas) {
+		}
+
+		//! Convert the iceberg partition specs
+		for (auto &it : partitions) {
+		}
+
+		//! Convert the iceberg snapshot
+		for (auto &it : snapshots) {
+		}
+	}
+
+private:
+	DuckLakeSnapshot &GetSnapshot(timestamp_t timestamp) {
+		auto it = snapshots.find(timestamp);
+		if (it != snapshots.end()) {
+			return it->second;
+		}
+		auto res = snapshots.emplace(timestamp, DuckLakeSnapshot(timestamp));
+		return res.first->second;
+	}
+
 public:
 	unique_ptr<IcebergTable> iceberg_table;
+
+	map<timestamp_t, DuckLakeSnapshot> snapshots;
+
+	idx_t snapshot_id = 0;
+	idx_t schema_id = 0;
+	idx_t table_id = 0;
+	idx_t column_id = 0;
+	idx_t partition_id = 0;
+	idx_t data_file_id = 0;
+	idx_t delete_file_id = 0;
+
+	//! Only changed when an existing schema, table or view is *changed*
+	idx_t schema_version = 0;
+	//! Only changed when a schema, table or view is added
+	idx_t next_catalog_id = 0;
+	//! Only changed when a data_file or delete_file is added
+	idx_t next_file_id = 0;
 };
 
 struct IcebergToDuckLakeGlobalTableFunctionState : public GlobalTableFunctionState {
@@ -102,6 +174,8 @@ static unique_ptr<FunctionData> IcebergToDuckLakeBind(ClientContext &context, Ta
 	auto iceberg_meta_path = IcebergTableMetadata::GetMetaDataPath(context, filename, fs, options);
 	auto table_metadata = IcebergTableMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
 	auto metadata = IcebergTableMetadata::FromTableMetadata(table_metadata);
+
+	ret->ConvertMetadata(metadata);
 
 	return_types.emplace_back(LogicalType::BIGINT);
 	names.emplace_back("count");
