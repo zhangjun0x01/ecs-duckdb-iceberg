@@ -66,6 +66,12 @@ public:
 	//! NOTE: does not populate 'ducklake_snapshot_changes'
 	//! TODO: write to 'ducklake_snapshot_changes' after processing all the changes made by the snapshot
 	string FinalizeEntry(DuckLakeMetadataSerializer &serializer) {
+		//! Set these, so we can use these to create the correct ids for the catalog/file entries added by this snapshot
+		base_schema_version = serializer.schema_version;
+		base_catalog_id = serializer.next_catalog_id;
+		base_file_id = serializer.next_file_id;
+
+		//! Update the serializer to point to the next id starts
 		serializer.schema_version += schema_changes;
 		serializer.next_catalog_id += schema_additions;
 		serializer.next_file_id += files_added;
@@ -81,16 +87,29 @@ public:
 	}
 
 public:
+	int64_t AddSchemaAddition() {
+		return schema_additions++;
+	}
+	int64_t AddFileAddition() {
+		return files_added++;
+	}
+
+public:
 	//! The snapshot id is assigned after we've processed all tables
 	optional_idx snapshot_id;
 	timestamp_t snapshot_time;
 
-	//! schemas/tables/views changed
+	//! schemas/tables/views changed (unused)
 	idx_t schema_changes = 0;
 	//! schemas/tables/views added
 	idx_t schema_additions = 0;
 	//! data or delete files added
 	idx_t files_added = 0;
+
+	//! These are populated after FinalizeEntry has been called
+	int64_t base_schema_version;
+	int64_t base_catalog_id;
+	int64_t base_file_id;
 };
 
 struct DefaultType {
@@ -262,7 +281,8 @@ public:
 	}
 
 public:
-	vector<string> FinalizeEntry(int64_t table_id, int64_t partition_id) {
+	vector<string> FinalizeEntry(int64_t table_id, DuckLakeMetadataSerializer &serializer) {
+		auto partition_id = serializer.partition_id++;
 		this->partition_id = partition_id;
 		int64_t begin_snapshot = start_snapshot->snapshot_id.GetIndex();
 		string end_snapshot = this->end_snapshot ? to_string(this->end_snapshot) : "NULL";
@@ -300,11 +320,14 @@ public:
 	}
 
 public:
-	string FinalizeEntry(int64_t table_id, int64_t data_file_id) {
+	string FinalizeEntry(int64_t table_id) {
 		//! NOTE: partitions have to be finalized before data files
 		D_ASSERT(partition.partition_id.IsValid());
+		auto &snapshot = *start_snapshot;
+		int64_t data_file_id = snapshot.base_file_id + file_id_offset;
 		this->data_file_id = data_file_id;
-		int64_t begin_snapshot = start_snapshot->snapshot_id.GetIndex();
+
+		int64_t begin_snapshot = snapshot.snapshot_id.GetIndex();
 		string end_snapshot = this->end_snapshot ? to_string(this->end_snapshot) : "NULL";
 		int64_t partition_id = partition.partition_id.GetIndex();
 
@@ -323,6 +346,7 @@ public:
 
 	//! The id is assigned after we've processed all tables
 	optional_idx data_file_id;
+	idx_t file_id_offset = DConstants::INVALID_INDEX;
 
 	optional_ptr<DuckLakeSnapshot> start_snapshot;
 	optional_ptr<DuckLakeSnapshot> end_snapshot;
@@ -363,9 +387,12 @@ public:
 	}
 
 public:
-	string FinalizeEntry(int64_t table_id, int64_t delete_file_id) {
+	string FinalizeEntry(int64_t table_id) {
+		auto &snapshot = *start_snapshot;
+		int64_t delete_file_id = snapshot.base_file_id + file_id_offset;
 		this->delete_file_id = delete_file_id;
-		int64_t begin_snapshot = start_snapshot->snapshot_id.GetIndex();
+
+		int64_t begin_snapshot = snapshot.snapshot_id.GetIndex();
 		string end_snapshot = this->end_snapshot ? to_string(this->end_snapshot) : "NULL";
 		int64_t data_file_id = referenced_data_file->data_file_id.GetIndex();
 
@@ -382,6 +409,7 @@ public:
 
 	//! The id is assigned after we've processed all tables
 	optional_idx delete_file_id;
+	idx_t file_id_offset = DConstants::INVALID_INDEX;
 
 	optional_ptr<DuckLakeSnapshot> start_snapshot;
 	optional_ptr<DuckLakeSnapshot> end_snapshot;
@@ -439,6 +467,7 @@ public:
 
 	void AddDataFile(DuckLakeDataFile &data_file, DuckLakeSnapshot &begin_snapshot) {
 		data_file.start_snapshot = begin_snapshot;
+		data_file.file_id_offset = begin_snapshot.AddFileAddition();
 		D_ASSERT(!current_data_files.count(data_file.path));
 		all_data_files.push_back(data_file);
 		current_data_files.emplace(data_file.path, all_data_files.back());
@@ -460,6 +489,7 @@ public:
 
 	void AddDeleteFile(DuckLakeDeleteFile &delete_file, DuckLakeSnapshot &begin_snapshot) {
 		delete_file.start_snapshot = begin_snapshot;
+		delete_file.file_id_offset = begin_snapshot.AddFileAddition();
 		D_ASSERT(!current_delete_files.count(delete_file.path));
 
 		//! NOTE: because delete files reference data files by id, the Data Files have to be processed first.
@@ -496,18 +526,14 @@ public:
 	}
 
 public:
-	vector<string> FinalizeEntry(int64_t schema_id, DuckLakeMetadataSerializer &serializer) {
-		vector<string> result;
-		auto table_id = serializer.catalog_id++;
+	string FinalizeEntry(int64_t schema_id) {
+		auto &snapshot = *start_snapshot;
+		auto table_id = snapshot.base_catalog_id + catalog_id_offset;
 		this->table_id = table_id;
 
-		//! The first schema marks the start of the table
-		auto start_snapshot = all_columns.front().start_snapshot;
-		int64_t begin_snapshot = start_snapshot->snapshot_id.GetIndex();
-
-		result.push_back(StringUtil::Format("VALUES(%d, '%s', %d, NULL, %d, '%s')", table_id, table_uuid,
-		                                    begin_snapshot, schema_id, table_name));
-		return result;
+		int64_t begin_snapshot = snapshot.snapshot_id.GetIndex();
+		return StringUtil::Format("VALUES(%d, '%s', %d, NULL, %d, '%s')", table_id, table_uuid, begin_snapshot,
+		                          schema_id, table_name);
 	}
 
 public:
@@ -515,9 +541,11 @@ public:
 	//! FIXME: we don't support renames of tables, but then again, I don't think we can
 	string table_name;
 	optional_ptr<DuckLakeSchema> schema;
+	optional_ptr<DuckLakeSnapshot> start_snapshot;
 
 	//! The table id is assigned after we've processed all tables
 	optional_idx table_id;
+	idx_t catalog_id_offset = DConstants::INVALID_INDEX;
 
 	vector<DuckLakeColumn> all_columns;
 	unordered_map<int64_t, reference<DuckLakeColumn>> current_columns;
@@ -543,10 +571,17 @@ public:
 	}
 
 public:
-	string FinalizeEntry(DuckLakeMetadataSerializer &serializer) {
-		int64_t schema_id = serializer.catalog_id++;
+	string FinalizeEntry() {
+		auto &snapshot = *start_snapshot;
+		int64_t schema_id = snapshot.base_catalog_id + catalog_id_offset;
 		this->schema_id = schema_id;
 
+		int64_t begin_snapshot = snapshot.snapshot_id.GetIndex();
+		return StringUtil::Format("VALUES (%d, '%s', %d, NULL, %s)", schema_id, schema_uuid, begin_snapshot,
+		                          schema_name);
+	}
+	void AssignEarliestSnapshot() {
+		D_ASSERT(!tables.empty());
 		optional_ptr<DuckLakeSnapshot> snapshot;
 		for (idx_t i = 0; i < tables.size(); i++) {
 			auto &table = tables[i].get();
@@ -555,17 +590,19 @@ public:
 				snapshot = table_snapshot;
 			}
 		}
-		int64_t begin_snapshot = snapshot->snapshot_id.GetIndex();
-		return StringUtil::Format("VALUES (%d, '%s', %d, NULL, %s)", schema_id, schema_uuid, begin_snapshot,
-		                          schema_name);
+		start_snapshot = snapshot;
+		catalog_id_offset = snapshot->AddSchemaAddition();
 	}
 
 public:
 	string schema_name;
 	string schema_uuid;
+
 	//! The schema id is assigned after we've processed all tables
 	optional_idx schema_id;
+	idx_t catalog_id_offset = DConstants::INVALID_INDEX;
 
+	optional_ptr<DuckLakeSnapshot> start_snapshot;
 	vector<reference<DuckLakeTable>> tables;
 };
 
@@ -616,9 +653,17 @@ public:
 		optional_idx current_partition_spec_id;
 		optional_ptr<DuckLakePartition> current_partition;
 
+		bool first_snapshot = true;
 		for (auto &it : snapshots) {
 			auto &snapshot = it.second.get();
 			auto &ducklake_snapshot = GetSnapshot(it.first);
+
+			if (first_snapshot) {
+				//! Mark the table as being created by this snapshot
+				table.catalog_id_offset = ducklake_snapshot.AddSchemaAddition();
+				table.start_snapshot = ducklake_snapshot;
+				first_snapshot = false;
+			}
 
 			//! Process the schema changes
 			auto &current_schema = *metadata.GetSchemaFromId(snapshot.schema_id);
@@ -719,6 +764,17 @@ public:
 			}
 		}
 	}
+	void AssignSchemaBeginSnapshots() {
+		//! Figure out in which snapshot the schemas were created
+		for (auto &it : schemas) {
+			auto &schema = it.second;
+			if (schema.tables.empty()) {
+				//! We can't serialize this, we have no clue when it was added
+				continue;
+			}
+			schema.AssignEarliestSnapshot();
+		}
+	}
 
 public:
 	vector<string> CreateSQLStatements() {
@@ -746,7 +802,12 @@ public:
 		for (auto &it : schemas) {
 			auto &schema = it.second;
 
-			auto values = schema.FinalizeEntry(serializer);
+			if (schema.tables.empty()) {
+				//! We can't serialize this schema, it has no entries, so we can't date it back to any snapshot
+				//! FIXME: we *could* assign it to the earliest snapshot in existence???
+				continue;
+			}
+			auto values = schema.FinalizeEntry();
 			sql.push_back(StringUtil::Format("INSERT INTO ducklake_schema %s", values));
 		}
 
@@ -755,8 +816,29 @@ public:
 			auto &table = it.second;
 
 			auto schema_id = table.schema->schema_id.GetIndex();
-			//! TODO: finalize the table
-			// auto values = table.FinalizeEntry()
+			auto values = table.FinalizeEntry(schema_id);
+			sql.push_back(StringUtil::Format("INSERT INTO ducklake_table %s", values));
+
+			int64_t table_id = table.table_id.GetIndex();
+
+			//! FIXME: serialize partition info
+			////! ducklake_partition_info
+			// for (auto &partition : table.all_partitions) {
+			//	auto values = partition.FinalizeEntry(table_id, serializer);
+			//	sql.push_back(StringUtil::Format("INSERT INTO ducklake_partition_info %s", values));
+			//}
+
+			//! ducklake_data_file
+			for (auto &data_file : table.all_data_files) {
+				auto values = data_file.FinalizeEntry(table_id);
+				sql.push_back(StringUtil::Format("INSERT INTO ducklake_data_file %s", values));
+			}
+
+			//! ducklake_delete_file
+			for (auto &delete_file : table.all_delete_files) {
+				auto values = delete_file.FinalizeEntry(table_id);
+				sql.push_back(StringUtil::Format("INSERT INTO ducklake_delete_file %s", values));
+			}
 		}
 
 		return sql;
@@ -842,6 +924,8 @@ static unique_ptr<FunctionData> IcebergToDuckLakeBind(ClientContext &context, Ta
 			ret->AddTable(table, context, options);
 		}
 	}
+
+	ret->AssignSchemaBeginSnapshots();
 
 	ret->CreateSQLStatements();
 
