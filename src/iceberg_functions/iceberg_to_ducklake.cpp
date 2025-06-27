@@ -27,6 +27,19 @@
 
 namespace duckdb {
 
+// struct DuckLakeMetadataSerializer {
+// public:
+//	DuckLakeMetadataSerializer() {}
+// public:
+//	int64_t snapshot_id;
+//	int64_t schema_id;
+//	int64_t table_id;
+//	int64_t partition_id;
+//	int64_t data_file_id;
+//	int64_t delete_file_id;
+
+//};
+
 struct DuckLakeSnapshot {
 public:
 	DuckLakeSnapshot(timestamp_t timestamp) : snapshot_time(timestamp) {
@@ -172,9 +185,75 @@ public:
 	optional_ptr<DuckLakeSnapshot> end_snapshot;
 };
 
+struct DuckLakePartitionColumn {
+public:
+	DuckLakePartitionColumn(const IcebergPartitionSpecField &field) {
+		switch (field.transform.Type()) {
+		case IcebergTransformType::IDENTITY:
+		case IcebergTransformType::YEAR:
+		case IcebergTransformType::MONTH:
+		case IcebergTransformType::DAY:
+		case IcebergTransformType::HOUR: {
+			transform = field.transform.RawType();
+			break;
+		}
+		case IcebergTransformType::BUCKET:
+		case IcebergTransformType::TRUNCATE:
+		case IcebergTransformType::VOID:
+		default:
+			throw InvalidInputException("This type of transform (%s) can not be translated to DuckLake",
+			                            field.transform.RawType());
+		};
+		column_id = field.source_id;
+	}
+
+public:
+	string FinalizeEntry(int64_t table_id, int64_t partition_id, int64_t partition_key_index) {
+		return StringUtil::Format("VALUES(%d, %d, %d, %d, %s)", partition_id, table_id, partition_key_index, column_id,
+		                          transform);
+	}
+
+public:
+	int64_t column_id;
+	string transform;
+};
+
+struct DuckLakePartition {
+public:
+	DuckLakePartition(const IcebergPartitionSpec &partition) {
+		for (auto &field : partition.fields) {
+			columns.push_back(DuckLakePartitionColumn(field));
+		}
+	}
+
+public:
+	vector<string> FinalizeEntry(int64_t table_id, int64_t partition_id) {
+		this->partition_id = partition_id;
+		int64_t begin_snapshot = start_snapshot->snapshot_id.GetIndex();
+		string end_snapshot = this->end_snapshot ? to_string(this->end_snapshot) : "NULL";
+
+		vector<string> result;
+		result.push_back(
+		    StringUtil::Format("VALUES(%d, %d, %d, %s)", partition_id, table_id, begin_snapshot, end_snapshot));
+		for (idx_t i = 0; i < columns.size(); i++) {
+			auto &column = columns[i];
+			result.push_back(column.FinalizeEntry(table_id, partition_id, i));
+		}
+		return result;
+	}
+
+public:
+	//! The id is assigned after we've processed all tables
+	optional_idx partition_id;
+	vector<DuckLakePartitionColumn> columns;
+
+	optional_ptr<DuckLakeSnapshot> start_snapshot;
+	optional_ptr<DuckLakeSnapshot> end_snapshot;
+};
+
 struct DuckLakeDataFile {
 public:
-	DuckLakeDataFile(const IcebergManifestEntry &entry) {
+	DuckLakeDataFile(const IcebergManifestEntry &entry, DuckLakePartition &partition) : partition(partition) {
 		path = entry.file_path;
 		if (!StringUtil::CIEquals(entry.file_format, "parquet")) {
 			throw InvalidInputException(
@@ -183,14 +262,29 @@ public:
 		}
 		record_count = entry.record_count;
 		file_size_bytes = entry.file_size_in_bytes;
-		partition_id = entry.partition_spec_id;
 	}
 
 public:
+	string FinalizeEntry(int64_t table_id, int64_t data_file_id) {
+		//! NOTE: partitions have to be finalized before data files
+		D_ASSERT(partition.partition_id.IsValid());
+		this->data_file_id = data_file_id;
+		int64_t begin_snapshot = start_snapshot->snapshot_id.GetIndex();
+		string end_snapshot = this->end_snapshot ? to_string(this->end_snapshot) : "NULL";
+		int64_t partition_id = partition.partition_id.GetIndex();
+
+		return StringUtil::Format("VALUES(%d, %d, %d, %s, NULL, '%s', False, 'parquet', %d, %d, NULL, NULL -- "
+		                          "row_id_start, %d, NULL -- encryption_key, NULL -- partial_file_info)",
+		                          data_file_id, table_id, begin_snapshot, end_snapshot, path, record_count,
+		                          file_size_bytes, partition_id);
+	}
+
+public:
+	DuckLakePartition &partition;
+
 	string path;
 	int64_t record_count;
 	int64_t file_size_bytes;
-	int64_t partition_id;
 
 	//! The id is assigned after we've processed all tables
 	optional_idx data_file_id;
@@ -234,6 +328,18 @@ public:
 	}
 
 public:
+	string FinalizeEntry(int64_t table_id, int64_t delete_file_id) {
+		this->delete_file_id = delete_file_id;
+		int64_t begin_snapshot = start_snapshot->snapshot_id.GetIndex();
+		string end_snapshot = this->end_snapshot ? to_string(this->end_snapshot) : "NULL";
+		int64_t data_file_id = referenced_data_file->data_file_id.GetIndex();
+
+		return StringUtil::Format(
+		    "VALUE(%d, %d, %d, %s, %d, '%s', false, 'parquet', %d, %d, NULL -- footer_size, NULL -- encryption_key)",
+		    delete_file_id, table_id, begin_snapshot, end_snapshot, data_file_id, path, record_count, file_size_bytes);
+	}
+
+public:
 	string path;
 	int64_t record_count;
 	int64_t file_size_bytes;
@@ -246,58 +352,6 @@ public:
 	optional_ptr<DuckLakeSnapshot> end_snapshot;
 
 	optional_ptr<DuckLakeDataFile> referenced_data_file;
-};
-
-struct DuckLakePartitionColumn {
-public:
-	DuckLakePartitionColumn(int64_t partition_id, const IcebergPartitionSpecField &field) : partition_id(partition_id) {
-		switch (field.transform.Type()) {
-		case IcebergTransformType::IDENTITY:
-		case IcebergTransformType::YEAR:
-		case IcebergTransformType::MONTH:
-		case IcebergTransformType::DAY:
-		case IcebergTransformType::HOUR: {
-			transform = field.transform.RawType();
-			break;
-		}
-		case IcebergTransformType::BUCKET:
-		case IcebergTransformType::TRUNCATE:
-		case IcebergTransformType::VOID:
-		default:
-			throw InvalidInputException("This type of transform (%s) can not be translated to DuckLake",
-			                            field.transform.RawType());
-		};
-		column_id = field.source_id;
-	}
-
-public:
-	string FinalizeEntry(int64_t table_id, int64_t partition_key_index) {
-		return StringUtil::Format("VALUES(%d, %d, %d, %d, %s)", partition_id, table_id, partition_key_index, column_id,
-		                          transform);
-	}
-
-public:
-	int64_t partition_id;
-	int64_t column_id;
-	string transform;
-};
-
-struct DuckLakePartition {
-public:
-	DuckLakePartition(const IcebergPartitionSpec &partition) {
-		partition_id = partition.spec_id;
-
-		for (auto &field : partition.fields) {
-			columns.push_back(DuckLakePartitionColumn(partition_id, field));
-		}
-	}
-
-public:
-	int64_t partition_id;
-	vector<DuckLakePartitionColumn> columns;
-
-	optional_ptr<DuckLakeSnapshot> start_snapshot;
-	optional_ptr<DuckLakeSnapshot> end_snapshot;
 };
 
 struct DuckLakeTable {
@@ -330,7 +384,7 @@ public:
 public:
 	//! ----- Partition Updates -----
 
-	void AddPartition(DuckLakePartition &new_partition, DuckLakeSnapshot &begin_snapshot) {
+	DuckLakePartition &AddPartition(DuckLakePartition &new_partition, DuckLakeSnapshot &begin_snapshot) {
 		if (current_partition) {
 			auto &old_partition = *current_partition;
 			old_partition.end_snapshot = begin_snapshot;
@@ -339,6 +393,8 @@ public:
 		new_partition.start_snapshot = begin_snapshot;
 		all_partitions.push_back(new_partition);
 		current_partition = all_partitions.back();
+
+		return *current_partition;
 	}
 
 public:
@@ -403,6 +459,19 @@ public:
 	}
 
 public:
+	vector<string> FinalizeEntry(int64_t table_id, int64_t schema_id, const string &table_name) {
+		vector<string> result;
+
+		//! The first schema marks the start of the table
+		auto start_snapshot = all_columns.front().start_snapshot;
+		int64_t begin_snapshot = start_snapshot->snapshot_id.GetIndex();
+
+		result.push_back(StringUtil::Format("VALUES(%d, '%s', %d, NULL, %d, '%s')", table_id, table_uuid,
+		                                    begin_snapshot, schema_id, table_name));
+		return result;
+	}
+
+public:
 	string table_uuid;
 
 	vector<DuckLakeColumn> all_columns;
@@ -421,10 +490,23 @@ public:
 	unordered_set<string> referenced_data_files;
 };
 
+static void SchemaToColumnsInternal(const vector<unique_ptr<IcebergColumnDefinition>> &columns,
+                                    unordered_map<int64_t, DuckLakeColumn> &result,
+                                    optional_ptr<const IcebergColumnDefinition> parent) {
+	for (idx_t i = 0; i < columns.size(); i++) {
+		auto &column = *columns[i];
+		result.emplace(column.id, DuckLakeColumn(column, i, parent));
+		if (column.children.empty()) {
+			continue;
+		}
+		auto &children = column.children;
+		SchemaToColumnsInternal(children, result, column);
+	}
+}
+
 static unordered_map<int64_t, DuckLakeColumn> SchemaToColumns(const IcebergTableSchema &schema) {
 	unordered_map<int64_t, DuckLakeColumn> result;
-
-	//! TODO: convert to DuckLakeColumns
+	SchemaToColumnsInternal(schema.columns, result, nullptr);
 	return result;
 }
 
@@ -435,19 +517,22 @@ public:
 
 public:
 	void ConvertMetadata(IcebergTableMetadata &metadata, ClientContext &context, const IcebergOptions &options) {
-		map<int64_t, reference<IcebergSnapshot>> snapshots;
+		map<timestamp_t, reference<IcebergSnapshot>> snapshots;
 		for (auto &it : metadata.snapshots) {
-			snapshots.emplace(it.first, it.second);
+			snapshots.emplace(it.second.timestamp_ms, it.second);
 		}
 
 		auto &table = GetTable(metadata.table_uuid);
-		//! Convert the iceberg snapshot
+		//! Current schema state
 		optional_ptr<IcebergTableSchema> last_schema;
+
+		//! Current partition state
 		optional_idx current_partition_spec_id;
+		optional_ptr<DuckLakePartition> current_partition;
 
 		for (auto &it : snapshots) {
 			auto &snapshot = it.second.get();
-			auto &ducklake_snapshot = GetSnapshot(snapshot.timestamp_ms);
+			auto &ducklake_snapshot = GetSnapshot(it.first);
 
 			//! Process the schema changes
 			auto &current_schema = *metadata.GetSchemaFromId(snapshot.schema_id);
@@ -473,10 +558,8 @@ public:
 			}
 			last_schema = current_schema;
 
-			//! Process the data changes
 			auto iceberg_table = IcebergTable::Load(metadata.location, metadata, snapshot, context, options);
 
-			int64_t used_partition_spec_id = 0;
 			vector<DuckLakeDataFile> new_data_files;
 			vector<string> deleted_data_files;
 
@@ -486,9 +569,12 @@ public:
 				auto &manifest = entry.manifest;
 				auto &manifest_file = entry.manifest_file;
 
-				auto partition_spec_id = manifest.partition_spec_id;
-				if (partition_spec_id > used_partition_spec_id) {
-					used_partition_spec_id = partition_spec_id;
+				if (!current_partition_spec_id.IsValid() ||
+				    manifest.partition_spec_id > current_partition_spec_id.GetIndex()) {
+					auto &partition_spec = *metadata.FindPartitionSpecById(manifest.partition_spec_id);
+					auto new_partition = DuckLakePartition(partition_spec);
+					current_partition = table.AddPartition(new_partition, ducklake_snapshot);
+					current_partition_spec_id = manifest.partition_spec_id;
 				}
 
 				switch (manifest.content) {
@@ -500,7 +586,7 @@ public:
 							continue;
 						}
 						if (manifest_entry.status == IcebergManifestEntryStatusType::ADDED) {
-							new_data_files.emplace_back(manifest_entry);
+							new_data_files.push_back(DuckLakeDataFile(manifest_entry, *current_partition));
 						} else {
 							D_ASSERT(manifest_entry.status == IcebergManifestEntryStatusType::DELETED);
 							deleted_data_files.push_back(manifest_entry.file_path);
@@ -529,14 +615,8 @@ public:
 				}
 				}
 			}
-			//! Update the partition spec, if it changed
-			if (!current_partition_spec_id.IsValid() || used_partition_spec_id > current_partition_spec_id.GetIndex()) {
-				current_partition_spec_id = used_partition_spec_id;
-				auto &partition_spec = *metadata.FindPartitionSpecById(used_partition_spec_id);
-				DuckLakePartition new_partition(partition_spec);
-				table.AddPartition(new_partition, ducklake_snapshot);
-			}
 
+			//! Process changes to delete files
 			for (auto &delete_file : new_delete_files) {
 				table.AddDeleteFile(delete_file, ducklake_snapshot);
 			}
@@ -544,6 +624,7 @@ public:
 				table.DeleteDeleteFile(path, ducklake_snapshot);
 			}
 
+			//! Process changes to data files
 			for (auto &data_file : new_data_files) {
 				table.AddDataFile(data_file, ducklake_snapshot);
 			}
@@ -580,7 +661,6 @@ public:
 	idx_t snapshot_id = 0;
 	idx_t schema_id = 0;
 	idx_t table_id = 0;
-	idx_t column_id = 0;
 	idx_t partition_id = 0;
 	idx_t data_file_id = 0;
 	idx_t delete_file_id = 0;
