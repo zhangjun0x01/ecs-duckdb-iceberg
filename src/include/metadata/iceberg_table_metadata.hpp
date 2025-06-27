@@ -43,6 +43,7 @@ public:
 
 public:
 	string table_uuid;
+	string location;
 
 	int32_t iceberg_version;
 	int32_t current_schema_id;
