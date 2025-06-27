@@ -55,7 +55,7 @@ protected:
 	void LoadEntries(ClientContext &context);
 	void FillEntry(ClientContext &context, IcebergTableInformation &table);
 
-protected:
+public:
 	IRCSchemaEntry &schema;
 	Catalog &catalog;
 	case_insensitive_map_t<IcebergTableInformation> entries;

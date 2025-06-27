@@ -22,27 +22,62 @@
 #include "iceberg_metadata.hpp"
 #include "iceberg_functions.hpp"
 #include "iceberg_utils.hpp"
+#include "duckdb/common/types/uuid.hpp"
+
+#include "storage/irc_catalog.hpp"
+#include "storage/irc_transaction.hpp"
+#include "storage/irc_schema_entry.hpp"
+#include "storage/irc_schema_set.hpp"
+#include "storage/irc_table_set.hpp"
+#include "storage/irc_table_entry.hpp"
 
 #include "metadata/iceberg_table_metadata.hpp"
 
 namespace duckdb {
 
-// struct DuckLakeMetadataSerializer {
-// public:
-//	DuckLakeMetadataSerializer() {}
-// public:
-//	int64_t snapshot_id;
-//	int64_t schema_id;
-//	int64_t table_id;
-//	int64_t partition_id;
-//	int64_t data_file_id;
-//	int64_t delete_file_id;
+struct DuckLakeMetadataSerializer {
+public:
+	DuckLakeMetadataSerializer() {
+	}
 
-//};
+public:
+	int64_t snapshot_id = 0;
+	int64_t partition_id = 0;
+
+	//! Assigned to table_id, schema_id, view_id
+	int64_t catalog_id = 0;
+	//! Assigned to data_file_id, delete_file_id
+	int64_t file_id = 0;
+
+	//! Sum of all the schema changes made by snapshots that are serialized (this stays 0 for Iceberg)
+	int64_t schema_version = 0;
+	//! Ids assigned to table_id, schema_id and view_id
+	int64_t next_catalog_id = 0;
+	//! Ids assigned to data_file_id or delete_file_id
+	int64_t next_file_id = 0;
+};
 
 struct DuckLakeSnapshot {
 public:
 	DuckLakeSnapshot(timestamp_t timestamp) : snapshot_time(timestamp) {
+	}
+
+public:
+	//! NOTE: does not populate 'ducklake_snapshot_changes'
+	//! TODO: write to 'ducklake_snapshot_changes' after processing all the changes made by the snapshot
+	string FinalizeEntry(DuckLakeMetadataSerializer &serializer) {
+		serializer.schema_version += schema_changes;
+		serializer.next_catalog_id += schema_additions;
+		serializer.next_file_id += files_added;
+
+		int64_t snapshot_id = serializer.snapshot_id++;
+		this->snapshot_id = snapshot_id;
+
+		int64_t schema_version = serializer.schema_version;
+		int64_t next_catalog_id = serializer.next_catalog_id;
+		int64_t next_file_id = serializer.next_file_id;
+		return StringUtil::Format("VALUES(%d, '%s', %d, %d, %d)", snapshot_id, Timestamp::ToString(snapshot_time),
+		                          schema_version, next_catalog_id, next_file_id);
 	}
 
 public:
@@ -354,9 +389,11 @@ public:
 	optional_ptr<DuckLakeDataFile> referenced_data_file;
 };
 
+struct DuckLakeSchema;
+
 struct DuckLakeTable {
 public:
-	DuckLakeTable(const string &table_uuid) : table_uuid(table_uuid) {
+	DuckLakeTable(const string &table_uuid, const string &table_name) : table_uuid(table_uuid), table_name(table_name) {
 	}
 
 public:
@@ -459,8 +496,10 @@ public:
 	}
 
 public:
-	vector<string> FinalizeEntry(int64_t table_id, int64_t schema_id, const string &table_name) {
+	vector<string> FinalizeEntry(int64_t schema_id, DuckLakeMetadataSerializer &serializer) {
 		vector<string> result;
+		auto table_id = serializer.catalog_id++;
+		this->table_id = table_id;
 
 		//! The first schema marks the start of the table
 		auto start_snapshot = all_columns.front().start_snapshot;
@@ -473,6 +512,12 @@ public:
 
 public:
 	string table_uuid;
+	//! FIXME: we don't support renames of tables, but then again, I don't think we can
+	string table_name;
+	optional_ptr<DuckLakeSchema> schema;
+
+	//! The table id is assigned after we've processed all tables
+	optional_idx table_id;
 
 	vector<DuckLakeColumn> all_columns;
 	unordered_map<int64_t, reference<DuckLakeColumn>> current_columns;
@@ -488,6 +533,40 @@ public:
 
 	//! Keep track of which data files are referenced by active delete files
 	unordered_set<string> referenced_data_files;
+};
+
+struct DuckLakeSchema {
+public:
+	DuckLakeSchema(const string &schema_name) : schema_name(schema_name) {
+		//! FIXME: this is generated for now
+		schema_uuid = UUID::ToString(UUID::GenerateRandomUUID());
+	}
+
+public:
+	string FinalizeEntry(DuckLakeMetadataSerializer &serializer) {
+		int64_t schema_id = serializer.catalog_id++;
+		this->schema_id = schema_id;
+
+		optional_ptr<DuckLakeSnapshot> snapshot;
+		for (idx_t i = 0; i < tables.size(); i++) {
+			auto &table = tables[i].get();
+			auto &table_snapshot = table.all_columns.front().start_snapshot;
+			if (!snapshot || snapshot->snapshot_time < table_snapshot->snapshot_time) {
+				snapshot = table_snapshot;
+			}
+		}
+		int64_t begin_snapshot = snapshot->snapshot_id.GetIndex();
+		return StringUtil::Format("VALUES (%d, '%s', %d, NULL, %s)", schema_id, schema_uuid, begin_snapshot,
+		                          schema_name);
+	}
+
+public:
+	string schema_name;
+	string schema_uuid;
+	//! The schema id is assigned after we've processed all tables
+	optional_idx schema_id;
+
+	vector<reference<DuckLakeTable>> tables;
 };
 
 static void SchemaToColumnsInternal(const vector<unique_ptr<IcebergColumnDefinition>> &columns,
@@ -516,13 +595,20 @@ public:
 	}
 
 public:
-	void ConvertMetadata(IcebergTableMetadata &metadata, ClientContext &context, const IcebergOptions &options) {
+	void AddTable(IcebergTableInformation &table_info, ClientContext &context, const IcebergOptions &options) {
+		auto &metadata = table_info.table_metadata;
 		map<timestamp_t, reference<IcebergSnapshot>> snapshots;
 		for (auto &it : metadata.snapshots) {
 			snapshots.emplace(it.second.timestamp_ms, it.second);
 		}
 
-		auto &table = GetTable(metadata.table_uuid);
+		auto &schema_entry = table_info.schema;
+		auto &schema = GetSchema(schema_entry.name);
+
+		auto &table = GetTable(table_info);
+		schema.tables.push_back(table);
+		table.schema = schema;
+
 		//! Current schema state
 		optional_ptr<IcebergTableSchema> last_schema;
 
@@ -634,6 +720,48 @@ public:
 		}
 	}
 
+public:
+	vector<string> CreateSQLStatements() {
+		//! Order to process in:
+		// - snapshot
+		// - schema
+		// - table
+		// - partition
+		// - data file
+		// - delete file
+		// - snapshot_changes
+
+		DuckLakeMetadataSerializer serializer;
+		vector<string> sql;
+
+		//! ducklake_snapshot
+		for (auto &it : snapshots) {
+			auto &snapshot = it.second;
+
+			auto values = snapshot.FinalizeEntry(serializer);
+			sql.push_back(StringUtil::Format("INSERT INTO ducklake_snapshot %s", values));
+		}
+
+		//! ducklake_schema
+		for (auto &it : schemas) {
+			auto &schema = it.second;
+
+			auto values = schema.FinalizeEntry(serializer);
+			sql.push_back(StringUtil::Format("INSERT INTO ducklake_schema %s", values));
+		}
+
+		//! ducklake_table
+		for (auto &it : tables) {
+			auto &table = it.second;
+
+			auto schema_id = table.schema->schema_id.GetIndex();
+			//! TODO: finalize the table
+			// auto values = table.FinalizeEntry()
+		}
+
+		return sql;
+	}
+
 private:
 	DuckLakeSnapshot &GetSnapshot(timestamp_t timestamp) {
 		auto it = snapshots.find(timestamp);
@@ -644,33 +772,33 @@ private:
 		return res.first->second;
 	}
 
-	DuckLakeTable &GetTable(const string &table_uuid) {
-		auto it = table_schemas.find(table_uuid);
-		if (it != table_schemas.end()) {
+	DuckLakeTable &GetTable(const IcebergTableInformation &table_info) {
+		auto &metadata = table_info.table_metadata;
+		auto table_uuid = metadata.table_uuid;
+		auto it = tables.find(table_uuid);
+		if (it != tables.end()) {
 			return it->second;
 		}
-		auto res = table_schemas.emplace(table_uuid, DuckLakeTable(table_uuid));
+		auto res = tables.emplace(table_uuid, DuckLakeTable(table_uuid, table_info.name));
+		return res.first->second;
+	}
+
+	DuckLakeSchema &GetSchema(const string &schema_name) {
+		auto it = schemas.find(schema_name);
+		if (it != schemas.end()) {
+			return it->second;
+		}
+		auto res = schemas.emplace(schema_name, DuckLakeSchema(schema_name));
 		return res.first->second;
 	}
 
 public:
+	//! timestamp -> snapshot
 	map<timestamp_t, DuckLakeSnapshot> snapshots;
-	//! table_uuid -> table schema
-	unordered_map<string, DuckLakeTable> table_schemas;
-
-	idx_t snapshot_id = 0;
-	idx_t schema_id = 0;
-	idx_t table_id = 0;
-	idx_t partition_id = 0;
-	idx_t data_file_id = 0;
-	idx_t delete_file_id = 0;
-
-	//! Only changed when an existing schema, table or view is *changed*
-	idx_t schema_version = 0;
-	//! Only changed when a schema, table or view is added
-	idx_t next_catalog_id = 0;
-	//! Only changed when a data_file or delete_file is added
-	idx_t next_file_id = 0;
+	//! table_uuid -> table
+	unordered_map<string, DuckLakeTable> tables;
+	//! schema name -> schema
+	unordered_map<string, DuckLakeSchema> schemas;
 };
 
 struct IcebergToDuckLakeGlobalTableFunctionState : public GlobalTableFunctionState {
@@ -691,17 +819,31 @@ public:
 static unique_ptr<FunctionData> IcebergToDuckLakeBind(ClientContext &context, TableFunctionBindInput &input,
                                                       vector<LogicalType> &return_types, vector<string> &names) {
 	auto ret = make_uniq<IcebergToDuckLakeBindData>();
-
-	FileSystem &fs = FileSystem::GetFileSystem(context);
 	auto input_string = input.inputs[0].ToString();
-	auto filename = IcebergUtils::GetStorageLocation(context, input_string);
 
+	auto &catalog = Catalog::GetCatalog(context, input_string);
+	auto catalog_type = catalog.GetCatalogType();
+	if (catalog_type != "iceberg") {
+		throw InvalidInputException("First parameter must be the name of an attached Iceberg catalog");
+	}
+	auto &irc_catalog = catalog.Cast<IRCatalog>();
+	auto &irc_transaction = IRCTransaction::Get(context, irc_catalog);
+	auto &schema_set = irc_transaction.schemas;
+
+	//! FIXME: the function should take named parameters that are translated to this.
 	IcebergOptions options;
-	auto iceberg_meta_path = IcebergTableMetadata::GetMetaDataPath(context, filename, fs, options);
-	auto table_metadata = IcebergTableMetadata::Parse(iceberg_meta_path, fs, options.metadata_compression_codec);
-	auto metadata = IcebergTableMetadata::FromTableMetadata(table_metadata);
 
-	ret->ConvertMetadata(metadata, context, options);
+	for (auto &it : schema_set.entries) {
+		auto &schema_entry = it.second->Cast<IRCSchemaEntry>();
+
+		auto &tables = schema_entry.tables;
+		for (auto &it : tables.entries) {
+			auto &table = it.second;
+			ret->AddTable(table, context, options);
+		}
+	}
+
+	ret->CreateSQLStatements();
 
 	return_types.emplace_back(LogicalType::BIGINT);
 	names.emplace_back("count");
