@@ -885,6 +885,72 @@ public:
 			}
 		}
 
+		//! ducklake_snapshot_changes
+		for (auto &it : snapshots) {
+			auto &snapshot = it.second;
+
+			vector<string> changes;
+			for (auto &schema_name : snapshot.created_schema) {
+				auto escaped_name = KeywordHelper::WriteQuoted(schema_name, '"');
+
+				changes.push_back(StringUtil::Format("created_schema:%s", escaped_name));
+			}
+
+			for (auto &table_uuid : snapshot.created_table) {
+				auto &table = tables.at(table_uuid);
+				auto &schema = *table.schema;
+
+				auto schema_name = KeywordHelper::WriteQuoted(schema.schema_name, '"');
+				auto table_name = KeywordHelper::WriteQuoted(table.table_name, '"');
+
+				changes.push_back(StringUtil::Format("created_table:%s.%s", schema_name, table_name));
+			}
+
+			for (auto &table_uuid : snapshot.inserted_into_table) {
+				auto &table = tables.at(table_uuid);
+
+				auto table_id = table.table_id.GetIndex();
+				changes.push_back(StringUtil::Format("inserted_into_table:%d", table_id));
+			}
+
+			for (auto &table_uuid : snapshot.deleted_from_table) {
+				auto &table = tables.at(table_uuid);
+
+				auto table_id = table.table_id.GetIndex();
+				changes.push_back(StringUtil::Format("deleted_from_table:%d", table_id));
+			}
+
+			for (auto &schema_name : snapshot.dropped_schema) {
+				auto &schema = schemas.at(schema_name);
+				auto schema_id = schema.schema_id.GetIndex();
+
+				changes.push_back(StringUtil::Format("dropped_schema:%d", schema_id));
+			}
+
+			for (auto &table_uuid : snapshot.dropped_table) {
+				auto &table = tables.at(table_uuid);
+
+				auto table_id = table.table_id.GetIndex();
+				changes.push_back(StringUtil::Format("dropped_table:%d", table_id));
+			}
+
+			for (auto &table_uuid : snapshot.altered_table) {
+				if (snapshot.created_table.count(table_uuid)) {
+					//! Table was created in this snapshot,
+					//! any alters to the table made as part of that creation don't have to be recorded as
+					//! 'snapshot_changes'
+					continue;
+				}
+				auto &table = tables.at(table_uuid);
+
+				auto table_id = table.table_id.GetIndex();
+				changes.push_back(StringUtil::Format("altered_table:%d", table_id));
+			}
+			auto snapshot_id = snapshot.snapshot_id.GetIndex();
+			auto values = StringUtil::Format("VALUES(%d, '%s')", snapshot_id, StringUtil::Join(changes, ","));
+			sql.push_back(StringUtil::Format("INSERT INTO ducklake_snapshot_changes %s", values));
+		}
+
 		return sql;
 	}
 
