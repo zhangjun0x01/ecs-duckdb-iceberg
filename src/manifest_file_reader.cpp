@@ -61,7 +61,21 @@ void ManifestFileReader::CreateVectorMapping(idx_t column_id, MultiFileColumnDef
 		D_ASSERT(child.identifier.type().id() == LogicalTypeId::INTEGER);
 		auto child_field_id = child.identifier.GetValue<int32_t>();
 
-		vector_mapping.emplace(child_field_id, ColumnIndex(column_id, {ColumnIndex(child_idx)}));
+		vector<ColumnIndex> child_indexes;
+		child_indexes.emplace_back(child_idx);
+
+		vector_mapping.emplace(child_field_id, ColumnIndex(column_id, child_indexes));
+		if (column_id == PARTITION) {
+			for (idx_t partition_idx = 0; partition_idx < child.children.size(); partition_idx++) {
+				auto &partition_field = child.children[partition_idx];
+
+				auto partition_field_id = partition_field.identifier.GetValue<int32_t>();
+				auto partition_child_indexes = child_indexes;
+				partition_child_indexes.emplace_back(partition_idx);
+
+				partition_fields.emplace(partition_field_id, ColumnIndex(column_id, partition_child_indexes));
+			}
+		}
 	}
 }
 

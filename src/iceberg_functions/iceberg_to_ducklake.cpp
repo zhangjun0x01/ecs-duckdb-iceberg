@@ -949,6 +949,8 @@ public:
 					                                 nan_count, min_value, max_value, contains_nan);
 					sql.push_back(StringUtil::Format("INSERT INTO ducklake_file_column_statistics %s", values));
 				}
+
+				//! ducklake_file_partition_value
 			}
 
 			//! ducklake_delete_file
