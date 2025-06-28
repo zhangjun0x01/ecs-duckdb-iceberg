@@ -32,6 +32,7 @@ public:
 	//! source_id -> blob
 	unordered_map<int32_t, Value> lower_bounds;
 	unordered_map<int32_t, Value> upper_bounds;
+	unordered_map<int32_t, int64_t> column_sizes;
 	unordered_map<int32_t, int64_t> value_counts;
 	unordered_map<int32_t, int64_t> null_value_counts;
 	unordered_map<int32_t, int64_t> nan_value_counts;

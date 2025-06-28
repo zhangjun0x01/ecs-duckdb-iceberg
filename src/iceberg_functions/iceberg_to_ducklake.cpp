@@ -320,20 +320,13 @@ public:
 	}
 
 public:
-	vector<string> FinalizeEntry(int64_t table_id, DuckLakeMetadataSerializer &serializer) {
+	string FinalizeEntry(int64_t table_id, DuckLakeMetadataSerializer &serializer) {
 		auto partition_id = serializer.partition_id++;
 		this->partition_id = partition_id;
 		int64_t begin_snapshot = start_snapshot->snapshot_id.GetIndex();
 		string end_snapshot = this->end_snapshot ? to_string(this->end_snapshot) : "NULL";
 
-		vector<string> result;
-		result.push_back(
-		    StringUtil::Format("VALUES(%d, %d, %d, %s)", partition_id, table_id, begin_snapshot, end_snapshot));
-		for (idx_t i = 0; i < columns.size(); i++) {
-			auto &column = columns[i];
-			result.push_back(column.FinalizeEntry(table_id, partition_id, i));
-		}
-		return result;
+		return StringUtil::Format("VALUES(%d, %d, %d, %s)", partition_id, table_id, begin_snapshot, end_snapshot);
 	}
 
 public:
@@ -347,7 +340,8 @@ public:
 
 struct DuckLakeDataFile {
 public:
-	DuckLakeDataFile(const IcebergManifestEntry &entry, DuckLakePartition &partition) : partition(partition) {
+	DuckLakeDataFile(const IcebergManifestEntry &entry, DuckLakePartition &partition)
+	    : manifest_entry(entry), partition(partition) {
 		path = entry.file_path;
 		if (!StringUtil::CIEquals(entry.file_format, "parquet")) {
 			throw InvalidInputException(
@@ -377,6 +371,8 @@ public:
 	}
 
 public:
+	//! Contains the stats used to write the 'ducklake_file_column_statistics'
+	IcebergManifestEntry manifest_entry;
 	DuckLakePartition &partition;
 
 	string path;
@@ -461,6 +457,29 @@ struct DuckLakeSchema;
 struct DuckLakeTable {
 public:
 	DuckLakeTable(const string &table_uuid, const string &table_name) : table_uuid(table_uuid), table_name(table_name) {
+	}
+
+public:
+	unordered_map<int64_t, reference<DuckLakeColumn>> GetColumnsAtSnapshot(DuckLakeSnapshot &snapshot) {
+		unordered_map<int64_t, reference<DuckLakeColumn>> result;
+		//! These conditions have to be true: begin <= snapshot AND end > snapshot
+
+		for (auto &column : all_columns) {
+			if (column.start_snapshot->snapshot_time > snapshot.snapshot_time) {
+				//! This column version was created after this snapshot
+				continue;
+			}
+			if (column.end_snapshot && column.end_snapshot->snapshot_time <= snapshot.snapshot_time) {
+				//! This column is deleted and it was deleted before our snapshot
+				continue;
+			}
+			auto res = result.emplace(column.column_id, column);
+			if (!res.second) {
+				throw InvalidInputException(
+				    "Iceberg integrity error: two columns with the same source id exist at the same time");
+			}
+		}
+		return result;
 	}
 
 public:
@@ -670,6 +689,22 @@ static unordered_map<int64_t, DuckLakeColumn> SchemaToColumns(const IcebergTable
 	return result;
 }
 
+static string GetBoundStats(const unordered_map<int32_t, Value> &bounds, int64_t column_id) {
+	auto it = bounds.find(column_id);
+	if (it == bounds.end()) {
+		return "NULL";
+	}
+	return it->second.ToString();
+}
+
+static string GetNumericStats(const unordered_map<int32_t, int64_t> &stats, int64_t column_id) {
+	auto it = stats.find(column_id);
+	if (it == stats.end()) {
+		return "NULL";
+	}
+	return to_string(it->second);
+}
+
 struct IcebergToDuckLakeBindData : public TableFunctionData {
 public:
 	IcebergToDuckLakeBindData() {
@@ -864,18 +899,56 @@ public:
 			sql.push_back(StringUtil::Format("INSERT INTO ducklake_table %s", values));
 
 			int64_t table_id = table.table_id.GetIndex();
+			//! ducklake_partition_info
+			for (auto &partition : table.all_partitions) {
+				auto values = partition.FinalizeEntry(table_id, serializer);
+				sql.push_back(StringUtil::Format("INSERT INTO ducklake_partition_info %s", values));
 
-			//! FIXME: serialize partition info
-			////! ducklake_partition_info
-			// for (auto &partition : table.all_partitions) {
-			//	auto values = partition.FinalizeEntry(table_id, serializer);
-			//	sql.push_back(StringUtil::Format("INSERT INTO ducklake_partition_info %s", values));
-			//}
+				auto partition_id = partition.partition_id.GetIndex();
+				//! ducklake_partition_column
+				for (idx_t i = 0; i < partition.columns.size(); i++) {
+					auto &column = partition.columns[i];
+					auto values = column.FinalizeEntry(table_id, partition_id, i);
+					sql.push_back(StringUtil::Format("INSERT INTO ducklake_partition_column %s", values));
+				}
+			}
 
 			//! ducklake_data_file
 			for (auto &data_file : table.all_data_files) {
 				auto values = data_file.FinalizeEntry(table_id);
 				sql.push_back(StringUtil::Format("INSERT INTO ducklake_data_file %s", values));
+
+				auto data_file_id = data_file.data_file_id.GetIndex();
+				auto start_snapshot = data_file.start_snapshot;
+
+				//! ducklake_file_column_statistics
+				auto columns = table.GetColumnsAtSnapshot(*start_snapshot);
+				for (auto &it : columns) {
+					auto column_id = it.first;
+					auto &column = it.second.get();
+					auto &manifest_entry = data_file.manifest_entry;
+
+					auto column_size_bytes = GetNumericStats(manifest_entry.column_sizes, column_id);
+					auto value_count = GetNumericStats(manifest_entry.value_counts, column_id);
+					auto null_count = GetNumericStats(manifest_entry.null_value_counts, column_id);
+					auto nan_count = GetNumericStats(manifest_entry.nan_value_counts, column_id);
+					auto min_value = GetBoundStats(manifest_entry.lower_bounds, column_id);
+					auto max_value = GetBoundStats(manifest_entry.upper_bounds, column_id);
+
+					string contains_nan;
+					if (nan_count == "NULL") {
+						contains_nan = "NULL";
+					} else if (nan_count == "0") {
+						contains_nan = "false";
+					} else {
+						contains_nan = "true";
+					}
+
+					auto values = StringUtil::Format("VALUES(%d, %d, %d, %d, %d, %d, %d, '%s', '%s', %s)", data_file_id,
+					                                 table_id, column_id, column_size_bytes, value_count, null_count,
+					                                 nan_count, min_value, max_value, contains_nan);
+					sql.push_back(StringUtil::Format("INSERT INTO ducklake_file_column_statistics %s", values));
+				}
 			}
 
 			//! ducklake_delete_file

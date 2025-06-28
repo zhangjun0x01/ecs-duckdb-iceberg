@@ -186,12 +186,17 @@ idx_t ManifestFileReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 	    *child_entries[vector_mapping.at(RECORD_COUNT).GetChildIndex(0).GetPrimaryIndex()]);
 	auto file_size_in_bytes = FlatVector::GetData<int64_t>(
 	    *child_entries[vector_mapping.at(FILE_SIZE_IN_BYTES).GetChildIndex(0).GetPrimaryIndex()]);
+	optional_ptr<Vector> column_sizes;
 	optional_ptr<Vector> lower_bounds;
 	optional_ptr<Vector> upper_bounds;
 	optional_ptr<Vector> value_counts;
 	optional_ptr<Vector> null_value_counts;
 	optional_ptr<Vector> nan_value_counts;
 
+	auto column_sizes_it = vector_mapping.find(COLUMN_SIZES);
+	if (column_sizes_it != vector_mapping.end()) {
+		column_sizes = *child_entries[column_sizes_it->second.GetChildIndex(0).GetPrimaryIndex()];
+	}
 	auto lower_bounds_it = vector_mapping.find(LOWER_BOUNDS);
 	if (lower_bounds_it != vector_mapping.end()) {
 		lower_bounds = *child_entries[lower_bounds_it->second.GetChildIndex(0).GetPrimaryIndex()];
@@ -251,6 +256,9 @@ idx_t ManifestFileReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 		if (lower_bounds && upper_bounds) {
 			entry.lower_bounds = GetBounds(*lower_bounds, index);
 			entry.upper_bounds = GetBounds(*upper_bounds, index);
+		}
+		if (column_sizes) {
+			entry.column_sizes = GetCounts(*column_sizes, index);
 		}
 		if (value_counts) {
 			entry.value_counts = GetCounts(*value_counts, index);
