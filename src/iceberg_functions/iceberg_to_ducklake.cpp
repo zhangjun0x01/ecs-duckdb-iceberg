@@ -72,8 +72,8 @@ public:
 		base_file_id = serializer.next_file_id;
 
 		//! Update the serializer to point to the next id starts
-		serializer.schema_version += schema_changes;
-		serializer.next_catalog_id += schema_additions;
+		serializer.schema_version += catalog_changes;
+		serializer.next_catalog_id += catalog_additions;
 		serializer.next_file_id += files_added;
 
 		int64_t snapshot_id = serializer.snapshot_id++;
@@ -87,11 +87,37 @@ public:
 	}
 
 public:
-	int64_t AddSchemaAddition() {
-		return schema_additions++;
+	int64_t AddSchema(const string &schema_name) {
+		created_schema.insert(schema_name);
+		return catalog_additions++;
 	}
-	int64_t AddFileAddition() {
+	void DropSchema(const string &schema_name) {
+		dropped_schema.insert(schema_name);
+	}
+
+	int64_t AddTable(const string &table_uuid) {
+		created_table.insert(table_uuid);
+		return catalog_additions++;
+	}
+	void DropTable(const string &table_uuid) {
+		dropped_table.insert(table_uuid);
+	}
+
+	int64_t AddDataFile(const string &table_uuid) {
+		inserted_into_table.insert(table_uuid);
 		return files_added++;
+	}
+	void DeleteDataFile(const string &table_uuid) {
+		deleted_from_table.insert(table_uuid);
+	}
+
+	int64_t AddDeleteFile(const string &table_uuid) {
+		deleted_from_table.insert(table_uuid);
+		return files_added++;
+	}
+
+	void AlterTable(const string &table_uuid) {
+		altered_table.insert(table_uuid);
 	}
 
 public:
@@ -99,10 +125,23 @@ public:
 	optional_idx snapshot_id;
 	timestamp_t snapshot_time;
 
+public:
+	//! table_uuid set
+	unordered_set<string> created_table;
+	unordered_set<string> inserted_into_table;
+	unordered_set<string> deleted_from_table;
+	unordered_set<string> dropped_table;
+	unordered_set<string> altered_table;
+
+	//! schema name set
+	unordered_set<string> created_schema;
+	unordered_set<string> dropped_schema;
+
+public:
 	//! schemas/tables/views changed (unused)
-	idx_t schema_changes = 0;
+	idx_t catalog_changes = 0;
 	//! schemas/tables/views added
-	idx_t schema_additions = 0;
+	idx_t catalog_additions = 0;
 	//! data or delete files added
 	idx_t files_added = 0;
 
@@ -432,6 +471,7 @@ public:
 		//! First set the end snapshot of the old version of this column (if it exists)
 		auto column_id = new_column.column_id;
 		DropColumnVersion(column_id, begin_snapshot);
+		begin_snapshot.AlterTable(table_uuid);
 		new_column.start_snapshot = begin_snapshot;
 		all_columns.push_back(new_column);
 		current_columns.emplace(column_id, all_columns.back());
@@ -442,6 +482,7 @@ public:
 			return;
 		}
 		auto &column = it->second.get();
+		end_snapshot.AlterTable(table_uuid);
 		column.end_snapshot = end_snapshot;
 		current_columns.erase(it);
 	}
@@ -455,6 +496,7 @@ public:
 			old_partition.end_snapshot = begin_snapshot;
 			current_partition = nullptr;
 		}
+		begin_snapshot.AlterTable(table_uuid);
 		new_partition.start_snapshot = begin_snapshot;
 		all_partitions.push_back(new_partition);
 		current_partition = all_partitions.back();
@@ -467,7 +509,7 @@ public:
 
 	void AddDataFile(DuckLakeDataFile &data_file, DuckLakeSnapshot &begin_snapshot) {
 		data_file.start_snapshot = begin_snapshot;
-		data_file.file_id_offset = begin_snapshot.AddFileAddition();
+		data_file.file_id_offset = begin_snapshot.AddDataFile(table_uuid);
 		D_ASSERT(!current_data_files.count(data_file.path));
 		all_data_files.push_back(data_file);
 		current_data_files.emplace(data_file.path, all_data_files.back());
@@ -479,6 +521,7 @@ public:
 		}
 
 		auto &data_file = it->second.get();
+		end_snapshot.DeleteDataFile(table_uuid);
 		data_file.end_snapshot = end_snapshot;
 
 		current_data_files.erase(it);
@@ -489,7 +532,7 @@ public:
 
 	void AddDeleteFile(DuckLakeDeleteFile &delete_file, DuckLakeSnapshot &begin_snapshot) {
 		delete_file.start_snapshot = begin_snapshot;
-		delete_file.file_id_offset = begin_snapshot.AddFileAddition();
+		delete_file.file_id_offset = begin_snapshot.AddDeleteFile(table_uuid);
 		D_ASSERT(!current_delete_files.count(delete_file.path));
 
 		//! NOTE: because delete files reference data files by id, the Data Files have to be processed first.
@@ -519,6 +562,7 @@ public:
 		}
 
 		auto &delete_file = it->second.get();
+		//! end_snapshot.DeleteDeleteFile(table_uuid);
 		delete_file.end_snapshot = end_snapshot;
 		referenced_data_files.erase(delete_file.data_file_path);
 
@@ -591,7 +635,7 @@ public:
 			}
 		}
 		start_snapshot = snapshot;
-		catalog_id_offset = snapshot->AddSchemaAddition();
+		catalog_id_offset = snapshot->AddSchema(schema_name);
 	}
 
 public:
@@ -660,7 +704,7 @@ public:
 
 			if (first_snapshot) {
 				//! Mark the table as being created by this snapshot
-				table.catalog_id_offset = ducklake_snapshot.AddSchemaAddition();
+				table.catalog_id_offset = ducklake_snapshot.AddTable(table_info.table_metadata.table_uuid);
 				table.start_snapshot = ducklake_snapshot;
 				first_snapshot = false;
 			}
