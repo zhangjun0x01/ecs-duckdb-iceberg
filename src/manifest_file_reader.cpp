@@ -232,6 +232,12 @@ idx_t ManifestFileReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 		nan_value_counts = *child_entries[nan_value_counts_it->second.GetChildIndex(0).GetPrimaryIndex()];
 	}
 	auto &partition_vec = child_entries[partition_idx.GetChildIndex(0).GetPrimaryIndex()];
+	auto &partition_children = StructVector::GetEntries(*partition_vec);
+	unordered_map<int32_t, reference<Vector>> partition_vectors;
+	for (auto &it : partition_fields) {
+		auto partition_field_idx = it.second.GetChildIndex(1).GetPrimaryIndex();
+		partition_vectors.emplace(it.first, *partition_children[partition_field_idx]);
+	}
 
 	optional_ptr<Vector> referenced_data_file;
 	optional_ptr<Vector> content_offset;
@@ -321,7 +327,12 @@ idx_t ManifestFileReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 		}
 
 		entry.partition_spec_id = this->partition_spec_id;
-		entry.partition = partition_vec->GetValue(index);
+		for (auto &it : partition_vectors) {
+			auto field_id = it.first;
+			auto &partition_vector = it.second.get();
+
+			entry.partition_values.emplace_back(field_id, partition_vector.GetValue(index));
+		}
 		produced++;
 		result.push_back(entry);
 	}

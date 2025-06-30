@@ -424,49 +424,6 @@ OpenFileInfo IcebergMultiFileList::GetFile(idx_t file_id) {
 	return GetFileInternal(file_id, guard);
 }
 
-static void PopulateSourceIdMap(unordered_map<uint64_t, ColumnIndex> &source_to_column_id,
-                                const vector<unique_ptr<IcebergColumnDefinition>> &columns,
-                                optional_ptr<ColumnIndex> parent) {
-	for (idx_t i = 0; i < columns.size(); i++) {
-		auto &column = columns[i];
-
-		ColumnIndex new_index;
-		if (parent) {
-			auto primary = parent->GetPrimaryIndex();
-			auto child_indexes = parent->GetChildIndexes();
-			child_indexes.push_back(ColumnIndex(i));
-			new_index = ColumnIndex(primary, child_indexes);
-		} else {
-			new_index = ColumnIndex(i);
-		}
-
-		PopulateSourceIdMap(source_to_column_id, column->children, new_index);
-		source_to_column_id.emplace(static_cast<uint64_t>(column->id), std::move(new_index));
-	}
-}
-
-static const IcebergColumnDefinition &GetFromColumnIndex(const vector<unique_ptr<IcebergColumnDefinition>> &columns,
-                                                         const ColumnIndex &column_index, idx_t depth) {
-	auto &child_indexes = column_index.GetChildIndexes();
-	auto &selected_index = depth ? child_indexes[depth - 1] : column_index;
-
-	auto index = selected_index.GetPrimaryIndex();
-	if (index >= columns.size()) {
-		throw InvalidConfigurationException("ColumnIndex out of bounds for columns (index %d, 'columns' size: %d)",
-		                                    index, columns.size());
-	}
-	auto &column = columns[index];
-	if (depth == child_indexes.size()) {
-		return *column;
-	}
-	if (column->children.empty()) {
-		throw InvalidConfigurationException(
-		    "Expected column to have children, ColumnIndex has a depth of %d, we reached only %d",
-		    column_index.ChildIndexCount(), depth);
-	}
-	return GetFromColumnIndex(column->children, column_index, depth + 1);
-}
-
 static optional_ptr<const TableFilter> GetFilterForColumnIndex(TableFilterSet &filter_set,
                                                                const ColumnIndex &column_index) {
 	auto primary_index = column_index.GetPrimaryIndex();
@@ -525,7 +482,7 @@ bool IcebergMultiFileList::ManifestMatchesFilter(const IcebergManifest &manifest
 
 	auto &schema = GetSchema().columns;
 	unordered_map<uint64_t, ColumnIndex> source_to_column_id;
-	PopulateSourceIdMap(source_to_column_id, schema, nullptr);
+	IcebergTableSchema::PopulateSourceIdMap(source_to_column_id, schema, nullptr);
 
 	for (idx_t i = 0; i < field_summaries.size(); i++) {
 		auto &field_summary = field_summaries[i];
@@ -539,7 +496,7 @@ bool IcebergMultiFileList::ManifestMatchesFilter(const IcebergManifest &manifest
 			continue;
 		}
 
-		auto &column = GetFromColumnIndex(schema, column_id, 0);
+		auto &column = IcebergTableSchema::GetFromColumnIndex(schema, column_id, 0);
 		IcebergPredicateStats stats;
 		auto result_type = field.transform.GetSerializedType(column.type);
 		DeserializeBounds(field_summary.lower_bound, field_summary.upper_bound, column.name, result_type, stats);

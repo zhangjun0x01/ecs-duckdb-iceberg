@@ -8,6 +8,7 @@
 #include "duckdb/function/copy_function.hpp"
 #include "duckdb/execution/execution_context.hpp"
 #include "duckdb/parallel/thread_context.hpp"
+#include "duckdb/common/insertion_order_preserving_map.hpp"
 
 namespace duckdb {
 
@@ -36,7 +37,7 @@ public:
 	unordered_map<int32_t, int64_t> value_counts;
 	unordered_map<int32_t, int64_t> null_value_counts;
 	unordered_map<int32_t, int64_t> nan_value_counts;
-	Value partition;
+	vector<pair<int32_t, Value>> partition_values;
 	//! Inherited from the 'manifest_file' if NULL and 'status == EXISTING'
 	sequence_number_t sequence_number;
 	//! Inherited from the 'manifest_file'
