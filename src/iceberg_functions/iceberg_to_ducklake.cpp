@@ -298,6 +298,7 @@ public:
 			                            field.transform.RawType());
 		};
 		column_id = field.source_id;
+		partition_field_id = field.partition_field_id;
 	}
 
 public:
@@ -309,6 +310,9 @@ public:
 public:
 	int64_t column_id;
 	string transform;
+
+	//! The iceberg partition field id that this column is mirroring
+	uint64_t partition_field_id;
 };
 
 struct DuckLakePartition {
@@ -951,6 +955,30 @@ public:
 				}
 
 				//! ducklake_file_partition_value
+				auto &partition_values = data_file.manifest_entry.partition_values;
+				auto &partition = data_file.partition;
+
+				unordered_map<int32_t, idx_t> field_id_to_index;
+				for (idx_t i = 0; i < partition_values.size(); i++) {
+					field_id_to_index.emplace(partition_values[i].first, i);
+				}
+
+				for (idx_t partition_key_index = 0; partition_key_index < partition.columns.size();
+				     partition_key_index++) {
+					auto &partition_column = partition.columns[partition_key_index];
+
+					auto partition_it = field_id_to_index.find(partition_column.partition_field_id);
+					string partition_value;
+					if (partition_it == field_id_to_index.end()) {
+						partition_value = "NULL";
+					} else {
+						auto index = partition_it->second;
+						partition_value = "'" + partition_values[index].second.ToString() + "'";
+					}
+					auto values = StringUtil::Format("VALUES(%d, %d, %d, '%s')", data_file_id, table_id,
+					                                 partition_key_index, partition_value);
+					sql.push_back(StringUtil::Format("INSERT INTO ducklake_file_partition_value %s", values));
+				}
 			}
 
 			//! ducklake_delete_file
