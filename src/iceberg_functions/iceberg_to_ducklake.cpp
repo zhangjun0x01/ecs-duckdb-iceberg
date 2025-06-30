@@ -729,7 +729,7 @@ public:
 		this->schema_id = schema_id;
 
 		int64_t begin_snapshot = snapshot.snapshot_id.GetIndex();
-		return StringUtil::Format("VALUES (%d, '%s', %d, NULL, %s)", schema_id, schema_uuid, begin_snapshot,
+		return StringUtil::Format("VALUES (%d, '%s', %d, NULL, '%s')", schema_id, schema_uuid, begin_snapshot,
 		                          schema_name);
 	}
 	void AssignEarliestSnapshot(unordered_map<string, DuckLakeTable> &all_tables,
@@ -817,8 +817,13 @@ public:
 			upper_bound = upper_bound_it->second;
 		}
 
+		LogicalType logical_type;
+		if (column.column_type == "struct" || column.column_type == "map" || column.column_type == "list") {
+			logical_type = LogicalType::VARCHAR;
+		} else {
+			logical_type = FromStringBaseType(column.column_type);
+		}
 		//! Transform the stats stored in the iceberg metadata
-		auto logical_type = FromStringBaseType(column.column_type);
 		auto stats =
 		    IcebergPredicateStats::DeserializeBounds(lower_bound, upper_bound, column.column_name, logical_type);
 		auto null_counts_it = entry.null_value_counts.find(column.column_id);

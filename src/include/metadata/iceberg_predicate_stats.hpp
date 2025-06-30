@@ -4,7 +4,7 @@
 namespace duckdb {
 
 struct IcebergPredicateStats {
-private:
+public:
 	IcebergPredicateStats() {
 	}
 
