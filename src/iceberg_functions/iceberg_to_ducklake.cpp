@@ -1086,6 +1086,20 @@ public:
 
 			auto stats_values = StringUtil::Format("VALUES(%d, %d, NULL, %d)", table_id, record_count, file_size_bytes);
 			sql.push_back(StringUtil::Format("INSERT INTO ducklake_table_stats %s", stats_values));
+
+			//! ducklake_table_column_stats
+			for (auto &it : column_stats) {
+				auto column_id = it.first;
+				auto &stats = it.second;
+
+				auto contains_null = stats.contains_null ? "true" : "false";
+				auto contains_nan = stats.contains_nan ? "true" : "false";
+				auto min_value = stats.min_value.ToString();
+				auto max_value = stats.max_value.ToString();
+				auto values = StringUtil::Format("VALUES(%d, %d, %s, %s, '%s', '%s')", table_id, column_id,
+				                                 contains_null, contains_nan, min_value, max_value);
+				sql.push_back(StringUtil::Format("INSERT INTO ducklake_table_column_stats %s", values));
+			}
 		}
 
 		//! ducklake_snapshot_changes
