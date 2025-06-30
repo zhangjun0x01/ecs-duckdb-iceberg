@@ -234,10 +234,12 @@ unique_ptr<NodeStatistics> IcebergMultiFileList::GetCardinality(ClientContext &c
 	return make_uniq<NodeStatistics>(cardinality, cardinality);
 }
 
-static void DeserializeBounds(const Value &lower_bound, const Value &upper_bound, const string &name,
-                              const LogicalType &type, IcebergPredicateStats &out) {
+IcebergPredicateStats IcebergPredicateStats::DeserializeBounds(const Value &lower_bound, const Value &upper_bound,
+                                                               const string &name, const LogicalType &type) {
+	IcebergPredicateStats res;
+
 	if (lower_bound.IsNull()) {
-		out.lower_bound = Value(type);
+		res.lower_bound = Value(type);
 	} else {
 		D_ASSERT(lower_bound.type().id() == LogicalTypeId::BLOB);
 		auto lower_bound_blob = lower_bound.GetValueUnsafe<string_t>();
@@ -246,11 +248,11 @@ static void DeserializeBounds(const Value &lower_bound, const Value &upper_bound
 			throw InvalidConfigurationException("Column %s lower bound deserialization failed: %s", name,
 			                                    deserialized_lower_bound.GetError());
 		}
-		out.lower_bound = deserialized_lower_bound.GetValue();
+		res.lower_bound = deserialized_lower_bound.GetValue();
 	}
 
 	if (upper_bound.IsNull()) {
-		out.upper_bound = Value(type);
+		res.upper_bound = Value(type);
 	} else {
 		D_ASSERT(upper_bound.type().id() == LogicalTypeId::BLOB);
 		auto upper_bound_blob = upper_bound.GetValueUnsafe<string_t>();
@@ -259,8 +261,9 @@ static void DeserializeBounds(const Value &lower_bound, const Value &upper_bound
 			throw InvalidConfigurationException("Column %s upper bound deserialization failed: %s", name,
 			                                    deserialized_upper_bound.GetError());
 		}
-		out.upper_bound = deserialized_upper_bound.GetValue();
+		res.upper_bound = deserialized_upper_bound.GetValue();
 	}
+	return res;
 }
 
 bool IcebergMultiFileList::FileMatchesFilter(const IcebergManifestEntry &file) {
@@ -294,8 +297,7 @@ bool IcebergMultiFileList::FileMatchesFilter(const IcebergManifestEntry &file) {
 			upper_bound = upper_bound_it->second;
 		}
 
-		IcebergPredicateStats stats;
-		DeserializeBounds(lower_bound, upper_bound, column.name, column.type, stats);
+		auto stats = IcebergPredicateStats::DeserializeBounds(lower_bound, upper_bound, column.name, column.type);
 		auto null_counts_it = file.null_value_counts.find(source_id);
 		if (null_counts_it != file.null_value_counts.end()) {
 			auto &null_counts = null_counts_it->second;
@@ -497,9 +499,9 @@ bool IcebergMultiFileList::ManifestMatchesFilter(const IcebergManifest &manifest
 		}
 
 		auto &column = IcebergTableSchema::GetFromColumnIndex(schema, column_id, 0);
-		IcebergPredicateStats stats;
 		auto result_type = field.transform.GetSerializedType(column.type);
-		DeserializeBounds(field_summary.lower_bound, field_summary.upper_bound, column.name, result_type, stats);
+		auto stats = IcebergPredicateStats::DeserializeBounds(field_summary.lower_bound, field_summary.upper_bound,
+		                                                      column.name, result_type);
 		stats.has_nan = field_summary.contains_nan;
 		stats.has_null = field_summary.contains_null;
 

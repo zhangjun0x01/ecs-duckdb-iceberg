@@ -710,6 +710,66 @@ static string GetNumericStats(const unordered_map<int32_t, int64_t> &stats, int6
 	return to_string(it->second);
 }
 
+struct DuckLakeColumnStats {
+public:
+	DuckLakeColumnStats(DuckLakeColumn &column) : column(column) {
+	}
+
+public:
+	void AddStats(DuckLakeDataFile &data_file) {
+		auto &entry = data_file.manifest_entry;
+
+		auto lower_bound_it = entry.lower_bounds.find(column.column_id);
+		auto upper_bound_it = entry.upper_bounds.find(column.column_id);
+		Value lower_bound;
+		Value upper_bound;
+		if (lower_bound_it != entry.lower_bounds.end()) {
+			lower_bound = lower_bound_it->second;
+		}
+		if (upper_bound_it != entry.upper_bounds.end()) {
+			upper_bound = upper_bound_it->second;
+		}
+
+		//! Transform the stats stored in the iceberg metadata
+		auto logical_type = IcebergColumnDefinition::ParsePrimitiveTypeString(column.column_type);
+		auto stats =
+		    IcebergPredicateStats::DeserializeBounds(lower_bound, upper_bound, column.column_name, logical_type);
+		auto null_counts_it = entry.null_value_counts.find(column.column_id);
+		if (null_counts_it != entry.null_value_counts.end()) {
+			auto &null_counts = null_counts_it->second;
+			stats.has_null = null_counts != 0;
+		}
+		auto nan_counts_it = entry.nan_value_counts.find(column.column_id);
+		if (nan_counts_it != entry.nan_value_counts.end()) {
+			auto &nan_counts = nan_counts_it->second;
+			stats.has_nan = nan_counts != 0;
+		}
+
+		//! Update the stats
+		if (stats.has_null) {
+			contains_null = true;
+		}
+		if (stats.has_nan) {
+			contains_nan = true;
+		}
+
+		if (!stats.lower_bound.IsNull() && (min_value.IsNull() || stats.lower_bound < min_value)) {
+			min_value = stats.lower_bound;
+		}
+		if (!stats.upper_bound.IsNull() && (max_value.IsNull() || stats.upper_bound > max_value)) {
+			max_value = stats.upper_bound;
+		}
+	}
+
+public:
+	DuckLakeColumn &column;
+
+	bool contains_nan = false;
+	bool contains_null = false;
+	Value min_value;
+	Value max_value;
+};
+
 struct IcebergToDuckLakeBindData : public TableFunctionData {
 public:
 	IcebergToDuckLakeBindData() {
@@ -922,6 +982,8 @@ public:
 				}
 			}
 
+			unordered_map<int32_t, DuckLakeColumnStats> column_stats;
+
 			//! ducklake_data_file
 			for (auto &data_file : table.all_data_files) {
 				auto values = data_file.FinalizeEntry(table_id);
@@ -957,6 +1019,16 @@ public:
 					                                 table_id, column_id, column_size_bytes, value_count, null_count,
 					                                 nan_count, min_value, max_value, contains_nan);
 					sql.push_back(StringUtil::Format("INSERT INTO ducklake_file_column_statistics %s", values));
+
+					if (!data_file.end_snapshot) {
+						//! This data file is currently active, collect stats for it
+						auto stats_it = column_stats.find(column_id);
+						if (stats_it == column_stats.end()) {
+							stats_it = column_stats.emplace(column_id, column).first;
+						}
+						auto &stats = stats_it->second;
+						stats.AddStats(data_file);
+					}
 				}
 
 				//! ducklake_file_partition_value

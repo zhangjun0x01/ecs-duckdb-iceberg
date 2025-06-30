@@ -4,9 +4,13 @@
 namespace duckdb {
 
 struct IcebergPredicateStats {
-public:
+private:
 	IcebergPredicateStats() {
 	}
+
+public:
+	static IcebergPredicateStats DeserializeBounds(const Value &lower_bound, const Value &upper_bound,
+	                                               const string &name, const LogicalType &type);
 
 public:
 	Value lower_bound;
