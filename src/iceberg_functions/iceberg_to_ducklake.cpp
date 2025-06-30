@@ -244,6 +244,20 @@ static string ToDuckLakeColumnType(const LogicalType &type) {
 	}
 }
 
+static pair<int64_t, string> GetSnapshots(timestamp_t begin, bool has_end, timestamp_t end,
+                                          const map<timestamp_t, DuckLakeSnapshot> &snapshots) {
+	auto &begin_snapshot = snapshots.at(begin);
+
+	string end_snapshot;
+	if (has_end) {
+		auto &snapshot = snapshots.at(end);
+		end_snapshot = snapshot.snapshot_id.GetIndex();
+	} else {
+		end_snapshot = "NULL";
+	}
+	return make_pair<int64_t, string>(begin_snapshot.snapshot_id.GetIndex(), std::move(end_snapshot));
+}
+
 struct DuckLakeColumn {
 public:
 	DuckLakeColumn(const IcebergColumnDefinition &column, idx_t order,
@@ -292,10 +306,8 @@ public:
 	}
 
 public:
-	string FinalizeEntry(int64_t table_id) {
-		D_ASSERT(start_snapshot->snapshot_id.IsValid());
-		int64_t begin_snapshot = start_snapshot->snapshot_id.GetIndex();
-		string end_snapshot = this->end_snapshot ? to_string(this->end_snapshot) : "NULL";
+	string FinalizeEntry(int64_t table_id, const map<timestamp_t, DuckLakeSnapshot> &snapshots) {
+		auto snapshot_ids = GetSnapshots(start_snapshot, has_end, end_snapshot, snapshots);
 		string parent_column = this->parent_column.IsValid() ? to_string(this->parent_column.GetIndex()) : "NULL";
 
 		return StringUtil::Format(R"(
@@ -313,9 +325,9 @@ public:
 				%s -- parent_column
 			)
 		)",
-		                          column_id, begin_snapshot, end_snapshot, table_id, column_order, column_name,
-		                          column_type, initial_default, default_value, nulls_allowed ? "true" : "false",
-		                          parent_column);
+		                          column_id, snapshot_ids.first, snapshot_ids.second, table_id, column_order,
+		                          column_name, column_type, initial_default, default_value,
+		                          nulls_allowed ? "true" : "false", parent_column);
 	}
 
 public:
@@ -330,8 +342,9 @@ public:
 	string default_value;
 	bool nulls_allowed;
 
-	optional_ptr<DuckLakeSnapshot> start_snapshot;
-	optional_ptr<DuckLakeSnapshot> end_snapshot;
+	timestamp_t start_snapshot;
+	bool has_end = false;
+	timestamp_t end_snapshot;
 };
 
 struct DuckLakePartitionColumn {
@@ -380,13 +393,14 @@ public:
 	}
 
 public:
-	string FinalizeEntry(int64_t table_id, DuckLakeMetadataSerializer &serializer) {
+	string FinalizeEntry(int64_t table_id, DuckLakeMetadataSerializer &serializer,
+	                     const map<timestamp_t, DuckLakeSnapshot> &snapshots) {
 		auto partition_id = serializer.partition_id++;
 		this->partition_id = partition_id;
-		int64_t begin_snapshot = start_snapshot->snapshot_id.GetIndex();
-		string end_snapshot = this->end_snapshot ? to_string(this->end_snapshot) : "NULL";
+		auto snapshot_ids = GetSnapshots(start_snapshot, has_end, end_snapshot, snapshots);
 
-		return StringUtil::Format("VALUES(%d, %d, %d, %s)", partition_id, table_id, begin_snapshot, end_snapshot);
+		return StringUtil::Format("VALUES(%d, %d, %d, %s)", partition_id, table_id, snapshot_ids.first,
+		                          snapshot_ids.second);
 	}
 
 public:
@@ -394,8 +408,9 @@ public:
 	optional_idx partition_id;
 	vector<DuckLakePartitionColumn> columns;
 
-	optional_ptr<DuckLakeSnapshot> start_snapshot;
-	optional_ptr<DuckLakeSnapshot> end_snapshot;
+	timestamp_t start_snapshot;
+	bool has_end = false;
+	timestamp_t end_snapshot;
 };
 
 struct DuckLakeDataFile {
@@ -413,20 +428,19 @@ public:
 	}
 
 public:
-	string FinalizeEntry(int64_t table_id) {
+	string FinalizeEntry(int64_t table_id, const map<timestamp_t, DuckLakeSnapshot> &snapshots) {
 		//! NOTE: partitions have to be finalized before data files
 		D_ASSERT(partition.partition_id.IsValid());
-		auto &snapshot = *start_snapshot;
+		auto &snapshot = snapshots.at(start_snapshot);
 		int64_t data_file_id = snapshot.base_file_id + file_id_offset;
 		this->data_file_id = data_file_id;
 
-		int64_t begin_snapshot = snapshot.snapshot_id.GetIndex();
-		string end_snapshot = this->end_snapshot ? to_string(this->end_snapshot) : "NULL";
+		auto snapshot_ids = GetSnapshots(start_snapshot, has_end, end_snapshot, snapshots);
 		int64_t partition_id = partition.partition_id.GetIndex();
 
 		return StringUtil::Format("VALUES(%d, %d, %d, %s, NULL, '%s', False, 'parquet', %d, %d, NULL, NULL -- "
 		                          "row_id_start, %d, NULL -- encryption_key, NULL -- partial_file_info)",
-		                          data_file_id, table_id, begin_snapshot, end_snapshot, path, record_count,
+		                          data_file_id, table_id, snapshot_ids.first, snapshot_ids.second, path, record_count,
 		                          file_size_bytes, partition_id);
 	}
 
@@ -443,8 +457,10 @@ public:
 	optional_idx data_file_id;
 	idx_t file_id_offset = DConstants::INVALID_INDEX;
 
-	optional_ptr<DuckLakeSnapshot> start_snapshot;
-	optional_ptr<DuckLakeSnapshot> end_snapshot;
+	timestamp_t start_snapshot;
+
+	bool has_end = false;
+	timestamp_t end_snapshot;
 };
 
 struct DuckLakeDeleteFile {
@@ -482,19 +498,21 @@ public:
 	}
 
 public:
-	string FinalizeEntry(int64_t table_id, vector<DuckLakeDataFile> &all_data_files) {
-		auto &snapshot = *start_snapshot;
+	string FinalizeEntry(int64_t table_id, vector<DuckLakeDataFile> &all_data_files,
+	                     const map<timestamp_t, DuckLakeSnapshot> &snapshots) {
+		auto &snapshot = snapshots.at(start_snapshot);
 		int64_t delete_file_id = snapshot.base_file_id + file_id_offset;
 		this->delete_file_id = delete_file_id;
 
-		int64_t begin_snapshot = snapshot.snapshot_id.GetIndex();
-		string end_snapshot = this->end_snapshot ? to_string(this->end_snapshot) : "NULL";
+		auto snapshot_ids = GetSnapshots(start_snapshot, has_end, end_snapshot, snapshots);
+
 		auto &data_file = all_data_files[referenced_data_file];
 		int64_t data_file_id = data_file.data_file_id.GetIndex();
 
 		return StringUtil::Format(
 		    "VALUE(%d, %d, %d, %s, %d, '%s', false, 'parquet', %d, %d, NULL -- footer_size, NULL -- encryption_key)",
-		    delete_file_id, table_id, begin_snapshot, end_snapshot, data_file_id, path, record_count, file_size_bytes);
+		    delete_file_id, table_id, snapshot_ids.first, snapshot_ids.second, data_file_id, path, record_count,
+		    file_size_bytes);
 	}
 
 public:
@@ -507,8 +525,9 @@ public:
 	optional_idx delete_file_id;
 	idx_t file_id_offset = DConstants::INVALID_INDEX;
 
-	optional_ptr<DuckLakeSnapshot> start_snapshot;
-	optional_ptr<DuckLakeSnapshot> end_snapshot;
+	timestamp_t start_snapshot;
+	bool has_end = false;
+	timestamp_t end_snapshot;
 
 	//! Index into 'all_data_files'
 	idx_t referenced_data_file;
@@ -527,11 +546,11 @@ public:
 		//! These conditions have to be true: begin <= snapshot AND end > snapshot
 
 		for (auto &column : all_columns) {
-			if (column.start_snapshot->snapshot_time > snapshot.snapshot_time) {
+			if (column.start_snapshot > snapshot.snapshot_time) {
 				//! This column version was created after this snapshot
 				continue;
 			}
-			if (column.end_snapshot && column.end_snapshot->snapshot_time <= snapshot.snapshot_time) {
+			if (column.has_end && column.end_snapshot <= snapshot.snapshot_time) {
 				//! This column is deleted and it was deleted before our snapshot
 				continue;
 			}
@@ -553,7 +572,7 @@ public:
 		auto column_id = new_column.column_id;
 		DropColumnVersion(column_id, begin_snapshot);
 		begin_snapshot.AlterTable(table_uuid);
-		new_column.start_snapshot = begin_snapshot;
+		new_column.start_snapshot = begin_snapshot.snapshot_time;
 		all_columns.push_back(new_column);
 		current_columns.emplace(column_id, all_columns.size() - 1);
 	}
@@ -564,7 +583,8 @@ public:
 		}
 		auto &column = all_columns[it->second];
 		end_snapshot.AlterTable(table_uuid);
-		column.end_snapshot = end_snapshot;
+		column.end_snapshot = end_snapshot.snapshot_time;
+		column.has_end = true;
 		current_columns.erase(it);
 	}
 
@@ -574,11 +594,12 @@ public:
 	DuckLakePartition &AddPartition(DuckLakePartition &new_partition, DuckLakeSnapshot &begin_snapshot) {
 		if (current_partition) {
 			auto &old_partition = *current_partition;
-			old_partition.end_snapshot = begin_snapshot;
+			old_partition.end_snapshot = begin_snapshot.snapshot_time;
+			old_partition.has_end = true;
 			current_partition = nullptr;
 		}
 		begin_snapshot.AlterTable(table_uuid);
-		new_partition.start_snapshot = begin_snapshot;
+		new_partition.start_snapshot = begin_snapshot.snapshot_time;
 		all_partitions.push_back(new_partition);
 		current_partition = all_partitions.back();
 
@@ -589,7 +610,7 @@ public:
 	//! ----- Data File Updates -----
 
 	void AddDataFile(DuckLakeDataFile &data_file, DuckLakeSnapshot &begin_snapshot) {
-		data_file.start_snapshot = begin_snapshot;
+		data_file.start_snapshot = begin_snapshot.snapshot_time;
 		data_file.file_id_offset = begin_snapshot.AddDataFile(table_uuid);
 		D_ASSERT(!current_data_files.count(data_file.path));
 		all_data_files.push_back(data_file);
@@ -603,7 +624,8 @@ public:
 
 		auto &data_file = all_data_files[it->second];
 		end_snapshot.DeleteDataFile(table_uuid);
-		data_file.end_snapshot = end_snapshot;
+		data_file.end_snapshot = end_snapshot.snapshot_time;
+		data_file.has_end = true;
 
 		current_data_files.erase(it);
 	}
@@ -612,7 +634,7 @@ public:
 	//! ----- Delete File Updates -----
 
 	void AddDeleteFile(DuckLakeDeleteFile &delete_file, DuckLakeSnapshot &begin_snapshot) {
-		delete_file.start_snapshot = begin_snapshot;
+		delete_file.start_snapshot = begin_snapshot.snapshot_time;
 		delete_file.file_id_offset = begin_snapshot.AddDeleteFile(table_uuid);
 		D_ASSERT(!current_delete_files.count(delete_file.path));
 
@@ -645,7 +667,8 @@ public:
 
 		auto &delete_file = all_delete_files[it->second];
 		//! end_snapshot.DeleteDeleteFile(table_uuid);
-		delete_file.end_snapshot = end_snapshot;
+		delete_file.end_snapshot = end_snapshot.snapshot_time;
+		delete_file.has_end = true;
 		referenced_data_files.erase(delete_file.data_file_path);
 
 		current_delete_files.erase(it);
@@ -653,13 +676,14 @@ public:
 
 public:
 	string FinalizeEntry(int64_t schema_id, const map<timestamp_t, DuckLakeSnapshot> &snapshots) {
+		D_ASSERT(has_snapshot);
 		auto &snapshot = snapshots.at(start_snapshot);
 		auto table_id = snapshot.base_catalog_id + catalog_id_offset;
 		this->table_id = table_id;
 
-		int64_t begin_snapshot = snapshot.snapshot_id.GetIndex();
-		return StringUtil::Format("VALUES(%d, '%s', %d, NULL, %d, '%s')", table_id, table_uuid, begin_snapshot,
-		                          schema_id, table_name);
+		auto snapshot_ids = GetSnapshots(start_snapshot, false, timestamp_t(0), snapshots);
+		return StringUtil::Format("VALUES(%d, '%s', %d, %s, %d, '%s')", table_id, table_uuid, snapshot_ids.first,
+		                          snapshot_ids.second, schema_id, table_name);
 	}
 
 public:
@@ -699,8 +723,8 @@ public:
 	}
 
 public:
-	string FinalizeEntry() {
-		auto &snapshot = *start_snapshot;
+	string FinalizeEntry(const map<timestamp_t, DuckLakeSnapshot> &snapshots) {
+		auto &snapshot = snapshots.at(start_snapshot);
 		int64_t schema_id = snapshot.base_catalog_id + catalog_id_offset;
 		this->schema_id = schema_id;
 
@@ -708,18 +732,20 @@ public:
 		return StringUtil::Format("VALUES (%d, '%s', %d, NULL, %s)", schema_id, schema_uuid, begin_snapshot,
 		                          schema_name);
 	}
-	void AssignEarliestSnapshot(unordered_map<string, DuckLakeTable> &all_tables) {
+	void AssignEarliestSnapshot(unordered_map<string, DuckLakeTable> &all_tables,
+	                            map<timestamp_t, DuckLakeSnapshot> &snapshots) {
 		D_ASSERT(!tables.empty());
-		optional_ptr<DuckLakeSnapshot> snapshot;
+		timestamp_t snapshot_time;
 		for (idx_t i = 0; i < tables.size(); i++) {
 			auto &table = all_tables.at(tables[i]);
 			auto &table_snapshot = table.all_columns.front().start_snapshot;
-			if (!snapshot || snapshot->snapshot_time < table_snapshot->snapshot_time) {
-				snapshot = table_snapshot;
+			if (!i || snapshot_time < table_snapshot) {
+				snapshot_time = table_snapshot;
 			}
 		}
-		start_snapshot = snapshot;
-		catalog_id_offset = snapshot->AddSchema(schema_name);
+		start_snapshot = snapshot_time;
+		auto &snapshot = snapshots.at(snapshot_time);
+		catalog_id_offset = snapshot.AddSchema(schema_name);
 	}
 
 public:
@@ -730,7 +756,7 @@ public:
 	optional_idx schema_id;
 	idx_t catalog_id_offset = DConstants::INVALID_INDEX;
 
-	optional_ptr<DuckLakeSnapshot> start_snapshot;
+	timestamp_t start_snapshot;
 	//! List of table uuids that belong to this schema
 	vector<string> tables;
 };
@@ -1011,7 +1037,7 @@ public:
 				//! We can't serialize this, we have no clue when it was added
 				continue;
 			}
-			schema.AssignEarliestSnapshot(tables);
+			schema.AssignEarliestSnapshot(tables, snapshots);
 		}
 	}
 
@@ -1050,7 +1076,7 @@ public:
 				//! FIXME: we *could* assign it to the earliest snapshot in existence???
 				continue;
 			}
-			auto values = schema.FinalizeEntry();
+			auto values = schema.FinalizeEntry(snapshots);
 			sql.push_back(StringUtil::Format("INSERT INTO ducklake_schema %s", values));
 		}
 
@@ -1066,7 +1092,7 @@ public:
 			int64_t table_id = table.table_id.GetIndex();
 			//! ducklake_partition_info
 			for (auto &partition : table.all_partitions) {
-				auto values = partition.FinalizeEntry(table_id, serializer);
+				auto values = partition.FinalizeEntry(table_id, serializer, snapshots);
 				sql.push_back(StringUtil::Format("INSERT INTO ducklake_partition_info %s", values));
 
 				auto partition_id = partition.partition_id.GetIndex();
@@ -1082,14 +1108,14 @@ public:
 
 			//! ducklake_data_file
 			for (auto &data_file : table.all_data_files) {
-				auto values = data_file.FinalizeEntry(table_id);
+				auto values = data_file.FinalizeEntry(table_id, snapshots);
 				sql.push_back(StringUtil::Format("INSERT INTO ducklake_data_file %s", values));
 
 				auto data_file_id = data_file.data_file_id.GetIndex();
-				auto start_snapshot = data_file.start_snapshot;
+				auto &start_snapshot = snapshots.at(data_file.start_snapshot);
 
 				//! ducklake_file_column_statistics
-				auto columns = table.GetColumnsAtSnapshot(*start_snapshot);
+				auto columns = table.GetColumnsAtSnapshot(start_snapshot);
 				for (auto &it : columns) {
 					auto column_id = it.first;
 					auto &column = it.second.get();
@@ -1116,7 +1142,7 @@ public:
 					                                 nan_count, min_value, max_value, contains_nan);
 					sql.push_back(StringUtil::Format("INSERT INTO ducklake_file_column_statistics %s", values));
 
-					if (!data_file.end_snapshot && !column.end_snapshot) {
+					if (!data_file.has_end && !column.has_end) {
 						//! This data file is currently active, collect stats for it
 						auto stats_it = column_stats.find(column_id);
 						if (stats_it == column_stats.end()) {
@@ -1156,7 +1182,7 @@ public:
 
 			//! ducklake_delete_file
 			for (auto &delete_file : table.all_delete_files) {
-				auto values = delete_file.FinalizeEntry(table_id, table.all_data_files);
+				auto values = delete_file.FinalizeEntry(table_id, table.all_data_files, snapshots);
 				sql.push_back(StringUtil::Format("INSERT INTO ducklake_delete_file %s", values));
 			}
 
@@ -1175,7 +1201,7 @@ public:
 
 				record_count -= delete_file.record_count;
 				auto &data_file = table.all_data_files[delete_file.referenced_data_file];
-				D_ASSERT(!data_file.end_snapshot);
+				D_ASSERT(!data_file.has_end);
 				auto percent_deleted = double(delete_file.record_count) / (data_file.record_count / 100.00);
 				file_size_bytes -= LossyNumericCast<idx_t>(double(data_file.file_size_bytes) / percent_deleted);
 			}
