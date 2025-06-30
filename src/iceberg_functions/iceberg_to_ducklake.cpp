@@ -152,12 +152,7 @@ public:
 	int64_t base_file_id;
 };
 
-struct DefaultType {
-	const char *name;
-	LogicalTypeId id;
-};
-
-static string ToStringBaseType(const LogicalType &type) {
+static unordered_map<LogicalTypeId, string> &GetDuckLakeTypeMap() {
 	static unordered_map<LogicalTypeId, string> type_map {{LogicalTypeId::BOOLEAN, "boolean"},
 	                                                      {LogicalTypeId::TINYINT, "int8"},
 	                                                      {LogicalTypeId::SMALLINT, "int16"},
@@ -185,6 +180,36 @@ static string ToStringBaseType(const LogicalType &type) {
 	                                                      {LogicalTypeId::VARCHAR, "varchar"},
 	                                                      {LogicalTypeId::BLOB, "blob"},
 	                                                      {LogicalTypeId::UUID, "uuid"}};
+	return type_map;
+}
+
+static LogicalType FromStringBaseType(const string &type_string) {
+	auto &type_map = GetDuckLakeTypeMap();
+
+	if (StringUtil::StartsWith(type_string, "decimal")) {
+		D_ASSERT(type_string[7] == '(');
+		D_ASSERT(type_string.back() == ')');
+		auto start = type_string.find('(');
+		auto end = type_string.rfind(')');
+		auto raw_digits = type_string.substr(start + 1, end - start);
+		auto digits = StringUtil::Split(raw_digits, ',');
+		D_ASSERT(digits.size() == 2);
+
+		auto width = std::stoi(digits[0]);
+		auto scale = std::stoi(digits[1]);
+		return LogicalType::DECIMAL(width, scale);
+	}
+
+	for (auto it : type_map) {
+		if (it.second == type_string) {
+			return it.first;
+		}
+	}
+	throw InvalidInputException("Can't convert type string (%s) to DuckLake type", type_string);
+}
+
+static string ToStringBaseType(const LogicalType &type) {
+	auto &type_map = GetDuckLakeTypeMap();
 
 	auto it = type_map.find(type.id());
 	if (it == type_map.end()) {
@@ -375,13 +400,13 @@ public:
 
 struct DuckLakeDataFile {
 public:
-	DuckLakeDataFile(const IcebergManifestEntry &entry, DuckLakePartition &partition)
+	DuckLakeDataFile(const IcebergManifestEntry &entry, DuckLakePartition &partition, const string &table_name)
 	    : manifest_entry(entry), partition(partition) {
 		path = entry.file_path;
 		if (!StringUtil::CIEquals(entry.file_format, "parquet")) {
-			throw InvalidInputException(
-			    "Can't convert Iceberg tables containing data files with file_format '%s' to DuckLake",
-			    entry.file_format);
+			throw InvalidInputException("Can't convert Iceberg table (name: %s) to DuckLake, because it contains a "
+			                            "data file with file_format '%s'",
+			                            table_name, entry.file_format);
 		}
 		record_count = entry.record_count;
 		file_size_bytes = entry.file_size_in_bytes;
@@ -424,12 +449,12 @@ public:
 
 struct DuckLakeDeleteFile {
 public:
-	DuckLakeDeleteFile(const IcebergManifestEntry &entry) {
+	DuckLakeDeleteFile(const IcebergManifestEntry &entry, const string &table_name) {
 		path = entry.file_path;
 		if (!StringUtil::CIEquals(entry.file_format, "parquet")) {
-			throw InvalidInputException(
-			    "Can't convert Iceberg tables containing delete files with file_format '%s' to DuckLake",
-			    entry.file_format);
+			throw InvalidInputException("Can't convert Iceberg table (name: %s) to DuckLake, as it contains a delete "
+			                            "files with file_format '%s'",
+			                            table_name, entry.file_format);
 		}
 		record_count = entry.record_count;
 		file_size_bytes = entry.file_size_in_bytes;
@@ -457,14 +482,15 @@ public:
 	}
 
 public:
-	string FinalizeEntry(int64_t table_id) {
+	string FinalizeEntry(int64_t table_id, vector<DuckLakeDataFile> &all_data_files) {
 		auto &snapshot = *start_snapshot;
 		int64_t delete_file_id = snapshot.base_file_id + file_id_offset;
 		this->delete_file_id = delete_file_id;
 
 		int64_t begin_snapshot = snapshot.snapshot_id.GetIndex();
 		string end_snapshot = this->end_snapshot ? to_string(this->end_snapshot) : "NULL";
-		int64_t data_file_id = referenced_data_file->data_file_id.GetIndex();
+		auto &data_file = all_data_files[referenced_data_file];
+		int64_t data_file_id = data_file.data_file_id.GetIndex();
 
 		return StringUtil::Format(
 		    "VALUE(%d, %d, %d, %s, %d, '%s', false, 'parquet', %d, %d, NULL -- footer_size, NULL -- encryption_key)",
@@ -484,7 +510,8 @@ public:
 	optional_ptr<DuckLakeSnapshot> start_snapshot;
 	optional_ptr<DuckLakeSnapshot> end_snapshot;
 
-	optional_ptr<DuckLakeDataFile> referenced_data_file;
+	//! Index into 'all_data_files'
+	idx_t referenced_data_file;
 };
 
 struct DuckLakeSchema;
@@ -595,8 +622,7 @@ public:
 		if (data_file_it == current_data_files.end()) {
 			throw InvalidInputException("Iceberg integrity error: Referencing a data file that doesn't exist?");
 		}
-		auto &data_file = all_data_files[data_file_it->second];
-		delete_file.referenced_data_file = data_file;
+		delete_file.referenced_data_file = data_file_it->second;
 
 		//! Add to the set of referenced data files, verify that there is no other active delete file that references
 		//! this data file.
@@ -626,8 +652,8 @@ public:
 	}
 
 public:
-	string FinalizeEntry(int64_t schema_id) {
-		auto &snapshot = *start_snapshot;
+	string FinalizeEntry(int64_t schema_id, const map<timestamp_t, DuckLakeSnapshot> &snapshots) {
+		auto &snapshot = snapshots.at(start_snapshot);
 		auto table_id = snapshot.base_catalog_id + catalog_id_offset;
 		this->table_id = table_id;
 
@@ -640,8 +666,10 @@ public:
 	string table_uuid;
 	//! FIXME: we don't support renames of tables, but then again, I don't think we can
 	string table_name;
-	optional_ptr<DuckLakeSchema> schema;
-	optional_ptr<DuckLakeSnapshot> start_snapshot;
+	string schema_name;
+
+	bool has_snapshot = false;
+	timestamp_t start_snapshot;
 
 	//! The table id is assigned after we've processed all tables
 	optional_idx table_id;
@@ -680,11 +708,11 @@ public:
 		return StringUtil::Format("VALUES (%d, '%s', %d, NULL, %s)", schema_id, schema_uuid, begin_snapshot,
 		                          schema_name);
 	}
-	void AssignEarliestSnapshot() {
+	void AssignEarliestSnapshot(unordered_map<string, DuckLakeTable> &all_tables) {
 		D_ASSERT(!tables.empty());
 		optional_ptr<DuckLakeSnapshot> snapshot;
 		for (idx_t i = 0; i < tables.size(); i++) {
-			auto &table = tables[i].get();
+			auto &table = all_tables.at(tables[i]);
 			auto &table_snapshot = table.all_columns.front().start_snapshot;
 			if (!snapshot || snapshot->snapshot_time < table_snapshot->snapshot_time) {
 				snapshot = table_snapshot;
@@ -703,7 +731,8 @@ public:
 	idx_t catalog_id_offset = DConstants::INVALID_INDEX;
 
 	optional_ptr<DuckLakeSnapshot> start_snapshot;
-	vector<reference<DuckLakeTable>> tables;
+	//! List of table uuids that belong to this schema
+	vector<string> tables;
 };
 
 static void SchemaToColumnsInternal(const vector<unique_ptr<IcebergColumnDefinition>> &columns,
@@ -763,7 +792,7 @@ public:
 		}
 
 		//! Transform the stats stored in the iceberg metadata
-		auto logical_type = IcebergColumnDefinition::ParsePrimitiveTypeString(column.column_type);
+		auto logical_type = FromStringBaseType(column.column_type);
 		auto stats =
 		    IcebergPredicateStats::DeserializeBounds(lower_bound, upper_bound, column.column_name, logical_type);
 		auto null_counts_it = entry.null_value_counts.find(column.column_id);
@@ -810,6 +839,15 @@ public:
 public:
 	void AddTable(IcebergTableInformation &table_info, ClientContext &context, const IcebergOptions &options) {
 		auto &metadata = table_info.table_metadata;
+		if (table_names_to_skip.count(table_info.name)) {
+			//! FIXME: perhaps log that the table was skipped
+			return;
+		}
+		if (metadata.snapshots.empty()) {
+			//! The table has no snapshots, so we can't assign any ducklake snapshot as its creator
+			return;
+		}
+
 		map<timestamp_t, reference<IcebergSnapshot>> snapshots;
 		for (auto &it : metadata.snapshots) {
 			snapshots.emplace(it.second.timestamp_ms, it.second);
@@ -819,8 +857,8 @@ public:
 		auto &schema = GetSchema(schema_entry.name);
 
 		auto &table = GetTable(table_info);
-		schema.tables.push_back(table);
-		table.schema = schema;
+		schema.tables.push_back(table.table_uuid);
+		table.schema_name = schema.schema_name;
 
 		//! Current schema state
 		optional_ptr<IcebergTableSchema> last_schema;
@@ -833,10 +871,11 @@ public:
 			auto &snapshot = it.second.get();
 			auto &ducklake_snapshot = GetSnapshot(it.first);
 
-			if (!table.start_snapshot) {
+			if (!table.has_snapshot) {
 				//! Mark the table as being created by this snapshot
 				table.catalog_id_offset = ducklake_snapshot.AddTable(table_info.table_metadata.table_uuid);
-				table.start_snapshot = ducklake_snapshot;
+				table.start_snapshot = ducklake_snapshot.snapshot_time;
+				table.has_snapshot = true;
 			}
 
 			//! Process the schema changes
@@ -916,7 +955,8 @@ public:
 							continue;
 						}
 						if (manifest_entry.status == IcebergManifestEntryStatusType::ADDED) {
-							new_data_files.push_back(DuckLakeDataFile(manifest_entry, *current_partition));
+							new_data_files.push_back(
+							    DuckLakeDataFile(manifest_entry, *current_partition, table.table_name));
 						} else {
 							D_ASSERT(manifest_entry.status == IcebergManifestEntryStatusType::DELETED);
 							deleted_data_files.push_back(manifest_entry.file_path);
@@ -935,7 +975,7 @@ public:
 							continue;
 						}
 						if (manifest_entry.status == IcebergManifestEntryStatusType::ADDED) {
-							new_delete_files.emplace_back(manifest_entry);
+							new_delete_files.push_back(DuckLakeDeleteFile(manifest_entry, table.table_name));
 						} else {
 							D_ASSERT(manifest_entry.status == IcebergManifestEntryStatusType::DELETED);
 							deleted_delete_files.push_back(manifest_entry.file_path);
@@ -971,7 +1011,7 @@ public:
 				//! We can't serialize this, we have no clue when it was added
 				continue;
 			}
-			schema.AssignEarliestSnapshot();
+			schema.AssignEarliestSnapshot(tables);
 		}
 	}
 
@@ -1018,8 +1058,9 @@ public:
 		for (auto &it : tables) {
 			auto &table = it.second;
 
-			auto schema_id = table.schema->schema_id.GetIndex();
-			auto values = table.FinalizeEntry(schema_id);
+			auto &schema = schemas.at(table.schema_name);
+			auto schema_id = schema.schema_id.GetIndex();
+			auto values = table.FinalizeEntry(schema_id, snapshots);
 			sql.push_back(StringUtil::Format("INSERT INTO ducklake_table %s", values));
 
 			int64_t table_id = table.table_id.GetIndex();
@@ -1070,12 +1111,12 @@ public:
 						contains_nan = "true";
 					}
 
-					auto values = StringUtil::Format("VALUES(%d, %d, %d, %d, %d, %d, %d, '%s', '%s', %s)", data_file_id,
+					auto values = StringUtil::Format("VALUES(%d, %d, %d, %s, %s, %s, %s, '%s', '%s', %s)", data_file_id,
 					                                 table_id, column_id, column_size_bytes, value_count, null_count,
 					                                 nan_count, min_value, max_value, contains_nan);
 					sql.push_back(StringUtil::Format("INSERT INTO ducklake_file_column_statistics %s", values));
 
-					if (!data_file.end_snapshot) {
+					if (!data_file.end_snapshot && !column.end_snapshot) {
 						//! This data file is currently active, collect stats for it
 						auto stats_it = column_stats.find(column_id);
 						if (stats_it == column_stats.end()) {
@@ -1115,7 +1156,7 @@ public:
 
 			//! ducklake_delete_file
 			for (auto &delete_file : table.all_delete_files) {
-				auto values = delete_file.FinalizeEntry(table_id);
+				auto values = delete_file.FinalizeEntry(table_id, table.all_data_files);
 				sql.push_back(StringUtil::Format("INSERT INTO ducklake_delete_file %s", values));
 			}
 
@@ -1133,7 +1174,7 @@ public:
 				auto &delete_file = table.all_delete_files[it.second];
 
 				record_count -= delete_file.record_count;
-				auto &data_file = *delete_file.referenced_data_file;
+				auto &data_file = table.all_data_files[delete_file.referenced_data_file];
 				D_ASSERT(!data_file.end_snapshot);
 				auto percent_deleted = double(delete_file.record_count) / (data_file.record_count / 100.00);
 				file_size_bytes -= LossyNumericCast<idx_t>(double(data_file.file_size_bytes) / percent_deleted);
@@ -1170,9 +1211,8 @@ public:
 
 			for (auto &table_uuid : snapshot.created_table) {
 				auto &table = tables.at(table_uuid);
-				auto &schema = *table.schema;
 
-				auto schema_name = KeywordHelper::WriteQuoted(schema.schema_name, '"');
+				auto schema_name = KeywordHelper::WriteQuoted(table.schema_name, '"');
 				auto table_name = KeywordHelper::WriteQuoted(table.table_name, '"');
 
 				changes.push_back(StringUtil::Format("created_table:%s.%s", schema_name, table_name));
@@ -1263,6 +1303,10 @@ public:
 	unordered_map<string, DuckLakeTable> tables;
 	//! schema name -> schema
 	unordered_map<string, DuckLakeSchema> schemas;
+
+public:
+	//! Skip these tables (should be set if a table doesn't meet the conversion criteria)
+	set<string> table_names_to_skip;
 };
 
 struct IcebergToDuckLakeGlobalTableFunctionState : public GlobalTableFunctionState {
@@ -1296,6 +1340,39 @@ static unique_ptr<FunctionData> IcebergToDuckLakeBind(ClientContext &context, Ta
 
 	//! FIXME: the function should take named parameters that are translated to this.
 	IcebergOptions options;
+	for (auto &kv : input.named_parameters) {
+		auto loption = StringUtil::Lower(kv.first);
+		auto &val = kv.second;
+		if (loption == "allow_moved_paths") {
+			options.allow_moved_paths = BooleanValue::Get(val);
+		} else if (loption == "metadata_compression_codec") {
+			options.metadata_compression_codec = StringValue::Get(val);
+		} else if (loption == "version") {
+			options.table_version = StringValue::Get(val);
+		} else if (loption == "version_name_format") {
+			auto value = StringValue::Get(kv.second);
+			auto string_substitutions = IcebergUtils::CountOccurrences(value, "%s");
+			if (string_substitutions != 2) {
+				throw InvalidInputException(
+				    "'version_name_format' has to contain two occurrences of '%s' in it, found %d", "%s",
+				    string_substitutions);
+			}
+			options.version_name_format = value;
+		} else if (loption == "skip_tables") {
+			auto &type = kv.second.type();
+			if (kv.second.IsNull() || type.id() != LogicalTypeId::LIST) {
+				throw InvalidInputException("'skip_tables' has to be provided as a list of strings");
+			}
+			auto &child_type = ListType::GetChildType(type);
+			if (child_type.id() != LogicalTypeId::VARCHAR) {
+				throw InvalidInputException("'skip_tables' has to be provided as a list of strings");
+			}
+			auto &tables = ListValue::GetChildren(kv.second);
+			for (auto &table : tables) {
+				ret->table_names_to_skip.insert(table.GetValue<string>());
+			}
+		}
+	}
 
 	schema_set.LoadEntries(context);
 	for (auto &it : schema_set.entries) {
@@ -1333,6 +1410,7 @@ TableFunctionSet IcebergFunctions::GetIcebergToDuckLakeFunction() {
 
 	auto fun = TableFunction({LogicalType::VARCHAR, LogicalType::VARCHAR}, IcebergToDuckLakeFunction,
 	                         IcebergToDuckLakeBind, IcebergToDuckLakeGlobalTableFunctionState::Init);
+	fun.named_parameters.emplace("skip_tables", LogicalType::LIST(LogicalTypeId::VARCHAR));
 	function_set.AddFunction(fun);
 
 	return function_set;
