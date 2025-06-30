@@ -83,7 +83,7 @@ public:
 		int64_t schema_version = serializer.schema_version;
 		int64_t next_catalog_id = serializer.next_catalog_id;
 		int64_t next_file_id = serializer.next_file_id;
-		return StringUtil::Format("VALUES(%d, '%s', %d, %d, %d)", snapshot_id, Timestamp::ToString(snapshot_time),
+		return StringUtil::Format("VALUES(%d, '%s', %d, %d, %d);", snapshot_id, Timestamp::ToString(snapshot_time),
 		                          schema_version, next_catalog_id, next_file_id);
 	}
 
@@ -379,7 +379,7 @@ public:
 
 public:
 	string FinalizeEntry(int64_t table_id, int64_t partition_id, int64_t partition_key_index) {
-		return StringUtil::Format("VALUES(%d, %d, %d, %d, '%s')", partition_id, table_id, partition_key_index,
+		return StringUtil::Format("VALUES(%d, %d, %d, %d, '%s');", partition_id, table_id, partition_key_index,
 		                          column_id, transform);
 	}
 
@@ -406,7 +406,7 @@ public:
 		this->partition_id = partition_id;
 		auto snapshot_ids = GetSnapshots(start_snapshot, has_end, end_snapshot, snapshots);
 
-		return StringUtil::Format("VALUES(%d, %d, %d, %s)", partition_id, table_id, snapshot_ids.first,
+		return StringUtil::Format("VALUES(%d, %d, %d, %s);", partition_id, table_id, snapshot_ids.first,
 		                          snapshot_ids.second);
 	}
 
@@ -689,7 +689,7 @@ public:
 		this->table_id = table_id;
 
 		auto snapshot_ids = GetSnapshots(start_snapshot, false, timestamp_t(0), snapshots);
-		return StringUtil::Format("VALUES(%d, '%s', %d, %s, %d, '%s')", table_id, table_uuid, snapshot_ids.first,
+		return StringUtil::Format("VALUES(%d, '%s', %d, %s, %d, '%s');", table_id, table_uuid, snapshot_ids.first,
 		                          snapshot_ids.second, schema_id, table_name);
 	}
 
@@ -736,7 +736,7 @@ public:
 		this->schema_id = schema_id;
 
 		int64_t begin_snapshot = snapshot.snapshot_id.GetIndex();
-		return StringUtil::Format("VALUES (%d, '%s', %d, NULL, '%s')", schema_id, schema_uuid, begin_snapshot,
+		return StringUtil::Format("VALUES (%d, '%s', %d, NULL, '%s');", schema_id, schema_uuid, begin_snapshot,
 		                          schema_name);
 	}
 	void AssignEarliestSnapshot(unordered_map<string, DuckLakeTable> &all_tables,
@@ -1146,7 +1146,7 @@ public:
 
 					auto contains_nan = stats.has_nan ? "true" : "false";
 					auto values = StringUtil::Format(
-					    "VALUES(%d, %d, %d, %s, %s, %s, %s, '%s', '%s', %s)", data_file_id, table_id, column_id,
+					    "VALUES(%d, %d, %d, %s, %s, %s, %s, '%s', '%s', %s);", data_file_id, table_id, column_id,
 					    column_size_bytes, value_count, null_count.ToString(), nan_count.ToString(),
 					    stats.lower_bound.ToString(), stats.upper_bound.ToString(), contains_nan);
 					sql.push_back(StringUtil::Format("INSERT INTO ducklake_file_column_statistics %s", values));
@@ -1183,7 +1183,7 @@ public:
 						auto index = partition_it->second;
 						partition_value = "'" + partition_values[index].second.ToString() + "'";
 					}
-					auto values = StringUtil::Format("VALUES(%d, %d, %d, '%s')", data_file_id, table_id,
+					auto values = StringUtil::Format("VALUES(%d, %d, %d, '%s');", data_file_id, table_id,
 					                                 partition_key_index, partition_value);
 					sql.push_back(StringUtil::Format("INSERT INTO ducklake_file_partition_value %s", values));
 				}
@@ -1215,7 +1215,8 @@ public:
 				file_size_bytes -= LossyNumericCast<idx_t>(double(data_file.file_size_bytes) / percent_deleted);
 			}
 
-			auto stats_values = StringUtil::Format("VALUES(%d, %d, NULL, %d)", table_id, record_count, file_size_bytes);
+			auto stats_values =
+			    StringUtil::Format("VALUES(%d, %d, NULL, %d);", table_id, record_count, file_size_bytes);
 			sql.push_back(StringUtil::Format("INSERT INTO ducklake_table_stats %s", stats_values));
 
 			//! ducklake_table_column_stats
@@ -1227,7 +1228,7 @@ public:
 				auto contains_nan = stats.contains_nan ? "true" : "false";
 				auto min_value = stats.min_value.ToString();
 				auto max_value = stats.max_value.ToString();
-				auto values = StringUtil::Format("VALUES(%d, %d, %s, %s, '%s', '%s')", table_id, column_id,
+				auto values = StringUtil::Format("VALUES(%d, %d, %s, %s, '%s', '%s');", table_id, column_id,
 				                                 contains_null, contains_nan, min_value, max_value);
 				sql.push_back(StringUtil::Format("INSERT INTO ducklake_table_column_stats %s", values));
 			}
@@ -1294,7 +1295,7 @@ public:
 				changes.push_back(StringUtil::Format("altered_table:%d", table_id));
 			}
 			auto snapshot_id = snapshot.snapshot_id.GetIndex();
-			auto values = StringUtil::Format("VALUES(%d, '%s')", snapshot_id, StringUtil::Join(changes, ","));
+			auto values = StringUtil::Format("VALUES(%d, '%s');", snapshot_id, StringUtil::Join(changes, ","));
 			sql.push_back(StringUtil::Format("INSERT INTO ducklake_snapshot_changes %s", values));
 		}
 
