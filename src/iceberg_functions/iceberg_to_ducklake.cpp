@@ -23,6 +23,7 @@
 #include "iceberg_functions.hpp"
 #include "iceberg_utils.hpp"
 #include "duckdb/common/types/uuid.hpp"
+#include "duckdb/common/numeric_utils.hpp"
 
 #include "storage/irc_catalog.hpp"
 #include "storage/irc_transaction.hpp"
@@ -865,9 +866,13 @@ public:
 		// - snapshot
 		// - schema
 		// - table
-		// - partition
-		// - data file
-		// - delete file
+		//   - partition_info
+		//     - partition_column
+		//   - data_file
+		//     - file_column_statistics
+		//     - file_partition_value
+		//   - delete_file
+		// - table_stats
 		// - snapshot_changes
 
 		DuckLakeMetadataSerializer serializer;
@@ -986,6 +991,29 @@ public:
 				auto values = delete_file.FinalizeEntry(table_id);
 				sql.push_back(StringUtil::Format("INSERT INTO ducklake_delete_file %s", values));
 			}
+
+			//! ducklake_table_stats
+			idx_t record_count = 0;
+			idx_t file_size_bytes = 0;
+
+			for (auto &it : table.current_data_files) {
+				auto &data_file = it.second.get();
+
+				record_count += data_file.record_count;
+				file_size_bytes += data_file.file_size_bytes;
+			}
+			for (auto &it : table.current_delete_files) {
+				auto &delete_file = it.second.get();
+
+				record_count -= delete_file.record_count;
+				auto &data_file = *delete_file.referenced_data_file;
+				D_ASSERT(!data_file.end_snapshot);
+				auto percent_deleted = double(delete_file.record_count) / (data_file.record_count / 100.00);
+				file_size_bytes -= LossyNumericCast<idx_t>(double(data_file.file_size_bytes) / percent_deleted);
+			}
+
+			auto stats_values = StringUtil::Format("VALUES(%d, %d, NULL, %d)", table_id, record_count, file_size_bytes);
+			sql.push_back(StringUtil::Format("INSERT INTO ducklake_table_stats %s", stats_values));
 		}
 
 		//! ducklake_snapshot_changes
