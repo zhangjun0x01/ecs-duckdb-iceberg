@@ -237,6 +237,36 @@ public:
 	}
 
 public:
+	bool operator==(const DuckLakeColumn &other) {
+		if (column_id != other.column_id) {
+			//! FIXME: perhaps we just assert that this is true, otherwise they shouldn't be compared at all
+			return false;
+		}
+		if (column_id != other.column_order) {
+			return false;
+		}
+		if (column_name != other.column_name) {
+			return false;
+		}
+		if (column_type != other.column_type) {
+			return false;
+		}
+		if (nulls_allowed != other.nulls_allowed) {
+			return false;
+		}
+		if (default_value != other.default_value) {
+			return false;
+		}
+		if (initial_default != other.initial_default) {
+			return false;
+		}
+		return true;
+	}
+	bool operator!=(const DuckLakeColumn &other) {
+		return !(*this == other);
+	}
+
+public:
 	string FinalizeEntry(int64_t table_id) {
 		D_ASSERT(start_snapshot->snapshot_id.IsValid());
 		int64_t begin_snapshot = start_snapshot->snapshot_id.GetIndex();
@@ -498,14 +528,14 @@ public:
 		begin_snapshot.AlterTable(table_uuid);
 		new_column.start_snapshot = begin_snapshot;
 		all_columns.push_back(new_column);
-		current_columns.emplace(column_id, all_columns.back());
+		current_columns.emplace(column_id, all_columns.size() - 1);
 	}
 	void DropColumnVersion(int64_t column_id, DuckLakeSnapshot &end_snapshot) {
 		auto it = current_columns.find(column_id);
 		if (it == current_columns.end()) {
 			return;
 		}
-		auto &column = it->second.get();
+		auto &column = all_columns[it->second];
 		end_snapshot.AlterTable(table_uuid);
 		column.end_snapshot = end_snapshot;
 		current_columns.erase(it);
@@ -536,7 +566,7 @@ public:
 		data_file.file_id_offset = begin_snapshot.AddDataFile(table_uuid);
 		D_ASSERT(!current_data_files.count(data_file.path));
 		all_data_files.push_back(data_file);
-		current_data_files.emplace(data_file.path, all_data_files.back());
+		current_data_files.emplace(data_file.path, all_data_files.size() - 1);
 	}
 	void DeleteDataFile(const string &data_file_path, DuckLakeSnapshot &end_snapshot) {
 		auto it = current_data_files.find(data_file_path);
@@ -544,7 +574,7 @@ public:
 			throw InvalidInputException("Iceberg integrity error: Deleting a Data File that doesn't exist?");
 		}
 
-		auto &data_file = it->second.get();
+		auto &data_file = all_data_files[it->second];
 		end_snapshot.DeleteDataFile(table_uuid);
 		data_file.end_snapshot = end_snapshot;
 
@@ -565,19 +595,21 @@ public:
 		if (data_file_it == current_data_files.end()) {
 			throw InvalidInputException("Iceberg integrity error: Referencing a data file that doesn't exist?");
 		}
-		auto &data_file = data_file_it->second.get();
+		auto &data_file = all_data_files[data_file_it->second];
 		delete_file.referenced_data_file = data_file;
 
 		//! Add to the set of referenced data files, verify that there is no other active delete file that references
 		//! this data file.
 		if (referenced_data_files.count(delete_file.data_file_path)) {
-			throw InvalidInputException("Can't convert an Iceberg table that has multiple deletes referencing the same "
-			                            "data file to a DuckLake table");
+			throw InvalidInputException(
+			    "Can't convert an Iceberg table (name: %s, uuid: %s) that has multiple deletes referencing the same "
+			    "data file to a DuckLake table",
+			    table_name, table_uuid);
 		}
 		referenced_data_files.insert(delete_file.data_file_path);
 
 		all_delete_files.push_back(delete_file);
-		current_delete_files.emplace(delete_file.path, all_delete_files.back());
+		current_delete_files.emplace(delete_file.path, all_delete_files.size() - 1);
 	}
 	void DeleteDeleteFile(const string &delete_file_path, DuckLakeSnapshot &end_snapshot) {
 		auto it = current_delete_files.find(delete_file_path);
@@ -585,7 +617,7 @@ public:
 			throw InvalidInputException("Iceberg integrity error: Deleting a Delete File that doesn't exist?");
 		}
 
-		auto &delete_file = it->second.get();
+		auto &delete_file = all_delete_files[it->second];
 		//! end_snapshot.DeleteDeleteFile(table_uuid);
 		delete_file.end_snapshot = end_snapshot;
 		referenced_data_files.erase(delete_file.data_file_path);
@@ -616,16 +648,16 @@ public:
 	idx_t catalog_id_offset = DConstants::INVALID_INDEX;
 
 	vector<DuckLakeColumn> all_columns;
-	unordered_map<int64_t, reference<DuckLakeColumn>> current_columns;
+	unordered_map<int64_t, idx_t> current_columns;
 
 	vector<DuckLakePartition> all_partitions;
 	optional_ptr<DuckLakePartition> current_partition;
 
 	vector<DuckLakeDataFile> all_data_files;
-	unordered_map<string, reference<DuckLakeDataFile>> current_data_files;
+	unordered_map<string, idx_t> current_data_files;
 
 	vector<DuckLakeDeleteFile> all_delete_files;
-	unordered_map<string, reference<DuckLakeDeleteFile>> current_delete_files;
+	unordered_map<string, idx_t> current_delete_files;
 
 	//! Keep track of which data files are referenced by active delete files
 	unordered_set<string> referenced_data_files;
@@ -797,16 +829,14 @@ public:
 		optional_idx current_partition_spec_id;
 		optional_ptr<DuckLakePartition> current_partition;
 
-		bool first_snapshot = true;
 		for (auto &it : snapshots) {
 			auto &snapshot = it.second.get();
 			auto &ducklake_snapshot = GetSnapshot(it.first);
 
-			if (first_snapshot) {
+			if (!table.start_snapshot) {
 				//! Mark the table as being created by this snapshot
 				table.catalog_id_offset = ducklake_snapshot.AddTable(table_info.table_metadata.table_uuid);
 				table.start_snapshot = ducklake_snapshot;
-				first_snapshot = false;
 			}
 
 			//! Process the schema changes
@@ -817,7 +847,26 @@ public:
 			if (last_schema) {
 				if (last_schema->schema_id != current_schema.schema_id) {
 					auto existing_columns = SchemaToColumns(*last_schema);
-					//! TODO: compare old and new columns to get a diff
+
+					vector<reference<DuckLakeColumn>> new_columns;
+					for (auto &it : current_columns) {
+						auto existing_it = existing_columns.find(it.first);
+						if (existing_it == existing_columns.end()) {
+							//! This column is entirely new
+							added_columns.push_back(it.second);
+						}
+						auto &existing_column = it.second;
+						if (existing_column != it.second) {
+							//! This column has been changed in the new schema
+							added_columns.push_back(it.second);
+						}
+					}
+					for (auto &it : existing_columns) {
+						if (!current_columns.count(it.first)) {
+							//! This column is dropped in the new schema
+							dropped_columns.push_back(it.first);
+						}
+					}
 				}
 			} else {
 				for (auto &it : current_columns) {
@@ -843,6 +892,12 @@ public:
 			for (auto &entry : iceberg_table->entries) {
 				auto &manifest = entry.manifest;
 				auto &manifest_file = entry.manifest_file;
+
+				if (manifest.added_snapshot_id != snapshot.snapshot_id) {
+					//! This is essentially an "EXISTING" manifest
+					//! there just isn't a 'status' field to indicate that
+					continue;
+				}
 
 				if (!current_partition_spec_id.IsValid() ||
 				    manifest.partition_spec_id > current_partition_spec_id.GetIndex()) {
@@ -1069,13 +1124,13 @@ public:
 			idx_t file_size_bytes = 0;
 
 			for (auto &it : table.current_data_files) {
-				auto &data_file = it.second.get();
+				auto &data_file = table.all_data_files[it.second];
 
 				record_count += data_file.record_count;
 				file_size_bytes += data_file.file_size_bytes;
 			}
 			for (auto &it : table.current_delete_files) {
-				auto &delete_file = it.second.get();
+				auto &delete_file = table.all_delete_files[it.second];
 
 				record_count -= delete_file.record_count;
 				auto &data_file = *delete_file.referenced_data_file;
@@ -1242,19 +1297,25 @@ static unique_ptr<FunctionData> IcebergToDuckLakeBind(ClientContext &context, Ta
 	//! FIXME: the function should take named parameters that are translated to this.
 	IcebergOptions options;
 
+	schema_set.LoadEntries(context);
 	for (auto &it : schema_set.entries) {
 		auto &schema_entry = it.second->Cast<IRCSchemaEntry>();
 
 		auto &tables = schema_entry.tables;
+		tables.LoadEntries(context);
 		for (auto &it : tables.entries) {
 			auto &table = it.second;
+			tables.FillEntry(context, table);
 			ret->AddTable(table, context, options);
 		}
 	}
 
 	ret->AssignSchemaBeginSnapshots();
 
-	ret->CreateSQLStatements();
+	auto statements = ret->CreateSQLStatements();
+	for (auto &statement : statements) {
+		Printer::Print(statement);
+	}
 
 	return_types.emplace_back(LogicalType::BIGINT);
 	names.emplace_back("count");
@@ -1270,9 +1331,8 @@ static void IcebergToDuckLakeFunction(ClientContext &context, TableFunctionInput
 TableFunctionSet IcebergFunctions::GetIcebergToDuckLakeFunction() {
 	TableFunctionSet function_set("iceberg_to_ducklake");
 
-	auto fun =
-	    TableFunction({LogicalType::VARCHAR, LogicalType::VARCHAR, LogicalType::VARCHAR}, IcebergToDuckLakeFunction,
-	                  IcebergToDuckLakeBind, IcebergToDuckLakeGlobalTableFunctionState::Init);
+	auto fun = TableFunction({LogicalType::VARCHAR, LogicalType::VARCHAR}, IcebergToDuckLakeFunction,
+	                         IcebergToDuckLakeBind, IcebergToDuckLakeGlobalTableFunctionState::Init);
 	function_set.AddFunction(fun);
 
 	return function_set;

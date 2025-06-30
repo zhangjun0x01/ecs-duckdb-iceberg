@@ -51,7 +51,7 @@ public:
 	optional_ptr<CatalogEntry> GetEntry(ClientContext &context, const EntryLookupInfo &lookup);
 	void Scan(ClientContext &context, const std::function<void(CatalogEntry &)> &callback);
 
-protected:
+public:
 	void LoadEntries(ClientContext &context);
 	void FillEntry(ClientContext &context, IcebergTableInformation &table);
 

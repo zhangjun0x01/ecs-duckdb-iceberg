@@ -232,11 +232,13 @@ idx_t ManifestFileReader::ReadChunk(idx_t offset, idx_t count, vector<IcebergMan
 		nan_value_counts = *child_entries[nan_value_counts_it->second.GetChildIndex(0).GetPrimaryIndex()];
 	}
 	auto &partition_vec = child_entries[partition_idx.GetChildIndex(0).GetPrimaryIndex()];
-	auto &partition_children = StructVector::GetEntries(*partition_vec);
 	unordered_map<int32_t, reference<Vector>> partition_vectors;
-	for (auto &it : partition_fields) {
-		auto partition_field_idx = it.second.GetChildIndex(1).GetPrimaryIndex();
-		partition_vectors.emplace(it.first, *partition_children[partition_field_idx]);
+	if (partition_vec->GetType().id() != LogicalTypeId::SQLNULL) {
+		auto &partition_children = StructVector::GetEntries(*partition_vec);
+		for (auto &it : partition_fields) {
+			auto partition_field_idx = it.second.GetChildIndex(1).GetPrimaryIndex();
+			partition_vectors.emplace(it.first, *partition_children[partition_field_idx]);
+		}
 	}
 
 	optional_ptr<Vector> referenced_data_file;
