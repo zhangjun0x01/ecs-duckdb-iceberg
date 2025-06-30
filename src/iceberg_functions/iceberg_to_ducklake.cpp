@@ -269,10 +269,14 @@ public:
 		column_order = order;
 		column_name = column.name;
 		column_type = ToDuckLakeColumnType(column.type);
-		initial_default = column.initial_default.ToString();
-		//! TODO: parse the write-default
-		default_value = "NULL";
+		initial_default = column.initial_default;
+		//! FIXME: parse the write-default
 		nulls_allowed = !column.required;
+	}
+
+public:
+	bool IsNested() const {
+		return (column_type == "struct" || column_type == "map" || column_type == "list");
 	}
 
 public:
@@ -309,6 +313,9 @@ public:
 	string FinalizeEntry(int64_t table_id, const map<timestamp_t, DuckLakeSnapshot> &snapshots) {
 		auto snapshot_ids = GetSnapshots(start_snapshot, has_end, end_snapshot, snapshots);
 		string parent_column = this->parent_column.IsValid() ? to_string(this->parent_column.GetIndex()) : "NULL";
+		auto initial_default = this->initial_default.IsNull() ? "NULL" : "'" + this->initial_default.ToString() + "'";
+		auto default_value = this->default_value.IsNull() ? "NULL" : "'" + this->default_value.ToString() + "'";
+		auto nulls_allowed = this->nulls_allowed ? "true" : "false";
 
 		return StringUtil::Format(R"(
 			VALUES (
@@ -317,17 +324,17 @@ public:
 				%s, -- end_snapshot
 				%d, -- table_id
 				%d, -- column_order
-				%s, -- column_name
-				%s, -- column_type
-				%s, -- initial_default
-				%s, -- default_value
+				'%s', -- column_name
+				'%s', -- column_type
+				'%s', -- initial_default
+				'%s', -- default_value
 				%s, -- nulls_allowed
 				%s -- parent_column
 			)
 		)",
 		                          column_id, snapshot_ids.first, snapshot_ids.second, table_id, column_order,
-		                          column_name, column_type, initial_default, default_value,
-		                          nulls_allowed ? "true" : "false", parent_column);
+		                          column_name, column_type, initial_default, default_value, nulls_allowed,
+		                          parent_column);
 	}
 
 public:
@@ -338,8 +345,8 @@ public:
 	int64_t column_order;
 	string column_name;
 	string column_type;
-	string initial_default;
-	string default_value;
+	Value initial_default;
+	Value default_value;
 	bool nulls_allowed;
 
 	timestamp_t start_snapshot;
@@ -372,8 +379,8 @@ public:
 
 public:
 	string FinalizeEntry(int64_t table_id, int64_t partition_id, int64_t partition_key_index) {
-		return StringUtil::Format("VALUES(%d, %d, %d, %d, %s)", partition_id, table_id, partition_key_index, column_id,
-		                          transform);
+		return StringUtil::Format("VALUES(%d, %d, %d, %d, '%s')", partition_id, table_id, partition_key_index,
+		                          column_id, transform);
 	}
 
 public:
@@ -803,40 +810,7 @@ public:
 	}
 
 public:
-	void AddStats(DuckLakeDataFile &data_file) {
-		auto &entry = data_file.manifest_entry;
-
-		auto lower_bound_it = entry.lower_bounds.find(column.column_id);
-		auto upper_bound_it = entry.upper_bounds.find(column.column_id);
-		Value lower_bound;
-		Value upper_bound;
-		if (lower_bound_it != entry.lower_bounds.end()) {
-			lower_bound = lower_bound_it->second;
-		}
-		if (upper_bound_it != entry.upper_bounds.end()) {
-			upper_bound = upper_bound_it->second;
-		}
-
-		LogicalType logical_type;
-		if (column.column_type == "struct" || column.column_type == "map" || column.column_type == "list") {
-			logical_type = LogicalType::VARCHAR;
-		} else {
-			logical_type = FromStringBaseType(column.column_type);
-		}
-		//! Transform the stats stored in the iceberg metadata
-		auto stats =
-		    IcebergPredicateStats::DeserializeBounds(lower_bound, upper_bound, column.column_name, logical_type);
-		auto null_counts_it = entry.null_value_counts.find(column.column_id);
-		if (null_counts_it != entry.null_value_counts.end()) {
-			auto &null_counts = null_counts_it->second;
-			stats.has_null = null_counts != 0;
-		}
-		auto nan_counts_it = entry.nan_value_counts.find(column.column_id);
-		if (nan_counts_it != entry.nan_value_counts.end()) {
-			auto &nan_counts = nan_counts_it->second;
-			stats.has_nan = nan_counts != 0;
-		}
-
+	void AddStats(IcebergPredicateStats &stats) {
 		//! Update the stats
 		if (stats.has_null) {
 			contains_null = true;
@@ -1109,6 +1083,12 @@ public:
 				}
 			}
 
+			//! ducklake_column
+			for (auto &column : table.all_columns) {
+				auto values = column.FinalizeEntry(table_id, snapshots);
+				sql.push_back(StringUtil::Format("INSERT INTO ducklake_column %s", values));
+			}
+
 			unordered_map<int32_t, DuckLakeColumnStats> column_stats;
 
 			//! ducklake_data_file
@@ -1128,33 +1108,57 @@ public:
 
 					auto column_size_bytes = GetNumericStats(manifest_entry.column_sizes, column_id);
 					auto value_count = GetNumericStats(manifest_entry.value_counts, column_id);
-					auto null_count = GetNumericStats(manifest_entry.null_value_counts, column_id);
-					auto nan_count = GetNumericStats(manifest_entry.nan_value_counts, column_id);
-					auto min_value = GetBoundStats(manifest_entry.lower_bounds, column_id);
-					auto max_value = GetBoundStats(manifest_entry.upper_bounds, column_id);
 
-					string contains_nan;
-					if (nan_count == "NULL") {
-						contains_nan = "NULL";
-					} else if (nan_count == "0") {
-						contains_nan = "false";
-					} else {
-						contains_nan = "true";
+					Value lower_bound;
+					Value upper_bound;
+					Value null_count;
+					Value nan_count;
+
+					auto lower_bound_it = manifest_entry.lower_bounds.find(column.column_id);
+					auto upper_bound_it = manifest_entry.upper_bounds.find(column.column_id);
+					if (lower_bound_it != manifest_entry.lower_bounds.end()) {
+						lower_bound = lower_bound_it->second;
+					}
+					if (upper_bound_it != manifest_entry.upper_bounds.end()) {
+						upper_bound = upper_bound_it->second;
 					}
 
-					auto values = StringUtil::Format("VALUES(%d, %d, %d, %s, %s, %s, %s, '%s', '%s', %s)", data_file_id,
-					                                 table_id, column_id, column_size_bytes, value_count, null_count,
-					                                 nan_count, min_value, max_value, contains_nan);
+					LogicalType logical_type;
+					if (!column.IsNested()) {
+						logical_type = FromStringBaseType(column.column_type);
+					} else {
+						logical_type = LogicalType::VARCHAR;
+					}
+
+					//! Transform the stats stored in the iceberg metadata
+					auto stats = IcebergPredicateStats::DeserializeBounds(lower_bound, upper_bound, column.column_name,
+					                                                      logical_type);
+					auto null_counts_it = manifest_entry.null_value_counts.find(column.column_id);
+					if (null_counts_it != manifest_entry.null_value_counts.end()) {
+						null_count = null_counts_it->second;
+						stats.has_null = null_count != 0;
+					}
+					auto nan_counts_it = manifest_entry.nan_value_counts.find(column.column_id);
+					if (nan_counts_it != manifest_entry.nan_value_counts.end()) {
+						nan_count = nan_counts_it->second;
+						stats.has_nan = nan_count != 0;
+					}
+
+					auto contains_nan = stats.has_nan ? "true" : "false";
+					auto values = StringUtil::Format(
+					    "VALUES(%d, %d, %d, %s, %s, %s, %s, '%s', '%s', %s)", data_file_id, table_id, column_id,
+					    column_size_bytes, value_count, null_count.ToString(), nan_count.ToString(),
+					    stats.lower_bound.ToString(), stats.upper_bound.ToString(), contains_nan);
 					sql.push_back(StringUtil::Format("INSERT INTO ducklake_file_column_statistics %s", values));
 
-					if (!data_file.has_end && !column.has_end) {
+					if (!data_file.has_end && !column.has_end && !column.IsNested()) {
 						//! This data file is currently active, collect stats for it
-						auto stats_it = column_stats.find(column_id);
-						if (stats_it == column_stats.end()) {
-							stats_it = column_stats.emplace(column_id, column).first;
+						auto file_stats_it = column_stats.find(column_id);
+						if (file_stats_it == column_stats.end()) {
+							file_stats_it = column_stats.emplace(column_id, column).first;
 						}
-						auto &stats = stats_it->second;
-						stats.AddStats(data_file);
+						auto &file_column_stats = file_stats_it->second;
+						file_column_stats.AddStats(stats);
 					}
 				}
 
