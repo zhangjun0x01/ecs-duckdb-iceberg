@@ -1213,6 +1213,7 @@ public:
 				record_count += data_file.record_count;
 				file_size_bytes += data_file.file_size_bytes;
 			}
+			idx_t total_record_count = record_count;
 			for (auto &it : table.current_delete_files) {
 				auto &delete_file = table.all_delete_files[it.second];
 
@@ -1223,9 +1224,12 @@ public:
 				file_size_bytes -= LossyNumericCast<idx_t>(double(data_file.file_size_bytes) / percent_deleted);
 			}
 
-			auto stats_values =
-			    StringUtil::Format("VALUES(%d, %d, NULL, %d);", table_id, record_count, file_size_bytes);
-			sql.push_back(StringUtil::Format("INSERT INTO ducklake_table_stats %s", stats_values));
+			if (!column_stats.empty()) {
+				//! FIXME: for v2 compatibility this uses the 'record_count' (without deletes) as the 'next_row_id'
+				auto stats_values = StringUtil::Format("VALUES(%d, %d, %d, %d);", table_id, record_count,
+				                                       total_record_count, file_size_bytes);
+				sql.push_back(StringUtil::Format("INSERT INTO ducklake_table_stats %s", stats_values));
+			}
 
 			//! ducklake_table_column_stats
 			for (auto &it : column_stats) {
