@@ -65,7 +65,7 @@ void ManifestFileReader::CreateVectorMapping(idx_t column_id, MultiFileColumnDef
 		child_indexes.emplace_back(child_idx);
 
 		vector_mapping.emplace(child_field_id, ColumnIndex(column_id, child_indexes));
-		if (column_id == PARTITION) {
+		if (child_field_id == PARTITION) {
 			for (idx_t partition_idx = 0; partition_idx < child.children.size(); partition_idx++) {
 				auto &partition_field = child.children[partition_idx];
 
