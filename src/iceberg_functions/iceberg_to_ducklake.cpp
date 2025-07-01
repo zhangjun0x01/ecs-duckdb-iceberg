@@ -46,9 +46,6 @@ public:
 	static unique_ptr<GlobalTableFunctionState> Init(ClientContext &context, TableFunctionInitInput &input) {
 		return make_uniq<IcebergToDuckLakeGlobalTableFunctionState>();
 	}
-
-public:
-	//! TODO: add connection to ducklake catalog, ducklake id values .. (like snapshot id)
 };
 
 namespace iceberg {
@@ -69,7 +66,7 @@ public:
 	//! Assigned to data_file_id, delete_file_id
 	int64_t file_id = 0;
 
-	//! Sum of all the schema changes made by snapshots that are serialized (this stays 0 for Iceberg)
+	//! Version of the schema of the catalog (this covers the schema, table and even columns of the table)
 	int64_t schema_version = 0;
 	//! Ids assigned to table_id, schema_id and view_id
 	int64_t next_catalog_id = 0;
@@ -83,8 +80,6 @@ public:
 	}
 
 public:
-	//! NOTE: does not populate 'ducklake_snapshot_changes'
-	//! TODO: write to 'ducklake_snapshot_changes' after processing all the changes made by the snapshot
 	string FinalizeEntry(DuckLakeMetadataSerializer &serializer) {
 		//! Set these, so we can use these to create the correct ids for the catalog/file entries added by this snapshot
 		base_schema_version = serializer.schema_version;
@@ -109,17 +104,21 @@ public:
 public:
 	int64_t AddSchema(const string &schema_name) {
 		created_schema.insert(schema_name);
+		catalog_changes++;
 		return catalog_additions++;
 	}
 	void DropSchema(const string &schema_name) {
+		catalog_changes++;
 		dropped_schema.insert(schema_name);
 	}
 
 	int64_t AddTable(const string &table_uuid) {
 		created_table.insert(table_uuid);
+		catalog_changes++;
 		return catalog_additions++;
 	}
 	void DropTable(const string &table_uuid) {
+		catalog_changes++;
 		dropped_table.insert(table_uuid);
 	}
 
@@ -137,6 +136,7 @@ public:
 	}
 
 	void AlterTable(const string &table_uuid) {
+		catalog_changes++;
 		altered_table.insert(table_uuid);
 	}
 
@@ -158,7 +158,7 @@ public:
 	unordered_set<string> dropped_schema;
 
 public:
-	//! schemas/tables/views changed (unused)
+	//! schemas/tables/views changed
 	idx_t catalog_changes = 0;
 	//! schemas/tables/views added
 	idx_t catalog_additions = 0;
@@ -728,7 +728,7 @@ public:
 struct DuckLakeSchema {
 public:
 	DuckLakeSchema(const string &schema_name) : schema_name(schema_name) {
-		//! FIXME: this is generated for now
+		//! FIXME: this is generated for now (Iceberg doesn't have "namespace" uuids)
 		schema_uuid = UUID::ToString(UUID::GenerateRandomUUID());
 	}
 
@@ -1372,7 +1372,6 @@ static unique_ptr<FunctionData> IcebergToDuckLakeBind(ClientContext &context, Ta
 	auto &irc_transaction = IRCTransaction::Get(context, irc_catalog);
 	auto &schema_set = irc_transaction.schemas;
 
-	//! FIXME: the function should take named parameters that are translated to this.
 	IcebergOptions options;
 	for (auto &kv : input.named_parameters) {
 		auto loption = StringUtil::Lower(kv.first);
