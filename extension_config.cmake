@@ -16,6 +16,10 @@ duckdb_extension_load(avro
         GIT_TAG f861995afa955b75b0543019113479424ce96cfe
 )
 
+duckdb_extension_load(ducklake
+    SOURCE_DIR /Users/thijs/DuckDBLabs/ducklake
+)
+
 ################## AWS
 if (NOT MINGW)
     duckdb_extension_load(aws

@@ -36,6 +36,25 @@
 
 namespace duckdb {
 
+struct IcebergToDuckLakeGlobalTableFunctionState : public GlobalTableFunctionState {
+public:
+	IcebergToDuckLakeGlobalTableFunctionState() {
+
+	};
+
+public:
+	static unique_ptr<GlobalTableFunctionState> Init(ClientContext &context, TableFunctionInitInput &input) {
+		return make_uniq<IcebergToDuckLakeGlobalTableFunctionState>();
+	}
+
+public:
+	//! TODO: add connection to ducklake catalog, ducklake id values .. (like snapshot id)
+};
+
+namespace iceberg {
+
+namespace ducklake {
+
 struct DuckLakeMetadataSerializer {
 public:
 	DuckLakeMetadataSerializer() {
@@ -251,7 +270,7 @@ static pair<int64_t, string> GetSnapshots(timestamp_t begin, bool has_end, times
 	string end_snapshot;
 	if (has_end) {
 		auto &snapshot = snapshots.at(end);
-		end_snapshot = snapshot.snapshot_id.GetIndex();
+		end_snapshot = to_string(snapshot.snapshot_id.GetIndex());
 	} else {
 		end_snapshot = "NULL";
 	}
@@ -317,24 +336,9 @@ public:
 		auto default_value = this->default_value.IsNull() ? "NULL" : "'" + this->default_value.ToString() + "'";
 		auto nulls_allowed = this->nulls_allowed ? "true" : "false";
 
-		return StringUtil::Format(R"(
-			VALUES (
-				%d, -- column_id
-				%d, -- begin_snapshot
-				%s, -- end_snapshot
-				%d, -- table_id
-				%d, -- column_order
-				'%s', -- column_name
-				'%s', -- column_type
-				'%s', -- initial_default
-				'%s', -- default_value
-				%s, -- nulls_allowed
-				%s -- parent_column
-			)
-		)",
-		                          column_id, snapshot_ids.first, snapshot_ids.second, table_id, column_order,
-		                          column_name, column_type, initial_default, default_value, nulls_allowed,
-		                          parent_column);
+		return StringUtil::Format("VALUES (%d,%d,%s,%d,%d,'%s','%s',%s,%s,%s,%s);", column_id, snapshot_ids.first,
+		                          snapshot_ids.second, table_id, column_order, column_name, column_type,
+		                          initial_default, default_value, nulls_allowed, parent_column);
 	}
 
 public:
@@ -445,10 +449,10 @@ public:
 		auto snapshot_ids = GetSnapshots(start_snapshot, has_end, end_snapshot, snapshots);
 		int64_t partition_id = partition.partition_id.GetIndex();
 
-		return StringUtil::Format("VALUES(%d, %d, %d, %s, NULL, '%s', False, 'parquet', %d, %d, NULL, NULL -- "
-		                          "row_id_start, %d, NULL -- encryption_key, NULL -- partial_file_info)",
-		                          data_file_id, table_id, snapshot_ids.first, snapshot_ids.second, path, record_count,
-		                          file_size_bytes, partition_id);
+		return StringUtil::Format(
+		    "VALUES(%d, %d, %d, %s, NULL, '%s', False, 'parquet', %d, %d, NULL, NULL, %d, NULL, NULL, NULL);",
+		    data_file_id, table_id, snapshot_ids.first, snapshot_ids.second, path, record_count, file_size_bytes,
+		    partition_id);
 	}
 
 public:
@@ -516,10 +520,9 @@ public:
 		auto &data_file = all_data_files[referenced_data_file];
 		int64_t data_file_id = data_file.data_file_id.GetIndex();
 
-		return StringUtil::Format(
-		    "VALUE(%d, %d, %d, %s, %d, '%s', false, 'parquet', %d, %d, NULL -- footer_size, NULL -- encryption_key)",
-		    delete_file_id, table_id, snapshot_ids.first, snapshot_ids.second, data_file_id, path, record_count,
-		    file_size_bytes);
+		return StringUtil::Format("VALUES(%d, %d, %d, %s, %d, '%s', false, 'parquet', %d, %d, NULL, NULL);",
+		                          delete_file_id, table_id, snapshot_ids.first, snapshot_ids.second, data_file_id, path,
+		                          record_count, file_size_bytes);
 	}
 
 public:
@@ -689,8 +692,8 @@ public:
 		this->table_id = table_id;
 
 		auto snapshot_ids = GetSnapshots(start_snapshot, false, timestamp_t(0), snapshots);
-		return StringUtil::Format("VALUES(%d, '%s', %d, %s, %d, '%s');", table_id, table_uuid, snapshot_ids.first,
-		                          snapshot_ids.second, schema_id, table_name);
+		return StringUtil::Format("VALUES(%d, '%s', %d, %s, %d, '%s', '', false);", table_id, table_uuid,
+		                          snapshot_ids.first, snapshot_ids.second, schema_id, table_name);
 	}
 
 public:
@@ -736,8 +739,8 @@ public:
 		this->schema_id = schema_id;
 
 		int64_t begin_snapshot = snapshot.snapshot_id.GetIndex();
-		return StringUtil::Format("VALUES (%d, '%s', %d, NULL, '%s');", schema_id, schema_uuid, begin_snapshot,
-		                          schema_name);
+		return StringUtil::Format("VALUES (%d, '%s', %d, NULL, '%s', '', false);", schema_id, schema_uuid,
+		                          begin_snapshot, schema_name);
 	}
 	void AssignEarliestSnapshot(unordered_map<string, DuckLakeTable> &all_tables,
 	                            map<timestamp_t, DuckLakeSnapshot> &snapshots) {
@@ -1038,6 +1041,11 @@ public:
 		DuckLakeMetadataSerializer serializer;
 		vector<string> sql;
 
+		sql.push_back("BEGIN TRANSACTION;");
+		sql.push_back("DELETE FROM ducklake_table;");
+		sql.push_back("DELETE FROM ducklake_snapshot;");
+		sql.push_back("DELETE FROM ducklake_snapshot_changes;");
+
 		//! ducklake_snapshot
 		for (auto &it : snapshots) {
 			auto &snapshot = it.second;
@@ -1112,7 +1120,6 @@ public:
 					Value lower_bound;
 					Value upper_bound;
 					Value null_count;
-					Value nan_count;
 
 					auto lower_bound_it = manifest_entry.lower_bounds.find(column.column_id);
 					auto upper_bound_it = manifest_entry.upper_bounds.find(column.column_id);
@@ -1140,15 +1147,16 @@ public:
 					}
 					auto nan_counts_it = manifest_entry.nan_value_counts.find(column.column_id);
 					if (nan_counts_it != manifest_entry.nan_value_counts.end()) {
-						nan_count = nan_counts_it->second;
+						auto &nan_count = nan_counts_it->second;
 						stats.has_nan = nan_count != 0;
 					}
 
 					auto contains_nan = stats.has_nan ? "true" : "false";
-					auto values = StringUtil::Format(
-					    "VALUES(%d, %d, %d, %s, %s, %s, %s, '%s', '%s', %s);", data_file_id, table_id, column_id,
-					    column_size_bytes, value_count, null_count.ToString(), nan_count.ToString(),
-					    stats.lower_bound.ToString(), stats.upper_bound.ToString(), contains_nan);
+					auto min_value = stats.lower_bound.IsNull() ? "NULL" : "'" + stats.lower_bound.ToString() + "'";
+					auto max_value = stats.upper_bound.IsNull() ? "NULL" : "'" + stats.upper_bound.ToString() + "'";
+					auto values = StringUtil::Format("VALUES(%d, %d, %d, %s, %s, %s, %s, %s, %s);", data_file_id,
+					                                 table_id, column_id, column_size_bytes, value_count,
+					                                 null_count.ToString(), min_value, max_value, contains_nan);
 					sql.push_back(StringUtil::Format("INSERT INTO ducklake_file_column_statistics %s", values));
 
 					if (!data_file.has_end && !column.has_end && !column.IsNested()) {
@@ -1183,7 +1191,7 @@ public:
 						auto index = partition_it->second;
 						partition_value = "'" + partition_values[index].second.ToString() + "'";
 					}
-					auto values = StringUtil::Format("VALUES(%d, %d, %d, '%s');", data_file_id, table_id,
+					auto values = StringUtil::Format("VALUES(%d, %d, %d, %s);", data_file_id, table_id,
 					                                 partition_key_index, partition_value);
 					sql.push_back(StringUtil::Format("INSERT INTO ducklake_file_partition_value %s", values));
 				}
@@ -1226,10 +1234,10 @@ public:
 
 				auto contains_null = stats.contains_null ? "true" : "false";
 				auto contains_nan = stats.contains_nan ? "true" : "false";
-				auto min_value = stats.min_value.ToString();
-				auto max_value = stats.max_value.ToString();
-				auto values = StringUtil::Format("VALUES(%d, %d, %s, %s, '%s', '%s');", table_id, column_id,
-				                                 contains_null, contains_nan, min_value, max_value);
+				auto min_value = stats.min_value.IsNull() ? "NULL" : "'" + stats.min_value.ToString() + "'";
+				auto max_value = stats.max_value.IsNull() ? "NULL" : "'" + stats.max_value.ToString() + "'";
+				auto values = StringUtil::Format("VALUES(%d, %d, %s, %s, %s, %s);", table_id, column_id, contains_null,
+				                                 contains_nan, min_value, max_value);
 				sql.push_back(StringUtil::Format("INSERT INTO ducklake_table_column_stats %s", values));
 			}
 		}
@@ -1298,6 +1306,7 @@ public:
 			auto values = StringUtil::Format("VALUES(%d, '%s');", snapshot_id, StringUtil::Join(changes, ","));
 			sql.push_back(StringUtil::Format("INSERT INTO ducklake_snapshot_changes %s", values));
 		}
+		sql.push_back("COMMIT TRANSACTION;");
 
 		return sql;
 	}
@@ -1343,21 +1352,6 @@ public:
 public:
 	//! Skip these tables (should be set if a table doesn't meet the conversion criteria)
 	set<string> table_names_to_skip;
-};
-
-struct IcebergToDuckLakeGlobalTableFunctionState : public GlobalTableFunctionState {
-public:
-	IcebergToDuckLakeGlobalTableFunctionState() {
-
-	};
-
-public:
-	static unique_ptr<GlobalTableFunctionState> Init(ClientContext &context, TableFunctionInitInput &input) {
-		return make_uniq<IcebergToDuckLakeGlobalTableFunctionState>();
-	}
-
-public:
-	//! TODO: add connection to ducklake catalog, ducklake id values .. (like snapshot id)
 };
 
 static unique_ptr<FunctionData> IcebergToDuckLakeBind(ClientContext &context, TableFunctionBindInput &input,
@@ -1441,11 +1435,15 @@ static void IcebergToDuckLakeFunction(ClientContext &context, TableFunctionInput
 	output.SetCardinality(0);
 }
 
+} // namespace ducklake
+
+} // namespace iceberg
+
 TableFunctionSet IcebergFunctions::GetIcebergToDuckLakeFunction() {
 	TableFunctionSet function_set("iceberg_to_ducklake");
 
-	auto fun = TableFunction({LogicalType::VARCHAR, LogicalType::VARCHAR}, IcebergToDuckLakeFunction,
-	                         IcebergToDuckLakeBind, IcebergToDuckLakeGlobalTableFunctionState::Init);
+	auto fun = TableFunction({LogicalType::VARCHAR, LogicalType::VARCHAR}, iceberg::ducklake::IcebergToDuckLakeFunction,
+	                         iceberg::ducklake::IcebergToDuckLakeBind, IcebergToDuckLakeGlobalTableFunctionState::Init);
 	fun.named_parameters.emplace("skip_tables", LogicalType::LIST(LogicalTypeId::VARCHAR));
 	function_set.AddFunction(fun);
 
