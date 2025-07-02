@@ -61,11 +61,6 @@ public:
 	int64_t snapshot_id = 0;
 	int64_t partition_id = 0;
 
-	//! Assigned to table_id, schema_id, view_id
-	int64_t catalog_id = 0;
-	//! Assigned to data_file_id, delete_file_id
-	int64_t file_id = 0;
-
 	//! Version of the schema of the catalog (this covers the schema, table and even columns of the table)
 	int64_t schema_version = 0;
 	//! Ids assigned to table_id, schema_id and view_id
@@ -301,8 +296,7 @@ public:
 public:
 	bool operator==(const DuckLakeColumn &other) {
 		if (column_id != other.column_id) {
-			//! FIXME: perhaps we just assert that this is true, otherwise they shouldn't be compared at all
-			return false;
+			throw InternalException("Comparison between two columns that don't share the same id is not defined");
 		}
 		if (column_id != other.column_order) {
 			return false;
@@ -1355,6 +1349,12 @@ public:
 public:
 	//! Skip these tables (should be set if a table doesn't meet the conversion criteria)
 	set<string> table_names_to_skip;
+
+public:
+	//! The statements to execute on the metadata catalog
+	vector<string> sql_statements;
+	//! Connection to the metadata catalog
+	unique_ptr<Connection> connection;
 };
 
 static unique_ptr<FunctionData> IcebergToDuckLakeBind(ClientContext &context, TableFunctionBindInput &input,
