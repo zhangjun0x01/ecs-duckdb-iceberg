@@ -1431,6 +1431,62 @@ public:
 	}
 
 public:
+	void VerifyDuckLakeVersion() {
+		auto version_query =
+		    StringUtil::Replace("SELECT value FROM {METADATA_CATALOG}.ducklake_metadata where key = 'version'",
+		                        "{METADATA_CATALOG}", metadata_catalog);
+		auto result = connection->Query(version_query);
+		if (result->HasError()) {
+			result->ThrowError("'iceberg_to_ducklake' version verification query failed: ");
+		}
+
+		D_ASSERT(result->ColumnCount() == 1);
+		auto chunk = result->Fetch();
+		if (!chunk) {
+			throw InvalidInputException("'iceberg_to_ducklake' version verification query failed, produced no chunks");
+		}
+		if (chunk->size() == 0) {
+			throw InvalidInputException("Metadata catalog does not have a 'version' entry in 'ducklake_metadata'");
+		}
+		auto value = chunk->GetValue(0, 0);
+		if (value.IsNull() || value.type().id() != LogicalTypeId::VARCHAR) {
+			throw InvalidInputException(
+			    "DuckLake version metadata is corrupt, the value can't be NULL and has to be of type VARCHAR");
+		}
+		auto version_string = value.GetValue<string>();
+		if (version_string != "0.2") {
+			throw InvalidInputException("'iceberg_to_ducklake' only support version 0.2 currently");
+		}
+	}
+
+	void VerifyEmptyCatalog() {
+		auto query = StringUtil::Replace("SELECT max(snapshot_id) FROM {METADATA_CATALOG}.ducklake_snapshot;",
+		                                 "{METADATA_CATALOG}", metadata_catalog);
+		auto result = connection->Query(query);
+		if (result->HasError()) {
+			result->ThrowError("'iceberg_to_ducklake' verification query failed: ");
+		}
+
+		D_ASSERT(result->ColumnCount() == 1);
+		auto chunk = result->Fetch();
+		if (!chunk) {
+			throw InvalidInputException("'iceberg_to_ducklake' verification query failed, produced no chunks");
+		}
+		if (chunk->size() == 0) {
+			throw InvalidInputException("Couldn't get 'max(snapshot_id)', produced 0 rows");
+		}
+		auto value = chunk->GetValue(0, 0);
+		if (value.IsNull() || value.type().id() != LogicalTypeId::BIGINT) {
+			throw InvalidInputException(
+			    "'max(snapshot_id)' did not produce a non-null value, or the value type is not BIGINT (int64)");
+		}
+		auto max_snapshot_id = value.GetValue<int64_t>();
+		if (max_snapshot_id != 0) {
+			throw InvalidInputException("'iceberg_to_ducklake' can only be used on empty catalogs currently");
+		}
+	}
+
+public:
 	static unique_ptr<GlobalTableFunctionState> Init(ClientContext &context, TableFunctionInitInput &input) {
 		auto &bind_data = input.bind_data->Cast<iceberg::ducklake::IcebergToDuckLakeBindData>();
 		auto &input_string = bind_data.ducklake_catalog;
@@ -1447,7 +1503,10 @@ public:
 
 		auto &db = DatabaseInstance::GetDatabase(context);
 		auto connection = make_uniq<Connection>(db);
-		return make_uniq<IcebergToDuckLakeGlobalTableFunctionState>(std::move(connection), metadata_catalog);
+		auto res = make_uniq<IcebergToDuckLakeGlobalTableFunctionState>(std::move(connection), metadata_catalog);
+		res->VerifyDuckLakeVersion();
+		res->VerifyEmptyCatalog();
+		return res;
 	}
 
 public:
