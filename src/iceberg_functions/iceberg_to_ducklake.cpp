@@ -36,18 +36,6 @@
 
 namespace duckdb {
 
-struct IcebergToDuckLakeGlobalTableFunctionState : public GlobalTableFunctionState {
-public:
-	IcebergToDuckLakeGlobalTableFunctionState() {
-
-	};
-
-public:
-	static unique_ptr<GlobalTableFunctionState> Init(ClientContext &context, TableFunctionInitInput &input) {
-		return make_uniq<IcebergToDuckLakeGlobalTableFunctionState>();
-	}
-};
-
 namespace iceberg {
 
 namespace ducklake {
@@ -785,14 +773,6 @@ static unordered_map<int64_t, DuckLakeColumn> SchemaToColumns(const IcebergTable
 	return result;
 }
 
-static string GetBoundStats(const unordered_map<int32_t, Value> &bounds, int64_t column_id) {
-	auto it = bounds.find(column_id);
-	if (it == bounds.end()) {
-		return "NULL";
-	}
-	return it->second.ToString();
-}
-
 static string GetNumericStats(const unordered_map<int32_t, int64_t> &stats, int64_t column_id) {
 	auto it = stats.find(column_id);
 	if (it == stats.end()) {
@@ -1036,16 +1016,16 @@ public:
 		vector<string> sql;
 
 		sql.push_back("BEGIN TRANSACTION;");
-		sql.push_back("DELETE FROM ducklake_table;");
-		sql.push_back("DELETE FROM ducklake_snapshot;");
-		sql.push_back("DELETE FROM ducklake_snapshot_changes;");
+		sql.push_back("DELETE FROM {METADATA_CATALOG}.ducklake_table;");
+		sql.push_back("DELETE FROM {METADATA_CATALOG}.ducklake_snapshot;");
+		sql.push_back("DELETE FROM {METADATA_CATALOG}.ducklake_snapshot_changes;");
 
 		//! ducklake_snapshot
 		for (auto &it : snapshots) {
 			auto &snapshot = it.second;
 
 			auto values = snapshot.FinalizeEntry(serializer);
-			sql.push_back(StringUtil::Format("INSERT INTO ducklake_snapshot %s", values));
+			sql.push_back(StringUtil::Format("INSERT INTO {METADATA_CATALOG}.ducklake_snapshot %s", values));
 		}
 
 		//! ducklake_schema
@@ -1058,7 +1038,7 @@ public:
 				continue;
 			}
 			auto values = schema.FinalizeEntry(snapshots);
-			sql.push_back(StringUtil::Format("INSERT INTO ducklake_schema %s", values));
+			sql.push_back(StringUtil::Format("INSERT INTO {METADATA_CATALOG}.ducklake_schema %s", values));
 		}
 
 		//! ducklake_table
@@ -1068,27 +1048,28 @@ public:
 			auto &schema = schemas.at(table.schema_name);
 			auto schema_id = schema.schema_id.GetIndex();
 			auto values = table.FinalizeEntry(schema_id, snapshots);
-			sql.push_back(StringUtil::Format("INSERT INTO ducklake_table %s", values));
+			sql.push_back(StringUtil::Format("INSERT INTO {METADATA_CATALOG}.ducklake_table %s", values));
 
 			int64_t table_id = table.table_id.GetIndex();
 			//! ducklake_partition_info
 			for (auto &partition : table.all_partitions) {
 				auto values = partition.FinalizeEntry(table_id, serializer, snapshots);
-				sql.push_back(StringUtil::Format("INSERT INTO ducklake_partition_info %s", values));
+				sql.push_back(StringUtil::Format("INSERT INTO {METADATA_CATALOG}.ducklake_partition_info %s", values));
 
 				auto partition_id = partition.partition_id.GetIndex();
 				//! ducklake_partition_column
 				for (idx_t i = 0; i < partition.columns.size(); i++) {
 					auto &column = partition.columns[i];
 					auto values = column.FinalizeEntry(table_id, partition_id, i);
-					sql.push_back(StringUtil::Format("INSERT INTO ducklake_partition_column %s", values));
+					sql.push_back(
+					    StringUtil::Format("INSERT INTO {METADATA_CATALOG}.ducklake_partition_column %s", values));
 				}
 			}
 
 			//! ducklake_column
 			for (auto &column : table.all_columns) {
 				auto values = column.FinalizeEntry(table_id, snapshots);
-				sql.push_back(StringUtil::Format("INSERT INTO ducklake_column %s", values));
+				sql.push_back(StringUtil::Format("INSERT INTO {METADATA_CATALOG}.ducklake_column %s", values));
 			}
 
 			unordered_map<int32_t, DuckLakeColumnStats> column_stats;
@@ -1096,7 +1077,7 @@ public:
 			//! ducklake_data_file
 			for (auto &data_file : table.all_data_files) {
 				auto values = data_file.FinalizeEntry(table_id, snapshots);
-				sql.push_back(StringUtil::Format("INSERT INTO ducklake_data_file %s", values));
+				sql.push_back(StringUtil::Format("INSERT INTO {METADATA_CATALOG}.ducklake_data_file %s", values));
 
 				auto data_file_id = data_file.data_file_id.GetIndex();
 				auto &start_snapshot = snapshots.at(data_file.start_snapshot);
@@ -1151,7 +1132,8 @@ public:
 					auto values = StringUtil::Format("VALUES(%d, %d, %d, %s, %s, %s, %s, %s, %s);", data_file_id,
 					                                 table_id, column_id, column_size_bytes, value_count,
 					                                 null_count.ToString(), min_value, max_value, contains_nan);
-					sql.push_back(StringUtil::Format("INSERT INTO ducklake_file_column_statistics %s", values));
+					sql.push_back(StringUtil::Format(
+					    "INSERT INTO {METADATA_CATALOG}.ducklake_file_column_statistics %s", values));
 
 					if (!data_file.has_end && !column.has_end && !column.IsNested()) {
 						//! This data file is currently active, collect stats for it
@@ -1187,14 +1169,15 @@ public:
 					}
 					auto values = StringUtil::Format("VALUES(%d, %d, %d, %s);", data_file_id, table_id,
 					                                 partition_key_index, partition_value);
-					sql.push_back(StringUtil::Format("INSERT INTO ducklake_file_partition_value %s", values));
+					sql.push_back(
+					    StringUtil::Format("INSERT INTO {METADATA_CATALOG}.ducklake_file_partition_value %s", values));
 				}
 			}
 
 			//! ducklake_delete_file
 			for (auto &delete_file : table.all_delete_files) {
 				auto values = delete_file.FinalizeEntry(table_id, table.all_data_files, snapshots);
-				sql.push_back(StringUtil::Format("INSERT INTO ducklake_delete_file %s", values));
+				sql.push_back(StringUtil::Format("INSERT INTO {METADATA_CATALOG}.ducklake_delete_file %s", values));
 			}
 
 			//! ducklake_table_stats
@@ -1221,7 +1204,8 @@ public:
 				//! FIXME: for v2 compatibility this uses the 'record_count' as the 'next_row_id'
 				auto stats_values = StringUtil::Format("VALUES(%d, %d, %d, %d);", table_id, record_count, record_count,
 				                                       file_size_bytes);
-				sql.push_back(StringUtil::Format("INSERT INTO ducklake_table_stats %s", stats_values));
+				sql.push_back(
+				    StringUtil::Format("INSERT INTO {METADATA_CATALOG}.ducklake_table_stats %s", stats_values));
 			}
 
 			//! ducklake_table_column_stats
@@ -1235,7 +1219,8 @@ public:
 				auto max_value = stats.max_value.IsNull() ? "NULL" : "'" + stats.max_value.ToString() + "'";
 				auto values = StringUtil::Format("VALUES(%d, %d, %s, %s, %s, %s);", table_id, column_id, contains_null,
 				                                 contains_nan, min_value, max_value);
-				sql.push_back(StringUtil::Format("INSERT INTO ducklake_table_column_stats %s", values));
+				sql.push_back(
+				    StringUtil::Format("INSERT INTO {METADATA_CATALOG}.ducklake_table_column_stats %s", values));
 			}
 		}
 
@@ -1301,7 +1286,7 @@ public:
 			}
 			auto snapshot_id = snapshot.snapshot_id.GetIndex();
 			auto values = StringUtil::Format("VALUES(%d, '%s');", snapshot_id, StringUtil::Join(changes, ","));
-			sql.push_back(StringUtil::Format("INSERT INTO ducklake_snapshot_changes %s", values));
+			sql.push_back(StringUtil::Format("INSERT INTO {METADATA_CATALOG}.ducklake_snapshot_changes %s", values));
 		}
 		sql.push_back("COMMIT TRANSACTION;");
 
@@ -1353,14 +1338,14 @@ public:
 public:
 	//! The statements to execute on the metadata catalog
 	vector<string> sql_statements;
-	//! Connection to the metadata catalog
-	unique_ptr<Connection> connection;
+	string ducklake_catalog;
 };
 
 static unique_ptr<FunctionData> IcebergToDuckLakeBind(ClientContext &context, TableFunctionBindInput &input,
                                                       vector<LogicalType> &return_types, vector<string> &names) {
 	auto ret = make_uniq<IcebergToDuckLakeBindData>();
 	auto input_string = input.inputs[0].ToString();
+	ret->ducklake_catalog = input.inputs[1].ToString();
 
 	auto &catalog = Catalog::GetCatalog(context, input_string);
 	auto catalog_type = catalog.GetCatalogType();
@@ -1421,8 +1406,8 @@ static unique_ptr<FunctionData> IcebergToDuckLakeBind(ClientContext &context, Ta
 
 	ret->AssignSchemaBeginSnapshots();
 
-	auto statements = ret->CreateSQLStatements();
-	for (auto &statement : statements) {
+	ret->sql_statements = ret->CreateSQLStatements();
+	for (auto &statement : ret->sql_statements) {
 		Printer::Print(statement);
 	}
 
@@ -1431,20 +1416,67 @@ static unique_ptr<FunctionData> IcebergToDuckLakeBind(ClientContext &context, Ta
 	return std::move(ret);
 }
 
-static void IcebergToDuckLakeFunction(ClientContext &context, TableFunctionInput &data, DataChunk &output) {
-	auto &bind_data = data.bind_data->Cast<IcebergToDuckLakeBindData>();
-	auto &global_state = data.global_state->Cast<IcebergToDuckLakeGlobalTableFunctionState>();
-	output.SetCardinality(0);
-}
-
 } // namespace ducklake
 
 } // namespace iceberg
 
+struct IcebergToDuckLakeGlobalTableFunctionState : public GlobalTableFunctionState {
+public:
+	IcebergToDuckLakeGlobalTableFunctionState(unique_ptr<Connection> connection, const string &metadata_catalog)
+	    : connection(std::move(connection)), metadata_catalog(metadata_catalog) {};
+	virtual ~IcebergToDuckLakeGlobalTableFunctionState() {
+		if (connection) {
+			connection.reset();
+		}
+	}
+
+public:
+	static unique_ptr<GlobalTableFunctionState> Init(ClientContext &context, TableFunctionInitInput &input) {
+		auto &bind_data = input.bind_data->Cast<iceberg::ducklake::IcebergToDuckLakeBindData>();
+		auto &input_string = bind_data.ducklake_catalog;
+
+		auto &catalog = Catalog::GetCatalog(context, input_string);
+		auto catalog_type = catalog.GetCatalogType();
+		if (catalog_type != "ducklake") {
+			throw InvalidInputException("Second parameter must be the name of an attached DuckLake catalog");
+		}
+
+		auto metadata_catalog = StringUtil::Format("__ducklake_metadata_%s", input_string);
+		//! Verify the existence of the metadata catalog and that it's attached as well.
+		(void)Catalog::GetCatalog(context, metadata_catalog);
+
+		auto &db = DatabaseInstance::GetDatabase(context);
+		auto connection = make_uniq<Connection>(db);
+		return make_uniq<IcebergToDuckLakeGlobalTableFunctionState>(std::move(connection), metadata_catalog);
+	}
+
+public:
+	//! Connection used to run the SQL statements
+	unique_ptr<Connection> connection;
+	string metadata_catalog;
+};
+
+static void IcebergToDuckLakeFunction(ClientContext &context, TableFunctionInput &data, DataChunk &output) {
+	auto &bind_data = data.bind_data->Cast<iceberg::ducklake::IcebergToDuckLakeBindData>();
+	auto &global_state = data.global_state->Cast<IcebergToDuckLakeGlobalTableFunctionState>();
+
+	auto &connection = *global_state.connection;
+	auto &statements = bind_data.sql_statements;
+
+	auto query = StringUtil::Join(statements, "\n");
+	query = StringUtil::Replace(query, "{METADATA_CATALOG}", StringUtil::Format("%s", global_state.metadata_catalog));
+	auto result = connection.Query(query);
+	if (result->HasError()) {
+		result->ThrowError("'iceberg_to_ducklake' failed to commit to the DuckLake metadata catalog: ");
+	}
+
+	output.SetCardinality(0);
+}
+
 TableFunctionSet IcebergFunctions::GetIcebergToDuckLakeFunction() {
 	TableFunctionSet function_set("iceberg_to_ducklake");
 
-	auto fun = TableFunction({LogicalType::VARCHAR, LogicalType::VARCHAR}, iceberg::ducklake::IcebergToDuckLakeFunction,
+	auto fun = TableFunction({LogicalType::VARCHAR, LogicalType::VARCHAR}, IcebergToDuckLakeFunction,
 	                         iceberg::ducklake::IcebergToDuckLakeBind, IcebergToDuckLakeGlobalTableFunctionState::Init);
 	fun.named_parameters.emplace("skip_tables", LogicalType::LIST(LogicalTypeId::VARCHAR));
 	function_set.AddFunction(fun);
