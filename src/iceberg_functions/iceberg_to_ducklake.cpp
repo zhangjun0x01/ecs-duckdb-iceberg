@@ -731,7 +731,7 @@ public:
 		for (idx_t i = 0; i < tables.size(); i++) {
 			auto &table = all_tables.at(tables[i]);
 			auto &table_snapshot = table.all_columns.front().start_snapshot;
-			if (!i || snapshot_time < table_snapshot) {
+			if (!i || snapshot_time > table_snapshot) {
 				snapshot_time = table_snapshot;
 			}
 		}
@@ -1407,9 +1407,6 @@ static unique_ptr<FunctionData> IcebergToDuckLakeBind(ClientContext &context, Ta
 	ret->AssignSchemaBeginSnapshots();
 
 	ret->sql_statements = ret->CreateSQLStatements();
-	for (auto &statement : ret->sql_statements) {
-		Printer::Print(statement);
-	}
 
 	return_types.emplace_back(LogicalType::BIGINT);
 	names.emplace_back("count");
