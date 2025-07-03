@@ -70,7 +70,7 @@ public:
 		base_file_id = serializer.next_file_id;
 
 		//! Update the serializer to point to the next id starts
-		serializer.schema_version += catalog_changes;
+		serializer.schema_version += !!catalog_changes;
 		serializer.next_catalog_id += catalog_additions;
 		serializer.next_file_id += files_added;
 
