@@ -1,7 +1,7 @@
 {
   "format-version": 2,
   "table-uuid": "9d405fef-3d1c-4d40-91c9-4769ee9ab38d",
-  "location": "/Users/thijs/DuckDBLabs/duckdb_iceberg/data/persistent/struct_filter_issue",
+  "location": "data/persistent/struct_filter_issue",
   "last-sequence-number": 0,
   "last-updated-ms": 1750967133526,
   "last-column-id": 10,

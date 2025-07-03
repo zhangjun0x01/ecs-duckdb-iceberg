@@ -1,7 +1,7 @@
 {
   "format-version": 2,
   "table-uuid": "9d405fef-3d1c-4d40-91c9-4769ee9ab38d",
-  "location": "/Users/thijs/DuckDBLabs/duckdb_iceberg/data/persistent/struct_filter_issue",
+  "location": "data/persistent/struct_filter_issue",
   "last-sequence-number": 1,
   "last-updated-ms": 1750967189414,
   "last-column-id": 10,
@@ -102,7 +102,7 @@
       "snapshot-id": 2608844449237347010,
       "sequence-number": 1,
       "timestamp-ms": 1750967189413,
-      "manifest-list": "/Users/thijs/DuckDBLabs/duckdb_iceberg/data/persistent/struct_filter_issue/metadata/snap-2608844449237347010-21cbc5e3-71c2-4260-aa5f-10911de4af89-0.avro",
+      "manifest-list": "data/persistent/struct_filter_issue/metadata/snap-2608844449237347010-21cbc5e3-71c2-4260-aa5f-10911de4af89-0.avro",
       "schema-id": 0,
       "summary": {
         "operation": "append",

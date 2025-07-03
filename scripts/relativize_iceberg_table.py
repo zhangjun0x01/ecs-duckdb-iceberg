@@ -176,10 +176,10 @@ def backup_and_replace_metadata(table_path: Path, temp_metadata_dir: Path):
 
 def main():
     args = parse_args()
-    table_path = Path(args.table_path).resolve()
+    table_path = Path(args.table_path)
     new_base_path = str(table_path)
 
-    validate_paths(table_path)
+    validate_paths(table_path.resolve())
 
     print(f"Relativizing Iceberg table at: {table_path}")
     print(f"Using new base path: {new_base_path}")
