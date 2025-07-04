@@ -9,6 +9,8 @@ require iceberg
 
 require httpfs
 
+require no_extension_autoloading "EXPECTED: enable logging is not aware of where 'Iceberg' option comes from"
+
 # Do not ignore 'HTTP' error messages!
 set ignore_error_messages
 
