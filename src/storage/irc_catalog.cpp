@@ -27,7 +27,7 @@ namespace duckdb {
 IRCatalog::IRCatalog(AttachedDatabase &db_p, AccessMode access_mode, unique_ptr<IRCAuthorization> auth_handler,
                      IcebergAttachOptions &attach_options, const string &version)
     : Catalog(db_p), access_mode(access_mode), auth_handler(std::move(auth_handler)),
-      warehouse(attach_options.warehouse), uri(attach_options.endpoint), version(version),
+      warehouse(attach_options.warehouse), uri(attach_options.endpoint), version(version), prefix((attach_options.prefix)),
       attach_options(attach_options) {
 	if (version.empty()) {
 		throw InternalException("version can not be empty");
@@ -231,7 +231,7 @@ void IRCatalog::GetConfig(ClientContext &context, IcebergEndpointType &endpoint_
 	auto url = GetBaseUrl();
 	// set the prefix to be empty. To get the config endpoint,
 	// we cannot add a default prefix.
-	D_ASSERT(prefix.empty());
+	// D_ASSERT(prefix.empty());
 	url.AddPathComponent("config");
 	url.SetParam("warehouse", warehouse);
 	auto response = auth_handler->GetRequest(context, url);
@@ -437,6 +437,9 @@ unique_ptr<Catalog> IRCatalog::Attach(StorageExtensionInfo *storage_info, Client
 		} else if (lower_name == "endpoint") {
 			attach_options.endpoint = StringUtil::Lower(entry.second.ToString());
 			StringUtil::RTrim(attach_options.endpoint, "/");
+		} else if (lower_name == "prefix") {
+			attach_options.prefix = StringUtil::Lower(entry.second.ToString());
+			StringUtil::RTrim(attach_options.prefix);
 		} else {
 			attach_options.options.emplace(std::move(entry));
 		}
