@@ -1503,7 +1503,7 @@ public:
 		auto res = make_uniq<IcebergToDuckLakeGlobalTableFunctionState>(std::move(connection), metadata_catalog);
 		res->VerifyDuckLakeVersion();
 		res->VerifyEmptyCatalog();
-		return res;
+		return std::move(res);
 	}
 
 public:
