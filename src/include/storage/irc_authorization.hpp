@@ -15,7 +15,6 @@ struct IcebergAttachOptions {
 	string endpoint;
 	string warehouse;
 	string secret;
-	string prefix;
 	string name;
 	bool allows_deletes = true;
 	IRCAuthorizationType authorization_type = IRCAuthorizationType::INVALID;
